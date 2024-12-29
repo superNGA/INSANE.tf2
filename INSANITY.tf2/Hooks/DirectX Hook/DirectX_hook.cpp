@@ -6,22 +6,6 @@ int WINDOW_HEIGHT, WINDOW_WIDTH;
 HWND WINDOW = nullptr;
 LPDIRECT3DDEVICE9 DEVICE = nullptr;
 
-//==============================END SCENE HOOK=============================================
-//typedef HRESULT(APIENTRY* T_ENDSCENE)(LPDIRECT3DDEVICE9);
-//T_ENDSCENE O_ENDSCENE = nullptr;
-//HRESULT H_ENDSCENE(LPDIRECT3DDEVICE9 P_DEVICE)
-//{
-//	//storing the device pointer globally
-//	if (!DEVICE) {
-//		DEVICE = P_DEVICE;
-//	}
-//
-//	DRAW_RECTANGLE(D3DCOLOR_ARGB(255, 255, 255, 255));
-//
-//	printf("Hooked endscene\n");
-//	return O_ENDSCENE(DEVICE);
-//}
-
 void* get_endscene()
 {
 	if (GET_DIRECTX_DEVICES_VTABLE(DIRECTX_DEVICE_VTABLE, sizeof(DIRECTX_DEVICE_VTABLE))) {
@@ -90,9 +74,3 @@ BOOL CALLBACK CHECK_WINDOW(HWND CURRENT_WINDOW, LPARAM LP)
 	WINDOW = CURRENT_WINDOW;
 	return FALSE;
 }
-
-//void DRAW_RECTANGLE(D3DCOLOR color)
-//{
-//	D3DRECT rect = { 100, 100, 200, 200 };
-//	DEVICE->Clear(1, &rect, D3DCLEAR_TARGET, color, 0, 0);
-//}

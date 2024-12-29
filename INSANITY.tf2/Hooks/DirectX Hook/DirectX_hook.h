@@ -34,6 +34,3 @@ HWND GET_PROCESS_WINDOW();
 
 /*This gets called by the EnumWindows and checks the window*/
 BOOL CALLBACK CHECK_WINDOW(HWND CURRENT_WINDOW, LPARAM LP);
-
-/*Testing function*/
-//void DRAW_RECTANGLE(D3DCOLOR color);

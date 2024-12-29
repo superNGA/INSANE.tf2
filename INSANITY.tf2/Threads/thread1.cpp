@@ -16,19 +16,23 @@ void execute_thread1(HINSTANCE instance)
 #endif
 
 	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene); //End scene hook
-	
-	//enabling all hooks
-	MH_EnableHook(MH_ALL_HOOKS);
+	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
+	winproc::hook_winproc(); // Hooking WinProc
 
 	while (!GetAsyncKeyState(VK_END))
 	{
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	// Uninitializing Minhook and freeing console
-	MH_Uninitialize();
+	directX::UI::shutdown_UI = true;
+	winproc::unhook_winproc(); // Unhooking WinProc
+	MH_DisableHook(MH_ALL_HOOKS); // disabling hooks
+	MH_Uninitialize(); // Uninitializing Minhook
+
 #ifdef _DEBUG
 	cons.Log("Removed all hooks", FG_RED);
 	cons.FreeConsoleInstance();
 #endif
+
+	FreeLibraryAndExitThread(instance, 0);
 }

@@ -9,7 +9,8 @@
 #include <thread>
 
 #include "../Hooks/EndScene/EndScene.h"
-#include "../Hooks/DirectX_hook.h"
+#include "../Hooks/WinProc/WinProc.h"
+#include "../Hooks/DirectX Hook/DirectX_hook.h"
 
 #ifdef _DEBUG
 	extern Console_System cons;
