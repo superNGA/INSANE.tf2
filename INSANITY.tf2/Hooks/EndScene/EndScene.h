@@ -10,10 +10,10 @@
 #include "../../External Libraries/ImGui/imgui_impl_dx9.h"
 #include "../../External Libraries/ImGui/imgui_impl_win32.h"
 
-// console system
-#include "../../Libraries/Console System/Console_System.h"
 
 #ifdef _DEBUG
+// console system
+#include "../../Libraries/Console System/Console_System.h"
 extern Console_System cons;
 #endif // _DEBUG
 
@@ -23,8 +23,11 @@ namespace directX
 	{
 		extern bool UI_initialized_DX9;
 		extern bool shutdown_UI;
+		extern bool UI_has_been_shutdown;
 		extern bool UI_visble;
 		extern bool WIN32_initialized;
+
+		inline void draw_UI();
 	};
 
 	typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);

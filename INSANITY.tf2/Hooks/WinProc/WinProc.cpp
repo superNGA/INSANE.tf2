@@ -16,7 +16,7 @@ bool winproc::hook_winproc() {
     global::target_hwnd = target_window_handle;
     #ifdef _DEBUG
     cons.Log("found target window", FG_GREEN);
-    printf("window handle -> %X\n", target_window_handle);
+    printf("window handle -> 0x%p\n", target_window_handle);
     #endif
 
     #ifdef _DEBUG
@@ -53,9 +53,19 @@ void winproc::unhook_winproc()
 }
 
 LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (directX::UI::UI_visble && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
-        return true; // Let ImGui handle the input
+    if (!directX::UI::UI_has_been_shutdown)
+    {
+        if (directX::UI::UI_visble && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
+            return true; // Let ImGui handle the input
+        }
     }
+#ifdef _DEBUG
+    else
+    {
+        cons.Log("Stoped WinProc from using ImGui after shutdown", FG_RED);
+    }
+#endif // _DEBUG
+
 
     // Handle custom input
     if (uMsg == WM_KEYDOWN)

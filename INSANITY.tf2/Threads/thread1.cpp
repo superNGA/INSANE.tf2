@@ -26,6 +26,15 @@ void execute_thread1(HINSTANCE instance)
 
 	directX::UI::shutdown_UI = true;
 	winproc::unhook_winproc(); // Unhooking WinProc
+
+	//waiting until ImGui has been shutdown properly.
+	while (!directX::UI::UI_has_been_shutdown)
+	{
+		#ifdef _DEBUG
+		cons.Log("Waiting for ImGui to shutdown properly", FG_YELLOW);
+		#endif // _DEBUG
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	}
 	MH_DisableHook(MH_ALL_HOOKS); // disabling hooks
 	MH_Uninitialize(); // Uninitializing Minhook
 

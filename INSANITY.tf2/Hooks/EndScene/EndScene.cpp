@@ -5,6 +5,7 @@ namespace directX {
     {
         bool UI_initialized_DX9 = false;
         bool shutdown_UI = false;
+        bool UI_has_been_shutdown = false;
         bool UI_visble = true;
         bool WIN32_initialized = false;
     };
@@ -18,8 +19,12 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 	}
 
     // Initializin DX9 imgui
-    if (!UI::UI_initialized_DX9) {
-        ImGui::CreateContext();
+    static ImGuiContext* context;
+    if (!UI::UI_initialized_DX9)
+    {
+        context = ImGui::CreateContext();
+        ImGui::SetCurrentContext(context);
+
         ImGui_ImplDX9_Init(device);
         ImGui_ImplDX9_CreateDeviceObjects();
         ImGuiIO& io = ImGui::GetIO();
@@ -53,36 +58,46 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     //skipping rendering if menu not visible
-    if (!UI::UI_visble)
+    if (!UI::UI_visble || UI::UI_has_been_shutdown)
     {
         return O_endscene(P_DEVICE);
     }
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
-
-    // Start a new ImGui frame
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
-    // Render menu
-    ImGui::Begin("Test Menu");
+    ImGui::SetNextWindowSize(ImVec2(700, 400));
+    ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
     ImGui::Text("Hello, World!");
     ImGui::End();
 
-    // Render ImGui
     ImGui::EndFrame();
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
     // Shuting down ImGui backends
-    if (UI::shutdown_UI)
+    if (UI::shutdown_UI && !UI::UI_has_been_shutdown)
     {
-        ImGui_ImplDX9_Shutdown();
-        ImGui_ImplWin32_Shutdown();
+
+        #ifdef _DEBUG
+        if (ImGui::GetCurrentContext() != context)
+        {
+            cons.Log("[ Error ] current context is null before destroying it", FG_RED);  
+        }
+        #endif
+        if(UI::UI_initialized_DX9) ImGui_ImplDX9_Shutdown();
+        if(UI::WIN32_initialized) ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
+        UI::shutdown_UI = false;
+        UI::UI_has_been_shutdown = true;
+        
+        #ifdef _DEBUG
+        cons.Log("ImGui has been shutdown", FG_RED);
+        #endif // _DEBUG
+
     }
 
 	return O_endscene(P_DEVICE);
 }
-
