@@ -59,13 +59,12 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             return true; // Let ImGui handle the input
         }
     }
-#ifdef _DEBUG
+    #ifdef _DEBUG
     else
     {
         cons.Log("Stoped WinProc from using ImGui after shutdown", FG_RED);
     }
-#endif // _DEBUG
-
+    #endif
 
     // Handle custom input
     if (uMsg == WM_KEYDOWN)

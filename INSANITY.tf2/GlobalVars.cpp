@@ -6,3 +6,8 @@ namespace global
 	const char* target_proc_name = "tf win64.exe";
 	HWND target_hwnd = nullptr;
 };
+
+namespace resource
+{
+	raw_image_data logo(logo_data, sizeof(logo_data));
+}

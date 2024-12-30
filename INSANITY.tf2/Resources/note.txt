@@ -1,0 +1,8 @@
+ NOTE : 
+	images uploaded here must be upside down, because the stb_image library decided to be a bitch and
+	read the image byte array in the wrong order and inverting it will take too much brain power 
+	which I currently not have much off and it will also require including new libraries which I don't
+	want.
+
+	sincerely,
+	superNGA
