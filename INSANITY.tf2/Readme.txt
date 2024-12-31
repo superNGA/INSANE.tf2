@@ -1,9 +1,14 @@
-Logo font : price down (gta 5)
-			
+In Difficult times, hope is something you give yourself
+	-INSANE
 
-Text font : Russo One
-			Agency FB
+Logo font : Agency FB
+			
+Text font : Agency FB
 			
 
 TO DO:
-	make a inverting function, which can turn the array upside down and store it in the raw_image_data struct.
+	write out the name with font
+	do deviders
+	make some cool ass logo, and place it appropriately
+	make vertical devider
+	make the minimize button on the top right

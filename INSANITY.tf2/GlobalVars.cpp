@@ -9,5 +9,10 @@ namespace global
 
 namespace resource
 {
+	/* textures */
 	raw_image_data logo(logo_data, sizeof(logo_data));
+	
+	/* Fonts */
+	raw_image_data agencyFB(agency_FB, sizeof(agency_FB));
+	raw_image_data roboto(roboto_data, sizeof(roboto_data));
 }

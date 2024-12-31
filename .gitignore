@@ -35,6 +35,8 @@ bld/
 *.sdf
 *.vcxproj.*
 *.vcxproj.filters
+*.sln
+*.vcxproj
 
 # ReSharper files
 _ReSharper*/

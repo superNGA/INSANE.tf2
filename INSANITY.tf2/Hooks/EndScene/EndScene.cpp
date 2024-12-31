@@ -8,22 +8,35 @@
 namespace directX {
     namespace UI
     {
-        int height_window = 700;
-        int width_window = 400;
+        int height_window = 600;
+        int width_window = 475;
 
         bool UI_initialized_DX9 = false;
         bool shutdown_UI = false;
         bool UI_has_been_shutdown = false;
         bool UI_visble = true;
         bool WIN32_initialized = false;
+
+        int top_text_width = 0;
+        bool static_calc_done = false;
+        const char* heading = "insanity";
     };
 
     namespace textures
     {
         bool are_textures_initialized = false;
 
-        texture_data logo = { nullptr, 0,0 ,"logo text" };
+        texture_data logo(nullptr, "Logo", 0, 0, 1,0.2f);
     };
+
+    namespace fonts
+    {
+        ImFont* roboto = nullptr;
+        ImFont* agency_FB = nullptr;
+        bool fonts_initialized = false;
+    };
+
+    ImGuiContext* context = nullptr;
 };
 
 
@@ -36,50 +49,27 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 		device = P_DEVICE;
 	}
 
-    // Initializin DX9 imgui
-    static ImGuiContext* context;
-    if (!UI::UI_initialized_DX9)
+    /* Doing the backend stuff */
+    if (!UI::UI_initialized_DX9 || !UI::WIN32_initialized)
     {
-        context = ImGui::CreateContext();
-        ImGui::SetCurrentContext(context);
-
-        ImGui_ImplDX9_Init(device);
-        ImGui_ImplDX9_CreateDeviceObjects();
-        ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
-        
-        UI::UI_initialized_DX9 = true;
-
-        #ifdef _DEBUG
-        cons.Log("initialized ImGui DX9", FG_GREEN);
-        #endif // _DEBUG
+        initialize_backends();
     }
 
-    // initializing WIN32 imgui
-    if (!UI::WIN32_initialized)
-    {
-        if (global::target_hwnd != nullptr)
-        {
-            ImGui_ImplWin32_Init(global::target_hwnd);
-            UI::WIN32_initialized = true;
-
-            #ifdef _DEBUG
-            cons.Log("initialized ImGui WIN32", FG_GREEN);
-            #endif // _DEBUG
-        }
-        #ifdef _DEBUG
-        else
-        {
-            cons.Log("No window handle yet", FG_YELLOW);
-        }
-        #endif // _DEBUG
-    }
-
-    // Initializing textures
+    /* Initializing textures */
     if (!textures::are_textures_initialized)
     {
         initialize_image_texture();
         textures::are_textures_initialized = true;
+
+        #ifdef _DEBUG
+        cons.Log(" All textures initialized ", FG_GREEN);
+        #endif
+    }
+
+    /* Initializing fonts */
+    if (!fonts::fonts_initialized && UI::UI_initialized_DX9 && UI::WIN32_initialized)
+    {
+        load_all_fonts();
     }
 
     //skipping rendering if menu not visible
@@ -88,43 +78,52 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         return O_endscene(P_DEVICE);
     }
 
+    /* Starting ImGui new frame*/
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowSize(ImVec2(UI::height_window, UI::width_window));
-    ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+    /*the sheer fact that I have to make something like this
+    tells that my IQ is questionable, but I do this before initialization
+    it causes crash*/
+    if (!UI::static_calc_done)
+    {
+        do_static_calc();
 
-    ImVec2 logo_size(200, (int)((200.0f / (float)textures::logo.image_height) * (float)textures::logo.image_width));
-    ImGui::Image((ImTextureID)textures::logo.texture, logo_size);
-    ImGui::Text("%d", (int)((700.0f / (float)textures::logo.image_height) * (float)textures::logo.image_width));
+        #ifdef _DEBUG
+        cons.Log("done Static calculations", FG_GREEN);
+        #endif // _DEBUG
+    }
+
+    /*Pushing font*/
+    ImGui::PushFont(fonts::agency_FB);
+
+    /* Initializing window*/
+    ImGui::SetNextWindowSize(ImVec2(UI::width_window, UI::height_window)); // update the window size at the end ( if needed )
+    ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiTableColumnFlags_NoResize);
+
+    /* adding logo */
+    //ImVec2 logo_size(textures::logo.rendering_image_width , textures::logo.rendering_image_height);
+    //ImGui::Image((ImTextureID)textures::logo.texture, logo_size); // Rendering image
+    ImGui::SetCursorPosX((UI::width_window - UI::top_text_width) / 2);
+    ImGui::Text(UI::heading);
+
+    ImGui::Separator();
+
+    /*Poping fonts*/
+    ImGui::PopFont();
+
+    /* Ending ImGui */
     ImGui::End();
-
     ImGui::EndFrame();
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-    // Shuting down ImGui backends
+    /*Shuting down ImGui on command*/
     if (UI::shutdown_UI && !UI::UI_has_been_shutdown)
     {
-
-        #ifdef _DEBUG
-        if (ImGui::GetCurrentContext() != context)
-        {
-            cons.Log("[ Error ] current context is null before destroying it", FG_RED);  
-        }
-        #endif
-        if(UI::UI_initialized_DX9) ImGui_ImplDX9_Shutdown();
-        if(UI::WIN32_initialized) ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-        UI::shutdown_UI = false;
-        UI::UI_has_been_shutdown = true;
-        
-        #ifdef _DEBUG
-        cons.Log("ImGui has been shutdown", FG_RED);
-        #endif // _DEBUG
-
+        shutdown_imgui();
     }
 
 	return O_endscene(P_DEVICE);
@@ -133,7 +132,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
 void directX::initialize_image_texture()
 {
+    /* logo */
     textures::logo.texture = load_texture_from_image_data(resource::logo, textures::logo);
+    textures::logo.update_res();
 }
 
 
@@ -184,11 +185,117 @@ void* directX::load_texture_from_image_data(raw_image_data& image_data, texture_
     stbi_image_free(decoded_data);
 
     #ifdef _DEBUG
-    printf("Successfuly loaded tecture : %s\n", texture_object.name);
+    printf("Successfuly loaded texture : %s\n", texture_object.name);
     printf("size : %d x %d\n", texture_object.image_width, texture_object.image_height);
     printf("byte array size : %lld\n", image_data.image_bytearray_size);
     #endif // _DEBUG
 
 
     return (void*)texture;
+}
+
+
+void directX::initialize_backends()
+{
+    // Initializin DX9 imgui
+    if (!UI::UI_initialized_DX9)
+    {
+        context = ImGui::CreateContext();
+        ImGui::SetCurrentContext(context);
+
+        ImGui_ImplDX9_Init(device);
+        ImGui_ImplDX9_CreateDeviceObjects();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
+
+        UI::UI_initialized_DX9 = true;
+
+        #ifdef _DEBUG
+        cons.Log("initialized ImGui DX9", FG_GREEN);
+        #endif // _DEBUG
+    }
+
+    // initializing WIN32 imgui
+    if (!UI::WIN32_initialized)
+    {
+        if (global::target_hwnd != nullptr)
+        {
+            ImGui_ImplWin32_Init(global::target_hwnd);
+            UI::WIN32_initialized = true;
+
+        #ifdef _DEBUG
+            cons.Log("initialized ImGui WIN32", FG_GREEN);
+        #endif // _DEBUG
+        }
+        #ifdef _DEBUG
+        else
+        {
+            cons.Log("No window handle yet", FG_YELLOW);
+        }
+        #endif // _DEBUG
+    }
+
+}
+
+
+void directX::shutdown_imgui()
+{
+    // Shuting down ImGui backends
+    #ifdef _DEBUG
+    if (ImGui::GetCurrentContext() != context)
+    {
+        cons.Log("[ Error ] current context is null before destroying it", FG_RED);
+    }
+    #endif
+
+    /*Shuting down backends*/
+    if (UI::UI_initialized_DX9) ImGui_ImplDX9_Shutdown();
+    if (UI::WIN32_initialized) ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    UI::shutdown_UI = false;
+    UI::UI_has_been_shutdown = true;
+    #ifdef _DEBUG
+    cons.Log("ImGui has been shutdown", FG_RED);
+    #endif // _DEBUG
+}
+
+
+void directX::load_all_fonts()
+{
+    /* withtout this ImGui won't load the font and everything will fuck up */
+    ImFontConfig font_config;
+    font_config.FontDataOwnedByAtlas = false;
+
+    /* Now loading font into memory */
+    ImGuiIO& io = ImGui::GetIO();
+    //fonts::roboto = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data, resource::roboto.image_bytearray_size, 20.0f, &font_config);
+    fonts::agency_FB = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 50.0f, &font_config);
+
+    #ifdef _DEBUG
+    if (!fonts::agency_FB)
+    {
+        cons.Log("Failed to load font", FG_RED);
+    }
+    else
+    {
+        cons.Log("Font data is valid", FG_GREEN);
+    }
+    #endif // _DEBUG
+
+    fonts::fonts_initialized = true;
+
+    ImGui_ImplDX9_InvalidateDeviceObjects();
+    ImGui_ImplDX9_CreateDeviceObjects();
+
+    #ifdef _DEBUG
+    cons.Log("All fonts loaded", FG_GREEN);
+    #endif
+}
+
+
+void directX::do_static_calc()
+{
+    UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
+
+    UI::static_calc_done = true;
 }
