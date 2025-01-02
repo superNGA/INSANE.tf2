@@ -11,8 +11,19 @@ namespace resource
 {
 	/* textures */
 	raw_image_data logo(logo_data, sizeof(logo_data));
+	raw_image_data aimbot_data(aimbot, sizeof(aimbot));
+	raw_image_data folder_data(folder, sizeof(folder));
+	raw_image_data left_wing_data(left_wing, sizeof(left_wing));
+	raw_image_data planet_data(planet, sizeof(planet));
+	raw_image_data player_data(player, sizeof(player));
+	raw_image_data setting_data(setting, sizeof(setting));
+	raw_image_data right_wing_data(right_wing, sizeof(right_wing));
+	raw_image_data stars_data(stars, sizeof(stars));
+	raw_image_data view_data(view, sizeof(view));
+
 	
 	/* Fonts */
 	raw_image_data agencyFB(agency_FB, sizeof(agency_FB));
 	raw_image_data roboto(roboto_data, sizeof(roboto_data));
+	raw_image_data adobe_clean_bold(adobe_clean_bold_data, sizeof(adobe_clean_bold_data));
 }

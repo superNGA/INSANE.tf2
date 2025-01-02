@@ -10,6 +10,9 @@
 #include "../../External Libraries/ImGui/imgui_impl_dx9.h"
 #include "../../External Libraries/ImGui/imgui_impl_win32.h"
 
+/*extra*/
+#include "../../Extra/spacing.h"
+
 // console system
 #ifdef _DEBUG
 #include "../../Libraries/Console System/Console_System.h"
@@ -25,8 +28,8 @@ namespace directX
 	/*These prevent my wonderfull cheat from crashing*/
 	namespace UI
 	{
-		extern int height_window;
-		extern int width_window;
+		extern int	height_window;
+		extern int	width_window;
 
 		extern bool UI_initialized_DX9;
 		extern bool shutdown_UI;
@@ -34,16 +37,36 @@ namespace directX
 		extern bool UI_visble;
 		extern bool WIN32_initialized;
 
-		extern int top_text_width;
+		extern int	top_text_width;
 		extern bool static_calc_done;
+		
+		extern bool done_styling;
 		extern const char* heading;
+
+		extern ImVec4 left_menu;
+		extern ImVec4 right_menu;
+
+		extern ImVec2 padding_001;
+		extern ImVec2 standard_button_size;
 	};
 
 	/* This will be popullated initialize_image_texture funtion :)*/
 	namespace textures
 	{
+		/* logo */
 		extern texture_data logo;
 		extern bool are_textures_initialized;
+
+		/* icons */
+		extern texture_data aimbot;
+		extern texture_data folder;
+		extern texture_data left_wing;
+		extern texture_data right_wing;
+		extern texture_data planet;
+		extern texture_data player;
+		extern texture_data setting;
+		extern texture_data stars;
+		extern texture_data view;
 	};
 
 	/* information about fonts and their initializtaions status*/
@@ -51,6 +74,7 @@ namespace directX
 	{
 		extern ImFont* roboto;
 		extern ImFont* agency_FB;
+		extern ImFont* adobe_clean_bold;
 
 		extern bool fonts_initialized;
 	};
@@ -89,4 +113,7 @@ namespace directX
 	/*does stupid maths cuase ImGui is a bitch I did to improve
 	performance could have been avoided if I was smart*/
 	void do_static_calc();
+
+	/* does the ImGui styling and shit*/
+	void make_it_pretty();
 };

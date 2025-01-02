@@ -5,10 +5,11 @@ Logo font : Agency FB
 			
 Text font : Agency FB
 			
+Left menu colours : 2, 2, 2, 240 <- slight transparent blackish grey
+
+right menu colours : 10, 10, 10, 255 <- a nice grey. Can make this slighly darker if you want ;)
 
 TO DO:
-	write out the name with font
-	do deviders
-	make some cool ass logo, and place it appropriately
-	make vertical devider
-	make the minimize button on the top right
+	choose and set colours
+	change logo colours appropriately, and make em thicker
+	make buttons with images and text

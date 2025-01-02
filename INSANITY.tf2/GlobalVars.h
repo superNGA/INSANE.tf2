@@ -25,11 +25,41 @@ namespace resource
 	extern unsigned char logo_data[8581];
 	extern raw_image_data logo;
 
+	extern unsigned char aimbot[577];
+	extern raw_image_data aimbot_data;
+
+	extern unsigned char folder[309];
+	extern raw_image_data folder_data;
+
+	extern unsigned char left_wing[1132];
+	extern raw_image_data left_wing_data;
+
+	extern unsigned char planet[500];
+	extern raw_image_data planet_data;
+
+	extern unsigned char player[491];
+	extern raw_image_data player_data;
+
+	extern unsigned char right_wing[1165];
+	extern raw_image_data right_wing_data;
+
+	extern unsigned char setting[621];
+	extern raw_image_data setting_data;
+
+	extern unsigned char stars[420];
+	extern raw_image_data stars_data;
+
+	extern unsigned char view[573];
+	extern raw_image_data view_data;
+
 	extern unsigned char agency_FB[49624];
 	extern raw_image_data agencyFB;
 
 	extern unsigned char roboto_data[168488];
 	extern raw_image_data roboto;
+
+	extern unsigned char adobe_clean_bold_data[483456];
+	extern raw_image_data adobe_clean_bold;
 };
 
 /* This holds the final data about the texture
@@ -46,12 +76,12 @@ struct texture_data
 
 	/*normal constructor */
 	texture_data(
-		void* texture_pntr,
-		const char* texture_namme,
-		int height,
-		int width,
-		float ratio,
-		float scalling_ratio) :
+		void* texture_pntr = nullptr ,
+		const char* texture_namme = "NOT SPECIFIED",
+		int height = 0,
+		int width = 0,
+		float ratio = 0.0f,
+		float scalling_ratio = 1.0f) :
 		texture(texture_pntr),
 		name(texture_namme),
 		image_height(height),
@@ -64,7 +94,7 @@ struct texture_data
 	int image_height;
 	int image_width;
 	
-	/* aspect ration, to be used for rescalling */
+	/* WIDHT / HEIGHT, multiply height with this to get new width*/
 	float aspect_ratio = (float)image_width / (float)image_height;
 
 	/*scalling the image down*/
