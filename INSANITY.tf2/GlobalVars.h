@@ -58,8 +58,14 @@ namespace resource
 	extern unsigned char roboto_data[168488];
 	extern raw_image_data roboto;
 
+	extern unsigned char background_data[587353];
+	extern raw_image_data background;
+
 	extern unsigned char adobe_clean_bold_data[483456];
 	extern raw_image_data adobe_clean_bold;
+
+	extern unsigned char haas_black_data[100220];
+	extern raw_image_data hass_black;
 };
 
 /* This holds the final data about the texture

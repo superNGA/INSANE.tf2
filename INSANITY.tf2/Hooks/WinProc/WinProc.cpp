@@ -78,6 +78,10 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         }
     }
 
+    if (directX::UI::UI_visble) {
+        return true;
+    }
+
     // Call the original WndProc
     return CallWindowProc(O_winproc, hWnd, uMsg, wParam, lParam);
 }

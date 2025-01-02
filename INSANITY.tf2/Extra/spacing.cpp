@@ -19,7 +19,7 @@ void asthetic::create_button_with_image(ImVec2 cursor_pos_before_button, texture
 		cursor_pos_before_button.x + directX::UI::standard_button_size.x - directX::UI::padding_001.x - image.rendering_image_width,
 		cursor_pos_before_button.y + directX::UI::standard_button_size.y - y_padding - image.rendering_image_height);
 
-	ImVec2 text_pos(cursor_pos_before_button.x + (directX::UI::standard_button_size.x - text_size.x) / 2, cursor_pos_before_button.y + (directX::UI::standard_button_size.y - text_size.y));
+	ImVec2 text_pos(cursor_pos_before_button.x + (directX::UI::standard_button_size.x - text_size.x) / 2, cursor_pos_before_button.y + (directX::UI::standard_button_size.y - text_size.y) / 2);
 
 	/*drawing first image*/
 	draw_list->AddImage(

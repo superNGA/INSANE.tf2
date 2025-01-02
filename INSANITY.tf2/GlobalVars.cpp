@@ -21,9 +21,12 @@ namespace resource
 	raw_image_data stars_data(stars, sizeof(stars));
 	raw_image_data view_data(view, sizeof(view));
 
+	/* backgound */
+	raw_image_data background(background_data, sizeof(background_data));
 	
 	/* Fonts */
 	raw_image_data agencyFB(agency_FB, sizeof(agency_FB));
 	raw_image_data roboto(roboto_data, sizeof(roboto_data));
 	raw_image_data adobe_clean_bold(adobe_clean_bold_data, sizeof(adobe_clean_bold_data));
+	raw_image_data hass_black(haas_black_data, sizeof(haas_black_data));
 }

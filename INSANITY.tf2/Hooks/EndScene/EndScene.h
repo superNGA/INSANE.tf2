@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <d3d9.h>
 #include <d3dx9.h>
 
@@ -48,6 +49,9 @@ namespace directX
 
 		extern ImVec2 padding_001;
 		extern ImVec2 standard_button_size;
+
+		extern float max_BG_opacity;
+		extern float cur_BG_alpha;
 	};
 
 	/* This will be popullated initialize_image_texture funtion :)*/
@@ -67,6 +71,9 @@ namespace directX
 		extern texture_data setting;
 		extern texture_data stars;
 		extern texture_data view;
+
+		/* texture */
+		extern texture_data background;
 	};
 
 	/* information about fonts and their initializtaions status*/
@@ -74,12 +81,25 @@ namespace directX
 	{
 		extern ImFont* roboto;
 		extern ImFont* agency_FB;
+		extern ImFont* agency_FB_small;
 		extern ImFont* adobe_clean_bold;
+		extern ImFont* haas_black;
 
 		extern bool fonts_initialized;
 	};
 
+	/* this shall hold some basics color definitions, which I might let the user 
+	control later*/
+	namespace colours
+	{
+		extern ImVec4 grey;
+		extern ImColor main_menu;
+		extern ImColor side_menu;
+	};
+
 	extern ImGuiContext* context;
+	extern bool time_refreshed;
+	extern std::chrono::time_point<std::chrono::high_resolution_clock> menu_visible_time;
 
 	/*Function template for EndScene*/
 	typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
@@ -116,4 +136,7 @@ namespace directX
 
 	/* does the ImGui styling and shit*/
 	void make_it_pretty();
+
+	/* drawing background window sperately do reduce clutter*/
+	inline void draw_background();
 };

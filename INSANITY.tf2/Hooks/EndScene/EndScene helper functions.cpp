@@ -20,6 +20,9 @@ void directX::initialize_image_texture()
     textures::setting.texture = load_texture_from_image_data(resource::setting_data, textures::setting);
     textures::stars.texture = load_texture_from_image_data(resource::stars_data, textures::stars);
     textures::view.texture = load_texture_from_image_data(resource::view_data, textures::view);
+
+    /* background*/
+    textures::background = load_texture_from_image_data(resource::background, textures::background);
 }
 
 
@@ -161,9 +164,12 @@ void directX::load_all_fonts()
 
     /* Now loading font into memory */
     ImGuiIO& io = ImGui::GetIO();
+
     fonts::roboto = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data, resource::roboto.image_bytearray_size, 20.0f, &font_config);
     fonts::agency_FB = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 50.0f, &font_config);
+    fonts::agency_FB_small = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 20.0f, &font_config);
     fonts::adobe_clean_bold = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data, resource::adobe_clean_bold.image_bytearray_size, 30.0f, &font_config);
+    fonts::haas_black = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data, resource::hass_black.image_bytearray_size, 40.0f, &font_config);
 
     #ifdef _DEBUG
     if (!fonts::agency_FB || !fonts::roboto || !fonts::adobe_clean_bold)
@@ -189,7 +195,7 @@ void directX::load_all_fonts()
 
 void directX::do_static_calc()
 {
-    ImGui::PushFont(fonts::agency_FB);
+    ImGui::PushFont(fonts::haas_black);
     UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
     ImGui::PopFont();
 
