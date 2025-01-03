@@ -1,4 +1,6 @@
+#pragma once
 #include "EndScene.h"
+#include "Cheat windows/cheat_window.h"
 
 //stb image
 #define STB_IMAGE_IMPLEMENTATION // required for this library, I dont know what it does
@@ -170,11 +172,13 @@ void directX::load_all_fonts()
     fonts::agency_FB_small = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 20.0f, &font_config);
     fonts::adobe_clean_bold = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data, resource::adobe_clean_bold.image_bytearray_size, 30.0f, &font_config);
     fonts::haas_black = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data, resource::hass_black.image_bytearray_size, 40.0f, &font_config);
+    fonts::kabel = io.Fonts->AddFontFromMemoryTTF(resource::kabel_data, resource::kabel.image_bytearray_size, 60.0f, &font_config);
+    fonts::adobe_clean_light = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_light_data, resource::adobe_clean_light.image_bytearray_size, 60.0f, &font_config);
 
     #ifdef _DEBUG
-    if (!fonts::agency_FB || !fonts::roboto || !fonts::adobe_clean_bold)
+    if (!fonts::agency_FB || !fonts::roboto || !fonts::adobe_clean_bold || !fonts::kabel || !fonts::adobe_clean_light || !fonts::haas_black)
     {
-        cons.Log("one or all of the font's data are fucked up", FG_RED);
+        cons.Log("one or all of the font's data is fucked up", FG_RED);
     }
     else
     {
@@ -197,6 +201,11 @@ void directX::do_static_calc()
 {
     ImGui::PushFont(fonts::haas_black);
     UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
+
+    ImGui::PushFont(cheat_window::quotes::quote_font);
+    cheat_window::quotes::quote_size = ImGui::CalcTextSize(cheat_window::quotes::quote1);
+
+    ImGui::PopFont();
     ImGui::PopFont();
 
     UI::static_calc_done = true;

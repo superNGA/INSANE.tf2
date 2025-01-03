@@ -1,4 +1,5 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include <chrono>
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -21,7 +22,6 @@ extern Console_System cons;
 #endif // _DEBUG
 
 //stb image
-//#define STB_IMAGE_IMPLEMENTATION // required for this library, I dont know what it does
 #include "../../External Libraries/stb image/stb_image.h"
 
 namespace directX
@@ -29,6 +29,10 @@ namespace directX
 	/*These prevent my wonderfull cheat from crashing*/
 	namespace UI
 	{
+		/* this is the important one, this stores the window the user wants to see.
+		the default is 0, where I plan to show quotes :)*/
+		extern cur_window section_index;
+
 		extern int	height_window;
 		extern int	width_window;
 
@@ -52,6 +56,9 @@ namespace directX
 
 		extern float max_BG_opacity;
 		extern float cur_BG_alpha;
+
+		/*this is the start point of the all & any main menu content */
+		extern ImVec2 content_start_point;
 	};
 
 	/* This will be popullated initialize_image_texture funtion :)*/
@@ -84,6 +91,8 @@ namespace directX
 		extern ImFont* agency_FB_small;
 		extern ImFont* adobe_clean_bold;
 		extern ImFont* haas_black;
+		extern ImFont* kabel;
+		extern ImFont* adobe_clean_light;
 
 		extern bool fonts_initialized;
 	};
@@ -93,13 +102,19 @@ namespace directX
 	namespace colours
 	{
 		extern ImVec4 grey;
+		extern ImColor white;
 		extern ImColor main_menu;
 		extern ImColor side_menu;
 	};
 
+	/* ImGui vars global */
+	extern ImGuiIO* IO;
 	extern ImGuiContext* context;
+
+	/* time vars. (just used in fade-in mechanism)*/
 	extern bool time_refreshed;
 	extern std::chrono::time_point<std::chrono::high_resolution_clock> menu_visible_time;
+
 
 	/*Function template for EndScene*/
 	typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);

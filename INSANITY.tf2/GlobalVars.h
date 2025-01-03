@@ -1,6 +1,8 @@
 #pragma once
 #include <Windows.h>
 
+/* this holds necesarry information about the byte array of a resource.
+all resources must initialize this.*/
 struct raw_image_data
 {
 	raw_image_data(unsigned char* bytes, size_t size)
@@ -8,6 +10,20 @@ struct raw_image_data
 
 	unsigned char* image_bytes;
 	size_t image_bytearray_size;
+};
+
+enum cur_window
+{
+	QUOTE_WINDOW = 0,
+	AIMBOT_WINDOW,
+	ANTIAIM_WINDOW,
+	WORLD_VISUALS_WINDOW,
+	PLAYER_VISUALS_WINDOW,
+	VIEW_VISUALS_WINDOW,
+	MISCELLANEOUS_WINDOW,
+	SKIN_CHANGER_WINDOW,
+	CONFIG_WINDOW,
+	SETTING_WINDOW
 };
 
 /*this holds imformation about the target process*/
@@ -66,6 +82,12 @@ namespace resource
 
 	extern unsigned char haas_black_data[100220];
 	extern raw_image_data hass_black;
+
+	extern unsigned char kabel_data[17460];
+	extern raw_image_data kabel;
+
+	extern unsigned char adobe_clean_light_data[486828];
+	extern raw_image_data adobe_clean_light;
 };
 
 /* This holds the final data about the texture

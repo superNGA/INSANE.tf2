@@ -29,4 +29,6 @@ namespace resource
 	raw_image_data roboto(roboto_data, sizeof(roboto_data));
 	raw_image_data adobe_clean_bold(adobe_clean_bold_data, sizeof(adobe_clean_bold_data));
 	raw_image_data hass_black(haas_black_data, sizeof(haas_black_data));
+	raw_image_data kabel(kabel_data, sizeof(kabel_data)); // <- this is the super thick one
+	raw_image_data adobe_clean_light(adobe_clean_light_data, sizeof(adobe_clean_light_data));
 }

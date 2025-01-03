@@ -8,12 +8,12 @@ void execute_thread1(HINSTANCE instance)
 {
 	// Initializing MinHook and Console_System
 	MH_Initialize();
-#ifdef _DEBUG
+	#ifdef _DEBUG
 	cons.CreateNewConsole();
 	cons.DoIntroduction();
 	cons.DoDevider();
 	cons.FastLog("MinHook initialized");
-#endif
+	#endif
 
 	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene); //End scene hook
 	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
@@ -38,10 +38,10 @@ void execute_thread1(HINSTANCE instance)
 	MH_DisableHook(MH_ALL_HOOKS); // disabling hooks
 	MH_Uninitialize(); // Uninitializing Minhook
 
-#ifdef _DEBUG
+	#ifdef _DEBUG
 	cons.Log("Removed all hooks", FG_RED);
 	cons.FreeConsoleInstance();
-#endif
+	#endif
 
 	FreeLibraryAndExitThread(instance, 0);
 }

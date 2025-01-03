@@ -78,8 +78,17 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         }
     }
 
+    // Blocking mouse input
     if (directX::UI::UI_visble) {
-        return true;
+        switch (uMsg) {
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MOUSEWHEEL:
+            return false;
+        }
     }
 
     // Call the original WndProc
