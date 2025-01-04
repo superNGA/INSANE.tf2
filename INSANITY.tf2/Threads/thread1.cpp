@@ -19,15 +19,12 @@ void execute_thread1(HINSTANCE instance)
 	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
 	winproc::hook_winproc(); // Hooking WinProc
 
-	while (!GetAsyncKeyState(VK_END))
+	while (!directX::UI::UI_has_been_shutdown)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	directX::UI::shutdown_UI = true;
-	winproc::unhook_winproc(); // Unhooking WinProc
-
-	//waiting until ImGui has been shutdown properly.
+	//waiting until ImGui has been shutdown properly, in case of some errors
 	while (!directX::UI::UI_has_been_shutdown)
 	{
 		#ifdef _DEBUG

@@ -28,11 +28,20 @@ namespace directX {
 
         ImVec2 padding_001(5.0f, 5.0f);
         ImVec2 standard_button_size(200.0f, 40.0f);
+        ImVec2 close_button_size(40.0f, 40.0f);
 
         float max_BG_opacity = 150.0f;
         float cur_BG_alpha = 255.0f;
 
         ImVec2 content_start_point(0.0f, 0.0f);
+
+        bool animation_done = false;
+        const char* end_message = "bye! :)";
+        ImVec2 end_meassage_size(0.0f, 0.0f);
+        float shutdown_anim_duration = 500.0f;
+        std::chrono::time_point<std::chrono::high_resolution_clock> shutdown_anim_start_time = std::chrono::high_resolution_clock::now();
+        bool time_noted = false;
+        ImFont* shutdown_anim_font = nullptr; // <- intialized in load_all_fonts() cause initalizing it here will just fill current values, which are all nullptrs :(
     };
 
     namespace textures
@@ -49,6 +58,8 @@ namespace directX {
         texture_data setting(nullptr, "setting");
         texture_data stars(nullptr, "stars");
         texture_data view(nullptr, "view");
+        texture_data misc(nullptr, "miscellaneous");
+        texture_data antiaim(nullptr, "anti aim");
 
         /* background */
         texture_data background(nullptr, "background image");
@@ -72,8 +83,8 @@ namespace directX {
         ImVec4 grey(40.0f/255.0f, 40.0f / 255.0f, 40.0f / 255.0f, 200.0f/255.0f);
 
         ImColor white(255, 255, 255, 255);
-        ImColor main_menu(7, 7, 7, 255);
-        ImColor side_menu(2, 2, 2, 240);
+        ImColor main_menu(7, 7, 7, (BYTE)(UI::cur_BG_alpha * 2.0f));
+        ImColor side_menu(2, 2, 2, (BYTE)(UI::cur_BG_alpha * 1.8f));
     };
 
     ImGuiIO* IO = nullptr;
@@ -171,7 +182,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     /* Initializing window*/
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(UI::width_window, UI::height_window));
-    ImGui::SetNextWindowBgAlpha(UI::cur_BG_alpha * 1.2f);
     ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 
     /* getting essential measurments */
@@ -218,7 +228,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     /*button : AITI-AIM*/
     cursor_pos = ImGui::GetCursorScreenPos();
     if (ImGui::Button("##antiaim", UI::standard_button_size)) UI::section_index = ANTIAIM_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::stars, "ANTI-AIM", false);
+    asthetic::create_button_with_image(cursor_pos, textures::antiaim, "ANTI-AIM", false);
     
     /* spacing */
     asthetic::top_spacing(2);
@@ -260,12 +270,24 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     /*button : MISCELLANEOUS*/
     cursor_pos = ImGui::GetCursorScreenPos();
     if (ImGui::Button("##misc", UI::standard_button_size)) UI::section_index = MISCELLANEOUS_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::stars, "MISC", false);
+    asthetic::create_button_with_image(cursor_pos, textures::misc, "MISC", false);
 
     /*button : SKIN CHANGER*/
     cursor_pos = ImGui::GetCursorScreenPos();
     if (ImGui::Button("##skins", UI::standard_button_size)) UI::section_index = SKIN_CHANGER_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::left_wing, "SKINS", false);
+    asthetic::create_button_with_image(cursor_pos, textures::stars, "SKINS", false);
+
+    /*buttons : CONFIG*/
+    ImGui::SetCursorScreenPos(ImVec2(window_pos.x, window_pos.y + UI::height_window - UI::standard_button_size.y));
+    cursor_pos = ImGui::GetCursorScreenPos();
+    if (ImGui::Button("##config", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = CONFIG_WINDOW;
+    asthetic::create_half_button(cursor_pos, textures::folder);
+    
+    /*button : SETTING*/
+    ImGui::SameLine();
+    cursor_pos = ImGui::GetCursorScreenPos();
+    if (ImGui::Button("##setting", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = SETTING_WINDOW;
+    asthetic::create_half_button(cursor_pos, textures::setting);
 
     ImGui::PopFont();
     ImGui::EndChild();    
@@ -281,6 +303,12 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - UI::top_text_width) / 2);
     ImGui::PushFont(fonts::haas_black);
     ImGui::Text(UI::heading);
+    ImGui::PopFont();
+
+    /*button : CLOSE*/
+    ImGui::SetCursorScreenPos(ImVec2(window_pos.x + UI::width_window - UI::close_button_size.x, window_pos.y + 0.0f));
+    ImGui::PushFont(fonts::adobe_clean_bold);
+    if (ImGui::Button("x", UI::close_button_size)) UI::shutdown_UI = true;
     ImGui::PopFont();
 
     /*RENDERING CHEAT FEATURE WINDOWS HERE*/
@@ -302,14 +330,44 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     /*Poping fonts*/
     ImGui::PopFont();
 
+    /* managing shutdown animation */
+    if (UI::shutdown_UI && !UI::animation_done)
+    {
+        if (!UI::time_noted)
+        {
+            UI::shutdown_anim_start_time = std::chrono::high_resolution_clock::now();
+            UI::time_noted = true;
+        }
+
+        ImDrawList* bg_draw_list = ImGui::GetForegroundDrawList();
+        bg_draw_list->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, ImColor(0, 0, 0, 255));
+        
+        ImGui::PushFont(UI::shutdown_anim_font);
+        if (!UI::shutdown_anim_font)
+        {
+            printf("font is null\n");
+        }
+        bg_draw_list->AddText(ImVec2((io.DisplaySize.x - UI::end_meassage_size.x) / 2.0f, (io.DisplaySize.y - UI::end_meassage_size.y) / 2.0f), ImColor(255, 255, 255, 255), UI::end_message);
+        ImGui::PopFont();
+
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - UI::shutdown_anim_start_time).count() >= UI::shutdown_anim_duration)
+        {
+            UI::animation_done = true;
+
+            #ifdef _DEBUG
+            cons.Log("Shutdown animation done", FG_GREEN);
+            #endif
+        }
+    }
+
     /* Frame end */
     ImGui::End();
     ImGui::EndFrame();
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-    /*Shuting down ImGui on command*/
-    if (UI::shutdown_UI && !UI::UI_has_been_shutdown)
+    /* managing shutdone once the animation is done */
+    if (UI::shutdown_UI && !UI::UI_has_been_shutdown && UI::animation_done)
     {
         shutdown_imgui();
     }
@@ -323,7 +381,7 @@ void directX::draw_background()
 {
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
     
-    /* getting time difference in milliseconds*/
+    /* getting time difference in milliseconds */
     UI::cur_BG_alpha = sqrt((std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - menu_visible_time).count())/5.0f);
     UI::cur_BG_alpha = UI::cur_BG_alpha * 12;
     if (UI::cur_BG_alpha > UI::max_BG_opacity) {
@@ -349,5 +407,6 @@ void directX::draw_background()
     draw_list->AddText(ImVec2((IO->DisplaySize.x - display_time_size.x) / 2, 0.02f * IO->DisplaySize.y), IM_COL32(255, 255, 255, UI::cur_BG_alpha), display_time);
 
     ImGui::PopFont();
+    /* This is the image background */
     //draw_list->AddImage((ImTextureID)textures::background.texture, ImVec2(0, 0), ImVec2(1920, 1080), ImVec2(0,0), ImVec2(1,1), IM_COL32(255, 255, 255, UI::cur_BG_alpha));
 }

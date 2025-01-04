@@ -1,6 +1,7 @@
 #pragma once
 #include "EndScene.h"
 #include "Cheat windows/cheat_window.h"
+#include "../WinProc/WinProc.h"
 
 //stb image
 #define STB_IMAGE_IMPLEMENTATION // required for this library, I dont know what it does
@@ -9,22 +10,24 @@
 void directX::initialize_image_texture()
 {
     /* logo */
-    textures::logo.texture = load_texture_from_image_data(resource::logo, textures::logo);
+    textures::logo.texture          = load_texture_from_image_data(resource::logo, textures::logo);
     textures::logo.update_res();
 
     /* icons */
-    textures::aimbot.texture = load_texture_from_image_data(resource::aimbot_data, textures::aimbot);
-    textures::folder.texture = load_texture_from_image_data(resource::folder_data, textures::folder);
-    textures::left_wing.texture = load_texture_from_image_data(resource::left_wing_data, textures::left_wing);
-    textures::right_wing.texture = load_texture_from_image_data(resource::right_wing_data, textures::right_wing);
-    textures::planet.texture = load_texture_from_image_data(resource::planet_data, textures::planet);
-    textures::player.texture = load_texture_from_image_data(resource::player_data, textures::player);
-    textures::setting.texture = load_texture_from_image_data(resource::setting_data, textures::setting);
-    textures::stars.texture = load_texture_from_image_data(resource::stars_data, textures::stars);
-    textures::view.texture = load_texture_from_image_data(resource::view_data, textures::view);
+    textures::aimbot.texture        = load_texture_from_image_data(resource::aimbot_data, textures::aimbot);
+    textures::folder.texture        = load_texture_from_image_data(resource::folder_data, textures::folder);
+    textures::left_wing.texture     = load_texture_from_image_data(resource::left_wing_data, textures::left_wing);
+    textures::right_wing.texture    = load_texture_from_image_data(resource::right_wing_data, textures::right_wing);
+    textures::planet.texture        = load_texture_from_image_data(resource::planet_data, textures::planet);
+    textures::player.texture        = load_texture_from_image_data(resource::player_data, textures::player);
+    textures::setting.texture       = load_texture_from_image_data(resource::setting_data, textures::setting);
+    textures::stars.texture         = load_texture_from_image_data(resource::stars_data, textures::stars);
+    textures::view.texture          = load_texture_from_image_data(resource::view_data, textures::view);
+    textures::misc.texture          = load_texture_from_image_data(resource::misc, textures::misc);
+    textures::antiaim.texture       = load_texture_from_image_data(resource::anti_aim, textures::antiaim);
 
     /* background*/
-    textures::background = load_texture_from_image_data(resource::background, textures::background);
+    textures::background            = load_texture_from_image_data(resource::background, textures::background);
 }
 
 
@@ -146,10 +149,14 @@ void directX::shutdown_imgui()
     }
     #endif
 
-    /*Shuting down backends*/
+    /*Shuting down ImGui backends*/
     if (UI::UI_initialized_DX9) ImGui_ImplDX9_Shutdown();
     if (UI::WIN32_initialized) ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+
+    /*Unhooking winProc*/
+    winproc::unhook_winproc();
+
     UI::shutdown_UI = false;
     UI::UI_has_been_shutdown = true;
     #ifdef _DEBUG
@@ -164,16 +171,19 @@ void directX::load_all_fonts()
     ImFontConfig font_config;
     font_config.FontDataOwnedByAtlas = false;
 
-    /* Now loading font into memory */
+    /* loading font into memory */
     ImGuiIO& io = ImGui::GetIO();
 
-    fonts::roboto = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data, resource::roboto.image_bytearray_size, 20.0f, &font_config);
-    fonts::agency_FB = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 50.0f, &font_config);
-    fonts::agency_FB_small = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 20.0f, &font_config);
-    fonts::adobe_clean_bold = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data, resource::adobe_clean_bold.image_bytearray_size, 30.0f, &font_config);
-    fonts::haas_black = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data, resource::hass_black.image_bytearray_size, 40.0f, &font_config);
-    fonts::kabel = io.Fonts->AddFontFromMemoryTTF(resource::kabel_data, resource::kabel.image_bytearray_size, 60.0f, &font_config);
-    fonts::adobe_clean_light = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_light_data, resource::adobe_clean_light.image_bytearray_size, 60.0f, &font_config);
+    fonts::roboto               = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data, resource::roboto.image_bytearray_size, 20.0f, &font_config);
+    fonts::agency_FB            = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 50.0f, &font_config);
+    fonts::agency_FB_small      = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 20.0f, &font_config);
+    fonts::adobe_clean_bold     = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data, resource::adobe_clean_bold.image_bytearray_size, 30.0f, &font_config);
+    fonts::haas_black           = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data, resource::hass_black.image_bytearray_size, 40.0f, &font_config);
+    fonts::kabel                = io.Fonts->AddFontFromMemoryTTF(resource::kabel_data, resource::kabel.image_bytearray_size, 60.0f, &font_config);
+    fonts::adobe_clean_light    = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_light_data, resource::adobe_clean_light.image_bytearray_size, 60.0f, &font_config);
+
+    /* setting fonts configurations */
+    UI::shutdown_anim_font      = fonts::adobe_clean_light;
 
     #ifdef _DEBUG
     if (!fonts::agency_FB || !fonts::roboto || !fonts::adobe_clean_bold || !fonts::kabel || !fonts::adobe_clean_light || !fonts::haas_black)
@@ -199,12 +209,19 @@ void directX::load_all_fonts()
 
 void directX::do_static_calc()
 {
+    /* getting heading width */
     ImGui::PushFont(fonts::haas_black);
     UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
 
+    /* getting quote size */
     ImGui::PushFont(cheat_window::quotes::quote_font);
     cheat_window::quotes::quote_size = ImGui::CalcTextSize(cheat_window::quotes::quote1);
 
+    /*getting message size for close animation */
+    ImGui::PushFont(UI::shutdown_anim_font);
+    UI::end_meassage_size = ImGui::CalcTextSize(UI::end_message);
+
+    ImGui::PopFont();
     ImGui::PopFont();
     ImGui::PopFont();
 

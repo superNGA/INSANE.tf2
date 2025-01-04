@@ -8,5 +8,7 @@ namespace asthetic
 
 	/*Note : create button first them call this function,
 	otherwise the alignment can get fucked up*/
-	void create_button_with_image(ImVec2 cursor_pos_before_button, texture_data& image, const char* text = "NOT SPECIFIED", bool image_one_both_sides = false);
+	void create_button_with_image(ImVec2 cursor_pos_before_button, texture_data& image, const char* text = "", bool image_one_both_sides = false);
+
+	void create_half_button(ImVec2 cursor_pos, texture_data& image);
 };

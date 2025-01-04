@@ -38,9 +38,11 @@ namespace global
 the software*/
 namespace resource
 {
+	/* logo , i didn't use */
 	extern unsigned char logo_data[8581];
 	extern raw_image_data logo;
 
+	/* icons */
 	extern unsigned char aimbot[577];
 	extern raw_image_data aimbot_data;
 
@@ -68,6 +70,13 @@ namespace resource
 	extern unsigned char view[573];
 	extern raw_image_data view_data;
 
+	extern unsigned char misc_data[239];
+	extern raw_image_data misc;
+
+	extern unsigned char antiaim_data[382];
+	extern raw_image_data anti_aim;
+
+	/* fonts */
 	extern unsigned char agency_FB[49624];
 	extern raw_image_data agencyFB;
 

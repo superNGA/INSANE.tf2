@@ -1,5 +1,15 @@
 #include "spacing.h"
 
+void asthetic::create_half_button(ImVec2 cursor_pos, texture_data& image)
+{
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+	ImVec2 image_start(
+		cursor_pos.x + ((directX::UI::standard_button_size.x / 2.0f) - image.image_width) / 2.0f,
+		cursor_pos.y + (directX::UI::standard_button_size.y - image.image_height) / 2.0f);
+	draw_list->AddImage((ImTextureID)image.texture, image_start, ImVec2(image_start.x + image.image_width, image_start.y + image.image_height));
+}
+
+
 void asthetic::create_button_with_image(ImVec2 cursor_pos_before_button, texture_data& image, const char* text, bool image_one_both_sides)
 {
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -43,11 +53,13 @@ void asthetic::create_button_with_image(ImVec2 cursor_pos_before_button, texture
 	}
 }
 
+
 void asthetic::left_spacing(int multiplier)
 {
 	ImGui::Dummy(ImVec2(10.0f * multiplier, 0.0f));
 	ImGui::SameLine();
 }
+
 
 void asthetic::top_spacing(int multiplier)
 {

@@ -53,12 +53,22 @@ namespace directX
 
 		extern ImVec2 padding_001;
 		extern ImVec2 standard_button_size;
+		extern ImVec2 close_button_size;
 
 		extern float max_BG_opacity;
 		extern float cur_BG_alpha;
 
 		/*this is the start point of the all & any main menu content */
 		extern ImVec2 content_start_point;
+
+		/* shutdown animation vars */
+		extern bool animation_done;
+		extern const char* end_message;
+		extern ImVec2 end_meassage_size;
+		extern float shutdown_anim_duration;
+		extern std::chrono::time_point<std::chrono::high_resolution_clock> shutdown_anim_start_time;
+		extern bool time_noted;
+		extern ImFont* shutdown_anim_font;
 	};
 
 	/* This will be popullated initialize_image_texture funtion :)*/
@@ -78,6 +88,8 @@ namespace directX
 		extern texture_data setting;
 		extern texture_data stars;
 		extern texture_data view;
+		extern texture_data misc;
+		extern texture_data antiaim;
 
 		/* texture */
 		extern texture_data background;
@@ -146,7 +158,8 @@ namespace directX
 	void load_all_fonts();
 
 	/*does stupid maths cuase ImGui is a bitch I did to improve
-	performance could have been avoided if I was smart*/
+	performance could have been avoided if I was smart.
+	NOTE : Only do this after all fonts are loaded */
 	void do_static_calc();
 
 	/* does the ImGui styling and shit*/
