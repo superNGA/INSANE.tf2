@@ -7,6 +7,12 @@ namespace global
 	HWND target_hwnd					= nullptr;
 };
 
+namespace handle
+{
+	uintptr_t client_dll;
+	uintptr_t engine_dll;
+};
+
 namespace resource
 {
 	/* logo */
@@ -35,4 +41,17 @@ namespace resource
 	raw_image_data hass_black			(haas_black_data, sizeof(haas_black_data));
 	raw_image_data kabel				(kabel_data, sizeof(kabel_data)); // <- this is the super thick one
 	raw_image_data adobe_clean_light	(adobe_clean_light_data, sizeof(adobe_clean_light_data));
+}
+
+bool handle::initialize()
+{
+	client_dll = reinterpret_cast<uintptr_t>(GetModuleHandle("client.dll"));
+	engine_dll = reinterpret_cast<uintptr_t>(GetModuleHandle("engine.dll"));
+
+	if (!client_dll || !engine_dll)
+	{
+		return false;
+	}
+
+	return true;	
 }

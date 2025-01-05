@@ -34,6 +34,15 @@ namespace global
 	extern HWND target_hwnd;
 };
 
+/* Handles to all game modules */
+namespace handle
+{
+	extern uintptr_t client_dll;
+	extern uintptr_t engine_dll;
+
+	bool initialize();
+};
+
 /*This holds information about the textures and images used in 
 the software*/
 namespace resource

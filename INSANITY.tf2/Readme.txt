@@ -10,6 +10,6 @@ Left menu colours : 2, 2, 2, 240 <- slight transparent blackish grey
 right menu colours : 10, 10, 10, 255 <- a nice grey. Can make this slighly darker if you want ;)
 
 TO DO:
-	choose and set colours
-	change logo colours appropriately, and make em thicker
-	make buttons with images and text
+	add netvar manager
+	add createmove hook
+	add proper bhop
