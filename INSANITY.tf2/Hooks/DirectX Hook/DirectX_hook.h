@@ -11,11 +11,11 @@
 #pragma comment(lib, "d3dx9.lib")
 
 //Minhook
-#include "../External Libraries/MinHook/MinHook.h"
+#include "../../External Libraries/MinHook/MinHook.h"
 
 //colour full console
 #ifdef _DEBUG
-#include "../Libraries/Console System/Console_System.h"
+#include "../../Libraries/Console System/Console_System.h"
 #endif
 
 //global variables

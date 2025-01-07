@@ -1,5 +1,10 @@
 #pragma once
 #include <Windows.h>
+#include <string>
+#include <unordered_map>
+
+/* just a little typedef, cause typing out map type is very annoying*/
+typedef std::unordered_map < std::string , int32_t> T_map;
 
 /* this holds necesarry information about the byte array of a resource.
 all resources must initialize this.*/

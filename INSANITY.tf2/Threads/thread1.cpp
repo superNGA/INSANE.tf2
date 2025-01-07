@@ -3,12 +3,11 @@
 #ifdef _DEBUG
 	Console_System cons(FG_CYAN, BOLD, BG_BLACK);
 #endif // _DEBUG
-	Utility util;
-
+Utility util;
 
 void execute_thread1(HINSTANCE instance)
 {
-	// Initializing MinHook and Console_System & utility
+	/* Initializing MinHook and Console_System& utility */
 	MH_Initialize();
 	#ifdef _DEBUG
 	cons.CreateNewConsole();
@@ -28,15 +27,15 @@ void execute_thread1(HINSTANCE instance)
 	cons.Log("Successfully initialized module handles", FG_GREEN);
 	#endif
 
-	/* NetVars initializing */
-	if (!initialize_netvars())
+	/* intializing netvars */
+	if (!offsets::netvar_initialized && !offsets::initialize())
 	{
 		#ifdef _DEBUG
-		cons.Log("[ error ] NetVar failed", FG_RED);
+		cons.Log("Failed to intialize netvars", FG_RED);
 		#endif
 	}
 	#ifdef _DEBUG
-	cons.Log("Successfully initialized NetVar", FG_GREEN);
+	cons.Log("Initialize netvars", FG_GREEN);
 	#endif
 
 	/* hooking and enabling hooks */
@@ -55,7 +54,7 @@ void execute_thread1(HINSTANCE instance)
 	{
 		#ifdef _DEBUG
 		cons.Log("Waiting for ImGui to shutdown properly", FG_YELLOW);
-		#endif // _DEBUG
+		#endif
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 	MH_DisableHook(MH_ALL_HOOKS); // disabling hooks
@@ -67,42 +66,4 @@ void execute_thread1(HINSTANCE instance)
 	#endif
 
 	FreeLibraryAndExitThread(instance, 0);
-}
-
-bool initialize_netvars()
-{
-	int error_code;
-	IBaseClientDLL* base_client = (IBaseClientDLL*)util.GetInterface("VClient017", "client.dll", &error_code);
-
-	/* returning if failed to get interface */
-	if (error_code) return false;
-
-	ClientClass* all_class_linked_list = base_client->GetAllClasses();
-	if (all_class_linked_list == nullptr || all_class_linked_list->m_pNext == nullptr) return false;
-
-	printf("In the clear\n");
-
-	int Index = 0, OldProp = 0;
-	while (all_class_linked_list->m_pNext != NULL)
-	{
-		Index++;
-		int PropCount = all_class_linked_list->m_pRecvTable->m_nProps;
-		printf("Index : %d, Table name : %s, Property Count : %d\n", Index, all_class_linked_list->m_pRecvTable->m_pNetTableName, PropCount);
-
-		//Looping through props
-		for (int i = 1; i < PropCount; i++) //Starting from 1 avoids the repeating Base class in start of every table.
-		{
-			const auto Prop = &all_class_linked_list->m_pRecvTable->m_pProps[i];
-
-			if (!Prop) {
-				continue;
-			}
-
-			offsets::netvar_map[Prop->m_pVarName] = Prop->GetOffset();
-			//std::cout << Prop->m_pVarName << " -> 0x" << std::hex << Prop->GetOffset() << std::endl;
-		}
-		all_class_linked_list = all_class_linked_list->m_pNext;
-	}
-
-	return true;
 }
