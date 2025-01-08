@@ -1,5 +1,5 @@
 #pragma once
-#include "../EndScene.h"
+#include "../EndScene.h" // <- this file also includes the global.h which include config.h
 
 namespace cheat_window
 {
@@ -16,12 +16,19 @@ namespace cheat_window
 	{
 		ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-		//ImGui::PushFont(quotes::quote_font);
 		draw_list->AddText(
 			ImVec2(directX::UI::content_start_point.x + (ImGui::GetContentRegionAvail().x - quotes::quote_size.x) / 2, directX::UI::content_start_point.y + (ImGui::GetContentRegionAvail().y - quotes::quote_size.y) / 2),
 			directX::colours::white,
 			quotes::quote1
 		);
-		//ImGui::PopFont();
+	}
+
+	inline void draw_miscellaneous_window()
+	{
+		ImGui::PushFont(directX::fonts::agency_FB_small);
+
+		ImGui::Checkbox("bhop", &config::miscellaneous::bhop);
+
+		ImGui::PopFont();
 	}
 };

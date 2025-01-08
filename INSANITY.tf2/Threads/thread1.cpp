@@ -16,6 +16,7 @@ void execute_thread1(HINSTANCE instance)
 	cons.FastLog("MinHook initialized");
 	#endif
 
+
 	/* initializing module handles */
 	if (!handle::initialize())
 	{
@@ -26,6 +27,7 @@ void execute_thread1(HINSTANCE instance)
 	#ifdef _DEBUG
 	cons.Log("Successfully initialized module handles", FG_GREEN);
 	#endif
+
 
 	/* intializing netvars */
 	if (!offsets::netvar_initialized && !offsets::initialize())
@@ -38,14 +40,34 @@ void execute_thread1(HINSTANCE instance)
 	cons.Log("Initialize netvars", FG_GREEN);
 	#endif
 
+
+	/* getting interfaces */
+	int entity_list_code, ivengineclient_code;
+	interface_tf2::entity_list = (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
+	interface_tf2::engine = (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
+
+	#ifdef _DEBUG
+	entity_list_code ? cons.Log("Failed to get IClientEntityList", FG_RED) : cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
+	ivengineclient_code ? cons.Log("Failed to get IVEngineClient014", FG_RED) : cons.Log("Successfully retrived IVEngineClient014", FG_GREEN);
+	#endif
+
+
+	/* signature scanning */
+	fn_runtime_adrs::fn_createmove = util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+
 	/* hooking and enabling hooks */
 	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene); //End scene hook
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove, (LPVOID)hook::createmove::hooked_createmove, (LPVOID*)&hook::createmove::original_createmove);
+
 	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
 	winproc::hook_winproc(); // Hooking WinProc
 
 	/* main cheat loop */
 	while (!directX::UI::UI_has_been_shutdown)
 	{
+		/* for now this will also update the local player address, but I shall find a better location for this soon. */
+		netvar.local_player = (uintptr_t)interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
@@ -67,3 +89,8 @@ void execute_thread1(HINSTANCE instance)
 
 	FreeLibraryAndExitThread(instance, 0);
 }
+
+namespace fn_runtime_adrs
+{
+	uintptr_t fn_createmove = 0;
+};

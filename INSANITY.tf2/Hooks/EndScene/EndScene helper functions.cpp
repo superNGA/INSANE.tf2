@@ -174,13 +174,13 @@ void directX::load_all_fonts()
     /* loading font into memory */
     ImGuiIO& io = ImGui::GetIO();
 
-    fonts::roboto               = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data, resource::roboto.image_bytearray_size, 20.0f, &font_config);
-    fonts::agency_FB            = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 50.0f, &font_config);
-    fonts::agency_FB_small      = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB, resource::agencyFB.image_bytearray_size, 20.0f, &font_config);
-    fonts::adobe_clean_bold     = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data, resource::adobe_clean_bold.image_bytearray_size, 30.0f, &font_config);
-    fonts::haas_black           = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data, resource::hass_black.image_bytearray_size, 40.0f, &font_config);
-    fonts::kabel                = io.Fonts->AddFontFromMemoryTTF(resource::kabel_data, resource::kabel.image_bytearray_size, 60.0f, &font_config);
-    fonts::adobe_clean_light    = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_light_data, resource::adobe_clean_light.image_bytearray_size, 60.0f, &font_config);
+    fonts::roboto               = io.Fonts->AddFontFromMemoryTTF(resource::roboto_data,             resource::roboto.image_bytearray_size,              20.0f, &font_config);
+    fonts::agency_FB            = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB,               resource::agencyFB.image_bytearray_size,            50.0f, &font_config);
+    fonts::agency_FB_small      = io.Fonts->AddFontFromMemoryTTF(resource::agency_FB,               resource::agencyFB.image_bytearray_size,            20.0f, &font_config);
+    fonts::adobe_clean_bold     = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_bold_data,   resource::adobe_clean_bold.image_bytearray_size,    30.0f, &font_config);
+    fonts::haas_black           = io.Fonts->AddFontFromMemoryTTF(resource::haas_black_data,         resource::hass_black.image_bytearray_size,          40.0f, &font_config);
+    fonts::kabel                = io.Fonts->AddFontFromMemoryTTF(resource::kabel_data,              resource::kabel.image_bytearray_size,               60.0f, &font_config);
+    fonts::adobe_clean_light    = io.Fonts->AddFontFromMemoryTTF(resource::adobe_clean_light_data,  resource::adobe_clean_light.image_bytearray_size,   60.0f, &font_config);
 
     /* setting fonts configurations */
     UI::shutdown_anim_font      = fonts::adobe_clean_light;

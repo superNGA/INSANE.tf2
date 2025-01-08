@@ -55,3 +55,10 @@ bool handle::initialize()
 
 	return true;	
 }
+
+namespace interface_tf2
+{
+	IBaseClientDLL* base_client = nullptr;
+	I_client_entity_list* entity_list = nullptr;
+	IVEngineClient013* engine = nullptr;
+};

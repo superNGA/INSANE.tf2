@@ -1,7 +1,5 @@
 #pragma once
 #include <unordered_map>
-//#include <string>
-#include <functional>
 #include "../../GlobalVars.h"
 
 /* helper libraries */
@@ -15,7 +13,6 @@ extern Utility util;
 #include "../../Libraries/Console System/Console_System.h"
 extern Console_System cons;
 #endif
-
 
 /* this holds offsets */
 namespace offsets
@@ -32,4 +29,18 @@ namespace offsets
 	/* retrives the netvar varibles and also checks whether the netvar map 
 	is popullated or not */
 	uintptr_t get_netvar(const char* name);
+
+	/* Fills in the only local netvar object */
+	void fill_local_netvars();
 };
+
+
+/* after initializing the netvar map, I am storing them in this struct.
+this should make the netvar accesing very fast. */
+struct local_netvars
+{
+	uintptr_t local_player = 0;
+	uintptr_t m_fFlags = 0;
+};
+
+extern local_netvars netvar;

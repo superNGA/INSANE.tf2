@@ -11,6 +11,12 @@
 #include <mutex>
 #include <unordered_map>
 
+/* global data */
+#include "../GlobalVars.h"
+
+/* hooks */
+#include "../Hooks/Createmove/CreateMove.h"
+
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"
 #include "../Hooks/DirectX Hook/DirectX_hook.h"
@@ -21,10 +27,17 @@
 
 /* NetVar managment */
 #include "../SDK/offsets/offsets.h"
+extern local_netvars netvar; // <- this holds all the netvars
 
 #ifdef _DEBUG
 	extern Console_System cons;
 #endif // _DEBUG
-	extern Utility util;
+
+extern Utility util;
 
 void execute_thread1(HINSTANCE instance);
+
+namespace fn_runtime_adrs
+{
+	extern uintptr_t fn_createmove;
+};

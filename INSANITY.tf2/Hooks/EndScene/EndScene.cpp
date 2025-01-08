@@ -316,10 +316,14 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     //draw_list->AddRect(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetContentRegionAvail().x, cursor_pos.y + ImGui::GetContentRegionAvail().y), ImColor(255, 255, 255, 255));
     switch (UI::section_index)
     {
-    case QUOTE_WINDOW: 
+    case QUOTE_WINDOW:
         ImGui::PushFont(fonts::adobe_clean_bold);
         cheat_window::draw_quote_window();
         ImGui::PopFont();
+        break;
+    case MISCELLANEOUS_WINDOW:
+        asthetic::top_spacing(2);
+        cheat_window::draw_miscellaneous_window();
         break;
     default: break;
     }

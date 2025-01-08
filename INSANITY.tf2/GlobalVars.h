@@ -3,6 +3,27 @@
 #include <string>
 #include <unordered_map>
 
+/* game module names */
+#define CLIENT_DLL "client.dll"
+#define ENGINE_DLL "engine.dll"
+
+/* game interfaces names */
+#define IVENGIENCLIENT013	"VEngineClient014"
+#define ICLIENTENTITYLIST	"VClientEntityList003"
+#define VENGINERANDOM001	"VEngineRandom001"
+#define IGAMEEVENTLISTNER	"GAMEEVENTSMANAGER002"
+#define IVDEBUGOVERLAY		"VDebugOverlay003"
+#define ENGINETRACE_SERVER	"EngineTraceServer003"
+#define ENGINETRACE_CLIENT	"EngineTraceClient003"
+
+/* this is config file */
+#include "Features/config.h"
+
+/* game classes */
+#include "SDK/class/I_BaseEntityDLL.h"
+#include "SDK/class/Source Entity.h"
+#include "SDK/class/IVEngineClient.h"
+
 /* just a little typedef, cause typing out map type is very annoying*/
 typedef std::unordered_map < std::string , int32_t> T_map;
 
@@ -172,3 +193,11 @@ struct texture_data
 	}
 };
 
+
+/* This holds all the captures interfaces so I can use them across multiple files */
+namespace interface_tf2
+{
+	extern IBaseClientDLL* base_client;
+	extern I_client_entity_list* entity_list;
+	extern IVEngineClient013* engine;
+};

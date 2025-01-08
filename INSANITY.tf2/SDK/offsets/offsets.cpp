@@ -1,5 +1,7 @@
 #include "offsets.h"
 
+local_netvars netvar;
+
 namespace offsets
 {
 	bool netvar_initialized = false;
@@ -29,13 +31,13 @@ bool offsets::initialize()
 
 	/* getting VClient017 interface */
 	int error_code;
-	IBaseClientDLL* base_client = (IBaseClientDLL*)util.GetInterface("VClient017", "client.dll", &error_code);
+	interface_tf2::base_client = (IBaseClientDLL*)util.GetInterface("VClient017", "client.dll", &error_code);
 
 	/* returning if failed to get interface */
 	if (error_code) return false;
 
 	/* getting client class and error checking */
-	ClientClass* all_class_linked_list = base_client->GetAllClasses();
+	ClientClass* all_class_linked_list = interface_tf2::base_client->GetAllClasses();
 	if (all_class_linked_list == nullptr || all_class_linked_list->m_pNext == nullptr) return false;
 
 	/* looping througth and retriving netvars */
@@ -60,6 +62,16 @@ bool offsets::initialize()
 	cons.Log("Finished processing NetVars", FG_GREEN);
 	#endif // _DEBUG
 
+	/* after loading netvars into the map, we shall now put required ones into our struct object. */
+	offsets::fill_local_netvars();
+
 	offsets::netvar_initialized = true;
 	return true;
+}
+
+
+void offsets::fill_local_netvars()
+{
+	/* Fill other offsets here */
+	netvar.m_fFlags = (*netvar_map)["m_fFlags"];
 }
