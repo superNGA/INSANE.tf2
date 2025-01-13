@@ -74,4 +74,5 @@ void offsets::fill_local_netvars()
 {
 	/* Fill other offsets here */
 	netvar.m_fFlags = (*netvar_map)["m_fFlags"];
+	netvar.m_nForceTauntCam = (*netvar_map)["m_nForceTauntCam"];
 }

@@ -48,7 +48,7 @@ void* Utility::GetInterface(const char* InterfaceName, const char* MouduleName, 
 	return InterfacePntr;
 }
 
-void** GetVirtualTable(void* InterfacePntr)
+void** Utility::GetVirtualTable(void* InterfacePntr)
 {
 	void** VirtualTable = *(void***)InterfacePntr;
 	return VirtualTable;

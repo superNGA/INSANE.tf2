@@ -7,6 +7,11 @@
 #define WildCard 0xFF
 #define CREATE_INTERFACE "CreateInterface"
 
+/* used by input_util functions */
+#define HELD_DOWN	(1<<15)
+#define DONE_ONCE	(1<<0)
+#define STATE		(1<<1)
+
 //Template for Get interface function
 typedef void* (__cdecl T_CreateInterface)(const char* InterfaceName, int* ReturnCode);
 
@@ -46,3 +51,37 @@ private:
 	Not using Viurtual Protect cause if it is gonna find it, it will find it anyways.*/
 	uintptr_t MemoryScanner( std::vector<BYTE> Signature, std::string Mask, uintptr_t ModuleSize, uintptr_t BaseAdrs);
 };
+
+
+/* input detection / altering functions here */
+namespace input_util
+{
+	/* retuns key state in different fashions 
+	@param if toggle -> TRUE , output is toggles when key pressed
+	@param if toggle -> FALSE, output true only when key pressed */
+	inline bool key_detect(const BYTE key, const bool toggle)
+	{
+		static BYTE key_state_data = 0;
+		switch (toggle)
+		{
+		case true:
+			if (GetAsyncKeyState(key) & HELD_DOWN)
+			{
+				if (!(key_state_data & DONE_ONCE))
+				{
+					key_state_data ^= (STATE | DONE_ONCE); // Toggling state bit & setting done once bit to true
+					return key_state_data & STATE; //returning state bit
+				}
+			}
+			else
+			{
+				key_state_data &= ~DONE_ONCE; // setting done once bit to false
+				return key_state_data & STATE; // returning state bit
+			}
+			break;
+		default:
+			if (GetAsyncKeyState(key) & HELD_DOWN) return true;
+			return false;
+		}
+	}
+}

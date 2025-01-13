@@ -13,6 +13,8 @@ bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
 	
 	/*BHOP*/
 	feature::bhop(cmd, bit_flags);
+	feature::rocket_jump(cmd, result);
+	feature::third_person();
 
 	return result;
 }

@@ -41,6 +41,7 @@ struct local_netvars
 {
 	uintptr_t local_player = 0;
 	uintptr_t m_fFlags = 0;
+	uintptr_t m_nForceTauntCam = 0;
 };
 
 extern local_netvars netvar;

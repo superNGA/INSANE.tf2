@@ -28,6 +28,8 @@ namespace cheat_window
 		ImGui::PushFont(directX::fonts::agency_FB_small);
 
 		ImGui::Checkbox("bhop", &config::miscellaneous::bhop);
+		ImGui::Checkbox("auto rocket jump", &config::miscellaneous::rocket_jump);
+		ImGui::Checkbox("Third person", &config::miscellaneous::third_person);
 
 		ImGui::PopFont();
 	}
