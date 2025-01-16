@@ -15,6 +15,7 @@ namespace feature
 	{
 		if (!config::miscellaneous::bhop) return;
 
+		if (!global::entities_popullated) return;
 		int32_t flag = *(int32_t*)(netvar.local_player + netvar.m_fFlags);
 
 		if (!GetAsyncKeyState(VK_SPACE))
@@ -46,10 +47,12 @@ namespace feature
 	inline void rocket_jump(CUserCmd* cmd, bool& result)
 	{
 		if (!config::miscellaneous::rocket_jump) return;
+		if (!global::entities_popullated) return;
 
 		static bool isRocketJumping = false;
 		static int rocketJumpStage = 0;
 		if (GetAsyncKeyState(VK_XBUTTON2)) { // Hotkey for rocket jump
+			if (*(int32_t*)((uintptr_t)entities::local::active_weapon + netvar.m_iReloadMode) != 0) cmd->buttons |= IN_ATTACK;
 			if (!isRocketJumping) {
 				isRocketJumping = true;
 				rocketJumpStage = 0;

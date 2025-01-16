@@ -1,6 +1,6 @@
 /* NOTE : 
 * This thread will manage all the hooking,
-* the single console_system & Utility object is made in this file
+* the single Utility object is made in this file
 * also hold the single netvars object. Dont make another one :)
 */
 

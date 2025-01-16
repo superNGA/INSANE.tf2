@@ -1,8 +1,5 @@
 #include "thread1.h"
 
-#ifdef _DEBUG
-	Console_System cons(FG_CYAN, BOLD, BG_BLACK);
-#endif // _DEBUG
 Utility util;
 
 void execute_thread1(HINSTANCE instance)
@@ -43,11 +40,11 @@ void execute_thread1(HINSTANCE instance)
 
 	/* getting interfaces */
 	int entity_list_code, ivengineclient_code;
-	interface_tf2::entity_list = (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
-	interface_tf2::engine = (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
+	interface_tf2::entity_list	= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
+	interface_tf2::engine		= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
 
 	#ifdef _DEBUG
-	entity_list_code ? cons.Log("Failed to get IClientEntityList", FG_RED) : cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
+	entity_list_code	? cons.Log("Failed to get IClientEntityList", FG_RED) : cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
 	ivengineclient_code ? cons.Log("Failed to get IVEngineClient014", FG_RED) : cons.Log("Successfully retrived IVEngineClient014", FG_GREEN);
 	#endif
 
@@ -62,12 +59,10 @@ void execute_thread1(HINSTANCE instance)
 	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
 	winproc::hook_winproc(); // Hooking WinProc
 
-	/* main cheat loop */
+	/* MAIN CHEAT LOOP, end this and whole cheat goes kaput! */
 	while (!directX::UI::UI_has_been_shutdown)
 	{
-		/* for now this will also update the local player address, but I shall find a better location for this soon. */
-		netvar.local_player = (uintptr_t)interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
-
+		thread_termination_status::thread1_primed = true;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
@@ -87,7 +82,9 @@ void execute_thread1(HINSTANCE instance)
 	cons.FreeConsoleInstance();
 	#endif
 
-	FreeLibraryAndExitThread(instance, 0);
+	ExitThread(0);
+	thread_termination_status::thread1 = true;
+	return;
 }
 
 namespace fn_runtime_adrs

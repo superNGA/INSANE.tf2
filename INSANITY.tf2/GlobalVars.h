@@ -38,6 +38,23 @@ struct raw_image_data
 	size_t image_bytearray_size;
 };
 
+namespace thread_termination_status
+{
+	inline bool thread1 = false;
+	inline bool thread2 = false;
+	inline bool thread3 = false;
+
+	inline bool thread1_primed = false;
+}
+
+namespace entities
+{
+	namespace local
+	{
+		inline I_client_entity* active_weapon = 0;
+	}
+}
+
 enum cur_window
 {
 	QUOTE_WINDOW = 0,
@@ -58,6 +75,9 @@ namespace global
 	extern const char* target_window_name;
 	extern const char* target_proc_name;
 	extern HWND target_hwnd;
+
+	/* thread specific information */
+	inline bool entities_popullated = false;
 };
 
 /* Handles to all game modules */
@@ -197,7 +217,7 @@ struct texture_data
 /* This holds all the captures interfaces so I can use them across multiple files */
 namespace interface_tf2
 {
-	extern IBaseClientDLL* base_client;
-	extern I_client_entity_list* entity_list;
-	extern IVEngineClient013* engine;
+	extern IBaseClientDLL*			base_client;
+	extern I_client_entity_list*	entity_list;
+	extern IVEngineClient013*		engine;
 };

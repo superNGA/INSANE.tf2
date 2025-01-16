@@ -20,18 +20,11 @@ namespace offsets
 	/* initialize netvars */
 	bool initialize();
 
-	/* global netvar map, once popullated holds the all offsets. */
-	extern T_map* netvar_map;
-
 	/* whether netvars initialized or not */
 	extern bool netvar_initialized;
 
-	/* retrives the netvar varibles and also checks whether the netvar map 
-	is popullated or not */
-	uintptr_t get_netvar(const char* name);
-
 	/* Fills in the only local netvar object */
-	void fill_local_netvars();
+	void fill_local_netvars(T_map& map);
 };
 
 
@@ -42,6 +35,8 @@ struct local_netvars
 	uintptr_t local_player = 0;
 	uintptr_t m_fFlags = 0;
 	uintptr_t m_nForceTauntCam = 0;
+	uintptr_t m_iReloadMode = 0;
+	uintptr_t m_hActiveWeapon = 0;
 };
 
 extern local_netvars netvar;

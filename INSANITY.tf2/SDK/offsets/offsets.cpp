@@ -6,22 +6,21 @@ namespace offsets
 {
 	bool netvar_initialized = false;
 	bool failed_netvar_retrival = false;
-	
-	T_map* netvar_map = new T_map;
 };
 
 
-uintptr_t offsets::get_netvar(const char* name)
+void recurse_maxxxing(RecvTable* table)
 {
-	if (!offsets::netvar_initialized || (*offsets::netvar_map).empty())
+	T_map temp_map;
+	for (int i = 0; i < table->m_nProps; i++)
 	{
-		#ifdef _DEBUG
-		cons.Log("NetVar map not initialized yet", FG_RED);
-		#endif
-		return 0;
-	}
+		RecvProp* prop = &table->m_pProps[i];//getting each prop
+		if (!prop) continue;//only skips the current prop, but if you return it skips rest of the props
 
-	return (*offsets::netvar_map)[name];
+		if (prop->child_table)recurse_maxxxing(prop->child_table);	
+		temp_map[prop->m_pVarName] = prop->m_Offset;
+	}
+	offsets::fill_local_netvars(temp_map);
 }
 
 
@@ -29,50 +28,57 @@ bool offsets::initialize()
 {
 	if (offsets::netvar_initialized) return true;
 
-	/* getting VClient017 interface */
+	/* create map */
+	T_map netvar_map;
+
+	/* getting interface */
 	int error_code;
 	interface_tf2::base_client = (IBaseClientDLL*)util.GetInterface("VClient017", "client.dll", &error_code);
 
-	/* returning if failed to get interface */
-	if (error_code) return false;
-
-	/* getting client class and error checking */
-	ClientClass* all_class_linked_list = interface_tf2::base_client->GetAllClasses();
-	if (all_class_linked_list == nullptr || all_class_linked_list->m_pNext == nullptr) return false;
-
-	/* looping througth and retriving netvars */
-	int Index = 0, OldProp = 0;
-	while (all_class_linked_list->m_pNext != NULL)
+	/* iterating through all client classes */
+	ClientClass* client_class = interface_tf2::base_client->GetAllClasses();
+	while (client_class) // <- this iterated throught the base classes
 	{
-		Index++;
-		int PropCount = all_class_linked_list->m_pRecvTable->m_nProps;
-
-		//Looping through props
-		for (int i = 1; i < PropCount; i++) //Starting from 1 avoids the repeating Base class in start of every table.
-		{
-			const auto Prop = &all_class_linked_list->m_pRecvTable->m_pProps[i];
-			if (!Prop) continue;
-
-			(*netvar_map)[Prop->m_pVarName] = Prop->GetOffset();
+		/* get the base tables and iterate through them */
+		RecvTable* base_table = client_class->m_pRecvTable;
+		if (!base_table) {
+			cons.Log("Bad base table", FG_RED);
+			continue;
 		}
-		all_class_linked_list = all_class_linked_list->m_pNext;
+
+		/* iterating props & checking child tables */
+		for (int i = 0; i < base_table->m_nProps; i++)
+		{
+			RecvProp* prop = &base_table->m_pProps[i];	//getting each prop
+			if (!prop) continue;					//only skips the current prop, but if you return it skips rest of the props
+			netvar_map[prop->m_pVarName] = prop->m_Offset;
+			if (prop->child_table) recurse_maxxxing(prop->child_table);
+		}
+
+		/* getting next table */
+		client_class = client_class->m_pNext;
 	}
 
 	#ifdef _DEBUG
 	cons.Log("Finished processing NetVars", FG_GREEN);
-	#endif // _DEBUG
+	#endif
 
-	/* after loading netvars into the map, we shall now put required ones into our struct object. */
-	offsets::fill_local_netvars();
+	/* loading desired netvars in local varibles and freeing map */
+	offsets::fill_local_netvars(netvar_map);
+
+	#ifdef _DEBUG
+	cons.Log("Loaded NetVars", FG_GREEN);
+	#endif
 
 	offsets::netvar_initialized = true;
 	return true;
 }
 
 
-void offsets::fill_local_netvars()
+void offsets::fill_local_netvars(T_map& map)
 {
-	/* Fill other offsets here */
-	netvar.m_fFlags = (*netvar_map)["m_fFlags"];
-	netvar.m_nForceTauntCam = (*netvar_map)["m_nForceTauntCam"];
+	if (map["m_fFlags"])			netvar.m_fFlags = map["m_fFlags"];
+	if (map["m_nForceTauntCam"])	netvar.m_nForceTauntCam = map["m_nForceTauntCam"];
+	if (map["m_iReloadMode"])		netvar.m_iReloadMode = map["m_iReloadMode"];
+	if (map["m_hActiveWeapon"])		netvar.m_hActiveWeapon = map["m_hActiveWeapon"];
 }
