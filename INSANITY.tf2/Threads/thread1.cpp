@@ -39,15 +39,16 @@ void execute_thread1(HINSTANCE instance)
 
 
 	/* getting interfaces */
-	int entity_list_code, ivengineclient_code;
-	interface_tf2::entity_list	= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
-	interface_tf2::engine		= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
+	int entity_list_code, ivengineclient_code, iengineclientreplay_code;
+	interface_tf2::entity_list		= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
+	interface_tf2::engine			= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
+	interface_tf2::engine_replay	= (I_engine_client_replay*)util.GetInterface(ENGINE_CLIENT_REPLAY, ENGINE_DLL, &iengineclientreplay_code);
 
 	#ifdef _DEBUG
-	entity_list_code	? cons.Log("Failed to get IClientEntityList", FG_RED) : cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
-	ivengineclient_code ? cons.Log("Failed to get IVEngineClient014", FG_RED) : cons.Log("Successfully retrived IVEngineClient014", FG_GREEN);
+	entity_list_code			? cons.Log("Failed to get IClientEntityList", FG_RED)		: cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
+	ivengineclient_code			? cons.Log("Failed to get IVEngineClient014", FG_RED)		: cons.Log("Successfully retrived IVEngineClient014", FG_GREEN);
+	iengineclientreplay_code	? cons.Log("Failed to get EngineClientReplay001", FG_RED)	: cons.Log("Successfully retrived EngineClientReplay001", FG_GREEN);
 	#endif
-
 
 	/* signature scanning */
 	fn_runtime_adrs::fn_createmove = util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);

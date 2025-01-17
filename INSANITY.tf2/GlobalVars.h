@@ -2,19 +2,21 @@
 #include <Windows.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 /* game module names */
 #define CLIENT_DLL "client.dll"
 #define ENGINE_DLL "engine.dll"
 
 /* game interfaces names */
-#define IVENGIENCLIENT013	"VEngineClient014"
-#define ICLIENTENTITYLIST	"VClientEntityList003"
-#define VENGINERANDOM001	"VEngineRandom001"
-#define IGAMEEVENTLISTNER	"GAMEEVENTSMANAGER002"
-#define IVDEBUGOVERLAY		"VDebugOverlay003"
-#define ENGINETRACE_SERVER	"EngineTraceServer003"
-#define ENGINETRACE_CLIENT	"EngineTraceClient003"
+#define IVENGIENCLIENT013		"VEngineClient014"
+#define ICLIENTENTITYLIST		"VClientEntityList003"
+#define VENGINERANDOM001		"VEngineRandom001"
+#define IGAMEEVENTLISTNER		"GAMEEVENTSMANAGER002"
+#define IVDEBUGOVERLAY			"VDebugOverlay003"
+#define ENGINETRACE_SERVER		"EngineTraceServer003"
+#define ENGINETRACE_CLIENT		"EngineTraceClient003"
+#define ENGINE_CLIENT_REPLAY	"EngineClientReplay001"
 
 /* this is config file */
 #include "Features/config.h"
@@ -23,6 +25,7 @@
 #include "SDK/class/I_BaseEntityDLL.h"
 #include "SDK/class/Source Entity.h"
 #include "SDK/class/IVEngineClient.h"
+#include "SDK/class/I_EngineClientReplay.h"
 
 /* just a little typedef, cause typing out map type is very annoying*/
 typedef std::unordered_map < std::string , int32_t> T_map;
@@ -38,6 +41,7 @@ struct raw_image_data
 	size_t image_bytearray_size;
 };
 
+/* this will hold information about when threads are started & teminated */
 namespace thread_termination_status
 {
 	inline bool thread1 = false;
@@ -47,12 +51,36 @@ namespace thread_termination_status
 	inline bool thread1_primed = false;
 }
 
+/* this will be popullated and maintained by thread 2,
+it shall hold important information about possible targets & me */
 namespace entities
 {
+	/* this struct holds screen corrdinated of each of the extreme body parts location of the entity.
+	essentially storing the height and width of the entity */
+	struct entity_dimensions
+	{
+		vec2 head, foot, left_shoulder, right_shoulder;
+	};
+
+	/* imfo about local player */
 	namespace local
 	{
-		inline I_client_entity* active_weapon = 0;
+		inline player_class		localplayer_class;
+		inline I_client_entity* active_weapon;
+		inline int32_t			ID_active_weapon;
+		inline int16_t			team_num;
 	}
+
+	/* info about all possible / alive targets */
+	namespace target
+	{
+		inline std::vector<entity_dimensions> all_entity_dimensions;
+	}
+
+	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
+	if returns FALSE, screen cordinates are not on the screen,
+	if returns TRUE, screen cordinated are valid and on the screen. */
+	bool world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
 }
 
 enum cur_window
@@ -72,6 +100,8 @@ enum cur_window
 /*this holds imformation about the target process*/
 namespace global
 {
+	extern vec2 window_size;
+
 	extern const char* target_window_name;
 	extern const char* target_proc_name;
 	extern HWND target_hwnd;
@@ -220,4 +250,5 @@ namespace interface_tf2
 	extern IBaseClientDLL*			base_client;
 	extern I_client_entity_list*	entity_list;
 	extern IVEngineClient013*		engine;
+	extern I_engine_client_replay*	engine_replay;
 };

@@ -20,7 +20,7 @@ void recurse_maxxxing(RecvTable* table)
 		if (prop->child_table)recurse_maxxxing(prop->child_table);	
 		temp_map[prop->m_pVarName] = prop->m_Offset;
 	}
-	offsets::fill_local_netvars(temp_map);
+	offsets::fill_local_netvars(temp_map, table->m_pNetTableName);
 }
 
 
@@ -64,7 +64,7 @@ bool offsets::initialize()
 	#endif
 
 	/* loading desired netvars in local varibles and freeing map */
-	offsets::fill_local_netvars(netvar_map);
+	offsets::fill_local_netvars(netvar_map, "BASE_TABLE");
 
 	#ifdef _DEBUG
 	cons.Log("Loaded NetVars", FG_GREEN);
@@ -75,10 +75,21 @@ bool offsets::initialize()
 }
 
 
-void offsets::fill_local_netvars(T_map& map)
+void offsets::fill_local_netvars(T_map& map, const char* table_name)
 {
-	if (map["m_fFlags"])			netvar.m_fFlags = map["m_fFlags"];
+	/* matching table and var name*/
+	if (!strcmp(table_name,"DT_TFPlayerClassShared")	&& map["m_iClass"])				netvar.m_iClass = map["m_iClass"];
+	if (!strcmp(table_name, "DT_EconEntity") && map["m_AttributeManager"])				netvar.m_AttributeManager = map["m_AttributeManager"];
+	if (!strcmp(table_name, "DT_AttributeContainer") && map["m_Item"])					netvar.m_Item = map["m_Item"];
+	if (!strcmp(table_name, "DT_ScriptCreatedItem") && map["m_iItemDefinitionIndex"])	netvar.m_iItemDefinitionIndex = map["m_iItemDefinitionIndex"];
+	if (!strcmp(table_name, "BASE_TABLE") && map["m_PlayerClass"])						netvar.m_PlayerClass = map["m_PlayerClass"];
+	if (!strcmp(table_name, "DT_BasePlayer") && map["m_iHealth"])						netvar.m_iHealth = map["m_iHealth"];
+	if (!strcmp(table_name, "DT_BasePlayer") && map["m_lifeState"])						netvar.m_lifeState = map["m_lifeState"];
+	if (!strcmp(table_name, "DT_BaseEntity") && map["m_iTeamNum"])						netvar.m_iTeamNum = map["m_iTeamNum"];
+
+	/* matching var name */
+	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];
 	if (map["m_nForceTauntCam"])	netvar.m_nForceTauntCam = map["m_nForceTauntCam"];
-	if (map["m_iReloadMode"])		netvar.m_iReloadMode = map["m_iReloadMode"];
-	if (map["m_hActiveWeapon"])		netvar.m_hActiveWeapon = map["m_hActiveWeapon"];
+	if (map["m_iReloadMode"])		netvar.m_iReloadMode	= map["m_iReloadMode"];
+	if (map["m_hActiveWeapon"])		netvar.m_hActiveWeapon	= map["m_hActiveWeapon"];
 }

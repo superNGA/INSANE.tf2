@@ -2,6 +2,7 @@
 
 namespace global
 {
+	vec2 window_size;
 	const char* target_window_name		= "Team Fortress 2 - Direct3D 9 - 64 Bit";
 	const char* target_proc_name		= "tf win64.exe";
 	HWND target_hwnd					= nullptr;
@@ -58,7 +59,30 @@ bool handle::initialize()
 
 namespace interface_tf2
 {
-	IBaseClientDLL* base_client = nullptr;
-	I_client_entity_list* entity_list = nullptr;
-	IVEngineClient013* engine = nullptr;
+	IBaseClientDLL* base_client				= nullptr;
+	I_client_entity_list* entity_list		= nullptr;
+	IVEngineClient013* engine				= nullptr;
+	I_engine_client_replay* engine_replay	= nullptr;
 };
+
+bool entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {
+	// Matrix-vector multiplication
+	float w = matrix->m[3][0] * worldPos.x + matrix->m[3][1] * worldPos.y + matrix->m[3][2] * worldPos.z + matrix->m[3][3];
+	if (w < 0.001f) { // Behind the camera
+		return false;
+	}
+
+	float x = matrix->m[0][0] * worldPos.x + matrix->m[0][1] * worldPos.y + matrix->m[0][2] * worldPos.z + matrix->m[0][3];
+	float y = matrix->m[1][0] * worldPos.x + matrix->m[1][1] * worldPos.y + matrix->m[1][2] * worldPos.z + matrix->m[1][3];
+
+	// Normalize coordinates
+	float invW = 1.0f / w;
+	x *= invW;
+	y *= invW;
+
+	// Convert to screen space
+	screen_pos.x = (global::window_size.x / 2.0f) + (x * global::window_size.x / 2.0f);
+	screen_pos.y = (global::window_size.y / 2.0f) - (y * global::window_size.y / 2.0f); // Y-axis is inverted in screen space
+
+	return true;
+}

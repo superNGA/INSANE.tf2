@@ -1,5 +1,5 @@
 /*
-This thread will be center for retreiving, updating& filtering entities
+This thread will be center for retreiving, updating & filtering entities
 such as local player, active weapon, enimies.
 might also do projectile aimbot caculations and other stuff */
 

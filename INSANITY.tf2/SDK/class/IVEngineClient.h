@@ -117,11 +117,11 @@ public:
 	virtual const char* GetGameDirectory(void) = 0;
 
 	// Get access to the world to screen transformation matrix
-	virtual const matrix3x4_t& WorldToScreenMatrix() = 0;
+	virtual const view_matrix& WorldToScreenMatrix() = 0;
 
 	// Get the matrix to move a point from world space into view space
 	// (translate and rotate so the camera is at the origin looking down X).
-	virtual const matrix3x4_t& WorldToViewMatrix() = 0;
+	virtual const view_matrix& WorldToViewMatrix() = 0;
 
 	// The .bsp file can have mod-specified data lumps. These APIs are for working with such game lumps.
 

@@ -152,6 +152,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     /* Starting ImGui new frame*/
     ImGuiIO& io = ImGui::GetIO();
+    global::window_size.x = ImGui::GetMainViewport()->Size.x;
+    global::window_size.y = ImGui::GetMainViewport()->Size.y;
     io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();
