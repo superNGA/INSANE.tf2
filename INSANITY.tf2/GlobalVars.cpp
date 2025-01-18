@@ -84,5 +84,7 @@ bool entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view
 	screen_pos.x = (global::window_size.x / 2.0f) + (x * global::window_size.x / 2.0f);
 	screen_pos.y = (global::window_size.y / 2.0f) - (y * global::window_size.y / 2.0f); // Y-axis is inverted in screen space
 
+	if ((screen_pos.x < 0.0f || screen_pos.x > global::window_size.x) || (screen_pos.y < 0.0f || screen_pos.y > global::window_size.y)) return false;
+	
 	return true;
 }

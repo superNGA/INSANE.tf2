@@ -19,7 +19,7 @@ void execute_thread2(HINSTANCE instance)
 
 	while (!directX::UI::UI_has_been_shutdown)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // This thread must sleep for this much in each iteration.
+		std::this_thread::sleep_for(std::chrono::milliseconds(5)); // This thread must sleep for this much in each iteration.
 
 		/* check if in game */
 		if (!interface_tf2::engine->IsInGame()) {
@@ -74,16 +74,18 @@ void execute_thread2(HINSTANCE instance)
 			if (*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num) continue;
 
 			/* getting entity bones and storing it if entity is on the screen */
-			ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime);
+			/*ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime);
 			if (entities::world_to_screen(skeleton_cache[BONE_HEAD].get_bone_coordinates(), cached_entity_dimension.head, &r_viewmatrix) ||
-				entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(), cached_entity_dimension.foot, &r_viewmatrix) ||
+				entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(), cached_entity_dimension.right_foot, &r_viewmatrix) ||
+				entities::world_to_screen(skeleton_cache[BONE_LEFT_FOOT].get_bone_coordinates(), cached_entity_dimension.left_foot, &r_viewmatrix) ||
 				entities::world_to_screen(skeleton_cache[BONE_LEFT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.left_shoulder, &r_viewmatrix) ||
 				entities::world_to_screen(skeleton_cache[BONE_RIGHT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.right_shoulder, &r_viewmatrix))
 			{
 				entities::target::all_entity_dimensions.push_back(cached_entity_dimension);
-			}
+			}*/
 
-			/*printf("%.2f %.2f | %.2f %.2f\n", cached_entity_dimension.head.x, cached_entity_dimension.head.y, cached_entity_dimension.foot.x, cached_entity_dimension.foot.y);*/
+			/*if (entities::target::all_entity_dimensions.empty()) continue;*/
+			/*printf("%.2f %.2f\n", entities::target::all_entity_dimensions[0].head.x, entities::target::all_entity_dimensions[0].head.y);*/
 		}
 
 		/* this flag will be used in features to prevent them from accessing invalid memory spaces */

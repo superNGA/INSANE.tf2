@@ -22,6 +22,12 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 	{
 		DisableThreadLibraryCalls(instance);
 		
+		#ifdef _DEBUG
+		cons.CreateNewConsole();
+		cons.DoIntroduction();
+		cons.DoDevider();
+		#endif
+
 		//creating threads
 		auto thread1 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(execute_thread1), instance, 0, nullptr);
 		auto thread2 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(execute_thread2), instance, 0, nullptr);
@@ -44,6 +50,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 
 		#ifdef _DEBUG
 		cons.Log("FREE'ed library", FG_GREEN);
+		cons.FreeConsoleInstance();
 		#endif
 	}
 

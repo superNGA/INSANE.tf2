@@ -98,7 +98,6 @@ namespace directX {
 
 HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 {
-    #pragma region INITIALIZATION
 	if (!device)
 	{
 		device = P_DEVICE;
@@ -127,28 +126,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         load_all_fonts();
     }
 
-    //skipping rendering if menu not visible
-    if (!UI::UI_visble || UI::UI_has_been_shutdown)
-    {
-        time_refreshed = false;
-        return O_endscene(P_DEVICE);
-    }
-    #pragma endregion
-
-    /* refreshing time */
-    if (!time_refreshed)
-    {
-        /* refeshing global time vars. */
-        menu_visible_time = std::chrono::high_resolution_clock::now();
-        time_refreshed = true;
-
-        /* globally storing/refreshing Imgui io */
-        IO = &ImGui::GetIO();
-
-        #ifdef _DEBUG
-        cons.Log("refreshed start time", FG_GREEN);
-        #endif
-    }
+    /* skipping all if already ended */
+    if (UI::UI_has_been_shutdown) return O_endscene(P_DEVICE);
 
     /* Starting ImGui new frame*/
     ImGuiIO& io = ImGui::GetIO();
@@ -158,7 +137,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
-    
+
     /* Calculating text size here */
     if (!UI::static_calc_done)
     {
@@ -174,208 +153,242 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     {
         make_it_pretty();
     }
-    
-    /* making new default font */
-    ImGui::PushFont(fonts::agency_FB);
 
-    /* Drawing background window & clock, fade in mechanism is also done here*/
-    draw_background();
-
-    /* Initializing window*/
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2(UI::width_window, UI::height_window));
-    ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-
-    /* getting essential measurments */
-    ImVec2 window_pos = ImGui::GetWindowPos();
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    
-    /* left side menu rectangle */
-    draw_list->AddRectFilled(
-        window_pos,
-        ImVec2(window_pos.x + 200.0f, window_pos.y + UI::height_window),
-        colours::side_menu,
-        10.0f,                   
-        ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersTopLeft);
-
-    /* right side menu rectangle */
-    draw_list->AddRectFilled(
-        ImVec2(window_pos.x + 200.0f, window_pos.y),
-        ImVec2(window_pos.x + UI::width_window, window_pos.y + UI::height_window),
-        colours::main_menu,
-        10.0f,
-        ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight);
-
-    /*child : SIDE MENU*/
-    ImGui::BeginChild("sections", ImVec2(200.0f, UI::height_window), true);
-
-    ImGui::PushFont(fonts::roboto);
-
-    /*spacing*/
-    asthetic::top_spacing(12);
-    asthetic::left_spacing();
-    
-    /*text : Aim assist*/
-    ImGui::PushFont(fonts::agency_FB_small);
-    ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
-    ImGui::Text("Aim assit");
-    ImGui::PopStyleColor();
-    ImGui::PopFont();
-
-    /*button : AIMBOT*/
-    ImVec2 cursor_pos = ImGui::GetCursorScreenPos(); 
-    if (ImGui::Button("##aimbot", UI::standard_button_size)) UI::section_index = AIMBOT_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::aimbot, "AIMBOT", false);
-
-    /*button : AITI-AIM*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##antiaim", UI::standard_button_size)) UI::section_index = ANTIAIM_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::antiaim, "ANTI-AIM", false);
-    
-    /* spacing */
-    asthetic::top_spacing(2);
-    asthetic::left_spacing();
-
-    /*text : Visuals*/
-    ImGui::PushFont(fonts::agency_FB_small);
-    ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
-    ImGui::Text("Visuals");
-    ImGui::PopStyleColor();
-    ImGui::PopFont();
-
-    /*button : WORLD VISUALS*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##world", UI::standard_button_size)) UI::section_index = WORLD_VISUALS_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::planet, "WORLD", false);
-
-    /*button : PLAYER VISUALS*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##player", UI::standard_button_size)) UI::section_index = PLAYER_VISUALS_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::player, "PLAYER", false);
-
-    /*button : VIEW -> VISUALS*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##view", UI::standard_button_size)) UI::section_index = VIEW_VISUALS_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::view, "VIEW", false);
-    
-    /* spacing */
-    asthetic::top_spacing(2);
-    asthetic::left_spacing();
-
-    /*text : Miscellaneous*/
-    ImGui::PushFont(fonts::agency_FB_small);
-    ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
-    ImGui::Text("Miscellaneous");
-    ImGui::PopStyleColor();
-    ImGui::PopFont();
-
-    /*button : MISCELLANEOUS*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##misc", UI::standard_button_size)) UI::section_index = MISCELLANEOUS_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::misc, "MISC", false);
-
-    /*button : SKIN CHANGER*/
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##skins", UI::standard_button_size)) UI::section_index = SKIN_CHANGER_WINDOW;
-    asthetic::create_button_with_image(cursor_pos, textures::stars, "SKINS", false);
-
-    /*buttons : CONFIG*/
-    ImGui::SetCursorScreenPos(ImVec2(window_pos.x, window_pos.y + UI::height_window - UI::standard_button_size.y));
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##config", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = CONFIG_WINDOW;
-    asthetic::create_half_button(cursor_pos, textures::folder);
-    
-    /*button : SETTING*/
-    ImGui::SameLine();
-    cursor_pos = ImGui::GetCursorScreenPos();
-    if (ImGui::Button("##setting", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = SETTING_WINDOW;
-    asthetic::create_half_button(cursor_pos, textures::setting);
-
-    ImGui::PopFont();
-    ImGui::EndChild();    
-    ImGui::SameLine();
-
-    /*child : MAIN MENU*/
-    ImGui::BeginChild("features", ImVec2(UI::width_window - 200.0f, UI::height_window), false);
-
-    /*spacing*/
-    asthetic::top_spacing();
-
-    /*text : I      N      S      A      N      E*/
-    ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - UI::top_text_width) / 2);
-    ImGui::PushFont(fonts::haas_black);
-    ImGui::Text(UI::heading);
-    ImGui::PopFont();
-
-    /*button : CLOSE*/
-    ImGui::SetCursorScreenPos(ImVec2(window_pos.x + UI::width_window - UI::close_button_size.x, window_pos.y + 0.0f));
-    ImGui::PushFont(fonts::adobe_clean_bold);
-    if (ImGui::Button("x", UI::close_button_size)) UI::shutdown_UI = true;
-    ImGui::PopFont();
-
-    /*RENDERING CHEAT FEATURE WINDOWS HERE*/
-    UI::content_start_point = ImGui::GetCursorScreenPos();
-    //draw_list->AddRect(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetContentRegionAvail().x, cursor_pos.y + ImGui::GetContentRegionAvail().y), ImColor(255, 255, 255, 255));
-    switch (UI::section_index)
+    /* MANAGING CHEAT FEATURES RELATED TO RENDERING CUSTOM STUFF */
+    if (global::entities_popullated)
     {
-    case QUOTE_WINDOW:
-        ImGui::PushFont(fonts::adobe_clean_bold);
-        cheat_window::draw_quote_window();
-        ImGui::PopFont();
-        break;
-    case MISCELLANEOUS_WINDOW:
-        asthetic::top_spacing(2);
-        cheat_window::draw_miscellaneous_window();
-        break;
-    default: break;
+        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+        //render_cheat_features::render_esp_boxes(draw_list);
     }
 
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
-
-    /*Poping fonts*/
-    ImGui::PopFont();
-
-    /* managing shutdown animation */
-    if (UI::shutdown_UI && !UI::animation_done)
+    if (UI::UI_visble)
     {
-        if (!UI::time_noted)
+        /* refreshing time */
+        if (!time_refreshed)
         {
-            UI::shutdown_anim_start_time = std::chrono::high_resolution_clock::now();
-            UI::time_noted = true;
-        }
+            /* refeshing global time vars. */
+            menu_visible_time = std::chrono::high_resolution_clock::now();
+            time_refreshed = true;
 
-        ImDrawList* bg_draw_list = ImGui::GetForegroundDrawList();
-        bg_draw_list->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, ImColor(0, 0, 0, 255));
-        
-        ImGui::PushFont(UI::shutdown_anim_font);
-        if (!UI::shutdown_anim_font)
-        {
-            printf("font is null\n");
-        }
-        bg_draw_list->AddText(ImVec2((io.DisplaySize.x - UI::end_meassage_size.x) / 2.0f, (io.DisplaySize.y - UI::end_meassage_size.y) / 2.0f), ImColor(255, 255, 255, 255), UI::end_message);
-        ImGui::PopFont();
-
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - UI::shutdown_anim_start_time).count() >= UI::shutdown_anim_duration)
-        {
-            UI::animation_done = true;
+            /* globally storing/refreshing Imgui io */
+            IO = &ImGui::GetIO();
 
             #ifdef _DEBUG
-            cons.Log("Shutdown animation done", FG_GREEN);
+            cons.Log("refreshed start time", FG_GREEN);
             #endif
         }
+
+        /* making new default font */
+        ImGui::PushFont(fonts::agency_FB);
+
+        /* Drawing background window & clock, fade in mechanism is also done here*/
+        draw_background();
+
+        /* Initializing window*/
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImVec2(UI::width_window, UI::height_window));
+        ImGui::Begin("INSANITY", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+
+        /* getting essential measurments */
+        ImVec2 window_pos = ImGui::GetWindowPos();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+        /* left side menu rectangle */
+        draw_list->AddRectFilled(
+            window_pos,
+            ImVec2(window_pos.x + 200.0f, window_pos.y + UI::height_window),
+            colours::side_menu,
+            10.0f,
+            ImDrawFlags_RoundCornersBottomLeft | ImDrawFlags_RoundCornersTopLeft);
+
+        /* right side menu rectangle */
+        draw_list->AddRectFilled(
+            ImVec2(window_pos.x + 200.0f, window_pos.y),
+            ImVec2(window_pos.x + UI::width_window, window_pos.y + UI::height_window),
+            colours::main_menu,
+            10.0f,
+            ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight);
+
+        /*child : SIDE MENU*/
+        ImGui::BeginChild("sections", ImVec2(200.0f, UI::height_window), true);
+
+        ImGui::PushFont(fonts::roboto);
+
+        /*spacing*/
+        asthetic::top_spacing(12);
+        asthetic::left_spacing();
+
+        /*text : Aim assist*/
+        ImGui::PushFont(fonts::agency_FB_small);
+        ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
+        ImGui::Text("Aim assit");
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+
+        /*button : AIMBOT*/
+        ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##aimbot", UI::standard_button_size)) UI::section_index = AIMBOT_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::aimbot, "AIMBOT", false);
+
+        /*button : AITI-AIM*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##antiaim", UI::standard_button_size)) UI::section_index = ANTIAIM_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::antiaim, "ANTI-AIM", false);
+
+        /* spacing */
+        asthetic::top_spacing(2);
+        asthetic::left_spacing();
+
+        /*text : Visuals*/
+        ImGui::PushFont(fonts::agency_FB_small);
+        ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
+        ImGui::Text("Visuals");
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+
+        /*button : WORLD VISUALS*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##world", UI::standard_button_size)) UI::section_index = WORLD_VISUALS_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::planet, "WORLD", false);
+
+        /*button : PLAYER VISUALS*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##player", UI::standard_button_size)) UI::section_index = PLAYER_VISUALS_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::player, "PLAYER", false);
+
+        /*button : VIEW -> VISUALS*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##view", UI::standard_button_size)) UI::section_index = VIEW_VISUALS_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::view, "VIEW", false);
+
+        /* spacing */
+        asthetic::top_spacing(2);
+        asthetic::left_spacing();
+
+        /*text : Miscellaneous*/
+        ImGui::PushFont(fonts::agency_FB_small);
+        ImGui::PushStyleColor(ImGuiCol_Text, colours::grey);
+        ImGui::Text("Miscellaneous");
+        ImGui::PopStyleColor();
+        ImGui::PopFont();
+
+        /*button : MISCELLANEOUS*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##misc", UI::standard_button_size)) UI::section_index = MISCELLANEOUS_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::misc, "MISC", false);
+
+        /*button : SKIN CHANGER*/
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##skins", UI::standard_button_size)) UI::section_index = SKIN_CHANGER_WINDOW;
+        asthetic::create_button_with_image(cursor_pos, textures::stars, "SKINS", false);
+
+        /*buttons : CONFIG*/
+        ImGui::SetCursorScreenPos(ImVec2(window_pos.x, window_pos.y + UI::height_window - UI::standard_button_size.y));
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##config", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = CONFIG_WINDOW;
+        asthetic::create_half_button(cursor_pos, textures::folder);
+
+        /*button : SETTING*/
+        ImGui::SameLine();
+        cursor_pos = ImGui::GetCursorScreenPos();
+        if (ImGui::Button("##setting", ImVec2(UI::standard_button_size.x / 2, UI::standard_button_size.y))) UI::section_index = SETTING_WINDOW;
+        asthetic::create_half_button(cursor_pos, textures::setting);
+
+        ImGui::PopFont();
+        ImGui::EndChild();
+        ImGui::SameLine();
+
+        /*child : MAIN MENU*/
+        ImGui::BeginChild("features", ImVec2(UI::width_window - 200.0f, UI::height_window), false);
+
+        /*spacing*/
+        asthetic::top_spacing();
+
+        /*text : I      N      S      A      N      E*/
+        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - UI::top_text_width) / 2);
+        ImGui::PushFont(fonts::haas_black);
+        ImGui::Text(UI::heading);
+        ImGui::PopFont();
+
+        /*button : CLOSE*/
+        ImGui::SetCursorScreenPos(ImVec2(window_pos.x + UI::width_window - UI::close_button_size.x, window_pos.y + 0.0f));
+        ImGui::PushFont(fonts::adobe_clean_bold);
+        if (ImGui::Button("x", UI::close_button_size)) UI::shutdown_UI = true;
+        ImGui::PopFont();
+
+        /*RENDERING CHEAT FEATURE WINDOWS HERE*/
+        UI::content_start_point = ImGui::GetCursorScreenPos();
+        //draw_list->AddRect(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetContentRegionAvail().x, cursor_pos.y + ImGui::GetContentRegionAvail().y), ImColor(255, 255, 255, 255));
+        switch (UI::section_index)
+        {
+        case QUOTE_WINDOW:
+            ImGui::PushFont(fonts::adobe_clean_bold);
+            cheat_window::draw_quote_window();
+            ImGui::PopFont();
+            break;
+        case MISCELLANEOUS_WINDOW:
+            asthetic::top_spacing(2);
+            cheat_window::draw_miscellaneous_window();
+            break;
+        default: break;
+        }
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+
+        /*Poping fonts*/
+        ImGui::PopFont();
+
+        /* managing shutdown animation */
+        if (UI::shutdown_UI && !UI::animation_done)
+        {
+            if (!UI::time_noted)
+            {
+                UI::shutdown_anim_start_time = std::chrono::high_resolution_clock::now();
+                UI::time_noted = true;
+            }
+
+            ImDrawList* bg_draw_list = ImGui::GetForegroundDrawList();
+            bg_draw_list->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, ImColor(0, 0, 0, 255));
+
+            ImGui::PushFont(UI::shutdown_anim_font);
+            if (!UI::shutdown_anim_font)
+            {
+                printf("font is null\n");
+            }
+            bg_draw_list->AddText(ImVec2((io.DisplaySize.x - UI::end_meassage_size.x) / 2.0f, (io.DisplaySize.y - UI::end_meassage_size.y) / 2.0f), ImColor(255, 255, 255, 255), UI::end_message);
+            ImGui::PopFont();
+
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - UI::shutdown_anim_start_time).count() >= UI::shutdown_anim_duration)
+            {
+                UI::animation_done = true;
+
+                #ifdef _DEBUG
+                cons.Log("Shutdown animation done", FG_GREEN);
+                #endif
+            }
+        }
+
+        /* ending main UI window */
+        ImGui::End();
+    }
+    else
+    {
+        time_refreshed = false;
     }
 
     /* Frame end */
-    ImGui::End();
     ImGui::EndFrame();
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-    /* managing shutdone once the animation is done */
-    if (UI::shutdown_UI && !UI::UI_has_been_shutdown && UI::animation_done)
+    if (UI::UI_visble)
     {
-        shutdown_imgui();
+        /* managing shutdone once the animation is done */
+        if (UI::shutdown_UI && !UI::UI_has_been_shutdown && UI::animation_done)
+        {
+            shutdown_imgui();
+        }
     }
 
     /* calling original function */
@@ -415,4 +428,20 @@ void directX::draw_background()
     ImGui::PopFont();
     /* This is the image background */
     //draw_list->AddImage((ImTextureID)textures::background.texture, ImVec2(0, 0), ImVec2(1920, 1080), ImVec2(0,0), ImVec2(1,1), IM_COL32(255, 255, 255, UI::cur_BG_alpha));
+}
+
+void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
+{
+    draw_list->PushClipRectFullScreen();
+
+    for (auto& ent : entities::target::all_entity_dimensions)
+    {
+        draw_list->AddCircleFilled(ImVec2(ent.head.x, ent.head.y), 5.0f, IM_COL32(0, 0, 0, 255));
+        draw_list->AddCircleFilled(ImVec2(ent.left_foot.x, ent.left_foot.y), 5.0f, IM_COL32(0, 0, 0, 255));
+        draw_list->AddCircleFilled(ImVec2(ent.right_foot.x, ent.right_foot.y), 5.0f, IM_COL32(0, 0, 0, 255));
+        draw_list->AddCircleFilled(ImVec2(ent.left_shoulder.x, ent.left_shoulder.y), 5.0f, IM_COL32(0, 0, 0, 255));
+        draw_list->AddCircleFilled(ImVec2(ent.right_shoulder.x, ent.right_shoulder.y), 5.0f, IM_COL32(0, 0, 0, 255));
+    }
+
+    draw_list->PopClipRect();
 }

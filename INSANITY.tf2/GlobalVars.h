@@ -59,7 +59,7 @@ namespace entities
 	essentially storing the height and width of the entity */
 	struct entity_dimensions
 	{
-		vec2 head, foot, left_shoulder, right_shoulder;
+		vec2 head, left_foot, right_foot, left_shoulder, right_shoulder;
 	};
 
 	/* imfo about local player */

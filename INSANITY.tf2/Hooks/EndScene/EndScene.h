@@ -127,7 +127,6 @@ namespace directX
 	extern bool time_refreshed;
 	extern std::chrono::time_point<std::chrono::high_resolution_clock> menu_visible_time;
 
-
 	/*Function template for EndScene*/
 	typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
 	
@@ -167,4 +166,9 @@ namespace directX
 
 	/* drawing background window sperately do reduce clutter*/
 	inline void draw_background();
+
+	namespace render_cheat_features
+	{
+		void render_esp_boxes(ImDrawList* draw_list);
+	}
 };

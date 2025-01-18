@@ -59,7 +59,7 @@ public:
 
 	/* gets the bone's world coordinates */
 	vec get_bone_coordinates(){
-		return vec(m[0][4], m[1][4], m[2][4]);
+		return vec(m[0][3], m[1][3], m[2][3]);
 	}
 };
 

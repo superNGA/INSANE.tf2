@@ -7,9 +7,6 @@ void execute_thread1(HINSTANCE instance)
 	/* Initializing MinHook and Console_System& utility */
 	MH_Initialize();
 	#ifdef _DEBUG
-	cons.CreateNewConsole();
-	cons.DoIntroduction();
-	cons.DoDevider();
 	cons.FastLog("MinHook initialized");
 	#endif
 
@@ -80,11 +77,10 @@ void execute_thread1(HINSTANCE instance)
 
 	#ifdef _DEBUG
 	cons.Log("Removed all hooks", FG_RED);
-	cons.FreeConsoleInstance();
 	#endif
 
-	ExitThread(0);
 	thread_termination_status::thread1 = true;
+	ExitThread(0);
 	return;
 }
 
