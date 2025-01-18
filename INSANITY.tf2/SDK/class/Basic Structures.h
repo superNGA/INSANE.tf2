@@ -6,24 +6,14 @@
 #define HITBOX_BONES		0x00000100
 
 /* bone type defs */
-#define BONE_HEAD 6              // Head
-#define BONE_NECK 5              // Neck
-#define BONE_SPINE_UPPER 4       // Upper Spine
-#define BONE_SPINE_MIDDLE 3      // Middle Spine
-#define BONE_SPINE_LOWER 2       // Lower Spine
-#define BONE_PELVIS 1            // Pelvis or Hip
-#define BONE_LEFT_SHOULDER 7     // Left Shoulder
-#define BONE_LEFT_ELBOW 8        // Left Elbow
-#define BONE_LEFT_HAND 9         // Left Hand
-#define BONE_RIGHT_SHOULDER 10   // Right Shoulder
-#define BONE_RIGHT_ELBOW 11      // Right Elbow
-#define BONE_RIGHT_HAND 12       // Right Hand
-#define BONE_LEFT_HIP 13         // Left Hip
-#define BONE_LEFT_KNEE 14        // Left Knee
-#define BONE_LEFT_FOOT 15        // Left Foot
-#define BONE_RIGHT_HIP 16        // Right Hip
-#define BONE_RIGHT_KNEE 17       // Right Knee
-#define BONE_RIGHT_FOOT 18       // Right Foot
+#define BONE_HEAD 6             // Head
+#define BONE_LEFT_SHOULDER 9	// left shoulder
+#define BONE_RIGHT_SHOULDER 10	// right shoulder
+#define BONE_LEFT_FOOT 34		// left foot
+#define BONE_RIGHT_FOOT 35		// right foot
+#define BONE_LEFT_KNEE 15		// left knee
+#define BONE_RIGHT_KNEE 16		// right knee
+
 
 
 struct qangle

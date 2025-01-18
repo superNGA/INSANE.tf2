@@ -19,7 +19,7 @@ void execute_thread2(HINSTANCE instance)
 
 	while (!directX::UI::UI_has_been_shutdown)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(5)); // This thread must sleep for this much in each iteration.
+		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // This thread must sleep for this much in each iteration.
 
 		/* check if in game */
 		if (!interface_tf2::engine->IsInGame()) {
@@ -49,13 +49,18 @@ void execute_thread2(HINSTANCE instance)
 		static player_info_t playerinfo_cache;
 		static matrix3x4_t skeleton_cache[MAX_STUDIO_BONES];
 		static entities::entity_dimensions cached_entity_dimension;
-
-		/* entity list loop here */
+		
 		const view_matrix r_viewmatrix	= interface_tf2::engine->WorldToScreenMatrix();
 		global_var_base* p_globalvar	= interface_tf2::engine_replay->GetClientGlobalVars();
 		int16_t ent_count				= interface_tf2::entity_list->NumberOfEntities(false);
 		int8_t localplayer_index		= interface_tf2::engine->GetLocalPlayer();
-		entities::target::all_entity_dimensions.clear();
+
+		/* clearing inactive buffer */
+		entities::target::active_buffer_index ? 
+			entities::target::entity_scrnpos_buffer_0.clear():
+			entities::target::entity_scrnpos_buffer_1.clear();
+
+		/* entity list loop here */
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)
 		{
 			/* skipping local player */
@@ -74,19 +79,21 @@ void execute_thread2(HINSTANCE instance)
 			if (*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num) continue;
 
 			/* getting entity bones and storing it if entity is on the screen */
-			/*ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime);
-			if (entities::world_to_screen(skeleton_cache[BONE_HEAD].get_bone_coordinates(), cached_entity_dimension.head, &r_viewmatrix) ||
-				entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(), cached_entity_dimension.right_foot, &r_viewmatrix) ||
-				entities::world_to_screen(skeleton_cache[BONE_LEFT_FOOT].get_bone_coordinates(), cached_entity_dimension.left_foot, &r_viewmatrix) ||
-				entities::world_to_screen(skeleton_cache[BONE_LEFT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.left_shoulder, &r_viewmatrix) ||
-				entities::world_to_screen(skeleton_cache[BONE_RIGHT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.right_shoulder, &r_viewmatrix))
+			int8_t ent_on_screen = 0;
+			ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime);
+			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_HEAD].get_bone_coordinates(), cached_entity_dimension.head, &r_viewmatrix);
+			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.left_shoulder, &r_viewmatrix) ;
+			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.right_shoulder, &r_viewmatrix) ;
+			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_FOOT].get_bone_coordinates(), cached_entity_dimension.left_foot, &r_viewmatrix);
+			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(), cached_entity_dimension.right_foot, &r_viewmatrix);
+			if(ent_on_screen)
 			{
-				entities::target::all_entity_dimensions.push_back(cached_entity_dimension);
-			}*/
-
-			/*if (entities::target::all_entity_dimensions.empty()) continue;*/
-			/*printf("%.2f %.2f\n", entities::target::all_entity_dimensions[0].head.x, entities::target::all_entity_dimensions[0].head.y);*/
+				entities::target::active_buffer_index ?
+					entities::target::entity_scrnpos_buffer_0.push_back(cached_entity_dimension):
+					entities::target::entity_scrnpos_buffer_1.push_back(cached_entity_dimension);
+			}
 		}
+		if (!entities::target::buffer_locked) entities::target::active_buffer_index = !entities::target::active_buffer_index;
 
 		/* this flag will be used in features to prevent them from accessing invalid memory spaces */
 		global::entities_popullated = true;

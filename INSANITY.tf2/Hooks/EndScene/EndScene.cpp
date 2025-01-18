@@ -158,7 +158,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     if (global::entities_popullated)
     {
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        //render_cheat_features::render_esp_boxes(draw_list);
+        render_cheat_features::render_esp_boxes(draw_list);
     }
 
     if (UI::UI_visble)
@@ -434,14 +434,22 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
 {
     draw_list->PushClipRectFullScreen();
 
-    for (auto& ent : entities::target::all_entity_dimensions)
+    entities::target::buffer_locked = true; //locking selected buffer for reading
+    /* looping through active buffer and it won't be changed while reading is active. */
+    for (auto& ent : (entities::target::active_buffer_index ? entities::target::entity_scrnpos_buffer_1 : entities::target::entity_scrnpos_buffer_0)) 
     {
-        draw_list->AddCircleFilled(ImVec2(ent.head.x, ent.head.y), 5.0f, IM_COL32(0, 0, 0, 255));
-        draw_list->AddCircleFilled(ImVec2(ent.left_foot.x, ent.left_foot.y), 5.0f, IM_COL32(0, 0, 0, 255));
-        draw_list->AddCircleFilled(ImVec2(ent.right_foot.x, ent.right_foot.y), 5.0f, IM_COL32(0, 0, 0, 255));
-        draw_list->AddCircleFilled(ImVec2(ent.left_shoulder.x, ent.left_shoulder.y), 5.0f, IM_COL32(0, 0, 0, 255));
-        draw_list->AddCircleFilled(ImVec2(ent.right_shoulder.x, ent.right_shoulder.y), 5.0f, IM_COL32(0, 0, 0, 255));
+        draw_list->AddRect(
+            ImVec2(ent.head.x - abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.right_foot.y), // bottom left corner
+            ImVec2(ent.head.x + abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.head.y),       // top right corner
+            IM_COL32(255, 0, 0, 255)); // color ( let user control this shit )
+
+        ImGui::Text("%.2f %.2f", ent.head.x, ent.head.y);
+        ImGui::Text("%.2f %.2f", ent.left_shoulder.x, ent.left_shoulder.y);
+        ImGui::Text("%.2f %.2f", ent.right_shoulder.x, ent.right_shoulder.y);
+        ImGui::Text("%.2f %.2f", ent.left_foot.x, ent.left_foot.y);
+        ImGui::Text("%.2f %.2f", ent.right_foot.x, ent.right_foot.y);
     }
+    entities::target::buffer_locked = false; // unlocking buffer after reading 
 
     draw_list->PopClipRect();
 }

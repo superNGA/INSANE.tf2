@@ -65,26 +65,32 @@ namespace interface_tf2
 	I_engine_client_replay* engine_replay	= nullptr;
 };
 
-bool entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {
-	// Matrix-vector multiplication
+int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {
+	// Matrix-vector multiplication to get homogeneous coordinates (x, y, z, w)
 	float w = matrix->m[3][0] * worldPos.x + matrix->m[3][1] * worldPos.y + matrix->m[3][2] * worldPos.z + matrix->m[3][3];
-	if (w < 0.001f) { // Behind the camera
-		return false;
+
+	// Check if the point is behind the camera (very small w value means behind the camera)
+	if (w < 0.001f) {
+		return 0;
 	}
 
+	// Perform the transformation for the x and y coordinates
 	float x = matrix->m[0][0] * worldPos.x + matrix->m[0][1] * worldPos.y + matrix->m[0][2] * worldPos.z + matrix->m[0][3];
 	float y = matrix->m[1][0] * worldPos.x + matrix->m[1][1] * worldPos.y + matrix->m[1][2] * worldPos.z + matrix->m[1][3];
 
-	// Normalize coordinates
+	// Normalize by dividing by w to perform the perspective divide
 	float invW = 1.0f / w;
 	x *= invW;
 	y *= invW;
 
-	// Convert to screen space
+	// Convert to screen space by mapping from normalized device coordinates to screen coordinates
 	screen_pos.x = (global::window_size.x / 2.0f) + (x * global::window_size.x / 2.0f);
-	screen_pos.y = (global::window_size.y / 2.0f) - (y * global::window_size.y / 2.0f); // Y-axis is inverted in screen space
+	screen_pos.y = (global::window_size.y / 2.0f) - (y * global::window_size.y / 2.0f); // Inverted Y-axis
 
-	if ((screen_pos.x < 0.0f || screen_pos.x > global::window_size.x) || (screen_pos.y < 0.0f || screen_pos.y > global::window_size.y)) return false;
-	
-	return true;
+	// Check if the screen position is within the window bounds
+	if (screen_pos.x < 0.0f || screen_pos.x > global::window_size.x || screen_pos.y < 0.0f || screen_pos.y > global::window_size.y) {
+		return 0;
+	}
+
+	return 1;
 }

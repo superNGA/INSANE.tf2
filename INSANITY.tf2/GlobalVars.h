@@ -74,13 +74,21 @@ namespace entities
 	/* info about all possible / alive targets */
 	namespace target
 	{
-		inline std::vector<entity_dimensions> all_entity_dimensions;
+		/* this holds the head, foot and shoulder's screen position of all alive entities */
+		inline std::vector<entity_dimensions> entity_scrnpos_buffer_0;
+		inline std::vector<entity_dimensions> entity_scrnpos_buffer_1;
+		
+		/* active buffer is the buffer currently being used in endscene hook to draw ESP
+		if active buffer index is TRUE, buffer 1 is being used
+		if FALSE, buffer 0 is being used */
+		inline bool active_buffer_index = false;
+		inline bool buffer_locked = false;
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,
 	if returns TRUE, screen cordinated are valid and on the screen. */
-	bool world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
+	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
 }
 
 enum cur_window
