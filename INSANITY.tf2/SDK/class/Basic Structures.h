@@ -14,16 +14,26 @@
 #define BONE_LEFT_KNEE 15		// left knee
 #define BONE_RIGHT_KNEE 16		// right knee
 
-
-
 struct qangle
 {
+	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
+	qangle(float PITCH, float YAW, float ROLL) : pitch(PITCH), yaw(YAW), roll(ROLL) {}
+
 	float pitch, yaw, roll;
 };
 
 struct vec
 {
 	float x, y, z;
+
+	vec operator+(vec other)
+	{
+		return vec(x + other.x, y + other.y, z + other.z);
+	}
+	vec operator-(vec other) const
+	{
+		return vec(x - other.x, y - other.y, z - other.z);
+	}
 };
 
 struct vec2
@@ -32,6 +42,11 @@ struct vec2
 	vec2() : x(0.0f), y(0.0f){}
 	vec2(float X, float Y)	: x(X), y(Y){}
 	float x, y;
+
+	qangle to_qangle()
+	{
+		return qangle(x, y, 0.0f);
+	}
 };
 
 /* view matrix, stores world-to-view or world-to-screen transformation matrix given

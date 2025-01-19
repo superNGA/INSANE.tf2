@@ -94,3 +94,21 @@ int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_
 
 	return 1;
 }
+
+qangle entities::world_to_viewangles(const vec& localPosition, const vec& targetPosition) {
+	vec delta = targetPosition - localPosition;
+
+	float hypotenuse = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+	qangle angles;
+
+	angles.pitch = -std::atan2(delta.z, hypotenuse) * (180.0f / M_PI);
+	angles.yaw = std::atan2(delta.y, delta.x) * (180.0f / M_PI);
+
+	if (angles.yaw < 0.0f) {
+		angles.yaw += 360.0f;
+	}
+
+	entities::verify_angles(angles); // keeping angles in bound
+
+	return angles;
+}

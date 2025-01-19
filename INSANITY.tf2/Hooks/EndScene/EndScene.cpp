@@ -442,12 +442,6 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
             ImVec2(ent.head.x - abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.right_foot.y), // bottom left corner
             ImVec2(ent.head.x + abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.head.y),       // top right corner
             IM_COL32(255, 0, 0, 255)); // color ( let user control this shit )
-
-        ImGui::Text("%.2f %.2f", ent.head.x, ent.head.y);
-        ImGui::Text("%.2f %.2f", ent.left_shoulder.x, ent.left_shoulder.y);
-        ImGui::Text("%.2f %.2f", ent.right_shoulder.x, ent.right_shoulder.y);
-        ImGui::Text("%.2f %.2f", ent.left_foot.x, ent.left_foot.y);
-        ImGui::Text("%.2f %.2f", ent.right_foot.x, ent.right_foot.y);
     }
     entities::target::buffer_locked = false; // unlocking buffer after reading 
 

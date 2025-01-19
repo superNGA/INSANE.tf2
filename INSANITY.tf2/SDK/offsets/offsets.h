@@ -44,6 +44,7 @@ struct local_netvars
 	uintptr_t m_iHealth					= 0;
 	uintptr_t m_lifeState				= 0;
 	uintptr_t m_iTeamNum				= 0;
+	uintptr_t m_vecViewOffset			= 0;
 };
 
 extern local_netvars netvar;

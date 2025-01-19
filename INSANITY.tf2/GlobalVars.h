@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <vector>
 
+#define M_PI 3.14159265358979323846
+
 /* game module names */
 #define CLIENT_DLL "client.dll"
 #define ENGINE_DLL "engine.dll"
@@ -69,6 +71,8 @@ namespace entities
 		inline I_client_entity* active_weapon;
 		inline int32_t			ID_active_weapon;
 		inline int16_t			team_num;
+		inline vec				pos;
+		inline vec				eye_pos;
 	}
 
 	/* info about all possible / alive targets */
@@ -83,12 +87,28 @@ namespace entities
 		if FALSE, buffer 0 is being used */
 		inline bool active_buffer_index = false;
 		inline bool buffer_locked = false;
+
+		inline qangle best_angle;
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,
 	if returns TRUE, screen cordinated are valid and on the screen. */
 	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
+
+	/* returns view angles for the target world coordinates */
+	qangle world_to_viewangles(const vec& localPosition, const vec& targetPosition);
+
+	/* keeps view angles in bound to prevent unneccesary bullshit */
+	inline void verify_angles(qangle& angles)
+	{
+		/* fixing pitch */
+		if (angles.pitch > 89.0f) angles.pitch = 89.0f;
+		else if (angles.pitch < -89.0f) angles.pitch = -89.0f;
+
+		/* fixing roll */
+		if (angles.roll != 0.0f) angles.roll = 0.0f;
+	}
 }
 
 enum cur_window
