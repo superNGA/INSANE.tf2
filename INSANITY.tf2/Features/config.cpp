@@ -2,6 +2,15 @@
 
 namespace config
 {
+	namespace aimbot
+	{
+		bool global = false;
+		float FOV = 10.0f;
+	}
+	namespace visuals
+	{
+		bool ESP = false;
+	}
 	namespace miscellaneous
 	{
 		bool bhop = false;

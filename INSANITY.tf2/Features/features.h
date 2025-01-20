@@ -93,4 +93,15 @@ namespace feature
 		bool thirdperson_state = *(bool*)(netvar.local_player + netvar.m_nForceTauntCam);
 		if (thirdperson_state != input_util::key_detect(VK_XBUTTON1, true)) *(bool*)(netvar.local_player + netvar.m_nForceTauntCam) = !thirdperson_state;
 	}
+
+	inline void aimbot(CUserCmd* cmd, bool& result)
+	{
+		if (!config::aimbot::global) return;
+
+		if (GetAsyncKeyState(VK_LBUTTON) && entities::target::found_valid_target)
+		{
+			cmd->viewangles = entities::target::best_angle;
+			result = false;
+		}
+	}
 };

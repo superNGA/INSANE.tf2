@@ -33,4 +33,15 @@ namespace cheat_window
 
 		ImGui::PopFont();
 	}
+
+	inline void draw_aimbot_window()
+	{
+		ImGui::Checkbox("GLOBAL", &config::aimbot::global);
+		ImGui::SliderFloat("FOV", &config::aimbot::FOV, 0.0f, 180.0f, "%.2f");
+	}
+
+	inline void draw_player_visual_window()
+	{
+		ImGui::Checkbox("ESP", &config::visuals::ESP);
+	}
 };

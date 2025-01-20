@@ -88,7 +88,9 @@ namespace entities
 		inline bool active_buffer_index = false;
 		inline bool buffer_locked = false;
 
+		/* aimbot variables */
 		inline qangle best_angle;
+		inline bool found_valid_target = false;
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
@@ -98,6 +100,12 @@ namespace entities
 
 	/* returns view angles for the target world coordinates */
 	qangle world_to_viewangles(const vec& localPosition, const vec& targetPosition);
+
+	/* Finds the distance from localplayer crosshair to the target angles */
+	inline float distance_from_crosshair(const qangle& local_angles, const qangle& target_angles)
+	{
+		return (sqrt(pow(local_angles.pitch - target_angles.pitch, 2) + pow(local_angles.yaw - target_angles.yaw, 2)));
+	}
 
 	/* keeps view angles in bound to prevent unneccesary bullshit */
 	inline void verify_angles(qangle& angles)

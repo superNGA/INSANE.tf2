@@ -154,11 +154,15 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         make_it_pretty();
     }
 
-    /* MANAGING CHEAT FEATURES RELATED TO RENDERING CUSTOM STUFF */
+    /* RENDERING CHEAT FEATURES */
     if (global::entities_popullated)
     {
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        render_cheat_features::render_esp_boxes(draw_list);
+        draw_list->PushClipRectFullScreen();
+        
+        if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list);
+        
+        draw_list->PopClipRect();
     }
 
     if (UI::UI_visble)
@@ -319,6 +323,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         /*RENDERING CHEAT FEATURE WINDOWS HERE*/
         UI::content_start_point = ImGui::GetCursorScreenPos();
         //draw_list->AddRect(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetContentRegionAvail().x, cursor_pos.y + ImGui::GetContentRegionAvail().y), ImColor(255, 255, 255, 255));
+
+        ImGui::PushFont(directX::fonts::agency_FB_small); // <- change this to change UI font :)
         switch (UI::section_index)
         {
         case QUOTE_WINDOW:
@@ -330,8 +336,15 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
             asthetic::top_spacing(2);
             cheat_window::draw_miscellaneous_window();
             break;
+        case PLAYER_VISUALS_WINDOW:
+            cheat_window::draw_player_visual_window();
+            break;
+        case AIMBOT_WINDOW:
+            cheat_window::draw_aimbot_window();
+            break;
         default: break;
         }
+        ImGui::PopFont();
 
         ImGui::EndChild();
         ImGui::PopStyleColor();
@@ -432,8 +445,6 @@ void directX::draw_background()
 
 void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
 {
-    draw_list->PushClipRectFullScreen();
-
     entities::target::buffer_locked = true; //locking selected buffer for reading
     /* looping through active buffer and it won't be changed while reading is active. */
     for (auto& ent : (entities::target::active_buffer_index ? entities::target::entity_scrnpos_buffer_1 : entities::target::entity_scrnpos_buffer_0)) 
@@ -443,7 +454,5 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
             ImVec2(ent.head.x + abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.head.y),       // top right corner
             IM_COL32(255, 0, 0, 255)); // color ( let user control this shit )
     }
-    entities::target::buffer_locked = false; // unlocking buffer after reading 
-
-    draw_list->PopClipRect();
+    entities::target::buffer_locked = false; // unlocking buffer after reading    
 }

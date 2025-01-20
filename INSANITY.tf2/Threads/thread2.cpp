@@ -29,6 +29,7 @@ void execute_thread2(HINSTANCE instance)
 
 		/* LOCAL PLAYER */
 		I_client_entity* local_player = interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
+		qangle viewangles_localplayer = local_player->GetAbsAngles();
 		if (!local_player) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
@@ -57,12 +58,14 @@ void execute_thread2(HINSTANCE instance)
 		global_var_base* p_globalvar	= interface_tf2::engine_replay->GetClientGlobalVars();
 		int16_t ent_count				= interface_tf2::entity_list->NumberOfEntities(false);
 		int8_t localplayer_index		= interface_tf2::engine->GetLocalPlayer();
+		float last_best_distance = 1000.69f, distance_from_crosshair; // this is just some obsurdly large value, not the FOV
 
 		/* clearing inactive buffer */
 		entities::target::active_buffer_index ? 
 			entities::target::entity_scrnpos_buffer_0.clear():
 			entities::target::entity_scrnpos_buffer_1.clear();
 
+		entities::target::found_valid_target = false; // reseting before checking new entity list
 		/* entity list loop here */
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)
 		{
@@ -82,24 +85,40 @@ void execute_thread2(HINSTANCE instance)
 			if (*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num) continue;
 
 			/* getting BONES */
-			int8_t ent_on_screen = 0;
 			if (!ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime)) continue; // skipping loop if setup bones fail?
-			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_HEAD].get_bone_coordinates(),			cached_entity_dimension.head,			&r_viewmatrix);
-			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_SHOULDER].get_bone_coordinates(),	cached_entity_dimension.left_shoulder,	&r_viewmatrix);
-			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_SHOULDER].get_bone_coordinates(),	cached_entity_dimension.right_shoulder, &r_viewmatrix);
-			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_FOOT].get_bone_coordinates(),		cached_entity_dimension.left_foot,		&r_viewmatrix);
-			ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(),		cached_entity_dimension.right_foot,		&r_viewmatrix);
-			if(ent_on_screen)
+
+			/* AIMBOT DATA */
+			qangle target_angles = entities::world_to_viewangles(entities::local::eye_pos, skeleton_cache[BONE_HEAD].get_bone_coordinates());
+			distance_from_crosshair = entities::distance_from_crosshair(viewangles_localplayer, target_angles);
+			if (distance_from_crosshair < last_best_distance) // storing closed target angles
 			{
-				entities::target::active_buffer_index ?
-					entities::target::entity_scrnpos_buffer_0.push_back(cached_entity_dimension):
-					entities::target::entity_scrnpos_buffer_1.push_back(cached_entity_dimension);
+				entities::target::best_angle = target_angles;
+				last_best_distance = distance_from_crosshair;
 			}
 
-			entities::target::best_angle = entities::world_to_viewangles(entities::local::eye_pos, skeleton_cache[BONE_HEAD].get_bone_coordinates());
-			printf("%.2f %.2f\n", entities::target::best_angle.pitch, entities::target::best_angle.yaw);
+			/* if ESP ENABLED */
+			if (config::visuals::ESP)
+			{
+				int8_t ent_on_screen = 0;
+				ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_HEAD].get_bone_coordinates(), cached_entity_dimension.head, &r_viewmatrix);
+				ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.left_shoulder, &r_viewmatrix);
+				ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_SHOULDER].get_bone_coordinates(), cached_entity_dimension.right_shoulder, &r_viewmatrix);
+				ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_LEFT_FOOT].get_bone_coordinates(), cached_entity_dimension.left_foot, &r_viewmatrix);
+				ent_on_screen += entities::world_to_screen(skeleton_cache[BONE_RIGHT_FOOT].get_bone_coordinates(), cached_entity_dimension.right_foot, &r_viewmatrix);
+				if (ent_on_screen)
+				{
+					entities::target::active_buffer_index ?
+						entities::target::entity_scrnpos_buffer_0.push_back(cached_entity_dimension) :
+						entities::target::entity_scrnpos_buffer_1.push_back(cached_entity_dimension);
+				}
+			}
 		}
-		if (!entities::target::buffer_locked) entities::target::active_buffer_index = !entities::target::active_buffer_index;
+		/* FOV check */
+		last_best_distance <= config::aimbot::FOV ?
+			entities::target::found_valid_target = true :
+			entities::target::found_valid_target = false;
+
+		if (!entities::target::buffer_locked) entities::target::active_buffer_index = !entities::target::active_buffer_index; // buffer swap if not locked
 
 		/* this flag will be used in features to prevent them from accessing invalid memory spaces */
 		global::entities_popullated = true;
