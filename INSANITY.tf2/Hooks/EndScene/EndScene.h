@@ -169,6 +169,13 @@ namespace directX
 
 	namespace render_cheat_features
 	{
+		inline ImColor idle_FOVcircle_col(1.0f, 1.0f, 1.0f, 1.0f); // white color FOV circle when no valid target
+		inline ImColor active_FOVcircle_col(0.0f, 1.0f, 0.0f, 1.0f); // green FOV circle with valid target
+
+		/* renders the esp box */
 		void render_esp_boxes(ImDrawList* draw_list);
+
+		/* renders the FOV circle and manages its colour */
+		void render_FOV_circle(ImDrawList* draw_list);
 	}
 };

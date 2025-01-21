@@ -1,4 +1,5 @@
 #pragma once
+#include "../SDK/class/Basic Structures.h"
 
 namespace config
 {

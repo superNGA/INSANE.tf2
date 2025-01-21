@@ -112,3 +112,9 @@ qangle entities::world_to_viewangles(const vec& localPosition, const vec& target
 
 	return angles;
 }
+
+
+float entities::vec_dis_from_screen_center(const vec2& target_pos)
+{
+	return (sqrt(pow(target_pos.x - global::window_size.x / 2, 2) + pow(target_pos.y - global::window_size.y / 2, 2)));
+}

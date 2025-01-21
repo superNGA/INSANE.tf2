@@ -161,6 +161,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         draw_list->PushClipRectFullScreen();
         
         if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list);
+        if (config::aimbot::global) render_cheat_features::render_FOV_circle(draw_list);
         
         draw_list->PopClipRect();
     }
@@ -455,4 +456,15 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
             IM_COL32(255, 0, 0, 255)); // color ( let user control this shit )
     }
     entities::target::buffer_locked = false; // unlocking buffer after reading    
+}
+
+
+void directX::render_cheat_features::render_FOV_circle(ImDrawList* draw_list)
+{
+    draw_list->AddCircle(ImVec2(global::window_size.x / 2, global::window_size.y / 2), 
+        config::aimbot::FOV, 
+        (entities::target::found_valid_target ? 
+            directX::render_cheat_features::active_FOVcircle_col : 
+            directX::render_cheat_features::idle_FOVcircle_col)
+    );
 }

@@ -91,6 +91,7 @@ namespace entities
 		/* aimbot variables */
 		inline qangle best_angle;
 		inline bool found_valid_target = false;
+		inline int8_t target_bone = BONE_HEAD; // This is target for aimbot
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
@@ -106,6 +107,9 @@ namespace entities
 	{
 		return (sqrt(pow(local_angles.pitch - target_angles.pitch, 2) + pow(local_angles.yaw - target_angles.yaw, 2)));
 	}
+
+	/* return distanance of a vec2 from the center of the screen. */
+	float vec_dis_from_screen_center(const vec2& target_pos);
 
 	/* keeps view angles in bound to prevent unneccesary bullshit */
 	inline void verify_angles(qangle& angles)

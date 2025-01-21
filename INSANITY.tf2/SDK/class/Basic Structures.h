@@ -7,6 +7,7 @@
 
 /* bone type defs */
 #define BONE_HEAD 6             // Head
+#define BONE_CHEST 7			// Chest
 #define BONE_LEFT_SHOULDER 9	// left shoulder
 #define BONE_RIGHT_SHOULDER 10	// right shoulder
 #define BONE_LEFT_FOOT 34		// left foot

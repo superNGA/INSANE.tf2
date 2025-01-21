@@ -58,14 +58,13 @@ void execute_thread2(HINSTANCE instance)
 		global_var_base* p_globalvar	= interface_tf2::engine_replay->GetClientGlobalVars();
 		int16_t ent_count				= interface_tf2::entity_list->NumberOfEntities(false);
 		int8_t localplayer_index		= interface_tf2::engine->GetLocalPlayer();
-		float last_best_distance = 1000.69f, distance_from_crosshair; // this is just some obsurdly large value, not the FOV
+		float last_best_distance = 10000.69f, distance_from_crosshair; // this is just some obsurdly large value, not the FOV
 
 		/* clearing inactive buffer */
 		entities::target::active_buffer_index ? 
 			entities::target::entity_scrnpos_buffer_0.clear():
 			entities::target::entity_scrnpos_buffer_1.clear();
 
-		entities::target::found_valid_target = false; // reseting before checking new entity list
 		/* entity list loop here */
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)
 		{
@@ -88,12 +87,18 @@ void execute_thread2(HINSTANCE instance)
 			if (!ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime)) continue; // skipping loop if setup bones fail?
 
 			/* AIMBOT DATA */
-			qangle target_angles = entities::world_to_viewangles(entities::local::eye_pos, skeleton_cache[BONE_HEAD].get_bone_coordinates());
-			distance_from_crosshair = entities::distance_from_crosshair(viewangles_localplayer, target_angles);
-			if (distance_from_crosshair < last_best_distance) // storing closed target angles
+			if (config::aimbot::global)
 			{
-				entities::target::best_angle = target_angles;
-				last_best_distance = distance_from_crosshair;
+				qangle target_angles = entities::world_to_viewangles(entities::local::eye_pos, skeleton_cache[entities::target::target_bone].get_bone_coordinates());
+				vec2 target_screen_pos;
+				entities::world_to_screen(skeleton_cache[entities::target::target_bone].get_bone_coordinates(), target_screen_pos, &r_viewmatrix);
+				distance_from_crosshair = entities::vec_dis_from_screen_center(target_screen_pos);						// <- this creates a simple circle for aimbot FOV
+				//distance_from_crosshair = entities::distance_from_crosshair(viewangles_localplayer, target_angles);	// <- this creates a cone for aimbot FOV
+				if (distance_from_crosshair < last_best_distance) // storing closed target angles
+				{
+					entities::target::best_angle = target_angles;
+					last_best_distance = distance_from_crosshair;
+				}
 			}
 
 			/* if ESP ENABLED */
