@@ -25,3 +25,7 @@ might also do projectile aimbot caculations and other stuff */
 extern local_netvars netvar;
 
 void execute_thread2(HINSTANCE instance);
+
+vec proj_aimbot_calc(vec ent_pos, vec ent_vel);
+
+void decide_bone_id();

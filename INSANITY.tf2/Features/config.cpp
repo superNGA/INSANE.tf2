@@ -6,6 +6,7 @@ namespace config
 	{
 		bool global = false;
 		float FOV = 10.0f;
+		bool projectile_aimbot = false;
 	}
 	namespace visuals
 	{

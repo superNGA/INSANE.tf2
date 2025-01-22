@@ -15,6 +15,9 @@
 #define BONE_LEFT_KNEE 15		// left knee
 #define BONE_RIGHT_KNEE 16		// right knee
 
+/* game constants */
+#define TF2_GRAVITY 800.0f
+
 struct qangle
 {
 	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
@@ -25,6 +28,8 @@ struct qangle
 
 struct vec
 {
+	vec() : x(0.0f), y(0.0f), z(0.0f) {}
+	vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
 	float x, y, z;
 
 	vec operator+(vec other)

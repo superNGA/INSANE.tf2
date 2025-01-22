@@ -17,6 +17,8 @@ void execute_thread2(HINSTANCE instance)
 	cons.Log("Starting Entity thread", FG_GREEN);
 	#endif
 
+	/* this unordered map holds all entities abs origin from the last iteration of thread 2. */
+	std::unordered_map<std::string, vec> map_entity_pos;
 	while (!directX::UI::UI_has_been_shutdown)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // This thread must sleep for this much in each iteration.
@@ -52,13 +54,17 @@ void execute_thread2(HINSTANCE instance)
 		static player_info_t playerinfo_cache;
 		static matrix3x4_t skeleton_cache[MAX_STUDIO_BONES];
 		static entities::entity_dimensions cached_entity_dimension;
-		
+
 		const view_matrix& r_viewmatrix	= interface_tf2::engine->WorldToScreenMatrix();
 		const view_matrix r_anglematrix	= interface_tf2::engine->WorldToViewMatrix();
 		global_var_base* p_globalvar	= interface_tf2::engine_replay->GetClientGlobalVars();
 		int16_t ent_count				= interface_tf2::entity_list->NumberOfEntities(false);
 		int8_t localplayer_index		= interface_tf2::engine->GetLocalPlayer();
 		float last_best_distance = 10000.69f, distance_from_crosshair; // this is just some obsurdly large value, not the FOV
+
+		/* Projectile aimbot vars */
+		float last_game_time = 0.0f;
+		static bool projectile_aimbot_primed = false;
 
 		/* clearing inactive buffer */
 		entities::target::active_buffer_index ? 
@@ -86,10 +92,31 @@ void execute_thread2(HINSTANCE instance)
 			/* getting BONES */
 			if (!ent->SetupBones(skeleton_cache, MAX_STUDIO_BONES, HITBOX_BONES, p_globalvar->curtime)) continue; // skipping loop if setup bones fail?
 
+			/* DECIDING bone */
+			decide_bone_id();
+
 			/* AIMBOT DATA */
+			vec ent_pos = ent->GetAbsOrigin();
 			if (config::aimbot::global)
 			{
-				qangle target_angles = entities::world_to_viewangles(entities::local::eye_pos, skeleton_cache[entities::target::target_bone].get_bone_coordinates());
+				vec old_ent_pos = map_entity_pos[std::string(playerinfo_cache.name)];
+				vec ent_vel;
+				if (old_ent_pos.x)
+				{
+					ent_vel.x = (old_ent_pos.x - ent_pos.x) / (p_globalvar->curtime - last_game_time);
+					ent_vel.y = (old_ent_pos.y - ent_pos.y) / (p_globalvar->curtime - last_game_time);
+					ent_vel.z = (old_ent_pos.z - ent_pos.z) / (p_globalvar->curtime - last_game_time);
+					projectile_aimbot_primed = true;
+				}
+				map_entity_pos[std::string(playerinfo_cache.name)] = ent_pos;
+				
+				vec aimbot_entity_pos;
+				config::aimbot::projectile_aimbot && projectile_aimbot_primed ?
+					aimbot_entity_pos = proj_aimbot_calc(skeleton_cache[BONE_CHEST].get_bone_coordinates(), ent_vel):
+					aimbot_entity_pos = skeleton_cache[entities::target::target_bone].get_bone_coordinates();
+
+				/* if projectile aimbot enabled the caculate future location else, do normal aimbot */
+				qangle target_angles = entities::world_to_viewangles(entities::local::eye_pos, aimbot_entity_pos);
 				vec2 target_screen_pos;
 				entities::world_to_screen(skeleton_cache[entities::target::target_bone].get_bone_coordinates(), target_screen_pos, &r_viewmatrix);
 				distance_from_crosshair = entities::vec_dis_from_screen_center(target_screen_pos);						// <- this creates a simple circle for aimbot FOV
@@ -123,7 +150,17 @@ void execute_thread2(HINSTANCE instance)
 			entities::target::found_valid_target = true :
 			entities::target::found_valid_target = false;
 
+		last_game_time = p_globalvar->curtime; // updating old time
 		if (!entities::target::buffer_locked) entities::target::active_buffer_index = !entities::target::active_buffer_index; // buffer swap if not locked
+
+		/* managing size of entity position list */
+		if (map_entity_pos.size() > 100)
+		{
+			map_entity_pos.clear();
+			#ifdef _DEBUG
+			cons.Log("WARNING : Clearing entity position map, its size is more than 100", FG_YELLOW);
+			#endif
+		}
 
 		/* this flag will be used in features to prevent them from accessing invalid memory spaces */
 		global::entities_popullated = true;

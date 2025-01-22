@@ -7,6 +7,7 @@ namespace config
 	{
 		extern bool global;
 		extern float FOV;
+		extern bool projectile_aimbot;
 	}
 	namespace visuals
 	{

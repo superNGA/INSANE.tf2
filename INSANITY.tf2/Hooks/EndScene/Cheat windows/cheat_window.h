@@ -38,6 +38,7 @@ namespace cheat_window
 	{
 		ImGui::Checkbox("GLOBAL", &config::aimbot::global);
 		ImGui::SliderFloat("FOV", &config::aimbot::FOV, 0.0f, 180.0f, "%.2f");
+		ImGui::Checkbox("PROJ. AIMBOT", &config::aimbot::projectile_aimbot);
 	}
 
 	inline void draw_player_visual_window()

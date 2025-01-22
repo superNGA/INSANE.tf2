@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <atomic>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -89,9 +90,9 @@ namespace entities
 		inline bool buffer_locked = false;
 
 		/* aimbot variables */
-		inline qangle best_angle;
+		inline std::atomic<qangle> best_angle; // <- aimbot angles
 		inline bool found_valid_target = false;
-		inline int8_t target_bone = BONE_HEAD; // This is target for aimbot
+		inline int8_t target_bone = BONE_CHEST; // This is target for aimbot
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
