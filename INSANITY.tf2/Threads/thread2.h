@@ -26,6 +26,6 @@ extern local_netvars netvar;
 
 void execute_thread2(HINSTANCE instance);
 
-vec proj_aimbot_calc(vec ent_pos, vec ent_vel);
+vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles);
 
 void decide_bone_id();

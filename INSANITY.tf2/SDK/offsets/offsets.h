@@ -32,7 +32,7 @@ this should make the netvar accesing very fast. */
 struct local_netvars
 {
 	uintptr_t local_player				= 0;
-	uintptr_t m_fFlags					= 0;
+	uintptr_t m_fFlags					= 0; // if first bit 1 -> on ground, 0 -> in air
 	uintptr_t m_nForceTauntCam			= 0;
 	uintptr_t m_iReloadMode				= 0;
 	uintptr_t m_hActiveWeapon			= 0;

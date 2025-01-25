@@ -162,7 +162,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         
         if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list);
         if (config::aimbot::global) render_cheat_features::render_FOV_circle(draw_list);
-        
+        if (config::aimbot::future_pos_helper) render_cheat_features::render_proj_helper(draw_list);
+
         draw_list->PopClipRect();
     }
 
@@ -467,4 +468,11 @@ void directX::render_cheat_features::render_FOV_circle(ImDrawList* draw_list)
             directX::render_cheat_features::active_FOVcircle_col : 
             directX::render_cheat_features::idle_FOVcircle_col)
     );
+}
+
+void directX::render_cheat_features::render_proj_helper(ImDrawList* draw_list)
+{
+    vec2 p1 = entities::target::target_future_positon_data.load();
+    vec2 p2 = entities::target::target_chest_pos.load();
+    draw_list->AddLine(ImVec2(p1.x, p1.y), ImVec2(p2.x, p2.y), IM_COL32(255, 255, 255, 255));
 }

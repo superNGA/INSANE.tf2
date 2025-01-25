@@ -177,5 +177,8 @@ namespace directX
 
 		/* renders the FOV circle and manages its colour */
 		void render_FOV_circle(ImDrawList* draw_list);
+
+		/* renders the projectile aim helper */
+		void render_proj_helper(ImDrawList* draw_list);
 	}
 };

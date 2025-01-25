@@ -58,6 +58,8 @@ namespace thread_termination_status
 it shall hold important information about possible targets & me */
 namespace entities
 {
+	inline std::atomic<view_matrix> matrix_world_to_screen;
+
 	/* this struct holds screen corrdinated of each of the extreme body parts location of the entity.
 	essentially storing the height and width of the entity */
 	struct entity_dimensions
@@ -93,6 +95,10 @@ namespace entities
 		inline std::atomic<qangle> best_angle; // <- aimbot angles
 		inline bool found_valid_target = false;
 		inline int8_t target_bone = BONE_CHEST; // This is target for aimbot
+
+		/* projectile aim helper */
+		inline std::atomic<vec2> target_future_positon_data;
+		inline std::atomic<vec2> target_chest_pos;
 	}
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 

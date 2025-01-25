@@ -13,3 +13,8 @@ TO DO:
 	add netvar manager
 	add createmove hook
 	add proper bhop
+
+RULES :
+	Do not add any visual features unless the basics are done.
+	Do not add the Button choice storing mechanism until basics done.
+	Use standard camelCase with meaning full suffix.

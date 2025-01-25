@@ -47,14 +47,18 @@ void execute_thread1(HINSTANCE instance)
 	iengineclientreplay_code	? cons.Log("Failed to get EngineClientReplay001", FG_RED)	: cons.Log("Successfully retrived EngineClientReplay001", FG_GREEN);
 	#endif
 
-	/* signature scanning */
-	fn_runtime_adrs::fn_createmove = util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+	/* getting fn runtime adrs */
+	fn_runtime_adrs::fn_createmove			= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+	fn_runtime_adrs::fn_frame_stage_notify	= (uintptr_t)util.GetVirtualTable((void*)interface_tf2::base_client)[35];
 
-	/* hooking and enabling hooks */
-	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene); //End scene hook
-	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove, (LPVOID)hook::createmove::hooked_createmove, (LPVOID*)&hook::createmove::original_createmove);
+	/* hooking FNs */
+	MH_CreateHook((LPVOID*)get_endscene(),							(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene); //End scene hook
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
+	/* hooking FNs by index */
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_frame_stage_notify,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 
-	MH_EnableHook(MH_ALL_HOOKS); //enabling all hooks
+	/* Enabling all hooks */
+	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc(); // Hooking WinProc
 
 	/* MAIN CHEAT LOOP, end this and whole cheat goes kaput! */
@@ -87,4 +91,5 @@ void execute_thread1(HINSTANCE instance)
 namespace fn_runtime_adrs
 {
 	uintptr_t fn_createmove = 0;
+	uintptr_t fn_frame_stage_notify = 0;
 };

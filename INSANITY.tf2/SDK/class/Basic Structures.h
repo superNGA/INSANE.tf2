@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <cstdint>
+#include <cmath>
 
 #define MAX_STUDIO_BONES	128
 #define HITBOX_BONES		0x00000100
@@ -14,9 +15,11 @@
 #define BONE_RIGHT_FOOT 35		// right foot
 #define BONE_LEFT_KNEE 15		// left knee
 #define BONE_RIGHT_KNEE 16		// right knee
+#define BONE_FACE 33
 
 /* game constants */
 #define TF2_GRAVITY 800.0f
+#define DIRECT_HIT_ROCKET_LAUNCHER 1980.0f
 
 struct qangle
 {
@@ -40,8 +43,14 @@ struct vec
 	{
 		return vec(x - other.x, y - other.y, z - other.z);
 	}
+
+	const float mag()
+	{
+		return sqrt(x * x + y * y + z * z);
+	}
 };
 
+/* most used to store screen coordinates in this software, nothing too big */
 struct vec2
 {
 	/* constructor maxing :) */
@@ -60,6 +69,19 @@ by the engine*/
 struct view_matrix
 {
 	float m[4][4];
+};
+
+/* enum for indicating which frame stage the engine is at. Used in FrameStageNotify */
+enum client_frame_stage
+{
+	FRAME_UNDEFINED = -1,					// (haven't run any frames yet)
+	FRAME_START,
+	FRAME_NET_UPDATE_START,					// A network packet is being recieved
+	FRAME_NET_UPDATE_POSTDATAUPDATE_START,	// Data has been received and we're going to start calling PostDataUpdate
+	FRAME_NET_UPDATE_POSTDATAUPDATE_END,	// Data has been received and we've called PostDataUpdate on all data recipients
+	FRAME_NET_UPDATE_END,					// We've received all packets, we can now do interpolation, prediction, etc..
+	FRAME_RENDER_START,						// We're about to start rendering the scene
+	FRAME_RENDER_END						// We've finished rendering the scene.
 };
 
 /* skeleton matrix */
