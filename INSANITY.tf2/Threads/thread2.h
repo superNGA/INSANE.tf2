@@ -29,3 +29,15 @@ void execute_thread2(HINSTANCE instance);
 vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles);
 
 void decide_bone_id();
+
+/* simple hashing function, uses a string, and choice of character ( or any static number related to 
+the entity ). Might need to work more on this in future. Using string straight away with map was not 
+working. */
+inline int hashString(const char* entUserName, int8_t entCharacterChoice) {
+	int16_t nameLen = strlen(entUserName);
+	int32_t hashOutput = 0;
+	for (int i = 0; i < nameLen; i++) {
+		hashOutput += (i + 1 + entCharacterChoice) * (int)entUserName[i];
+	}
+	return hashOutput;
+}

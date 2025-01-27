@@ -43,16 +43,10 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 		#ifdef _DEBUG
 		cons.Log("Thread handles destroyed", FG_GREEN);
 		#endif
-		
-		/* freeing library */
-		while (!thread_termination_status::thread1 || !thread_termination_status::thread2) Sleep(50);
-		FreeLibrary(instance);
-
-		#ifdef _DEBUG
-		cons.Log("FREE'ed library", FG_GREEN);
-		cons.FreeConsoleInstance();
-		#endif
 	}
+	#ifdef _DEBUG
+	cons.Log(FG_RED, "termination", "Exited DllMain");
+	#endif
 
 	return TRUE;
 }

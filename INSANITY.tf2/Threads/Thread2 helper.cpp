@@ -38,17 +38,3 @@ vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles
 
     return predicted_pos;
 }
-
-void decide_bone_id()
-{
-	/* Getting proper bone */
-	switch (entities::local::localplayer_class)
-	{
-	case TF_SNIPER:
-		entities::target::target_bone = BONE_HEAD;
-		break;
-	default:
-		entities::target::target_bone = BONE_CHEST;
-		break;
-	}
-}

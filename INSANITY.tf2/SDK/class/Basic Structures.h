@@ -48,6 +48,11 @@ struct vec
 	{
 		return sqrt(x * x + y * y + z * z);
 	}
+
+	bool isEmpty(){
+		if (x || y || z) return false;
+		return true;
+	}
 };
 
 /* most used to store screen coordinates in this software, nothing too big */

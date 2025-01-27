@@ -14,6 +14,9 @@ extern Utility util;
 extern Console_System cons;
 #endif
 
+/* m_fFlag bit defines */
+#define MF_ONGROUND (1<<0)
+
 /* this holds offsets */
 namespace offsets
 {

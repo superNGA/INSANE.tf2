@@ -1,5 +1,6 @@
 #pragma once
 #include "../../GlobalVars.h"
+#include "EntityProcessing.h"
 
 namespace hook
 {

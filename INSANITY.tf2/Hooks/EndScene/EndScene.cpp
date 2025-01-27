@@ -379,7 +379,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
                 UI::animation_done = true;
 
                 #ifdef _DEBUG
-                cons.Log("Shutdown animation done", FG_GREEN);
+                cons.Log(FG_GREEN, "termination", "Shutdown Animation Done");
                 #endif
             }
         }
@@ -447,32 +447,16 @@ void directX::draw_background()
 
 void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
 {
-    entities::target::buffer_locked = true; //locking selected buffer for reading
-    /* looping through active buffer and it won't be changed while reading is active. */
-    for (auto& ent : (entities::target::active_buffer_index ? entities::target::entity_scrnpos_buffer_1 : entities::target::entity_scrnpos_buffer_0)) 
-    {
-        draw_list->AddRect(
-            ImVec2(ent.head.x - abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.right_foot.y), // bottom left corner
-            ImVec2(ent.head.x + abs(ent.right_shoulder.x - ent.left_shoulder.x), ent.head.y),       // top right corner
-            IM_COL32(255, 0, 0, 255)); // color ( let user control this shit )
-    }
-    entities::target::buffer_locked = false; // unlocking buffer after reading    
+
 }
 
 
 void directX::render_cheat_features::render_FOV_circle(ImDrawList* draw_list)
 {
-    draw_list->AddCircle(ImVec2(global::window_size.x / 2, global::window_size.y / 2), 
-        config::aimbot::FOV, 
-        (entities::target::found_valid_target ? 
-            directX::render_cheat_features::active_FOVcircle_col : 
-            directX::render_cheat_features::idle_FOVcircle_col)
-    );
+    
 }
 
 void directX::render_cheat_features::render_proj_helper(ImDrawList* draw_list)
 {
-    vec2 p1 = entities::target::target_future_positon_data.load();
-    vec2 p2 = entities::target::target_chest_pos.load();
-    draw_list->AddLine(ImVec2(p1.x, p1.y), ImVec2(p2.x, p2.y), IM_COL32(255, 255, 255, 255));
+    
 }

@@ -252,6 +252,7 @@ public:
 	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
 	int get_active_weapon_handle();
+	vec getEntVelocity();
 };
 
 class c_base_entity : public I_client_entity

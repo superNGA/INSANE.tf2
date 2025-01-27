@@ -85,6 +85,12 @@ public:
 	*/
 	void Log(const char* LogMessage, int8_t TextColor = FG_WHITE, int8_t Format = NORMAL, int8_t BackgroundColor = BG_BLACK); // prints message
 
+	/* prints text in color
+	* @param tagText : CS_NO for priting system time instead of tagText
+	* Default format			-> BOLD
+	* Default BackGround color	-> BLACK*/
+	void Log(int8_t TextColor, const char* tagText,const char* LogMessage...);
+
 private:
 	int8_t D_TextColor			= FG_WHITE;
 	int8_t D_BackgroundColor	= BG_BLACK;

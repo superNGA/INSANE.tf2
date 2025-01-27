@@ -80,11 +80,20 @@ void execute_thread1(HINSTANCE instance)
 	MH_Uninitialize(); // Uninitializing Minhook
 
 	#ifdef _DEBUG
-	cons.Log("Removed all hooks", FG_RED);
+	cons.Log(FG_GREEN,"termination", "Removed all hooks");
 	#endif
 
+	while (!thread_termination_status::thread2) {
+		#ifdef _DEBUG
+		cons.Log(FG_YELLOW, "WAITING", "waiting for thread 2 to exit");
+		#endif
+		std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
+	}
+	cons.Log(FG_GREEN, "termination", "THREAD 1");
+	cons.Log(FG_GREEN, "termination", "FREE'ed Library");
+	cons.FreeConsoleInstance();
 	thread_termination_status::thread1 = true;
-	ExitThread(0);
+	FreeLibraryAndExitThread(instance, 0);
 	return;
 }
 

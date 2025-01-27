@@ -96,12 +96,12 @@ namespace feature
 
 	inline void aimbot(CUserCmd* cmd, bool& result)
 	{
-		if (!config::aimbot::global) return;
+		/*if (!config::aimbot::global) return;
 
 		if (GetAsyncKeyState(VK_LBUTTON) && entities::target::found_valid_target)
 		{
 			cmd->viewangles = entities::target::best_angle;
 			result = false;
-		}
+		}*/
 	}
 };

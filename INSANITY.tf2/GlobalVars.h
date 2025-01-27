@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -30,6 +31,9 @@
 #include "SDK/class/IVEngineClient.h"
 #include "SDK/class/I_EngineClientReplay.h"
 
+/* entity information template struct */
+#include "SDK/entInfo_t.h"
+
 /* just a little typedef, cause typing out map type is very annoying*/
 typedef std::unordered_map < std::string , int32_t> T_map;
 
@@ -58,7 +62,8 @@ namespace thread_termination_status
 it shall hold important information about possible targets & me */
 namespace entities
 {
-	inline std::atomic<view_matrix> matrix_world_to_screen;
+	inline std::atomic<view_matrix> M_worldToScreen;
+	inline std::atomic<view_matrix> M_worldToView;
 
 	/* this struct holds screen corrdinated of each of the extreme body parts location of the entity.
 	essentially storing the height and width of the entity */
@@ -79,27 +84,39 @@ namespace entities
 	}
 
 	/* info about all possible / alive targets */
-	namespace target
+	// todo : maybe make something that updates it instead for cleaning and refilling it each iteration? maybe
+	class C_targets
 	{
-		/* this holds the head, foot and shoulder's screen position of all alive entities */
-		inline std::vector<entity_dimensions> entity_scrnpos_buffer_0;
-		inline std::vector<entity_dimensions> entity_scrnpos_buffer_1;
+	private:
+		/* holds all valid entities, which are to be processed inside FrameStageNotify */
+		std::vector<entInfo_t> vecEntities;
+		std::mutex MTX_vecEntities;
+
+	public:
+		void clear_vecEntities() {
+			std::lock_guard<std::mutex> lock(MTX_vecEntities);
+			vecEntities.clear();
+		}
+
+		void insert_vecEntities(const entInfo_t entInfo) {
+			std::lock_guard<std::mutex> lock(MTX_vecEntities);
+			vecEntities.push_back(entInfo);
+		}
+
+		/* made to return a copy intentionaly, so it can altered according to needs */
+		std::vector<entInfo_t> get_vecEntities() {
+			std::lock_guard<std::mutex> lock(MTX_vecEntities);
+			return vecEntities;
+		}
 		
-		/* active buffer is the buffer currently being used in endscene hook to draw ESP
-		if active buffer index is TRUE, buffer 1 is being used
-		if FALSE, buffer 0 is being used */
-		inline bool active_buffer_index = false;
-		inline bool buffer_locked = false;
-
-		/* aimbot variables */
-		inline std::atomic<qangle> best_angle; // <- aimbot angles
-		inline bool found_valid_target = false;
-		inline int8_t target_bone = BONE_CHEST; // This is target for aimbot
-
-		/* projectile aim helper */
-		inline std::atomic<vec2> target_future_positon_data;
-		inline std::atomic<vec2> target_chest_pos;
-	}
+		/* taking it simply instead of refrence might not be optimal? IDK nigga */
+		void update_vecEntities(const std::vector<entInfo_t> new_vecEntInfo) {
+			std::lock_guard<std::mutex> lock(MTX_vecEntities);
+			vecEntities.clear();
+			vecEntities = new_vecEntInfo;
+		}
+	};
+	inline C_targets entManager;
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,

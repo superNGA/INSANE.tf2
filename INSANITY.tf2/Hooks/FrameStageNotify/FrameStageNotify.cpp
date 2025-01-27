@@ -7,22 +7,11 @@ void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_fr
 
 	switch (frame_stage)
 	{
-	case FRAME_START:
-		break;
-	case FRAME_NET_UPDATE_START:
-		break;
-	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
-		break;
-	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
-		break;
-	case FRAME_NET_UPDATE_END:
-		break;
+	case FRAME_NET_UPDATE_END: break;
 	case FRAME_RENDER_START:
-		entities::matrix_world_to_screen.store(interface_tf2::engine->WorldToScreenMatrix());
+		processEntities();
 		break;
-	case FRAME_RENDER_END:
-		break;
-	default:
-		break;
+	case FRAME_RENDER_END: break;
+	default: break;
 	}
 }

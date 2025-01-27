@@ -31,7 +31,7 @@ bool winproc::hook_winproc() {
     O_winproc = (WNDPROC)SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)H_winproc);
 
     #ifdef _DEBUG
-    cons.FastLog("Hooked WinProc");
+    cons.Log(FG_RED, "initiatlizing", "Hooking WinProc");
     #endif
     return true;
 }
@@ -41,13 +41,13 @@ void winproc::unhook_winproc()
     if (target_window_handle && O_winproc) {
         SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)O_winproc);
         #ifdef _DEBUG
-        cons.FastLog("Unhooked WinProc");
+        cons.Log(FG_GREEN, "termination", "Unhooked ImGui");
         #endif
         return;
     }
 
     #ifdef _DEBUG
-    cons.Log("Failed unhooking", FG_RED);
+    cons.Log(FG_RED, "ERROR", "Failed UnHooking WinProc");
     #endif // _DEBUG
 
 }
@@ -62,7 +62,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     #ifdef _DEBUG
     else
     {
-        cons.Log("Stoped WinProc from using ImGui after shutdown", FG_RED);
+        cons.Log(FG_YELLOW, "WARNING", "Stoped WinProc from using ImGui after shutdown");
     }
     #endif
 

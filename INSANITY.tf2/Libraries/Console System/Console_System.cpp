@@ -92,3 +92,27 @@ void Console_System::Log(const char* LogMessage, int8_t TextColor, int8_t Format
 	printf("\033[%d;%d;%dm", Format, TextColor, BackgroundColor); //Setting up printing config
 	printf("%s\033[0m\n", LogMessage); //printing text
 }
+
+void Console_System::Log(int8_t TextColor, const char* tagText, const char* LogMessage...)
+{
+	time_t NowTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	tm* LocalTime = localtime(&NowTime);
+
+	if (!strcmp(tagText, "CS_NO")) {
+		printf("[ %d:%d:%d %s ] ", LocalTime->tm_hour > 12 ? LocalTime->tm_hour - 12 : LocalTime->tm_hour, LocalTime->tm_min, LocalTime->tm_sec, LocalTime->tm_hour > 12 ? "PM" : "AM");
+	}
+	else{
+		printf("[ %s ] ", tagText);
+	}
+
+	// Process the variadic arguments
+	va_list args;
+	va_start(args, LogMessage);
+
+	// Print with formatting
+	printf("\033[%d;%d;%dm", BOLD, TextColor, BG_BLACK); // Set text color
+	vprintf(LogMessage, args); // Format the LogMessage with the arguments
+	printf("\033[0m\n"); // Reset text formatting
+
+	va_end(args);
+}
