@@ -57,7 +57,7 @@ void execute_thread2(HINSTANCE instance)
 
 		const view_matrix r_viewmatrix	= entities::M_worldToScreen.load();
 		const view_matrix r_anglematrix	= entities::M_worldToView.load();
-		global_var_base* p_globalvar	= interface_tf2::engine_replay->GetClientGlobalVars();
+		entities::pGlobalVars			= interface_tf2::engine_replay->GetClientGlobalVars();
 		int16_t ent_count				= interface_tf2::entity_list->NumberOfEntities(false);
 		int8_t localplayer_index		= interface_tf2::engine->GetLocalPlayer();
 
@@ -94,13 +94,20 @@ void execute_thread2(HINSTANCE instance)
 			CHE_entInfo.activeWeapon	= *(int32_t*)((uintptr_t)(interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle())) + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex);
 			CHE_entInfo.charactorChoice = (player_class)(*(int32_t*)((uintptr_t)ent + netvar.m_PlayerClass + netvar.m_iClass));
 			CHE_entInfo.entVelocity		= ent->getEntVelocity();
-			((uintptr_t)ent + netvar.m_fFlags) & MF_ONGROUND ?
+			*(int32_t*)((uintptr_t)ent + netvar.m_fFlags) & MF_ONGROUND ?
 				CHE_entInfo.setFlagBit(ENT_ON_GROUND) : 
 				CHE_entInfo.clearFlagBit(ENT_ON_GROUND);
 
-			// todo : fix that static float oldTime shit, its causing problems 
-			// TODO : get the Skeleton Matrix inside FrameStageNotify
-			// todo : fix all console logs with appropriate tags
+			CHE_entInfo.infoBoneID = entities::boneManager.getBone((void*)ent, CHE_entInfo.charactorChoice);
+
+			// todo : fix left foot, its giving some 1.e- bullshit
+
+			/*printf("head : %d\n", CHE_entInfo.infoBoneID->head);
+			printf("left shoulder : %d\n", CHE_entInfo.infoBoneID->leftShoulder);
+			printf("right shoulder : %d\n", CHE_entInfo.infoBoneID->rightShoulder);
+			printf("left foot : %ed\n", CHE_entInfo.infoBoneID->leftFoot);
+			printf("right foot : %d\n", CHE_entInfo.infoBoneID->rightFoot);*/
+
 			CHE_vecEntities.push_back(CHE_entInfo);
 		}
 		entities::entManager.update_vecEntities(CHE_vecEntities); // updating global filtered entity list

@@ -5,10 +5,23 @@
 #include <string>
 #include "class/Basic Structures.h"
 
+struct boneInfo_t {
+	int16_t head = 0;
+	int16_t leftShoulder = 0;
+	int16_t rightShoulder = 0;
+	int16_t leftFoot = 0;
+	int16_t rightFoot = 0;
+};
+
 enum BIT_entInfo
 {
 	VALID_VELOCITY = 0,
 	ENT_ON_GROUND
+};
+
+struct boneScreenPos_t
+{
+	vec2 bonePos;
 };
 
 struct entInfo_t
@@ -17,14 +30,17 @@ struct entInfo_t
 	I_client_entity* p_ent;
 
 	/* which class is this player playing */
-	int8_t charactorChoice;
+	player_class charactorChoice;
 
 	/* what weapon is this player holding */
 	int16_t activeWeapon;
 
 	vec entPos;
-	matrix3x4_t *bones; // TODO : reduce size if possible
+	matrix3x4_t bones[MAX_STUDIO_BONES]; // TODO : reduce size if possible
 	vec entVelocity;
+
+	boneInfo_t* infoBoneID = nullptr;
+	boneScreenPos_t boneScreenPos; // Bones screen position
 
 	/* This is a 8-bit bit field. each bit represent some information about the entity.
 	refer BIT_entInfo for to see which bit represents what :) */

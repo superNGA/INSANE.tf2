@@ -65,6 +65,11 @@ namespace interface_tf2
 	I_engine_client_replay* engine_replay	= nullptr;
 };
 
+namespace TF2_functions
+{
+	T_lookUpBone lookUpBone = nullptr;
+}
+
 int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {
 	// Matrix-vector multiplication to get homogeneous coordinates (x, y, z, w)
 	float w = matrix->m[3][0] * worldPos.x + matrix->m[3][1] * worldPos.y + matrix->m[3][2] * worldPos.z + matrix->m[3][3];

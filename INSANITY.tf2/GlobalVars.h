@@ -34,6 +34,13 @@
 /* entity information template struct */
 #include "SDK/entInfo_t.h"
 
+/* console system for debug mode */
+#ifdef _DEBUG
+#include "Libraries/Console System/Console_System.h"
+extern Console_System cons;
+#endif // _DEBUG
+
+
 /* just a little typedef, cause typing out map type is very annoying*/
 typedef std::unordered_map < std::string , int32_t> T_map;
 
@@ -46,6 +53,14 @@ struct raw_image_data
 
 	unsigned char* image_bytes;
 	size_t image_bytearray_size;
+};
+
+/* functions found via signature scanning. TO BE CALLED MANUALLY :) */
+namespace TF2_functions
+{
+	// 40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24
+	typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
+	extern T_lookUpBone lookUpBone;
 };
 
 /* this will hold information about when threads are started & teminated */
@@ -72,6 +87,8 @@ namespace entities
 		vec2 head, left_foot, right_foot, left_shoulder, right_shoulder;
 	};
 
+	inline global_var_base* pGlobalVars = nullptr;
+
 	/* imfo about local player */
 	namespace local
 	{
@@ -84,7 +101,6 @@ namespace entities
 	}
 
 	/* info about all possible / alive targets */
-	// todo : maybe make something that updates it instead for cleaning and refilling it each iteration? maybe
 	class C_targets
 	{
 	private:
@@ -92,6 +108,7 @@ namespace entities
 		std::vector<entInfo_t> vecEntities;
 		std::mutex MTX_vecEntities;
 
+		std::vector<entInfo_t> RENDER_vecEntities;
 	public:
 		void clear_vecEntities() {
 			std::lock_guard<std::mutex> lock(MTX_vecEntities);
@@ -104,19 +121,155 @@ namespace entities
 		}
 
 		/* made to return a copy intentionaly, so it can altered according to needs */
-		std::vector<entInfo_t> get_vecEntities() {
+		std::vector<entInfo_t> get_vecEntities(bool renderable = false) {
 			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			return vecEntities;
+			if (!renderable) return vecEntities;
+			return RENDER_vecEntities;
 		}
 		
 		/* taking it simply instead of refrence might not be optimal? IDK nigga */
-		void update_vecEntities(const std::vector<entInfo_t> new_vecEntInfo) {
+		void update_vecEntities(const std::vector<entInfo_t> new_vecEntInfo, bool renderable = false) {
 			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			vecEntities.clear();
-			vecEntities = new_vecEntInfo;
+			if (!renderable) {
+				vecEntities.clear();
+				vecEntities = new_vecEntInfo;
+			}
+			else {
+				RENDER_vecEntities.clear();
+				RENDER_vecEntities = new_vecEntInfo;
+			}
 		}
 	};
 	inline C_targets entManager;
+
+	class boneManager_t
+	{
+	private:
+		/* this is a 16-bit bit field, each booleans/bit holds whether that character models bones
+		are cached or not. and if they are not cached, they will be aquired and stored. */
+		int16_t BF_boneIndexCached = 0;
+		
+		/* used to toggle BF_boneIndexCached's bits */
+		void setBit_boneIndexCached(player_class characterModel) {
+			BF_boneIndexCached |= (1 << characterModel);
+		}
+		void clearBit_boneIndexCached(player_class characterModel) {
+			BF_boneIndexCached &= ~(1 << characterModel);
+		}
+		bool getBit_boneIndexCached(player_class characterModel) {
+			return BF_boneIndexCached & (1 << characterModel);
+		}
+
+		/* bone indexes to be cached */
+		boneInfo_t scoutBone;
+		boneInfo_t sniperBone;
+		boneInfo_t soldierBone;
+		boneInfo_t demomanBone;
+
+		boneInfo_t medicBone;
+		boneInfo_t heavyBone;
+		boneInfo_t pyroBone;
+		boneInfo_t engiBone;
+
+		boneInfo_t spyBone;
+
+	public:
+		/* loop up bone function, if bone IDs are not cached, the it caches them*/
+		boneInfo_t* getBone(void* pEnt, player_class characterModel) {
+			/* caching 
+			only done once in the entire life of software */
+			if (!getBit_boneIndexCached(characterModel)) {
+				
+				boneInfo_t CHE_boneInfo;
+				CHE_boneInfo.head			= TF2_functions::lookUpBone(pEnt, "bip_head");
+				CHE_boneInfo.leftShoulder	= TF2_functions::lookUpBone(pEnt, "bip_collar_L");
+				CHE_boneInfo.rightShoulder	= TF2_functions::lookUpBone(pEnt, "bip_collar_R");
+				CHE_boneInfo.leftFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_L");
+				CHE_boneInfo.rightFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_R");
+
+				setBit_boneIndexCached(characterModel);
+
+				switch (characterModel)
+				{
+				case TF_SCOUT:
+					scoutBone = CHE_boneInfo;
+					break;
+				case TF_SNIPER:
+					sniperBone = CHE_boneInfo;
+					break;
+				case TF_SOLDIER:
+					soldierBone = CHE_boneInfo;
+					break;
+				case TF_DEMOMAN:
+					demomanBone = CHE_boneInfo;
+					break;
+				case TF_MEDIC:
+					medicBone = CHE_boneInfo;
+					break;
+				case TF_HEAVY:
+					heavyBone = CHE_boneInfo;
+					break;
+				case TF_PYRO:
+					pyroBone = CHE_boneInfo;
+					break;
+				case TF_SPY:
+					spyBone = CHE_boneInfo;
+					break;
+				case TF_ENGINEER:
+					engiBone = CHE_boneInfo;
+					break;
+				default:
+					#ifdef _DEBUG
+					cons.Log(FG_RED, "BONE MAMANGER", "Failed bone caching");
+					#endif
+					break;
+				}
+
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "BONE MANAGER", "Cached bone information for model : %d", characterModel);
+				#endif 
+
+			}
+			
+			/* returning pointer to required bone structs */
+			switch (characterModel)
+			{
+			case TF_SCOUT:
+				return &scoutBone;
+				break;
+			case TF_SNIPER:
+				return &sniperBone;
+				break;
+			case TF_SOLDIER:
+				return &soldierBone;
+				break;
+			case TF_DEMOMAN:
+				return &demomanBone;
+				break;
+			case TF_MEDIC:
+				return &medicBone;
+				break;
+			case TF_HEAVY:
+				return &heavyBone;
+				break;
+			case TF_PYRO:
+				return &pyroBone;
+				break;
+			case TF_SPY:
+				return &spyBone;
+				break;
+			case TF_ENGINEER:
+				return &engiBone;
+				break;
+			default:
+				#ifdef _DEBUG
+				cons.Log(FG_RED, "BONE MAMANGER", "Failed to find character model");
+				#endif
+				break;
+			}
+		}
+	};
+	inline boneManager_t boneManager;
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,

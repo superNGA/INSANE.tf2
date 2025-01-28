@@ -447,7 +447,12 @@ void directX::draw_background()
 
 void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
 {
-
+    std::vector<entInfo_t> CHE_entVec = entities::entManager.get_vecEntities(true);
+    if (CHE_entVec.empty()) return;
+    view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
+    for (auto& ent : CHE_entVec) {
+        draw_list->AddCircleFilled(ImVec2(ent.boneScreenPos.bonePos.x, ent.boneScreenPos.bonePos.y), 5.0f, IM_COL32(255, 255, 255, 255));
+    }
 }
 
 
