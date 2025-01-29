@@ -100,14 +100,6 @@ void execute_thread2(HINSTANCE instance)
 
 			CHE_entInfo.infoBoneID = entities::boneManager.getBone((void*)ent, CHE_entInfo.charactorChoice);
 
-			// todo : fix left foot, its giving some 1.e- bullshit
-
-			/*printf("head : %d\n", CHE_entInfo.infoBoneID->head);
-			printf("left shoulder : %d\n", CHE_entInfo.infoBoneID->leftShoulder);
-			printf("right shoulder : %d\n", CHE_entInfo.infoBoneID->rightShoulder);
-			printf("left foot : %ed\n", CHE_entInfo.infoBoneID->leftFoot);
-			printf("right foot : %d\n", CHE_entInfo.infoBoneID->rightFoot);*/
-
 			CHE_vecEntities.push_back(CHE_entInfo);
 		}
 		entities::entManager.update_vecEntities(CHE_vecEntities); // updating global filtered entity list

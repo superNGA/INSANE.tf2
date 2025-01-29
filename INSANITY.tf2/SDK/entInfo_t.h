@@ -5,6 +5,16 @@
 #include <string>
 #include "class/Basic Structures.h"
 
+#define IS_MAXBONES 5
+
+enum INDEX_boneInfo {
+	HEAD=0,
+	LEFT_SHOULDER,
+	RIGHT_SHOULDER,
+	LEFT_FOOT,
+	RIGHT_FOOT
+};
+
 struct boneInfo_t {
 	int16_t head = 0;
 	int16_t leftShoulder = 0;
@@ -36,11 +46,21 @@ struct entInfo_t
 	int16_t activeWeapon;
 
 	vec entPos;
-	matrix3x4_t bones[MAX_STUDIO_BONES]; // TODO : reduce size if possible
+	matrix3x4_t bones[IS_MAXBONES]; // TODO : reduce size if possible
 	vec entVelocity;
 
 	boneInfo_t* infoBoneID = nullptr;
 	boneScreenPos_t boneScreenPos; // Bones screen position
+
+	/* copies essential imformation about important bones from setUpBones to 
+	out entities "bones[IS_MAXBONES]". */
+	void copyEntBones(matrix3x4_t* maxStudioBones) {
+		bones[HEAD]				= maxStudioBones[infoBoneID->head];
+		bones[LEFT_SHOULDER]	= maxStudioBones[infoBoneID->leftShoulder];
+		bones[RIGHT_SHOULDER]	= maxStudioBones[infoBoneID->rightShoulder];
+		bones[LEFT_FOOT]		= maxStudioBones[infoBoneID->leftFoot];
+		bones[RIGHT_FOOT]		= maxStudioBones[infoBoneID->rightFoot];
+	}
 
 	/* This is a 8-bit bit field. each bit represent some information about the entity.
 	refer BIT_entInfo for to see which bit represents what :) */

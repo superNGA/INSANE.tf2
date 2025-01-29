@@ -15,13 +15,12 @@ inline void processEntities()
 		return;
 
 	view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
-	static int boneIndex = 0;
-	if (GetAsyncKeyState(VK_RETURN) & (1 << 0)) boneIndex++;
-	else if (GetAsyncKeyState(VK_BACK) & (1 << 0)) boneIndex--;
-	for (auto& ent : CHE_vecEntInfo)
-	{
-		ent.p_ent->SetupBones(ent.bones, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
-		entities::world_to_screen(ent.bones[ent.infoBoneID->head].get_bone_coordinates(), ent.boneScreenPos.bonePos, &CHE_viewMatrix);
+	matrix3x4_t CHE_boneMatrix[MAX_STUDIO_BONES];
+	for (auto& ent : CHE_vecEntInfo) {
+
+		ent.p_ent->SetupBones(CHE_boneMatrix, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
+		ent.copyEntBones(CHE_boneMatrix);
+		/* todo : do world to view angles here, for aimbot and more important stuff */
 	}
 	entities::entManager.update_vecEntities(CHE_vecEntInfo, true);
 }
