@@ -155,7 +155,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* RENDERING CHEAT FEATURES */
-    if (global::entities_popullated) {
+    if (global::entities_popullated && entities::entManager.getFlagBit(entities::C_targets::DOING_SECOND_HALF) && entities::entManager.getFlagBit(entities::C_targets::DOING_FIRST_HALF)) {
 
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
         draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible 
@@ -474,7 +474,7 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
         drawList->AddRect(
             ImVec2(ent.boneScreenPos[HEAD].x - entWidth, ent.boneScreenPos[LEFT_FOOT].y), // lower left corner for esp box
             ImVec2(ent.boneScreenPos[HEAD].x + entWidth, ent.boneScreenPos[HEAD].y), // upper right corner 
-            IM_COL32(255, 255, 255, 255) // colour
+            ImColor(ent.getFlagBit(IS_AIMBOT_TARGET) ? GREEN : WHITE) // colour
         );
     }
 }

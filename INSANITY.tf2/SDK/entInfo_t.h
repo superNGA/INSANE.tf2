@@ -37,7 +37,8 @@ enum BIT_entInfo
 {
 	VALID_VELOCITY = 0,
 	ENT_ON_GROUND,
-	ON_SCREEN
+	ON_SCREEN,
+	IS_AIMBOT_TARGET
 };
 
 struct boneScreenPos_t

@@ -26,6 +26,7 @@ void execute_thread2(HINSTANCE instance)
 
 		/* check if in game */
 		if (!interface_tf2::engine->IsInGame()) {
+			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 			continue;
 		}
@@ -117,6 +118,7 @@ void execute_thread2(HINSTANCE instance)
 			CHE_vecEntities.push_back(CHE_entInfo);
 		}
 		entities::entManager.update_vecEntities(CHE_vecEntities); // updating global filtered entity list
+		entities::entManager.setFlagBit(entities::C_targets::DOING_FIRST_HALF);
 
 		/* this flag will be used in features to prevent them from accessing invalid memory spaces */
 		global::entities_popullated = true;

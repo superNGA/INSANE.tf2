@@ -114,6 +114,7 @@ namespace entities
 		std::mutex MTX_vecEntities;
 
 		std::vector<entInfo_t> RENDER_vecEntities;
+		int8_t flag = 0;
 	public:
 		void clear_vecEntities() {
 			std::lock_guard<std::mutex> lock(MTX_vecEntities);
@@ -143,6 +144,27 @@ namespace entities
 				RENDER_vecEntities.clear();
 				RENDER_vecEntities = new_vecEntInfo;
 			}
+		}
+
+		/* enum holding information about flag bits */
+		enum BIT_cTarget {
+			DOING_FIRST_HALF = 0, // is vecEntities popullated ?
+			DOING_SECOND_HALF // is RENDER_vecEntities popullated ?
+		};
+
+		/* Gets the flag bit */
+		bool getFlagBit(BIT_cTarget bitIndex) {
+			return flag & (1 << bitIndex);
+		}
+
+		/* sets desired flag bit*/
+		void setFlagBit(BIT_cTarget bitIndex) {
+			flag |= (1 << bitIndex);
+		}
+
+		/* Clears desired flag bit */
+		void clearFlagBit(BIT_cTarget bitIndex) {
+			flag &= ~(1 << bitIndex);
 		}
 	};
 	inline C_targets entManager;
