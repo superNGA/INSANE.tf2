@@ -5,14 +5,22 @@
 #include <string>
 #include "class/Basic Structures.h"
 
-#define IS_MAXBONES 5
+#define IS_MAXBONES 6
+
+/* HOW TO ADD A NEW BONE :
+	INCREASE IS_MAXBONES size accoring to boneInfo_t size.
+	add bone name to enum INDEX_boneInfo
+	add bone name to boneInfo_t struct
+	add bone copy mechanism to copyEntBones in entInfo_t
+	add bone caching in boneManager in globalvars.h->entities::boneManager_t */
 
 enum INDEX_boneInfo {
 	HEAD=0,
 	LEFT_SHOULDER,
 	RIGHT_SHOULDER,
 	LEFT_FOOT,
-	RIGHT_FOOT
+	RIGHT_FOOT,
+	CHEST
 };
 
 struct boneInfo_t {
@@ -20,13 +28,16 @@ struct boneInfo_t {
 	int16_t leftShoulder = 0;
 	int16_t rightShoulder = 0;
 	int16_t leftFoot = 0;
+
 	int16_t rightFoot = 0;
+	int16_t chest = 0;
 };
 
 enum BIT_entInfo
 {
 	VALID_VELOCITY = 0,
-	ENT_ON_GROUND
+	ENT_ON_GROUND,
+	ON_SCREEN
 };
 
 struct boneScreenPos_t
@@ -50,7 +61,12 @@ struct entInfo_t
 	vec entVelocity;
 
 	boneInfo_t* infoBoneID = nullptr;
-	boneScreenPos_t boneScreenPos; // Bones screen position
+	INDEX_boneInfo targetBoneID = HEAD;
+	qangle targetAngles;
+
+	/* array for each bones screen position, popullated inside end scene's first 
+	visuals rendering function */
+	vec2 boneScreenPos[IS_MAXBONES];
 
 	/* copies essential imformation about important bones from setUpBones to 
 	out entities "bones[IS_MAXBONES]". */
@@ -60,6 +76,7 @@ struct entInfo_t
 		bones[RIGHT_SHOULDER]	= maxStudioBones[infoBoneID->rightShoulder];
 		bones[LEFT_FOOT]		= maxStudioBones[infoBoneID->leftFoot];
 		bones[RIGHT_FOOT]		= maxStudioBones[infoBoneID->rightFoot];
+		bones[CHEST]			= maxStudioBones[infoBoneID->chest];
 	}
 
 	/* This is a 8-bit bit field. each bit represent some information about the entity.

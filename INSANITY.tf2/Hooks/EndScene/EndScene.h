@@ -173,7 +173,7 @@ namespace directX
 		inline ImColor active_FOVcircle_col(0.0f, 1.0f, 0.0f, 1.0f); // green FOV circle with valid target
 
 		/* renders the esp box */
-		void render_esp_boxes(ImDrawList* draw_list);
+		void render_esp_boxes(ImDrawList* drawList, std::vector<entInfo_t>& CHE_vecEntInfo);
 
 		/* renders the FOV circle and manages its colour */
 		void render_FOV_circle(ImDrawList* draw_list);

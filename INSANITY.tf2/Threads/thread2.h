@@ -30,6 +30,9 @@ vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles
 
 void decide_bone_id();
 
+/* tells if we are holding a PROJECTILE weapon or a HIT-SCAN weapon */
+bool getWeaponType(int16_t weaponID);
+
 /* simple hashing function, uses a string, and choice of character ( or any static number related to 
 the entity ). Might need to work more on this in future. Using string straight away with map was not 
 working. */

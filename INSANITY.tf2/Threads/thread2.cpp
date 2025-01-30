@@ -41,7 +41,8 @@ void execute_thread2(HINSTANCE instance)
 		entities::local::localplayer_class	= (player_class)(*(int32_t*)(netvar.local_player + netvar.m_PlayerClass + netvar.m_iClass)); // player ingame class
 		entities::local::team_num			= *(int32_t*)(netvar.local_player + netvar.m_iTeamNum); // local players team
 		entities::local::pos				= local_player->GetAbsOrigin();
-		entities::local::eye_pos			= entities::local::pos + vec(0.0f, 0.0f, *(float*)((uintptr_t)local_player + netvar.m_vecViewOffset)); // storing local player's eyepos
+		entities::local::eye_pos.store(entities::local::pos + vec(0.0f, 0.0f, *(float*)((uintptr_t)local_player + netvar.m_vecViewOffset))); // storing local player's eyepos
+		entities::local::viewAngles.store(local_player->GetAbsAngles()); // storing view angles 
 
 		/* get ACTIVE WEAPON */
 		entities::local::active_weapon = interface_tf2::entity_list->GetClientEntity(local_player->get_active_weapon_handle());
@@ -49,7 +50,8 @@ void execute_thread2(HINSTANCE instance)
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
-		entities::local::ID_active_weapon = *(int32_t*)((uintptr_t)entities::local::active_weapon + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex); //gets weapon ID
+		entities::local::ID_active_weapon		= *(int32_t*)((uintptr_t)entities::local::active_weapon + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex); //gets weapon ID
+		entities::local::b_hasProjectileWeapon	= getWeaponType(entities::local::ID_active_weapon); // are we holding a projectile weapon or a hitscan weapon
 
 		/* cache storages for things to be used in entity list loop */
 		static player_info_t			CHE_playerInfo;
@@ -94,11 +96,23 @@ void execute_thread2(HINSTANCE instance)
 			CHE_entInfo.activeWeapon	= *(int32_t*)((uintptr_t)(interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle())) + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex);
 			CHE_entInfo.charactorChoice = (player_class)(*(int32_t*)((uintptr_t)ent + netvar.m_PlayerClass + netvar.m_iClass));
 			CHE_entInfo.entVelocity		= ent->getEntVelocity();
+
+			/* store if entity is on ground or not, use full for projectile aimbot */
 			*(int32_t*)((uintptr_t)ent + netvar.m_fFlags) & MF_ONGROUND ?
 				CHE_entInfo.setFlagBit(ENT_ON_GROUND) : 
 				CHE_entInfo.clearFlagBit(ENT_ON_GROUND);
 
-			CHE_entInfo.infoBoneID = entities::boneManager.getBone((void*)ent, CHE_entInfo.charactorChoice);
+			CHE_entInfo.infoBoneID = entities::boneManager.getBone((void*)ent, CHE_entInfo.charactorChoice); // return boneInfo pointer, and cache if not already
+			
+			/* processing target Bone ID accoring to entity state and active weapon */
+			if (entities::local::b_hasProjectileWeapon) { 
+				CHE_entInfo.getFlagBit(ENT_ON_GROUND) ? 
+					CHE_entInfo.targetBoneID = LEFT_FOOT : // if doing projectile aimbot, and entity on ground, then shoot at foot
+					CHE_entInfo.targetBoneID = CHEST; // else if in air, shoot at chest
+			}
+			else { // if using hit-scan weapon 
+				CHE_entInfo.targetBoneID = HEAD; // shoot at head
+			}
 
 			CHE_vecEntities.push_back(CHE_entInfo);
 		}

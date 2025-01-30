@@ -33,7 +33,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 		auto thread2 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(execute_thread2), instance, 0, nullptr);
 
 		#ifdef _DEBUG
-		cons.Log("All threads created Successfully", FG_GREEN);
+		cons.Log(FG_GREEN, "DllMain", "All threads created Successfully");
 		#endif
 
 		//closing thread handles
@@ -41,7 +41,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 		if (thread2) CloseHandle(thread2);
 
 		#ifdef _DEBUG
-		cons.Log("Thread handles destroyed", FG_GREEN);
+		cons.Log(FG_GREEN, "DllMain", "Thread Handles Destroyed");
 		#endif
 	}
 	#ifdef _DEBUG

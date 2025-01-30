@@ -38,3 +38,34 @@ vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles
 
     return predicted_pos;
 }
+
+bool getWeaponType(int16_t weaponID) {
+    switch (weaponID) {
+        // Soldier
+    case 18:  // Rocket Launcher
+    case 127: // Black Box
+    case 228: // Direct Hit
+    case 414: // Liberty Launcher
+    case 441: // Beggar's Bazooka
+    case 513: // Air Strike
+
+        // Demoman
+    case 19:  // Grenade Launcher
+    case 206: // Loch-n-Load
+    case 308: // Loose Cannon
+    case 996: // Iron Bomber
+    case 20:  // Stickybomb Launcher
+    case 207: // Scottish Resistance
+    case 661: // Quickiebomb Launcher
+
+        // Pyro
+    case 40:  // Flare Gun
+    case 351: // Detonator
+    case 595: // Manmelter
+    case 740: // Scorch Shot
+        return true;
+
+    default:
+        return false;
+    }
+}

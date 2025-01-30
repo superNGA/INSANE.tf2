@@ -7,7 +7,7 @@ void execute_thread1(HINSTANCE instance)
 	/* Initializing MinHook and Console_System& utility */
 	MH_Initialize();
 	#ifdef _DEBUG
-	cons.FastLog("MinHook initialized");
+	cons.Log(FG_GREEN, "MINHOOK", "MINHOOK initialized");
 	#endif
 
 
@@ -15,11 +15,11 @@ void execute_thread1(HINSTANCE instance)
 	if (!handle::initialize())
 	{
 		#ifdef _DEBUG
-		cons.Log("[ error ] Failed to get moudle handles for one or all modules", FG_RED);
+		cons.Log(FG_RED, "ERROR", "Failed to get module handle for one or more modules");
 		#endif
 	}
 	#ifdef _DEBUG
-	cons.Log("Successfully initialized module handles", FG_GREEN);
+	cons.Log(FG_GREEN, "THREAD 1", "Successfully intialized module handles");
 	#endif
 
 
@@ -27,11 +27,11 @@ void execute_thread1(HINSTANCE instance)
 	if (!offsets::netvar_initialized && !offsets::initialize())
 	{
 		#ifdef _DEBUG
-		cons.Log("Failed to intialize netvars", FG_RED);
+		cons.Log(FG_RED, "ERROR", "Failed to intialize netvars");
 		#endif
 	}
 	#ifdef _DEBUG
-	cons.Log("Initialize netvars", FG_GREEN);
+	cons.Log(FG_GREEN, "NETVARs", "Initialized NetVars");
 	#endif
 
 
@@ -42,9 +42,9 @@ void execute_thread1(HINSTANCE instance)
 	interface_tf2::engine_replay	= (I_engine_client_replay*)util.GetInterface(ENGINE_CLIENT_REPLAY, ENGINE_DLL, &iengineclientreplay_code);
 
 	#ifdef _DEBUG
-	entity_list_code			? cons.Log("Failed to get IClientEntityList", FG_RED)		: cons.Log("Successfully retrived IClientEntityList", FG_GREEN);
-	ivengineclient_code			? cons.Log("Failed to get IVEngineClient014", FG_RED)		: cons.Log("Successfully retrived IVEngineClient014", FG_GREEN);
-	iengineclientreplay_code	? cons.Log("Failed to get EngineClientReplay001", FG_RED)	: cons.Log("Successfully retrived EngineClientReplay001", FG_GREEN);
+	entity_list_code			? cons.Log(FG_RED, "ERROR","Failed to get IClientEntityList")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IClientEntityList");
+	ivengineclient_code			? cons.Log(FG_RED, "ERROR","Failed to get IVEngineClient014")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IVEngineClient014");
+	iengineclientreplay_code	? cons.Log(FG_RED, "ERROR","Failed to get EngineClientReplay001")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineClientReplay001");
 	#endif
 
 	/* getting fn runtime adrs */
@@ -75,7 +75,7 @@ void execute_thread1(HINSTANCE instance)
 	while (!directX::UI::UI_has_been_shutdown)
 	{
 		#ifdef _DEBUG
-		cons.Log("Waiting for ImGui to shutdown properly", FG_YELLOW);
+		cons.Log(FG_YELLOW, "THREAD 1", "Waiting for ImGui to ShutDown properly");
 		#endif
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
@@ -88,7 +88,7 @@ void execute_thread1(HINSTANCE instance)
 
 	while (!thread_termination_status::thread2) {
 		#ifdef _DEBUG
-		cons.Log(FG_YELLOW, "WAITING", "waiting for thread 2 to exit");
+		cons.Log(FG_YELLOW, "THREAD 1", "waiting for thread 2 to exit");
 		#endif
 		std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
 	}

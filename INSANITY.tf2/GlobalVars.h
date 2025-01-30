@@ -92,13 +92,18 @@ namespace entities
 	/* imfo about local player */
 	namespace local
 	{
-		inline player_class		localplayer_class;
-		inline I_client_entity* active_weapon;
-		inline int32_t			ID_active_weapon;
-		inline int16_t			team_num;
-		inline vec				pos;
-		inline vec				eye_pos;
+		inline player_class			localplayer_class;
+		inline I_client_entity*		active_weapon;
+		inline int32_t				ID_active_weapon;
+		inline int16_t				team_num;
+		inline vec					pos;
+		inline std::atomic<vec>		eye_pos;
+		inline bool					b_hasProjectileWeapon = false;
+		inline std::atomic<qangle>	viewAngles;
 	}
+
+	/* final aimbot angles, for best target entity */
+	inline std::atomic<qangle> aimbotTargetAngles;
 
 	/* info about all possible / alive targets */
 	class C_targets
@@ -186,6 +191,7 @@ namespace entities
 				CHE_boneInfo.rightShoulder	= TF2_functions::lookUpBone(pEnt, "bip_collar_R");
 				CHE_boneInfo.leftFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_L");
 				CHE_boneInfo.rightFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_R");
+				CHE_boneInfo.chest			= TF2_functions::lookUpBone(pEnt, "bip_spine_3");
 
 				setBit_boneIndexCached(characterModel);
 
@@ -280,7 +286,7 @@ namespace entities
 	qangle world_to_viewangles(const vec& localPosition, const vec& targetPosition);
 
 	/* Finds the distance from localplayer crosshair to the target angles */
-	inline float distance_from_crosshair(const qangle& local_angles, const qangle& target_angles)
+	inline float disFromCrosshair(const qangle& local_angles, const qangle& target_angles)
 	{
 		return (sqrt(pow(local_angles.pitch - target_angles.pitch, 2) + pow(local_angles.yaw - target_angles.yaw, 2)));
 	}

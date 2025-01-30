@@ -16,11 +16,27 @@ inline void processEntities()
 
 	view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
 	matrix3x4_t CHE_boneMatrix[MAX_STUDIO_BONES];
+	float disFromCrosshair = -1.0f;
+	qangle closestEntAngles;
 	for (auto& ent : CHE_vecEntInfo) {
 
 		ent.p_ent->SetupBones(CHE_boneMatrix, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
 		ent.copyEntBones(CHE_boneMatrix);
-		/* todo : do world to view angles here, for aimbot and more important stuff */
+
+		ent.targetAngles = entities::world_to_viewangles(entities::local::eye_pos.load(), ent.bones[ent.targetBoneID].get_bone_coordinates());
+		float entDisFromCrosshair = entities::disFromCrosshair(entities::local::viewAngles.load(), ent.targetAngles);
+		
+		/* calculating closest entity from crosshair */
+		if (disFromCrosshair < 0.0f) {
+			disFromCrosshair = entDisFromCrosshair;
+			closestEntAngles = ent.targetAngles;
+		}
+		else if (entDisFromCrosshair < disFromCrosshair) {
+			disFromCrosshair = entDisFromCrosshair;
+			closestEntAngles = ent.targetAngles;
+		}
 	}
-	entities::entManager.update_vecEntities(CHE_vecEntInfo, true);
+
+	entities::aimbotTargetAngles.store(closestEntAngles);
+	entities::entManager.update_vecEntities(CHE_vecEntInfo, true); // updating RENDERABLE entity list
 }

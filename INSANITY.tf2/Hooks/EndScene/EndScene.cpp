@@ -155,12 +155,14 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* RENDERING CHEAT FEATURES */
-    if (global::entities_popullated)
-    {
+    if (global::entities_popullated) {
+
         ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        draw_list->PushClipRectFullScreen();
+        draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible 
         
-        if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list);
+        std::vector<entInfo_t> CHE_vecEntInfo = entities::entManager.get_vecEntities(true); // renderable processed entity list
+
+        if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
         if (config::aimbot::global) render_cheat_features::render_FOV_circle(draw_list);
         if (config::aimbot::future_pos_helper) render_cheat_features::render_proj_helper(draw_list);
 
@@ -445,13 +447,35 @@ void directX::draw_background()
     //draw_list->AddImage((ImTextureID)textures::background.texture, ImVec2(0, 0), ImVec2(1920, 1080), ImVec2(0,0), ImVec2(1,1), IM_COL32(255, 255, 255, UI::cur_BG_alpha));
 }
 
-void directX::render_cheat_features::render_esp_boxes(ImDrawList* draw_list)
-{
-    std::vector<entInfo_t> CHE_entVec = entities::entManager.get_vecEntities(true);
-    if (CHE_entVec.empty()) return;
+void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std::vector<entInfo_t>& CHE_vecEntInfo) {
+
+    if (CHE_vecEntInfo.empty()) return;
     view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
-    for (auto& ent : CHE_entVec) {
-        draw_list->AddCircleFilled(ImVec2(ent.boneScreenPos.bonePos.x, ent.boneScreenPos.bonePos.y), 5.0f, IM_COL32(255, 255, 255, 255));
+
+    for (auto& ent : CHE_vecEntInfo) {
+
+        int8_t onScreenCounter = 0; // is this is still 0 after performaing world-to-screen, then entity is not on screen.
+        /* going from first bone HEAD to LAST bone, doing world-to-screen for each bone */
+        for (int INDEX_boneScreenPos = HEAD; INDEX_boneScreenPos <= CHEST; INDEX_boneScreenPos++) {
+            if (entities::world_to_screen(
+                ent.bones[INDEX_boneScreenPos].get_bone_coordinates(), // entity bone position
+                ent.boneScreenPos[INDEX_boneScreenPos], // where we want to store the bone screen position
+                &CHE_viewMatrix)) {
+                onScreenCounter++;
+            }
+        }
+        if (!onScreenCounter) { // ON_SCREEN bit will be 0 by default so not calling clear bit function redundantly
+            continue;
+        }
+        ent.setFlagBit(ON_SCREEN);
+
+        /* drawing ESP rectangle for current entity */
+        float entWidth = abs(ent.boneScreenPos[LEFT_SHOULDER].x - ent.boneScreenPos[RIGHT_SHOULDER].x);
+        drawList->AddRect(
+            ImVec2(ent.boneScreenPos[HEAD].x - entWidth, ent.boneScreenPos[LEFT_FOOT].y), // lower left corner for esp box
+            ImVec2(ent.boneScreenPos[HEAD].x + entWidth, ent.boneScreenPos[HEAD].y), // upper right corner 
+            IM_COL32(255, 255, 255, 255) // colour
+        );
     }
 }
 
