@@ -87,6 +87,7 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_BasePlayer") && map["m_lifeState"])						netvar.m_lifeState = map["m_lifeState"];
 	if (!strcmp(table_name, "DT_BaseEntity") && map["m_iTeamNum"])						netvar.m_iTeamNum = map["m_iTeamNum"];
 	if (!strcmp(table_name, "DT_LocalPlayerExclusive") && map["m_vecViewOffset[2]"])	netvar.m_vecViewOffset = map["m_vecViewOffset[2]"];
+	if (!strcmp(table_name, "DT_BaseCombatCharacter") && map["m_bGlowEnabled"])			netvar.m_vecViewOffset = map["m_bGlowEnabled"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

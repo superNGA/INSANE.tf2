@@ -38,7 +38,27 @@ enum BIT_entInfo
 	VALID_VELOCITY = 0,
 	ENT_ON_GROUND,
 	ON_SCREEN,
-	IS_AIMBOT_TARGET
+	
+	SHOULD_LOCK_AIMBOT, // is this entity locked in for aimbot
+	IS_PLAYER, // is this entity a actual player or something like a dispenser or some shit
+	IS_BUILDING, // is Dispensor, Teleporter or Sentery gun?
+
+	// TEAM FLAG
+	FRENDLY,
+};
+
+enum IDclass_t {
+	NOT_DEFINED,
+	PLAYER,
+	AMMO_PACK,
+	DISPENSER,
+	SENTRY_GUN,
+	TELEPORTER,
+	TF_ITEM,
+	CAPTURE_POINT,
+	BASE_WEAPON,
+	MELEE_WEAPON,
+	PAYLOAD
 };
 
 struct boneScreenPos_t
@@ -51,6 +71,9 @@ struct entInfo_t
 	char* entUserName;
 	I_client_entity* p_ent;
 
+	/* is this entity a player or dispenser of what? */
+	IDclass_t classID = NOT_DEFINED;
+
 	/* which class is this player playing */
 	player_class charactorChoice;
 
@@ -58,7 +81,7 @@ struct entInfo_t
 	int16_t activeWeapon;
 
 	vec entPos;
-	matrix3x4_t bones[IS_MAXBONES]; // TODO : reduce size if possible
+	matrix3x4_t bones[IS_MAXBONES]; 
 	vec entVelocity;
 
 	boneInfo_t* infoBoneID = nullptr;
@@ -80,9 +103,9 @@ struct entInfo_t
 		bones[CHEST]			= maxStudioBones[infoBoneID->chest];
 	}
 
-	/* This is a 8-bit bit field. each bit represent some information about the entity.
+	/* This is a 16-bit bit field. each bit represent some information about the entity.
 	refer BIT_entInfo for to see which bit represents what :) */
-	int8_t flags = 0;
+	int16_t flags = 0;
 
 	inline void setFlagBit(const BIT_entInfo bitIndex) {
 		flags |= (1 << bitIndex);

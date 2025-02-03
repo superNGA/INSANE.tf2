@@ -1,5 +1,6 @@
 #pragma once
 #include "Basic Structures.h"
+#include "ClientClass.h"
 
 /*
 * MATCH THE INHERITANCE ORDER CAREFULLY ELSE WON'T WORK!
@@ -182,7 +183,7 @@ public:
 	virtual void			Release() = 0;
 
 	// Supplied automatically by the IMPLEMENT_CLIENTCLASS macros.
-	virtual void* GetClientClass() = 0;
+	virtual ClientClass* GetClientClass() = 0;
 
 	// This tells the entity what the server says for ShouldTransmit on this entity.
 	// Note: This used to be EntityEnteredPVS/EntityRemainedInPVS/EntityLeftPVS.

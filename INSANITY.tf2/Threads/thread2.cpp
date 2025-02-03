@@ -67,35 +67,90 @@ void execute_thread2(HINSTANCE instance)
 		std::vector<entInfo_t> CHE_vecEntities; // PURPOSE : temporary cache vector for all valid which we shift into global storage after 
 		CHE_vecEntities.clear();
 		/* entity list loop here */
+		
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)
 		{
 			//===================================== ENTITY FILTERING ====================================================
 			if (ent_num == localplayer_index) { // skipping local player
 				continue;
 			}
+
 			I_client_entity* ent = interface_tf2::entity_list->GetClientEntity(ent_num);
 			if (!ent || ent->IsDormant()) { // DORMANT check
 				continue;
 			}
-			interface_tf2::engine->GetPlayerInfo(ent_num, &CHE_playerInfo);
-			if (CHE_playerInfo.name[0] == '\0') { // REAL PLAYER check
-				continue;
-			}
-			if (*(int16_t*)((uintptr_t)ent + netvar.m_lifeState) != 0) { // DEAD check
-				continue;
-			}
-			if (*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num) { // TEAM check
+
+			// Temp entInfo object
+			entInfo_t CHE_entInfo;
+			
+			CHE_entInfo.classID = entities::IDManager.getID(ent);
+			if (CHE_entInfo.classID == NOT_DEFINED) { // skip useless entities
 				continue;
 			}
 
+			// Checking health attribute for VALID ENTITIES & setting APPROPRIATE BITS
+			if (CHE_entInfo.classID == PLAYER || CHE_entInfo.classID == DISPENSER || CHE_entInfo.classID == SENTRY_GUN || CHE_entInfo.classID == TELEPORTER) {
+
+				// Getting playerInfo only if ENTITY is a PLAYER :)
+				if (CHE_entInfo.classID == PLAYER) {
+
+					interface_tf2::engine->GetPlayerInfo(ent_num, &CHE_playerInfo);
+					CHE_entInfo.setFlagBit(IS_PLAYER); // setting bit for is player
+				}
+				else {
+
+					CHE_entInfo.setFlagBit(IS_BUILDING); // setting bit for is Building
+				}
+
+				if (*(int16_t*)((uintptr_t)ent + netvar.m_lifeState) != 0) { // DEAD check for Player & Building
+					continue;
+				}
+			}
+			
 			//===================================== FILLING INFO ABOUT VAILD ENTITIES ====================================
+			
+			// PROTOTYPING
+			switch (CHE_entInfo.classID)
+			{
+				// heighest priority entities
+			case PLAYER:
+
+				// 2nd heighest priority entities 
+			case SENTRY_GUN:
+			case TELEPORTER:
+			case DISPENSER:
+
+				// 3rd heighest priority entities
+			case PAYLOAD:
+			case CAPTURE_POINT:
+
+				// some sort of bullshit enitty passed in somehow :(
+			default:
+				break;
+			}
+			
 			vec entOrigin = ent->GetAbsOrigin();
-			entInfo_t CHE_entInfo;
-			CHE_entInfo.p_ent			= ent;
-			CHE_entInfo.entUserName		= &CHE_playerInfo.name[0];
+
+			CHE_entInfo.p_ent = ent;
+
+			// USER NAME
+			CHE_entInfo.classID == PLAYER ? // is player?
+				CHE_entInfo.entUserName = &CHE_playerInfo.name[0] : // if player store real name
+				strcpy(CHE_entInfo.entUserName, "notPlayer"); // else put name as notPlayer
+			
 			CHE_entInfo.entPos			= entOrigin;
-			CHE_entInfo.activeWeapon	= *(int32_t*)((uintptr_t)(interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle())) + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex);
-			CHE_entInfo.charactorChoice = (player_class)(*(int32_t*)((uintptr_t)ent + netvar.m_PlayerClass + netvar.m_iClass));
+			
+			// ACTIVE WEAPON
+			CHE_entInfo.classID == PLAYER ?
+				CHE_entInfo.activeWeapon = *(int32_t*)((uintptr_t)(interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle())) + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex) :
+				CHE_entInfo.activeWeapon = 0; // if not a player then weapon is 0
+			
+			// CHARACTER CHOICE
+			CHE_entInfo.classID == PLAYER ?
+				CHE_entInfo.charactorChoice = (player_class)(*(int32_t*)((uintptr_t)ent + netvar.m_PlayerClass + netvar.m_iClass)) :
+				CHE_entInfo.charactorChoice = NOT_PLAYER;
+			
+			// todo : maybe not get velocity for non player entities
 			CHE_entInfo.entVelocity		= ent->getEntVelocity();
 
 			/* store if entity is on ground or not, use full for projectile aimbot */
@@ -103,7 +158,7 @@ void execute_thread2(HINSTANCE instance)
 				CHE_entInfo.setFlagBit(ENT_ON_GROUND) : 
 				CHE_entInfo.clearFlagBit(ENT_ON_GROUND);
 
-			CHE_entInfo.infoBoneID = entities::boneManager.getBone((void*)ent, CHE_entInfo.charactorChoice); // return boneInfo pointer, and cache if not already
+			CHE_entInfo.infoBoneID = entities::boneManager.getBone(CHE_entInfo, CHE_entInfo.charactorChoice); // return boneInfo pointer, and cache it if not already
 			
 			/* processing target Bone ID accoring to entity state and active weapon */
 			if (entities::local::b_hasProjectileWeapon) { 
@@ -115,8 +170,18 @@ void execute_thread2(HINSTANCE instance)
 				CHE_entInfo.targetBoneID = HEAD; // shoot at head
 			}
 
+			// SETTING FLAGS
+			CHE_entInfo.classID == PLAYER ? //  is player bit
+				CHE_entInfo.setFlagBit(IS_PLAYER) :
+				CHE_entInfo.clearFlagBit(IS_PLAYER);
+
+			*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num ? // is frendly entity bit
+				CHE_entInfo.setFlagBit(FRENDLY) :
+				CHE_entInfo.clearFlagBit(FRENDLY);
+
 			CHE_vecEntities.push_back(CHE_entInfo);
 		}
+
 		entities::entManager.update_vecEntities(CHE_vecEntities); // updating global filtered entity list
 		entities::entManager.setFlagBit(entities::C_targets::DOING_FIRST_HALF);
 

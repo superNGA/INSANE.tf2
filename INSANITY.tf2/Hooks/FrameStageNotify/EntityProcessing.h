@@ -22,6 +22,9 @@ inline void processEntities()
 	view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
 	matrix3x4_t CHE_boneMatrix[MAX_STUDIO_BONES];
 	
+	// loading values related to local player 
+	vec eyePos = entities::local::eye_pos.load();
+	
 	entInfo_t* p_bestEnt = nullptr; // pointer to best aimbot target
 	float disFromCrosshair = -1.0f; // if negative after processing, then no best entity
 	qangle closestEntAngles; // <- best aimbot angles
@@ -30,9 +33,16 @@ inline void processEntities()
 		ent.p_ent->SetupBones(CHE_boneMatrix, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
 		ent.copyEntBones(CHE_boneMatrix);
 
-		ent.targetAngles = entities::world_to_viewangles(entities::local::eye_pos.load(), ent.bones[ent.targetBoneID].get_bone_coordinates()); // getting angles for target bone
+		/* initial position of target bone, if gonna do projectile aimbot then process it, else use it as it is. */
+		vec intialTargetBonePos = ent.bones[ent.targetBoneID].get_bone_coordinates(); 
+		vec targetBonePos;
+		entities::local::b_hasProjectileWeapon ?
+			targetBonePos = entities::projAimbotCalculations(eyePos, intialTargetBonePos, ent.entVelocity, ent.getFlagBit(ENT_ON_GROUND)):
+			targetBonePos = intialTargetBonePos;
+
+		ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
 		float entDisFromCrosshair = entities::disFromCrosshair(entities::local::viewAngles.load(), ent.targetAngles); // target angles distance from crosshair
-		
+
 		/* calculating closest entity from crosshair */
 		if (disFromCrosshair < 0.0f) {
 			disFromCrosshair	= entDisFromCrosshair;
@@ -46,9 +56,18 @@ inline void processEntities()
 		}
 	}
 
-	if(p_bestEnt) p_bestEnt->setFlagBit(IS_AIMBOT_TARGET);
+	if(p_bestEnt) p_bestEnt->setFlagBit(SHOULD_LOCK_AIMBOT);
 	entities::aimbotTargetAngles.store(closestEntAngles);
 
 	entities::entManager.setFlagBit(entities::C_targets::DOING_SECOND_HALF); // we have popullated the RENDER_vecEntities list
 	entities::entManager.update_vecEntities(CHE_vecEntInfo, true); // updating RENDERABLE entity list
+}
+
+inline void processGlow() {
+
+	auto vecEnt = entities::entManager.get_vecEntities();
+	
+	for (auto& ent : vecEnt) {
+		*(bool*)((uintptr_t)ent.p_ent + netvar.m_bGlowEnabled) = true;
+	}
 }

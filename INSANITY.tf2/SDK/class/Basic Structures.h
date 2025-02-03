@@ -112,7 +112,8 @@ enum player_class
 	TF_HEAVY,
 	TF_PYRO,
 	TF_SPY,
-	TF_ENGINEER
+	TF_ENGINEER,
+	NOT_PLAYER
 };
 
 /* use engine to retrieve this information about player */

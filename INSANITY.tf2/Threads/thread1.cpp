@@ -49,6 +49,7 @@ void execute_thread1(HINSTANCE instance)
 
 	/* getting fn runtime adrs */
 	fn_runtime_adrs::fn_createmove			= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+	fn_runtime_adrs::fn_renderGlowEffect	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
 	fn_runtime_adrs::fn_frame_stage_notify	= (uintptr_t)util.GetVirtualTable((void*)interface_tf2::base_client)[35];
 	
 	/* storing manually calling functions */
@@ -57,6 +58,7 @@ void execute_thread1(HINSTANCE instance)
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(),							(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene); //End scene hook
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_renderGlowEffect,		(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect);
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_frame_stage_notify,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 
@@ -102,6 +104,7 @@ void execute_thread1(HINSTANCE instance)
 
 namespace fn_runtime_adrs
 {
-	uintptr_t fn_createmove = 0;
+	uintptr_t fn_createmove			= 0;
 	uintptr_t fn_frame_stage_notify = 0;
+	uintptr_t fn_renderGlowEffect	= 0;
 };

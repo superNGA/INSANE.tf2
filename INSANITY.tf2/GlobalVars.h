@@ -30,6 +30,7 @@
 #include "SDK/class/Source Entity.h"
 #include "SDK/class/IVEngineClient.h"
 #include "SDK/class/I_EngineClientReplay.h"
+#include "SDK/class/GlowManager.h"
 
 /* entity information template struct */
 #include "SDK/entInfo_t.h"
@@ -54,6 +55,11 @@ struct raw_image_data
 	unsigned char* image_bytes;
 	size_t image_bytearray_size;
 };
+
+namespace TF_objects
+{
+	inline glowManager* pGlowManager = nullptr;
+}
 
 /* functions found via signature scanning. TO BE CALLED MANUALLY :) */
 namespace TF2_functions
@@ -199,10 +205,17 @@ namespace entities
 		boneInfo_t engiBone;
 
 		boneInfo_t spyBone;
+		boneInfo_t nonPlayerEntities;
 
 	public:
 		/* loop up bone function, if bone IDs are not cached, the it caches them*/
-		boneInfo_t* getBone(void* pEnt, player_class characterModel) {
+		boneInfo_t* getBone(entInfo_t& ent, player_class characterModel) {
+			
+			if (ent.classID == SENTRY_GUN || ent.classID == DISPENSER || ent.classID == TELEPORTER) {
+				return &nonPlayerEntities;
+			}
+
+			void* pEnt = (void*)ent.p_ent;
 			/* caching 
 			only done once in the entire life of software */
 			if (!getBit_boneIndexCached(characterModel)) {
@@ -299,13 +312,67 @@ namespace entities
 	};
 	inline boneManager_t boneManager;
 
+	class IDManager_t {
+	
+	public:
+		IDclass_t getID(I_client_entity* ent) {
+			
+			// entity clas name
+			std::string name = std::string(ent->GetClientNetworkable()->GetClientClass()->m_pNetworkName);
+			
+			// class ID
+			int ID = ent->GetClientNetworkable()->GetClientClass()->m_ClassID;
+			
+			auto iterator = CHE_mapID.find(name);
+			if (iterator != CHE_mapID.end()) { // if it is stored in the map
+				return iterator->second; // return class ID
+			}
+
+			// if not stored then store it
+			IDclass_t TEMPclassID = NOT_DEFINED;
+			if (name == "CTFPlayer") {
+				TEMPclassID = PLAYER;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			else if (name == "CObjectSentrygun") {
+				TEMPclassID = SENTRY_GUN;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			else if (name == "CObjectDispenser") {
+				TEMPclassID = DISPENSER;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			else if (name == "CObjectTeleporter") {
+				TEMPclassID = TELEPORTER;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+
+			// storing and returning ID
+			if (TEMPclassID != NOT_DEFINED) CHE_mapID[name] = TEMPclassID;
+			return CHE_mapID[name];
+		}
+	private:
+		std::unordered_map<std::string, IDclass_t> CHE_mapID;
+	};
+	inline IDManager_t IDManager;
+
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,
 	if returns TRUE, screen cordinated are valid and on the screen. */
 	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
 
 	/* returns view angles for the target world coordinates */
-	qangle world_to_viewangles(const vec& localPosition, const vec& targetPosition);
+	qangle worldToViewangles(const vec& localPosition, const vec& targetPosition);
+
+	vec projAimbotCalculations(vec& projectileStartPos, vec& targetPosition, vec& entVel, bool onGround);
 
 	/* Finds the distance from localplayer crosshair to the target angles */
 	inline float disFromCrosshair(const qangle& local_angles, const qangle& target_angles)

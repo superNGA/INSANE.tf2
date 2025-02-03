@@ -4,6 +4,7 @@ such as local player, active weapon, enimies.
 might also do projectile aimbot caculations and other stuff */
 
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
 #include <Windows.h>
 #include <thread> 
 

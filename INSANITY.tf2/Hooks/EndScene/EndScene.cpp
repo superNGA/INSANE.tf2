@@ -474,7 +474,7 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
         drawList->AddRect(
             ImVec2(ent.boneScreenPos[HEAD].x - entWidth, ent.boneScreenPos[LEFT_FOOT].y), // lower left corner for esp box
             ImVec2(ent.boneScreenPos[HEAD].x + entWidth, ent.boneScreenPos[HEAD].y), // upper right corner 
-            ImColor(ent.getFlagBit(IS_AIMBOT_TARGET) ? GREEN : WHITE) // colour
+            ImColor(ent.getFlagBit(SHOULD_LOCK_AIMBOT) ? GREEN : WHITE) // colour
         );
     }
 }

@@ -100,7 +100,8 @@ int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_
 	return 1;
 }
 
-qangle entities::world_to_viewangles(const vec& localPosition, const vec& targetPosition) {
+/* HIT-SCAN aimbot calculations */
+qangle entities::worldToViewangles(const vec& localPosition, const vec& targetPosition) {
 	vec delta = targetPosition - localPosition;
 
 	float hypotenuse = std::sqrt(delta.x * delta.x + delta.y * delta.y);
@@ -118,6 +119,42 @@ qangle entities::world_to_viewangles(const vec& localPosition, const vec& target
 	return angles;
 }
 
+/* PROJECTILE aimbot calculations */
+vec entities::projAimbotCalculations(vec& projectileStartPos ,vec& targetPosition, vec& entVel, bool onGround) {
+
+	float projectileVel = 1980.0f; // todo : make this dynamic 
+	
+	// Convert viewangles (degrees) to radians
+	qangle viewAngles = entities::local::viewAngles.load();
+	viewAngles.pitch = -viewAngles.pitch * M_PI / 180; // Pitch is inverted in-game
+	viewAngles.yaw = viewAngles.yaw * M_PI / 180;
+
+	// Calculate projectile velocity in different directions
+	vec vecProjectileVel;
+	vecProjectileVel.z = projectileVel * sin(viewAngles.pitch);
+	vecProjectileVel.x = projectileVel * cos(viewAngles.pitch) * cos(viewAngles.yaw);
+	vecProjectileVel.y = projectileVel * cos(viewAngles.pitch) * sin(viewAngles.yaw);
+
+	// Calculating relative velocity
+	vec relativeVel;
+	relativeVel.x = vecProjectileVel.x - entVel.x;
+	relativeVel.y = vecProjectileVel.y - entVel.y;
+	relativeVel.z = vecProjectileVel.z - entVel.z;
+
+	// calculating distance & time
+	float distance = (projectileStartPos - targetPosition).mag(); // this will be + at all times
+	float time = distance / projectileVel;
+
+	// final position calculation
+	vec targetFuturePos;
+	targetFuturePos.x = targetPosition.x + entVel.x * time; // <- X axis
+	targetFuturePos.y = targetPosition.y + entVel.y * time; // <- Y axis
+	onGround ?
+		targetFuturePos.z = targetPosition.z + entVel.z * time : // normal position calculation if on ground
+		targetFuturePos.z = targetPosition.z + (entVel.z * time) + (0.5f * -TF2_GRAVITY * time * time); // else consider gravity
+
+	return targetFuturePos;
+}
 
 float entities::vec_dis_from_screen_center(const vec2& target_pos)
 {
