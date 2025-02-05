@@ -254,6 +254,15 @@ public:
 
 	int get_active_weapon_handle();
 	vec getEntVelocity();
+
+	// Returns life state, anything other than 0 means dead
+	lifeState_t getLifeState();
+
+	// What character is this player playing?
+	player_class getCharacterChoice();
+
+	// returns the team num for this entity
+	int16_t getTeamNum();
 };
 
 class c_base_entity : public I_client_entity

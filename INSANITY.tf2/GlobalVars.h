@@ -117,11 +117,12 @@ namespace entities
 	private:
 		/* holds all valid entities, which are to be processed inside FrameStageNotify */
 		std::vector<entInfo_t> vecEntities;
+		std::vector<entInfo_t> RENDER_vecEntities;
 		std::mutex MTX_vecEntities;
 
-		std::vector<entInfo_t> RENDER_vecEntities;
 		int8_t flag = 0;
 	public:
+		//==============HANDLING VECTOR============================
 		void clear_vecEntities() {
 			std::lock_guard<std::mutex> lock(MTX_vecEntities);
 			vecEntities.clear();
@@ -175,6 +176,67 @@ namespace entities
 	};
 	inline C_targets entManager;
 
+	// this is a anti-race condition mechanism for maps, but I cannot garantte returning 
+	// the latest buffer each call.
+	class allEntManager_t {
+	public:
+		typedef std::unordered_map<int16_t, glowObject_t> allEntMap;
+
+		// give pointer to current read buffer
+		allEntMap* getReadBuffer() {
+
+			b_isReadBufferActive.store(true);
+			return readBuffer.load();
+		}
+
+		// gives pointer to current write buffer
+		allEntMap* getWriteBuffer() {
+
+			b_isWriteBufferActive.store(true);
+			return writeBuffer.load();
+		}
+
+		// must call this once you are done reading or writting buffer
+		// @param set isRead to true if you sending back read buffer, else set it to false
+		void sendBack(bool isRead) {
+
+			// Managing flags
+			if (isRead) {
+				b_isReadBufferActive.store(false);
+			}
+			else {
+				b_isWriteBufferActive.store(false);
+			}
+
+			// if non of the buffer is active, then swap em'
+			if (!b_isReadBufferActive.load() && !b_isWriteBufferActive.load()) {
+				
+				// swapping buffer
+				if (readBuffer.load() == &allEntMap_01) {
+					readBuffer.store(&allEntMap_02);
+					writeBuffer.store(&allEntMap_01);
+				}
+				else {
+					readBuffer.store(&allEntMap_01);
+					writeBuffer.store(&allEntMap_02);
+				}
+			}
+		}
+
+	private:
+		allEntMap allEntMap_01; // default read buffer
+		allEntMap allEntMap_02; // default write buffer
+
+		// read and write buffer pointers
+		std::atomic<allEntMap*> readBuffer	= &allEntMap_01;
+		std::atomic<allEntMap*> writeBuffer	= &allEntMap_02;
+
+		// flags indicating state of read and write buffer to prevent race conditions
+		std::atomic<bool> b_isReadBufferActive = false;
+		std::atomic<bool> b_isWriteBufferActive = false;
+	};
+	inline allEntManager_t allEntManager;
+
 	class boneManager_t
 	{
 	private:
@@ -209,13 +271,14 @@ namespace entities
 
 	public:
 		/* loop up bone function, if bone IDs are not cached, the it caches them*/
-		boneInfo_t* getBone(entInfo_t& ent, player_class characterModel) {
+		boneInfo_t* getBone(entInfo_t* ent, player_class characterModel) {
 			
-			if (ent.classID == SENTRY_GUN || ent.classID == DISPENSER || ent.classID == TELEPORTER) {
+			if (ent->classID != PLAYER) {
 				return &nonPlayerEntities;
 			}
 
-			void* pEnt = (void*)ent.p_ent;
+			void* pEnt = (void*)ent->p_ent;
+
 			/* caching 
 			only done once in the entire life of software */
 			if (!getBit_boneIndexCached(characterModel)) {
@@ -330,26 +393,51 @@ namespace entities
 
 			// if not stored then store it
 			IDclass_t TEMPclassID = NOT_DEFINED;
+			// any PLAYER
 			if (name == "CTFPlayer") {
 				TEMPclassID = PLAYER;
 				#ifdef _DEBUG
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif
 			}
+			// engi -> sentery gun
 			else if (name == "CObjectSentrygun") {
 				TEMPclassID = SENTRY_GUN;
 				#ifdef _DEBUG
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif
 			}
+			// engi -> dispenser
 			else if (name == "CObjectDispenser") {
 				TEMPclassID = DISPENSER;
 				#ifdef _DEBUG
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif
 			}
+			// engi -> Teleported
 			else if (name == "CObjectTeleporter") {
 				TEMPclassID = TELEPORTER;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			// TODO : CHECK THIS 
+			else if (name == "CTFAmmoPack") {
+				TEMPclassID = AMMO_PACK;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			// Payload cart, if more than one in a match, that means we are not playing PAYLOAD
+			else if (name == "CFuncTrackTrain") {
+				TEMPclassID = PAYLOAD;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			// Flag in capture the Flag
+			else if (name == "CCaptureFlag") {
+				TEMPclassID = TF_ITEM;
 				#ifdef _DEBUG
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif

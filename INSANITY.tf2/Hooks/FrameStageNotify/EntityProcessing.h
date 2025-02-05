@@ -15,9 +15,13 @@ inline void processEntities()
 		return;
 	}
 
+	// getting vecEntities
 	std::vector<entInfo_t> CHE_vecEntInfo = entities::entManager.get_vecEntities();
 	if (CHE_vecEntInfo.empty()) 
 		return;
+
+	// getting map for all entities
+	entities::allEntManager_t::allEntMap* allEntMap = entities::allEntManager.getReadBuffer();
 
 	view_matrix CHE_viewMatrix = entities::M_worldToScreen.load();
 	matrix3x4_t CHE_boneMatrix[MAX_STUDIO_BONES];
@@ -28,46 +32,106 @@ inline void processEntities()
 	entInfo_t* p_bestEnt = nullptr; // pointer to best aimbot target
 	float disFromCrosshair = -1.0f; // if negative after processing, then no best entity
 	qangle closestEntAngles; // <- best aimbot angles
-	for (auto& ent : CHE_vecEntInfo) {
 
-		ent.p_ent->SetupBones(CHE_boneMatrix, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
-		ent.copyEntBones(CHE_boneMatrix);
+	// getting loop size
+	int16_t loopSize = 0;
+	int16_t SIZE_vecEnt = CHE_vecEntInfo.size();
+	int16_t SIZE_mapEnt = allEntMap->size();
+	SIZE_mapEnt > SIZE_vecEnt ?
+		loopSize = SIZE_mapEnt :
+		loopSize = SIZE_vecEnt;
 
-		/* initial position of target bone, if gonna do projectile aimbot then process it, else use it as it is. */
-		vec intialTargetBonePos = ent.bones[ent.targetBoneID].get_bone_coordinates(); 
-		vec targetBonePos;
-		entities::local::b_hasProjectileWeapon ?
-			targetBonePos = entities::projAimbotCalculations(eyePos, intialTargetBonePos, ent.entVelocity, ent.getFlagBit(ENT_ON_GROUND)):
-			targetBonePos = intialTargetBonePos;
+	for (int i = 0; i < loopSize; i++) {
 
-		ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
-		float entDisFromCrosshair = entities::disFromCrosshair(entities::local::viewAngles.load(), ent.targetAngles); // target angles distance from crosshair
+		// AIMBOT LOGIC
+		if (i < SIZE_vecEnt) {
 
-		/* calculating closest entity from crosshair */
-		if (disFromCrosshair < 0.0f) {
-			disFromCrosshair	= entDisFromCrosshair;
-			closestEntAngles	= ent.targetAngles;
-			p_bestEnt			= &ent;
+			entInfo_t& ent = CHE_vecEntInfo[i]; 
+			if (ent.getFlagBit(FRENDLY)) continue; // skipping entites from our team
+
+			ent.p_ent->SetupBones(CHE_boneMatrix, MAX_STUDIO_BONES, HITBOX_BONES, entities::pGlobalVars->curtime);
+			ent.copyEntBones(CHE_boneMatrix);
+
+			/* initial position of target bone, if gonna do projectile aimbot then process it, else use it as it is. */
+			vec intialTargetBonePos = ent.bones[ent.targetBoneID].get_bone_coordinates();
+			vec targetBonePos;
+			entities::local::b_hasProjectileWeapon ?
+				targetBonePos = entities::projAimbotCalculations(eyePos, intialTargetBonePos, ent.entVelocity, ent.getFlagBit(ENT_ON_GROUND)) :
+				targetBonePos = intialTargetBonePos;
+
+			ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
+			float entDisFromCrosshair = entities::disFromCrosshair(entities::local::viewAngles.load(), ent.targetAngles); // target angles distance from crosshair
+
+			/* calculating closest entity from crosshair */
+			if (disFromCrosshair < 0.0f) {
+				disFromCrosshair = entDisFromCrosshair;
+				closestEntAngles = ent.targetAngles;
+				p_bestEnt = &ent;
+			}
+			else if (entDisFromCrosshair < disFromCrosshair) {
+				disFromCrosshair = entDisFromCrosshair;
+				closestEntAngles = ent.targetAngles;
+				p_bestEnt = &ent;
+			}
 		}
-		else if (entDisFromCrosshair < disFromCrosshair) {
-			disFromCrosshair	= entDisFromCrosshair;
-			closestEntAngles	= ent.targetAngles;
-			p_bestEnt			= &ent;
+
+		// GLOW MANAGER
+		if (i < TF_objects::pGlowManager->count) {
+			
+			glowDef& glow = TF_objects::pGlowManager->g_glowObject[i];
+			glowObject_t& glowObj = (*allEntMap)[glow.getEntIndex()];
+
+			glow.alpha = 1.0f;
+			switch (glowObj.classID)
+			{
+			case PLAYER:
+				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing PLAYER");
+				if (glowObj.isFrendly) {
+					glow.color = vec(0.0f, 1.0f, 1.0f);
+				}
+				else {
+					glow.color = vec(1.0f, 0.0f, 0.0f);
+				}
+				break;
+
+			case DISPENSER:
+			case SENTRY_GUN:
+			case TELEPORTER:
+
+				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing BUILDING");
+				if (glowObj.isFrendly) {
+					glow.color = vec(0.0f, 1.0f, 0.0f);
+				}
+				else {
+					glow.color = vec(1.0f, 1.0f, 1.0f);
+				}
+				break;
+
+			default:
+				break;
+			}
 		}
 	}
 
 	if(p_bestEnt) p_bestEnt->setFlagBit(SHOULD_LOCK_AIMBOT);
 	entities::aimbotTargetAngles.store(closestEntAngles);
 
+	entities::allEntManager.sendBack(true);
 	entities::entManager.setFlagBit(entities::C_targets::DOING_SECOND_HALF); // we have popullated the RENDER_vecEntities list
 	entities::entManager.update_vecEntities(CHE_vecEntInfo, true); // updating RENDERABLE entity list
 }
 
 inline void processGlow() {
 
-	auto vecEnt = entities::entManager.get_vecEntities();
+	entities::allEntManager_t::allEntMap* entMap = entities::allEntManager.getReadBuffer();
+	for (const auto& [entIndex, glowObj] : *entMap) {
 	
-	for (auto& ent : vecEnt) {
-		*(bool*)((uintptr_t)ent.p_ent + netvar.m_bGlowEnabled) = true;
+		if (!glowObj.pEnt) {
+			continue;
+		}
+
+		*(bool*)((uintptr_t)glowObj.pEnt + netvar.m_bGlowEnabled) = true;
 	}
+
+	entities::allEntManager.sendBack(true);
 }

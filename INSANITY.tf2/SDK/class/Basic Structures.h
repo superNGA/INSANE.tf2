@@ -89,6 +89,14 @@ enum client_frame_stage
 	FRAME_RENDER_END						// We've finished rendering the scene.
 };
 
+enum lifeState_t {
+	LIFE_ALIVE = 0,
+	LIFE_DYING,
+	LIFE_DEAD,
+	LIFE_RESPAWNABLE,
+	LIFE_DISCARDBODY
+};
+
 /* skeleton matrix */
 class matrix3x4_t
 {

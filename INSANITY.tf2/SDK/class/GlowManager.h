@@ -8,6 +8,10 @@ struct glowDef
 	float	alpha;
 	bool	renderWhenOccluded; 
 	bool	renderWhenUnoccluded; 
+
+	inline int16_t getEntIndex() {
+		return pEnt & 0xFFF;
+	}
 };
 
 class glowManager

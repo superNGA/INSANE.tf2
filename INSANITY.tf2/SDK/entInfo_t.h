@@ -56,8 +56,7 @@ enum IDclass_t {
 	TELEPORTER,
 	TF_ITEM,
 	CAPTURE_POINT,
-	BASE_WEAPON,
-	MELEE_WEAPON,
+	WEAPON,
 	PAYLOAD
 };
 
@@ -68,8 +67,10 @@ struct boneScreenPos_t
 
 struct entInfo_t
 {
-	char* entUserName;
+	std::string entUserName = "NotPlayer";
 	I_client_entity* p_ent;
+	I_client_entity* pActiveWeapon;
+	int16_t entIndex = 0;
 
 	/* is this entity a player or dispenser of what? */
 	IDclass_t classID = NOT_DEFINED;
@@ -77,7 +78,8 @@ struct entInfo_t
 	/* which class is this player playing */
 	player_class charactorChoice;
 
-	/* what weapon is this player holding */
+	/* what weapon is this player holding 
+	weapon ID for active weapon */
 	int16_t activeWeapon;
 
 	vec entPos;
@@ -122,4 +124,12 @@ struct entInfo_t
 	inline bool getFlagBit(const BIT_entInfo bitIndex) {
 		return flags & (1 << bitIndex);
 	}
+};
+
+struct glowObject_t
+{
+	I_client_entity* pEnt	= nullptr;
+	int16_t entIndex		= 0;
+	bool isFrendly			= false;
+	IDclass_t classID		= NOT_DEFINED;
 };
