@@ -37,11 +37,15 @@ inline void processEntities()
 	int16_t loopSize = 0;
 	int16_t SIZE_vecEnt = CHE_vecEntInfo.size();
 	int16_t SIZE_mapEnt = allEntMap->size();
-	SIZE_mapEnt > SIZE_vecEnt ?
-		loopSize = SIZE_mapEnt :
+	if (SIZE_vecEnt > SIZE_mapEnt) {
 		loopSize = SIZE_vecEnt;
+	}
+	else {
+		loopSize = SIZE_mapEnt;
+	}
 
-	for (int i = 0; i < loopSize; i++) {
+	printf("GLOW MANAGER SIZE : %d, map size : %d, vector size : %d, loop size : %d\n", TF_objects::pGlowManager->count ,SIZE_mapEnt, SIZE_vecEnt, loopSize);
+	for (int i = 0; i < TF_objects::pGlowManager->count; i++) {
 
 		// AIMBOT LOGIC
 		if (i < SIZE_vecEnt) {
@@ -76,21 +80,23 @@ inline void processEntities()
 		}
 
 		// GLOW MANAGER
-		if (i < TF_objects::pGlowManager->count) {
-			
+		if (i < TF_objects::pGlowManager->count) { 
+
 			glowDef& glow = TF_objects::pGlowManager->g_glowObject[i];
 			glowObject_t& glowObj = (*allEntMap)[glow.getEntIndex()];
+
+			printf("ENTITY : %d\n", glow.getEntIndex());
 
 			glow.alpha = 1.0f;
 			switch (glowObj.classID)
 			{
 			case PLAYER:
-				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing PLAYER");
+				//cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing PLAYER");
 				if (glowObj.isFrendly) {
 					glow.color = vec(0.0f, 1.0f, 1.0f);
 				}
 				else {
-					glow.color = vec(1.0f, 0.0f, 0.0f);
+					glow.color = vec(1.0f, 1.0f, 1.0f);
 				}
 				break;
 
@@ -107,7 +113,25 @@ inline void processEntities()
 				}
 				break;
 
+			case TF_ITEM:
+				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing INTELLIGENCE CASE");
+				if (glowObj.isFrendly) { // our intelligence case
+					glow.color = vec(0.0f, 1.0f, 0.0f);
+				}
+				else { // enemy intelligence case
+					glow.color = vec(1.0f, 1.0f, 1.0f);
+				}
+				break;
+
+			case AMMO_PACK:
+				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing AMMO PACK");
+				glow.color = vec(1.0f, 1.0f, 0.0f);
+				break;
+
+			// if this entity is unindentified
 			default:
+				cons.Log(FG_GREEN, "GLOW MANAGER", "BULLSHIT");
+				glow.color = vec(1.0f, 1.0f, 1.0f);
 				break;
 			}
 		}

@@ -68,6 +68,8 @@ void execute_thread2(HINSTANCE instance)
 		// PURPOSE : this map stores some imformation about all entities if they are even slightly useful
 		entities::allEntManager_t::allEntMap* allEntMap = entities::allEntManager.getWriteBuffer();
 
+		int player = 0, turret = 0, dispenser = 0, teleporter = 0, ammo = 0, intel = 0;
+
 		/* entity list loop here */
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)
 		{
@@ -87,92 +89,13 @@ void execute_thread2(HINSTANCE instance)
 			
 			CHE_entInfo.classID = entities::IDManager.getID(ent);
 			CHE_glowObj.classID = CHE_entInfo.classID;
-			
+
 			//===================================== FILLING INFO ABOUT VAILD ENTITIES ====================================
-			
-			// PROTOTYPING
-			//switch (CHE_entInfo.classID)
-			//{
-			//	// heighest priority entities
-			//case PLAYER:
-			//	interface_tf2::engine->GetPlayerInfo(ent_num, &CHE_playerInfo);
-			//	cons.Log(FG_GREEN, "THREAD 2", "Processing player : %s", CHE_playerInfo.name);
-			//	CHE_entInfo.p_ent = ent;
-			//	CHE_entInfo.setFlagBit(IS_PLAYER);
-			//	CHE_entInfo.entUserName		= std::string(CHE_playerInfo.name);
-
-			//	// DEAD ?
-			//	if (*(int16_t*)((uintptr_t)ent + netvar.m_lifeState) != 0) { // DEAD check for Player & Building
-			//		break;
-			//	}
-
-			//	// getting ent + 0XD10
-			//	CHE_entInfo.activeWeapon	= *(int32_t*)((uintptr_t)(interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle())) + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex);
-			//	CHE_entInfo.charactorChoice = (player_class)(*(int32_t*)((uintptr_t)ent + netvar.m_PlayerClass + netvar.m_iClass));
-			//	CHE_entInfo.entVelocity		= ent->getEntVelocity();
-
-			//	*(int32_t*)((uintptr_t)ent + netvar.m_fFlags)& MF_ONGROUND ?
-			//		CHE_entInfo.setFlagBit(ENT_ON_GROUND) :
-			//		CHE_entInfo.clearFlagBit(ENT_ON_GROUND);
-
-			//	if (entities::local::b_hasProjectileWeapon) {
-			//		CHE_entInfo.getFlagBit(ENT_ON_GROUND) ?
-			//			CHE_entInfo.targetBoneID = LEFT_FOOT :	// if doing projectile aimbot, and entity on ground, then shoot at foot
-			//			CHE_entInfo.targetBoneID = CHEST;		// else if in air, shoot at chest
-			//	}
-			//	else { // if using hit-scan weapon 
-			//		CHE_entInfo.targetBoneID = HEAD;			// shoot at head
-			//	}
-			//	
-			//	CHE_entInfo.infoBoneID = entities::boneManager.getBone(&CHE_entInfo, CHE_entInfo.charactorChoice); // return boneInfo pointer, and cache it if not already
-
-			//	// 2nd heighest priority entities 
-			//case SENTRY_GUN:
-			//case TELEPORTER:
-			//case DISPENSER:
-			//	if (!CHE_entInfo.getFlagBit(IS_PLAYER)) printf("Processing a building\n");
-			//	CHE_entInfo.p_ent = ent;
-			//	CHE_entInfo.setFlagBit(IS_BUILDING);
-
-			//	// storing Entity index
-			//	CHE_entInfo.entIndex = ent_num;
-
-			//	// DEAD ?
-			//	if (*(int16_t*)((uintptr_t)ent + netvar.m_lifeState) != 0) { // DEAD check for Player & Building
-			//		break;
-			//	}
-
-			//	// FRENDLY ENTITY ?
-			//	*(int16_t*)((uintptr_t)ent + netvar.m_iTeamNum) == entities::local::team_num ?
-			//		CHE_entInfo.setFlagBit(FRENDLY) :
-			//		CHE_entInfo.clearFlagBit(FRENDLY);
-
-			//	// Pushing PLAYERS & Buildings
-			//	CHE_vecEntities.push_back(CHE_entInfo);
-
-			//case PAYLOAD:
-			//case TF_ITEM:
-			//	if (!CHE_entInfo.getFlagBit(IS_BUILDING)) printf("Processing a peace of shit\n");
-			//	CHE_entInfo.entPos	= ent->GetAbsOrigin();;
-			//	CHE_entInfo.p_ent	= ent;
-			//	
-			//	// managing glow Object
-			//	CHE_glowObj.pEnt			= ent;
-			//	CHE_glowObj.classID			= CHE_entInfo.classID;
-			//	CHE_glowObj.entIndex		= ent_num;
-			//	CHE_glowObj.isFrendly		= CHE_entInfo.getFlagBit(FRENDLY) ? true : false;
-
-			//	//MAP_allEntities[ent_num]	= CHE_glowObj;
-			//	
-			//	break;
-			//
-			//default:
-			//	break;
-			//}
 
 			switch (CHE_entInfo.classID)
 			{
 			case PLAYER:
+
 				// skip Dead players
 				if (ent->getLifeState() != LIFE_ALIVE) break;
 
@@ -222,8 +145,8 @@ void execute_thread2(HINSTANCE instance)
 
 				// finally pushing it in the vector & MAP
 				CHE_vecEntities.push_back(CHE_entInfo);
+				//printf("PLAYER pushing %p | index : %d\n", CHE_glowObj.pEnt, CHE_glowObj.entIndex);
 				(*allEntMap)[ent_num] = CHE_glowObj;
-
 				break;
 
 			case DISPENSER:
@@ -242,15 +165,20 @@ void execute_thread2(HINSTANCE instance)
 					CHE_glowObj.isFrendly = false;
 				}
 				CHE_glowObj.entIndex	= ent_num; 
+				//printf("BUILDING pushing %p | index : %d\n", CHE_glowObj.pEnt, CHE_glowObj.entIndex);
 				(*allEntMap)[ent_num]	= CHE_glowObj;
 
 				break;
 
 			case AMMO_PACK:
+				CHE_glowObj.pEnt = ent; // entity pointer allEntMap
+				CHE_glowObj.entIndex = ent_num;
+				(*allEntMap)[ent_num] = CHE_glowObj;
 
 				break;
 			case TF_ITEM:
 			case PAYLOAD:
+				//printf("payload or item\n");
 
 				break;
 			default:

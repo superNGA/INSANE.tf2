@@ -193,6 +193,11 @@ namespace entities
 		allEntMap* getWriteBuffer() {
 
 			b_isWriteBufferActive.store(true);
+
+			allEntMap* CHE_writeBuffer = writeBuffer.load();
+			CHE_writeBuffer->clear();
+
+			// clear write buffer here, if size if above some limit
 			return writeBuffer.load();
 		}
 

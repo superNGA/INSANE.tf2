@@ -9,7 +9,7 @@ int64_t hook::renderGlowEffect::H_renderGlowEffect(glowManager* pTF_glowManager,
 
 		TF_objects::pGlowManager = pTF_glowManager;
 		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "GLOW MANAGER", "Updated glow manager adrs");
+		cons.Log(FG_GREEN, "GLOW MANAGER", "Updated glow manager adrs : %p", (uintptr_t)pTF_glowManager);
 		#endif
 		updatedGlowManager = true;
 	}

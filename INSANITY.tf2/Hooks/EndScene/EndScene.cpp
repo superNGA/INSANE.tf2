@@ -1,4 +1,6 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
+#include <format>
 #include "EndScene.h"
 #include "Cheat windows/cheat_window.h"
 
@@ -476,6 +478,10 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
             ImVec2(ent.boneScreenPos[HEAD].x + entWidth, ent.boneScreenPos[HEAD].y), // upper right corner 
             ImColor(ent.getFlagBit(SHOULD_LOCK_AIMBOT) ? GREEN : WHITE) // colour
         );
+
+        /* drawing entity index on top of entities*/
+        std::string result = std::format("ENT INDEX : {}", ent.entIndex);
+        drawList->AddText(ImVec2(ent.boneScreenPos[HEAD].x, ent.boneScreenPos[HEAD].y), IM_COL32(255, 255, 255, 255), result.c_str());
     }
 }
 
