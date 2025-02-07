@@ -35,17 +35,18 @@ inline void processEntities()
 
 	// getting loop size
 	int16_t loopSize = 0;
-	int16_t SIZE_vecEnt = CHE_vecEntInfo.size();
-	int16_t SIZE_mapEnt = allEntMap->size();
-	if (SIZE_vecEnt > SIZE_mapEnt) {
-		loopSize = SIZE_vecEnt;
+	int16_t SIZE_vecEnt			= CHE_vecEntInfo.size();
+	int16_t SIZE_glowManager	= TF_objects::pGlowManager->count;
+	if (SIZE_glowManager > SIZE_vecEnt) {
+		loopSize = SIZE_glowManager;
 	}
 	else {
-		loopSize = SIZE_mapEnt;
+		loopSize = SIZE_vecEnt;
 	}
 
-	printf("GLOW MANAGER SIZE : %d, map size : %d, vector size : %d, loop size : %d\n", TF_objects::pGlowManager->count ,SIZE_mapEnt, SIZE_vecEnt, loopSize);
-	for (int i = 0; i < TF_objects::pGlowManager->count; i++) {
+	qangle localPlayerViewAngles = entities::local::viewAngles.load();
+
+	for (int i = 0; i < loopSize; i++) {
 
 		// AIMBOT LOGIC
 		if (i < SIZE_vecEnt) {
@@ -64,7 +65,7 @@ inline void processEntities()
 				targetBonePos = intialTargetBonePos;
 
 			ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
-			float entDisFromCrosshair = entities::disFromCrosshair(entities::local::viewAngles.load(), ent.targetAngles); // target angles distance from crosshair
+			float entDisFromCrosshair = entities::getFOV(localPlayerViewAngles , ent.targetAngles);
 
 			/* calculating closest entity from crosshair */
 			if (disFromCrosshair < 0.0f) {
@@ -80,18 +81,21 @@ inline void processEntities()
 		}
 
 		// GLOW MANAGER
-		if (i < TF_objects::pGlowManager->count) { 
+		if (i < SIZE_glowManager) { 
 
-			glowDef& glow = TF_objects::pGlowManager->g_glowObject[i];
-			glowObject_t& glowObj = (*allEntMap)[glow.getEntIndex()];
+			glowDef& glow = TF_objects::pGlowManager->g_glowObject[i];			
+			auto iterator = allEntMap->find(glow.getEntIndex());
+			
+			if (iterator == allEntMap->end()) {
+				continue;
+			}
 
-			printf("ENTITY : %d\n", glow.getEntIndex());
+			glowObject_t& glowObj = iterator->second;
 
 			glow.alpha = 1.0f;
 			switch (glowObj.classID)
 			{
 			case PLAYER:
-				//cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing PLAYER");
 				if (glowObj.isFrendly) {
 					glow.color = vec(0.0f, 1.0f, 1.0f);
 				}
@@ -103,8 +107,6 @@ inline void processEntities()
 			case DISPENSER:
 			case SENTRY_GUN:
 			case TELEPORTER:
-
-				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing BUILDING");
 				if (glowObj.isFrendly) {
 					glow.color = vec(0.0f, 1.0f, 0.0f);
 				}
@@ -123,15 +125,8 @@ inline void processEntities()
 				}
 				break;
 
-			case AMMO_PACK:
-				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing AMMO PACK");
-				glow.color = vec(1.0f, 1.0f, 0.0f);
-				break;
-
 			// if this entity is unindentified
 			default:
-				cons.Log(FG_GREEN, "GLOW MANAGER", "BULLSHIT");
-				glow.color = vec(1.0f, 1.0f, 1.0f);
 				break;
 			}
 		}
@@ -148,13 +143,20 @@ inline void processEntities()
 inline void processGlow() {
 
 	entities::allEntManager_t::allEntMap* entMap = entities::allEntManager.getReadBuffer();
+	
+	// looping through the map and enabling glow for each entity
 	for (const auto& [entIndex, glowObj] : *entMap) {
 	
+		// skipping null entries
 		if (!glowObj.pEnt) {
+			#ifdef _DEBUG
+			cons.Log(FG_RED, "GLOW MANAGER", "null entry in glow map, entity index : %d", glowObj.entIndex);
+			#endif
 			continue;
 		}
 
-		*(bool*)((uintptr_t)glowObj.pEnt + netvar.m_bGlowEnabled) = true;
+		// enabling glow
+		glowObj.pEnt->setGlow(true);
 	}
 
 	entities::allEntManager.sendBack(true);

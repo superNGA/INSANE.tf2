@@ -100,6 +100,17 @@ int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_
 	return 1;
 }
 
+float entities::getFOV(qangle& viewAngles, qangle& targetAngles) {
+	qangle delta = targetAngles - viewAngles;
+
+	// Normalize angles
+	delta.yaw = std::fmod(delta.yaw + 180.0f, 360.0f) - 180.0f;
+	delta.pitch = std::fmod(delta.pitch + 180.0f, 360.0f) - 180.0f;
+
+	return std::sqrt(delta.pitch * delta.pitch + delta.yaw * delta.yaw);
+}
+
+
 /* HIT-SCAN aimbot calculations */
 qangle entities::worldToViewangles(const vec& localPosition, const vec& targetPosition) {
 	vec delta = targetPosition - localPosition;

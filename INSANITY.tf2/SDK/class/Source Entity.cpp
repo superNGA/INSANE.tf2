@@ -27,3 +27,13 @@ player_class I_client_entity::getCharacterChoice() {
 int16_t I_client_entity::getTeamNum() {
 	return *(int16_t*)((uintptr_t)this + netvar.m_iTeamNum);
 }
+
+// setting glow
+void I_client_entity::setGlow(bool b_glowStatus) {
+	*(bool*)((uintptr_t)this + netvar.m_bGlowEnabled) = b_glowStatus;
+}
+
+// return the weapon index
+int32_t I_client_entity::getWeaponIndex() {
+	return *(int32_t*)((uintptr_t)this + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex);
+}

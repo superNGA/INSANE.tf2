@@ -195,7 +195,12 @@ namespace entities
 			b_isWriteBufferActive.store(true);
 
 			allEntMap* CHE_writeBuffer = writeBuffer.load();
-			CHE_writeBuffer->clear();
+			if (CHE_writeBuffer->size() > 100) {
+				#ifdef _DEBUG
+				cons.Log(FG_YELLOW, "Ent Map Manager", "Map size too big, clearing it now");
+				#endif 
+				CHE_writeBuffer->clear();
+			}
 
 			// clear write buffer here, if size if above some limit
 			return writeBuffer.load();
@@ -461,6 +466,8 @@ namespace entities
 	if returns FALSE, screen cordinates are not on the screen,
 	if returns TRUE, screen cordinated are valid and on the screen. */
 	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
+
+	float getFOV(qangle& viewAngles, qangle& targetAngles);
 
 	/* returns view angles for the target world coordinates */
 	qangle worldToViewangles(const vec& localPosition, const vec& targetPosition);

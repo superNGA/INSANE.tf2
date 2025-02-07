@@ -31,7 +31,8 @@ void execute_thread2(HINSTANCE instance)
 		/* LOCAL PLAYER */
 		I_client_entity* local_player = interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
 		qangle viewangles_localplayer = local_player->GetAbsAngles();
-		if (!local_player) {
+		if (!local_player || local_player->getLifeState() != LIFE_ALIVE) {
+			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
@@ -45,6 +46,7 @@ void execute_thread2(HINSTANCE instance)
 		/* get ACTIVE WEAPON */
 		entities::local::active_weapon = interface_tf2::entity_list->GetClientEntity(local_player->get_active_weapon_handle());
 		if (!entities::local::active_weapon) {
+			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
@@ -67,8 +69,6 @@ void execute_thread2(HINSTANCE instance)
 
 		// PURPOSE : this map stores some imformation about all entities if they are even slightly useful
 		entities::allEntManager_t::allEntMap* allEntMap = entities::allEntManager.getWriteBuffer();
-
-		int player = 0, turret = 0, dispenser = 0, teleporter = 0, ammo = 0, intel = 0;
 
 		/* entity list loop here */
 		for (int ent_num = 0; ent_num < ent_count; ent_num++)

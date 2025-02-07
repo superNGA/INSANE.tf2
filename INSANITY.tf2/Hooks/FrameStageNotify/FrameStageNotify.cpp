@@ -10,6 +10,8 @@ void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_fr
 	switch (frame_stage)
 	{
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
+		break;
+	case FRAME_NET_UPDATE_END:
 		if (frameCounter2 == 2) { // calling every third frame
 			processGlow();
 			frameCounter2 = 0; // reseting frame counter

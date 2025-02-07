@@ -27,6 +27,14 @@ struct qangle
 	qangle(float PITCH, float YAW, float ROLL) : pitch(PITCH), yaw(YAW), roll(ROLL) {}
 
 	float pitch, yaw, roll;
+
+	qangle operator+(qangle other) {
+		return qangle(pitch + other.pitch, yaw + other.yaw, 0.0f);
+	}
+
+	qangle operator-(qangle other) {
+		return qangle(pitch - other.pitch, yaw - other.yaw, 0.0f);
+	}
 };
 
 struct vec
