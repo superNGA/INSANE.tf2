@@ -45,5 +45,9 @@ namespace cheat_window
 	inline void draw_player_visual_window()
 	{
 		ImGui::Checkbox("ESP", &config::visuals::ESP);
+		ImGui::Checkbox("Health bar", &config::visuals::healthBar);
+		ImGui::Checkbox("Skip disguised spy", &config::visuals::skipDisguisedSpy);
+		ImGui::Checkbox("Skip cloaked spy", &config::visuals::skipCloackedSpy);
+		ImGui::Checkbox("Name", &config::visuals::playerName);
 	}
 };

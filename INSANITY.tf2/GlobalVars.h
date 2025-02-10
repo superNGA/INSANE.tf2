@@ -108,7 +108,9 @@ namespace entities
 		inline std::atomic<qangle>	viewAngles;
 	}
 
-	/* final aimbot angles, for best target entity */
+	inline int32_t* ARR_maxHealth = nullptr;
+
+	/* AIMBOT TARGET's angle */
 	inline std::atomic<qangle> aimbotTargetAngles;
 
 	/* info about all possible / alive targets */
@@ -300,6 +302,7 @@ namespace entities
 				CHE_boneInfo.leftFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_L");
 				CHE_boneInfo.rightFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_R");
 				CHE_boneInfo.chest			= TF2_functions::lookUpBone(pEnt, "bip_spine_3");
+				CHE_boneInfo.pelvis			= TF2_functions::lookUpBone(pEnt, "bip_pelvis");
 
 				setBit_boneIndexCached(characterModel);
 
@@ -448,6 +451,12 @@ namespace entities
 			// Flag in capture the Flag
 			else if (name == "CCaptureFlag") {
 				TEMPclassID = TF_ITEM;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
+			else if (name == "CTFPlayerResource") {
+				TEMPclassID = ENT_RESOURCE_MANAGER;
 				#ifdef _DEBUG
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif

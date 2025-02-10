@@ -164,9 +164,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         
         std::vector<entInfo_t> CHE_vecEntInfo = entities::entManager.get_vecEntities(true); // renderable processed entity list
 
-        if(config::visuals::ESP) render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
-        if (config::aimbot::global) render_cheat_features::render_FOV_circle(draw_list);
-        if (config::aimbot::future_pos_helper) render_cheat_features::render_proj_helper(draw_list);
+        if(config::visuals::ESP)                render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
+        if (config::aimbot::global)             render_cheat_features::render_FOV_circle(draw_list);
+        if (config::aimbot::future_pos_helper)  render_cheat_features::render_proj_helper(draw_list);
 
         draw_list->PopClipRect();
     }
@@ -449,6 +449,7 @@ void directX::draw_background()
     //draw_list->AddImage((ImTextureID)textures::background.texture, ImVec2(0, 0), ImVec2(1920, 1080), ImVec2(0,0), ImVec2(1,1), IM_COL32(255, 255, 255, UI::cur_BG_alpha));
 }
 
+
 void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std::vector<entInfo_t>& CHE_vecEntInfo) {
 
     if (CHE_vecEntInfo.empty()) return;
@@ -456,11 +457,31 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
 
     for (auto& ent : CHE_vecEntInfo) {
 
-        int8_t onScreenCounter = 0; // is this is still 0 after performaing world-to-screen, then entity is not on screen.
+        // skipping disguised spy if enabled feature
+        if (config::visuals::skipDisguisedSpy && ent.getFlagBit(IS_DISGUISED)) {
+            continue;
+        }
+
+        // skipping cloaked spy if enabled feature
+        if (config::visuals::skipCloackedSpy && ent.getFlagBit(IS_CLOAKED)) {
+            continue;
+        }
+
+        int8_t onScreenCounter = 0; // is this is still 0 after performaing world-to-screen, then entity is not on screen. 
+        
         /* going from first bone HEAD to LAST bone, doing world-to-screen for each bone */
-        for (int INDEX_boneScreenPos = HEAD; INDEX_boneScreenPos <= CHEST; INDEX_boneScreenPos++) {
+        for (int INDEX_boneScreenPos = HEAD; INDEX_boneScreenPos <= PELVIS; INDEX_boneScreenPos++) {
+
+            vec vecCurBoneCoordinates = ent.bones[INDEX_boneScreenPos].get_bone_coordinates(); // bone's world coordintates ( without adjustment for esp )
+            
+            // Adjusting bone screen position to make esp proper :)
+            if (INDEX_boneScreenPos == HEAD) {
+                vecCurBoneCoordinates.z += 15.0f;
+            }
+
+            // getting screen pos for adjusted bone positions 
             if (entities::world_to_screen(
-                ent.bones[INDEX_boneScreenPos].get_bone_coordinates(), // entity bone position
+                vecCurBoneCoordinates, // entity bone position
                 ent.boneScreenPos[INDEX_boneScreenPos], // where we want to store the bone screen position
                 &CHE_viewMatrix)) {
                 onScreenCounter++;
@@ -472,16 +493,54 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
         ent.setFlagBit(ON_SCREEN);
 
         /* drawing ESP rectangle for current entity */
-        float entWidth = abs(ent.boneScreenPos[LEFT_SHOULDER].x - ent.boneScreenPos[RIGHT_SHOULDER].x);
+        float entWidth  = abs(ent.boneScreenPos[HEAD].y - ent.boneScreenPos[PELVIS].y);
+        float entHeight = entWidth * 2.25f;
+
+        // ESP box screen coordinates
+        ImVec2 topLeft(ent.boneScreenPos[HEAD].x - entWidth / 2.0f, ent.boneScreenPos[HEAD].y);
+        ImVec2 bottomRight(ent.boneScreenPos[HEAD].x + entWidth / 2.0f, ent.boneScreenPos[HEAD].y + entHeight);
+        ImVec2 topRight(topLeft.x + entWidth, topLeft.y);
+        ImVec2 bottomLeft(bottomRight.x - entWidth, bottomRight.y);
+
         drawList->AddRect(
-            ImVec2(ent.boneScreenPos[HEAD].x - entWidth, ent.boneScreenPos[LEFT_FOOT].y), // lower left corner for esp box
-            ImVec2(ent.boneScreenPos[HEAD].x + entWidth, ent.boneScreenPos[HEAD].y), // upper right corner 
-            ImColor(ent.getFlagBit(SHOULD_LOCK_AIMBOT) ? GREEN : WHITE) // colour
+            topLeft, // TOP-LEFT corner for esp box
+            bottomRight, // BOTTOM-RIGHT corner 
+            ImColor(ent.getFlagBit(SHOULD_LOCK_AIMBOT) ? GREEN : WHITE) // color
         );
 
-        /* drawing entity index on top of entities*/
-        std::string result = std::format("ENT INDEX : {}", ent.entIndex);
-        drawList->AddText(ImVec2(ent.boneScreenPos[HEAD].x, ent.boneScreenPos[HEAD].y), IM_COL32(255, 255, 255, 255), result.c_str());
+        // HEALTH BAR
+        if (config::visuals::healthBar) {
+
+            float healthBarWidth = entWidth * 0.2f;
+
+            // empty health bar
+            drawList->AddRect(
+                ImVec2(topLeft.x - healthBarWidth, topLeft.y),
+                ImVec2(bottomLeft.x - healthBarWidth * 0.2f, bottomLeft.y),
+                WHITE
+            );
+
+            // filled health bar accoring to entities health
+            drawList->AddRectFilled(
+                ImVec2(topLeft.x - healthBarWidth, bottomLeft.y - entHeight * ((float)ent.health / (float)ent.maxHealth)),
+                ImVec2(bottomLeft.x - healthBarWidth * 0.2f, bottomLeft.y),
+                GREEN
+            );
+        }
+
+        // PLAYER NAME
+        if (config::visuals::playerName) {
+            
+            ImVec2 vec_nameSize = ImGui::CalcTextSize(ent.entUserName.c_str());
+            
+            ImVec2 vec_namePos(
+                (topRight.x + topLeft.x) / 2 - vec_nameSize.x,
+                topLeft.y + vec_nameSize.y
+            );
+
+            drawList->AddText(vec_namePos, IM_COL32(255, 255, 255, 255), ent.entUserName.c_str());
+        }
+
     }
 }
 

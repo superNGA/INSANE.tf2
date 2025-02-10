@@ -254,8 +254,8 @@ public:
 	// Return false to indicate sound is not audible
 	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
-	int get_active_weapon_handle();
-	vec getEntVelocity();
+	I_client_entity* getActiveWeapon();
+	vec				getEntVelocity();
 
 	// Returns life state, anything other than 0 means dead
 	lifeState_t		getLifeState();
@@ -271,6 +271,15 @@ public:
 
 	// if this entity is a weapon then gets its weapon index
 	int32_t getWeaponIndex();
+
+	// gets entities health niggaaaaaaa ;)
+	int16_t getEntHealth();
+
+	// is this entity a disguised spy or not?
+	bool isDisguised();
+
+	// is this spy cloaked?
+	bool isCloaked();
 };
 
 class c_base_entity : public I_client_entity
@@ -278,180 +287,3 @@ class c_base_entity : public I_client_entity
 public:
 	/* no need to include all those bullshit virtual functions, just make whatever you need locally and call function via index if needed*/
 };
-//class c_base_entity : public I_client_entity
-//{
-//public:
-//	virtual	void FireBullets();
-//	virtual	void ModifyFireBulletsDamage();
-//	virtual	bool ShouldDrawUnderwaterBulletBubbles();
-//	virtual	bool ShouldDrawWaterImpacts();
-//	virtual	bool HandleShotImpactingWater();	//5
-//	virtual	ITraceFilter* DispatchTraceAttack();
-//	virtual	void TraceAttack();
-//	virtual	void DoImpactEffect();
-//	virtual	void MakeTracer();
-//	virtual	int GetTracerAttachment();			//10
-//	virtual	int BloodColor();
-//	virtual	const char* GetTracerType();
-//	virtual	void Spawn();
-//	virtual	void SpawnClientEntity();
-//	virtual	void Precache();					//15
-//	virtual	void Activate();
-//	virtual	void ParseMapData();
-//	virtual	bool KeyValue();
-//	virtual	bool KeyValue2();
-//	virtual	bool KeyValue3(); //20
-//	virtual	bool GetKeyValue();
-//	virtual	bool Init();
-//	virtual	c_base_animating* GetBaseAnimating();
-//	virtual	void SetClassname();
-//	virtual	void SetRefEHandle(); //25
-//	virtual	void RecordToolMessage();
-//	virtual	void Release();
-//	virtual	c_base_entity* GetBaseEntity();
-//	virtual	bool IsTransparent();
-//	virtual	bool IsTwoPass();
-//	virtual	bool UsesPowerOfTwoFrameBufferTexture();
-//	virtual	bool UsesFullFrameBufferTexture();
-//	virtual	void IgnoresZBuffer();
-//	virtual	void DrawModel();
-//	virtual	void ComputeFxBlend();
-//	virtual	int GetFxBlend();
-//	virtual	bool LODTest();
-//	virtual	void GetRenderBounds();
-//	virtual	void GetRenderBoundsWorldspace();
-//	virtual	void GetShadowRenderBounds();
-//	virtual	void GetColorModulation();
-//	virtual	void OnThreadedDrawSetup();
-//	virtual	void TestCollision();
-//	virtual	void TestHitboxes();
-//	virtual	void GetAttackDamageScale();
-//	virtual	void NotifyShouldTransmit();
-//	virtual	void PreDataUpdate();
-//	virtual	void PostDataUpdate();
-//	virtual	void OnDataUnchangedInPVS();
-//	virtual	void ValidateModelIndex();
-//	virtual	void SetDormant();
-//	virtual	bool IsDormant();
-//	virtual	void SetDestroyedOnRecreateEntities();
-//	virtual	void GetEFlags();
-//	virtual	void SetEFlags();
-//	virtual	void entindex();
-//	virtual	void ReceiveMessage();
-//	virtual	void* GetDataTableBasePtr();
-//	virtual	void ClientThink();
-//	virtual	void SetThinkHandle();
-//	virtual	void ShouldSavePhysics();
-//	virtual	void OnSave();
-//	virtual	void OnRestore();
-//	virtual	void ObjectCaps();
-//	virtual	void Save();
-//	virtual	void Restore();
-//	virtual	void CreateVPhysics();
-//	virtual	void VPhysicsDestroyObject();
-//	virtual	void VPhysicsUpdate();
-//	virtual	void VPhysicsGetObjectList();
-//	virtual	void VPhysicsIsFlesh();
-//	virtual	void SetupBones();
-//	virtual	void SetupWeights();
-//	virtual	bool UsesFlexDelayedWeights();
-//	virtual	void DoAnimationEvents();
-//	virtual	void AddEntity();
-//	virtual	void CalcOverrideModelIndex();
-//	virtual	void ComputeWorldSpaceSurroundingBox();
-//	virtual	void GetHealthBarHeightOffset();
-//	virtual	void GetSolidFlags();
-//	virtual	CMouthInfo* GetMouth();
-//	virtual	void GetSoundSpatialization();
-//	virtual	void LookupAttachment();
-//	virtual	void GetAttachment();
-//	virtual	void GetAttachmentVelocity();
-//	virtual	void GetTeam();
-//	virtual	void GetTeamNumber();
-//	virtual	void ChangeTeam();
-//	virtual	void GetRenderTeamNumber();
-//	virtual	void InSameTeam();
-//	virtual	void InLocalTeam();
-//	virtual	void IsValidIDTarget();
-//	virtual	void GetIDString();
-//	virtual	void ModifyEmitSoundParams();
-//	virtual	void InitializeAsClientEntity();
-//	virtual	void Simulate();
-//	virtual	void OnDataChanged();
-//	virtual	void OnPreDataChanged();
-//	virtual	void GetClientVehicle();
-//	virtual	void GetAimEntOrigin();
-//	virtual	void GetToolRecordingState();
-//	virtual	void CleanupToolRecordingState();
-//	virtual	void GetCollideType();
-//	virtual	bool ShouldDraw();
-//	virtual	void UpdateVisibility();
-//	virtual	void IsSelfAnimating();
-//	virtual	void OnLatchInterpolatedVariables();
-//	virtual	void OnNewModel();
-//	virtual	void OnNewParticleEffect();
-//	virtual	void ResetLatched();
-//	virtual	void Interpolate();
-//	virtual	void IsSubModel();
-//	virtual	void CreateLightEffects();
-//	virtual	void Clear();
-//	virtual	void DrawBrushModel();
-//	virtual	void GetTextureAnimationStartTime();
-//	virtual	void TextureAnimationWrapped();
-//	virtual	void SetNextClientThink();
-//	virtual	void SetHealth();
-//	virtual	void GetHealth();
-//	virtual	void GetMaxHealth();
-//	virtual	void IsVisibleToTargetID();
-//	virtual	void IsHealthBarVisible();
-//	virtual	void ShouldReceiveProjectedTextures();
-//	virtual	bool IsShadowDirty();
-//	virtual	void MarkShadowDirty();
-//	virtual	void AddDecal();
-//	virtual	void AddColoredDecal();
-//	virtual	void IsClientCreated();
-//	virtual	void UpdateOnRemove();
-//	virtual	void SUB_Remove();
-//	virtual	void SetPredictable();
-//	virtual	void RestoreData();
-//	virtual	void DamageDecal();
-//	virtual	void DecalTrace();
-//	virtual	void ImpactTrace();
-//	virtual	void ShouldPredict();
-//	virtual	void Think();
-//	virtual	void CanBePoweredUp();
-//	virtual	void AttemptToPowerup();
-//	virtual	void IsCurrentlyTouching();
-//	virtual	void StartTouch();
-//	virtual	void Touch();
-//	virtual	void EndTouch();
-//	virtual	void PhysicsSolidMaskForEntity();
-//	virtual	void PhysicsSimulate();
-//	virtual	void IsAlive();
-//	virtual	void IsPlayer();
-//	virtual	void IsBaseCombatCharacter();
-//	virtual	void MyCombatCharacterPointer();
-//	virtual	void IsNPC();
-//	virtual	void IsNextBot();
-//	virtual	void IsBaseObject();
-//	virtual	void IsBaseCombatWeapon();
-//	virtual	void MyCombatWeaponPointer();
-//	virtual	void IsCombatItem();
-//	virtual	void IsBaseTrain();
-//	virtual	void ShouldCollide();
-//	virtual	void SetViewOffset();
-//	virtual	int GetBody();
-//	virtual	int GetSkin();
-//	virtual	void ShouldInterpolate();
-//	virtual	void GetClientSideFade();
-//	virtual	void BoneMergeFastCullBloat();
-//	virtual	void OnPredictedEntityRemove();
-//	virtual	void GetShadowCastDistance();
-//	virtual	void GetShadowCastDirection();
-//	virtual	void GetShadowUseOtherEntity();
-//	virtual	void SetShadowUseOtherEntity();
-//	virtual	void AddRagdollToFadeQueue();
-//	virtual	void IsDeflectable();
-//	virtual	void GetStudioBody();
-//	virtual	void PerformCustomPhysics();
-//};

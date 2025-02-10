@@ -116,7 +116,7 @@ inline void processEntities()
 				break;
 
 			case TF_ITEM:
-				cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing INTELLIGENCE CASE");
+				//cons.Log(FG_GREEN, "GLOW MANAGER", "Glowing INTELLIGENCE CASE");
 				if (glowObj.isFrendly) { // our intelligence case
 					glow.color = vec(0.0f, 1.0f, 0.0f);
 				}

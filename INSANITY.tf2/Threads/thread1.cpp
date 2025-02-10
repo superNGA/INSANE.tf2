@@ -94,9 +94,13 @@ void execute_thread1(HINSTANCE instance)
 		#endif
 		std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
 	}
+
+	#ifdef _DEBUG
 	cons.Log(FG_GREEN, "termination", "THREAD 1");
 	cons.Log(FG_GREEN, "termination", "FREE'ed Library");
 	cons.FreeConsoleInstance();
+	#endif
+
 	thread_termination_status::thread1 = true;
 	FreeLibraryAndExitThread(instance, 0);
 	return;

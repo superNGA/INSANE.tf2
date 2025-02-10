@@ -5,10 +5,9 @@
 
 #include "../../GlobalVars.h"
 #include "../EndScene/EndScene.h"
-#include "../../Libraries/Console System/Console_System.h"
-
 
 #ifdef _DEBUG
+#include "../../Libraries/Console System/Console_System.h"
 extern Console_System cons;
 #endif // _DEBUG
 

@@ -13,6 +13,10 @@ namespace config
 	namespace visuals
 	{
 		extern bool ESP;
+		extern bool healthBar;
+		extern bool skipDisguisedSpy;
+		extern bool skipCloackedSpy;
+		extern bool playerName;
 	}
 	namespace miscellaneous
 	{

@@ -12,6 +12,10 @@ namespace config
 	namespace visuals
 	{
 		bool ESP = false;
+		bool healthBar = false;
+		bool skipDisguisedSpy = false;
+		bool skipCloackedSpy = false;
+		bool playerName = false;
 	}
 	namespace miscellaneous
 	{

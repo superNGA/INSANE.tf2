@@ -1,9 +1,12 @@
 #pragma once
 #include <cstdint>
 #include "../../GlobalVars.h"
-#include "../../Libraries/Console System/Console_System.h"
 
+#ifdef _DEBUG
+#include "../../Libraries/Console System/Console_System.h"
 extern Console_System cons;
+#endif
+
 namespace hook
 {
 	namespace renderGlowEffect

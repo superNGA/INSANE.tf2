@@ -44,7 +44,7 @@ void execute_thread2(HINSTANCE instance)
 		entities::local::viewAngles.store(local_player->GetAbsAngles()); // storing view angles 
 
 		/* get ACTIVE WEAPON */
-		entities::local::active_weapon = interface_tf2::entity_list->GetClientEntity(local_player->get_active_weapon_handle());
+		entities::local::active_weapon = local_player->getActiveWeapon();
 		if (!entities::local::active_weapon) {
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -94,6 +94,10 @@ void execute_thread2(HINSTANCE instance)
 
 			switch (CHE_entInfo.classID)
 			{
+			case ENT_RESOURCE_MANAGER:
+				entities::ARR_maxHealth = (int32_t*)((uintptr_t)ent + netvar.m_iMaxHealth);
+				break;
+
 			case PLAYER:
 
 				// skip Dead players
@@ -104,12 +108,28 @@ void execute_thread2(HINSTANCE instance)
 
 				CHE_entInfo.p_ent			= ent; // entity pointer vecEntities
 				CHE_glowObj.pEnt			= ent; // entity pointer allEntMap
-				CHE_entInfo.pActiveWeapon	= interface_tf2::entity_list->GetClientEntity(ent->get_active_weapon_handle()); // active weapon pointer
-				CHE_entInfo.activeWeapon	= *(int32_t*)((uintptr_t)CHE_entInfo.pActiveWeapon + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex); // active weapon's weapon ID
+				CHE_entInfo.pActiveWeapon	= ent->getActiveWeapon(); // active weapon pointer
+				CHE_entInfo.activeWeapon	= CHE_entInfo.pActiveWeapon->getWeaponIndex();
 				CHE_entInfo.charactorChoice = ent->getCharacterChoice(); // which character is this entity playing?
-				CHE_entInfo.setFlagBit(IS_PLAYER); // setting IS_PLAYER bit dahh.. :)
-
 				CHE_entInfo.entVelocity		= ent->getEntVelocity();
+				CHE_entInfo.health			= ent->getEntHealth();
+				
+				// checking if disguised or not
+				ent->isDisguised() ?
+					CHE_entInfo.setFlagBit(IS_DISGUISED) :
+					CHE_entInfo.clearFlagBit(IS_DISGUISED);
+
+				// if cloaked or not
+				ent->isCloaked() ?
+					CHE_entInfo.setFlagBit(IS_CLOAKED) :
+					CHE_entInfo.clearFlagBit(IS_CLOAKED);
+
+				// getting entitis max health
+				if (entities::ARR_maxHealth) {
+					CHE_entInfo.maxHealth = entities::ARR_maxHealth[ent_num];
+				}
+
+				CHE_entInfo.setFlagBit(IS_PLAYER); // setting IS_PLAYER bit dahh.. :)
 
 				// is on ground or not? useful for projectile aimbot and shit
 				*(int32_t*)((uintptr_t)ent + netvar.m_fFlags) & MF_ONGROUND ?
@@ -145,7 +165,6 @@ void execute_thread2(HINSTANCE instance)
 
 				// finally pushing it in the vector & MAP
 				CHE_vecEntities.push_back(CHE_entInfo);
-				//printf("PLAYER pushing %p | index : %d\n", CHE_glowObj.pEnt, CHE_glowObj.entIndex);
 				(*allEntMap)[ent_num] = CHE_glowObj;
 				break;
 

@@ -42,7 +42,9 @@ bool offsets::initialize()
 		/* get the base tables and iterate through them */
 		RecvTable* base_table = client_class->m_pRecvTable;
 		if (!base_table) {
+			#ifdef _DEBUG
 			cons.Log("Bad base table", FG_RED);
+			#endif	
 			continue;
 		}
 
@@ -54,6 +56,8 @@ bool offsets::initialize()
 			netvar_map[prop->m_pVarName] = prop->m_Offset;
 			if (prop->child_table) recurse_maxxxing(prop->child_table);
 		}
+
+		offsets::fill_local_netvars(netvar_map, base_table->m_pNetTableName);
 
 		/* getting next table */
 		client_class = client_class->m_pNext;
@@ -78,15 +82,18 @@ bool offsets::initialize()
 void offsets::fill_local_netvars(T_map& map, const char* table_name)
 {
 	/* matching table and var name*/
-	if (!strcmp(table_name,"DT_TFPlayerClassShared")	&& map["m_iClass"])				netvar.m_iClass = map["m_iClass"];
-	if (!strcmp(table_name, "DT_EconEntity") && map["m_AttributeManager"])				netvar.m_AttributeManager = map["m_AttributeManager"];
-	if (!strcmp(table_name, "DT_AttributeContainer") && map["m_Item"])					netvar.m_Item = map["m_Item"];
-	if (!strcmp(table_name, "DT_ScriptCreatedItem") && map["m_iItemDefinitionIndex"])	netvar.m_iItemDefinitionIndex = map["m_iItemDefinitionIndex"];
-	if (!strcmp(table_name, "BASE_TABLE") && map["m_PlayerClass"])						netvar.m_PlayerClass = map["m_PlayerClass"];
-	if (!strcmp(table_name, "DT_BasePlayer") && map["m_iHealth"])						netvar.m_iHealth = map["m_iHealth"];
-	if (!strcmp(table_name, "DT_BasePlayer") && map["m_lifeState"])						netvar.m_lifeState = map["m_lifeState"];
-	if (!strcmp(table_name, "DT_BaseEntity") && map["m_iTeamNum"])						netvar.m_iTeamNum = map["m_iTeamNum"];
-	if (!strcmp(table_name, "DT_LocalPlayerExclusive") && map["m_vecViewOffset[2]"])	netvar.m_vecViewOffset = map["m_vecViewOffset[2]"];
+	if (!strcmp(table_name, "DT_TFPlayerClassShared")	&& map["m_iClass"])					netvar.m_iClass					= map["m_iClass"];
+	if (!strcmp(table_name, "DT_EconEntity")			&& map["m_AttributeManager"])		netvar.m_AttributeManager		= map["m_AttributeManager"];
+	if (!strcmp(table_name, "DT_AttributeContainer")	&& map["m_Item"])					netvar.m_Item					= map["m_Item"];
+	if (!strcmp(table_name, "DT_ScriptCreatedItem")		&& map["m_iItemDefinitionIndex"])	netvar.m_iItemDefinitionIndex	= map["m_iItemDefinitionIndex"];
+	if (!strcmp(table_name, "DT_TFPlayer")				&& map["m_PlayerClass"])			netvar.m_PlayerClass			= map["m_PlayerClass"];
+	if (!strcmp(table_name, "DT_BasePlayer")			&& map["m_iHealth"])				netvar.m_iHealth				= map["m_iHealth"];
+	if (!strcmp(table_name, "DT_BasePlayer")			&& map["m_lifeState"])				netvar.m_lifeState				= map["m_lifeState"];
+	if (!strcmp(table_name, "DT_BaseEntity")			&& map["m_iTeamNum"])				netvar.m_iTeamNum				= map["m_iTeamNum"];
+	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_vecViewOffset[2]"])		netvar.m_vecViewOffset			= map["m_vecViewOffset[2]"];
+	if (!strcmp(table_name, "DT_TFPlayerResource")		&& map["m_iMaxHealth"])				netvar.m_iMaxHealth				= map["m_iMaxHealth"];
+	if (!strcmp(table_name, "DT_TFPlayer")				&& map["m_Shared"])					netvar.m_Shared					= map["m_Shared"];
+	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_nPlayerCond"])			netvar.m_nPlayerCond			= map["m_nPlayerCond"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

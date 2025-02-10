@@ -5,7 +5,7 @@
 #include <string>
 #include "class/Basic Structures.h"
 
-#define IS_MAXBONES 6
+#define IS_MAXBONES 7
 
 /* HOW TO ADD A NEW BONE :
 	INCREASE IS_MAXBONES size accoring to boneInfo_t size.
@@ -20,7 +20,8 @@ enum INDEX_boneInfo {
 	RIGHT_SHOULDER,
 	LEFT_FOOT,
 	RIGHT_FOOT,
-	CHEST
+	CHEST,
+	PELVIS
 };
 
 struct boneInfo_t {
@@ -31,6 +32,7 @@ struct boneInfo_t {
 
 	int16_t rightFoot = 0;
 	int16_t chest = 0;
+	int16_t pelvis = 0;
 };
 
 enum BIT_entInfo
@@ -45,6 +47,9 @@ enum BIT_entInfo
 
 	// TEAM FLAG
 	FRENDLY,
+
+	IS_DISGUISED, // is disguised ?
+	IS_CLOAKED // is invisible ?
 };
 
 enum IDclass_t {
@@ -57,7 +62,10 @@ enum IDclass_t {
 	TF_ITEM,
 	CAPTURE_POINT,
 	WEAPON,
-	PAYLOAD
+	PAYLOAD,
+
+	// CTFResourceManager
+	ENT_RESOURCE_MANAGER
 };
 
 struct boneScreenPos_t
@@ -82,6 +90,12 @@ struct entInfo_t
 	weapon ID for active weapon */
 	int16_t activeWeapon;
 
+	// what is the maximum health for this entity ? 
+	int16_t maxHealth = 0;
+
+	// Current health for this entity
+	int16_t health = 0;
+
 	vec entPos;
 	matrix3x4_t bones[IS_MAXBONES]; 
 	vec entVelocity;
@@ -103,6 +117,7 @@ struct entInfo_t
 		bones[LEFT_FOOT]		= maxStudioBones[infoBoneID->leftFoot];
 		bones[RIGHT_FOOT]		= maxStudioBones[infoBoneID->rightFoot];
 		bones[CHEST]			= maxStudioBones[infoBoneID->chest];
+		bones[PELVIS]			= maxStudioBones[infoBoneID->pelvis];
 	}
 
 	/* This is a 16-bit bit field. each bit represent some information about the entity.
