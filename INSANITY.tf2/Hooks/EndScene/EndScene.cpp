@@ -541,6 +541,14 @@ void directX::render_cheat_features::render_esp_boxes(ImDrawList* drawList, std:
             drawList->AddText(vec_namePos, IM_COL32(255, 255, 255, 255), ent.entUserName.c_str());
         }
 
+        // testing visibility
+        if (ent.getFlagBit(IS_VISIBLE)) {
+            drawList->AddText(topRight, IM_COL32(255, 255, 255, 255), "visible");
+        }
+        else {
+            drawList->AddText(topRight, IM_COL32(255, 255, 255, 255), "NOPE");
+        }
+
     }
 }
 

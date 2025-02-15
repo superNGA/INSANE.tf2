@@ -21,6 +21,42 @@
 #define TF2_GRAVITY 800.0f
 #define DIRECT_HIT_ROCKET_LAUNCHER 1980.0f
 
+
+// engine trace specific defines
+#define	CONTENTS_SOLID					0x1
+#define	CONTENTS_WINDOW					0x2
+#define	CONTENTS_GRATE					0x8
+#define	CONTENTS_SLIME					0x10
+#define	CONTENTS_WATER					0x20
+#define	CONTENTS_BLOCKLOS				0x40
+#define CONTENTS_OPAQUE					0x80
+#define CONTENTS_IGNORE_NODRAW_OPAQUE	0x2000
+#define CONTENTS_MOVEABLE				0x4000
+#define	CONTENTS_PLAYERCLIP				0x10000
+#define	CONTENTS_MONSTERCLIP			0x20000
+#define	CONTENTS_MONSTER				0x2000000
+#define	CONTENTS_DEBRIS					0x4000000
+#define CONTENTS_HITBOX					0x40000000
+
+#define	MASK_ALL					(0xFFFFFFFF)
+#define	MASK_SHOT					(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEBRIS|CONTENTS_HITBOX)
+#define	MASK_SOLID					(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+#define	MASK_PLAYERSOLID			(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+#define	MASK_NPCSOLID				(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
+#define	MASK_WATER					(CONTENTS_WATER|CONTENTS_MOVEABLE|CONTENTS_SLIME)
+#define	MASK_OPAQUE					(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_OPAQUE)
+#define MASK_OPAQUE_AND_NPCS		(MASK_OPAQUE|CONTENTS_MONSTER)
+#define MASK_BLOCKLOS				(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_BLOCKLOS)
+#define MASK_BLOCKLOS_AND_NPCS		(MASK_BLOCKLOS|CONTENTS_MONSTER)
+#define	MASK_VISIBLE					(MASK_OPAQUE|CONTENTS_IGNORE_NODRAW_OPAQUE)
+#define MASK_VISIBLE_AND_NPCS		(MASK_OPAQUE_AND_NPCS|CONTENTS_IGNORE_NODRAW_OPAQUE)
+
+#define DISPSURF_FLAG_SURFACE		(1<<0)
+#define DISPSURF_FLAG_WALKABLE		(1<<1)
+#define DISPSURF_FLAG_BUILDABLE		(1<<2)
+#define DISPSURF_FLAG_SURFPROP1		(1<<3)
+#define DISPSURF_FLAG_SURFPROP2		(1<<4)
+
 struct qangle
 {
 	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
@@ -57,11 +93,29 @@ struct vec
 		return sqrt(x * x + y * y + z * z);
 	}
 
+	float magnitude() {
+		return sqrt(x * x + y * y + z * z);
+	}
+	
 	bool isEmpty(){
 		if (x || y || z) return false;
 		return true;
 	}
 };
+
+
+__declspec(align(16)) struct vecAligned : public vec {
+
+	float w; // to ensure alligment
+
+	vecAligned(float X, float Y, float Z, float W = 0.0f) : vec(X, Y, Z), w(W){}
+	vecAligned() : vec(0.0f, 0.0f, 0.0f), w(0.0f){}
+
+	vecAligned operator=(const vec& other) {
+		return vecAligned(other.x, other.y, other.z);
+	}
+};
+
 
 /* most used to store screen coordinates in this software, nothing too big */
 struct vec2
@@ -142,6 +196,23 @@ struct player_info_t
 	char		friendsName[32];
 	bool		fakeplayer;
 	bool		ishltv;
+};
+
+typedef unsigned char byte;
+struct cplane_t
+{
+	vec	normal;
+	float	dist;
+	byte	type;			// for fast side tests
+	byte	signbits;		// signx + (signy<<1) + (signz<<1)
+	byte	pad[2];
+};
+
+struct csurface_t
+{
+	const char*		name;
+	short			surfaceProps;
+	unsigned short	flags;		
 };
 
 /* Dummy stuctures */

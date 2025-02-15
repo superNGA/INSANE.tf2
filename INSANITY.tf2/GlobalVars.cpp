@@ -63,6 +63,8 @@ namespace interface_tf2
 	I_client_entity_list* entity_list		= nullptr;
 	IVEngineClient013* engine				= nullptr;
 	I_engine_client_replay* engine_replay	= nullptr;
+	IEngineTrace* pEngineTrace				= nullptr;
+	IVDebugOverlay* pDebugOverlay			= nullptr;
 };
 
 namespace TF2_functions

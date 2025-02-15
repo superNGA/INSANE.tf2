@@ -4,6 +4,29 @@
 
 extern local_netvars netvar;
 
+
+inline bool isTargetVisible(const vec& vecEyePos, const vec& vecTargetPos, entInfo_t* ent) {
+
+	I_client_entity* pLocalPlayer = entities::local::pLocalPlayer.load();
+	if (!pLocalPlayer) return false;
+
+	ray_t ray;
+	ray.Init(vecEyePos, vecTargetPos);
+	static trace_t gameTrace;
+	i_trace_filter filter(pLocalPlayer->GetCollideable()->GetEntityHandle());
+	interface_tf2::pEngineTrace->TraceRay(ray, MASK_ALL, &filter, &gameTrace);
+
+	// draws lines from player eye pos to target bones. 
+	//interface_tf2::pDebugOverlay->AddLineOverlay(vecEyePos, vecTargetPos, 255, 255, 255, true, 0.2f);
+
+	bool didHit = (ent->p_ent == gameTrace.m_entity);
+	didHit ?
+		ent->setFlagBit(IS_VISIBLE) :
+		ent->clearFlagBit(IS_VISIBLE);
+	return didHit;
+}
+
+
 inline void processEntities()
 {
 	/* updating matrices */
@@ -45,6 +68,7 @@ inline void processEntities()
 	}
 
 	qangle localPlayerViewAngles = entities::local::viewAngles.load();
+	vec localEyePos = entities::local::eye_pos.load();
 
 	for (int i = 0; i < loopSize; i++) {
 
@@ -64,6 +88,12 @@ inline void processEntities()
 				targetBonePos = entities::projAimbotCalculations(eyePos, intialTargetBonePos, ent.entVelocity, ent.getFlagBit(ENT_ON_GROUND)) :
 				targetBonePos = intialTargetBonePos;
 
+			// is this entity visible ?
+			if (!isTargetVisible(localEyePos, targetBonePos, &ent)) {
+				continue;
+			}
+
+			// getting view angles & distance for this entity...
 			ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
 			float entDisFromCrosshair = entities::getFOV(localPlayerViewAngles , ent.targetAngles);
 
@@ -134,6 +164,9 @@ inline void processEntities()
 
 	if(p_bestEnt) p_bestEnt->setFlagBit(SHOULD_LOCK_AIMBOT);
 	entities::aimbotTargetAngles.store(closestEntAngles);
+	p_bestEnt == nullptr ?
+		entities::shouldDoAimbot.store(false) :
+		entities::shouldDoAimbot.store(true);
 
 	entities::allEntManager.sendBack(true);
 	entities::entManager.setFlagBit(entities::C_targets::DOING_SECOND_HALF); // we have popullated the RENDER_vecEntities list

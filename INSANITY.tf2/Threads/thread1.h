@@ -18,6 +18,7 @@
 #include "../Hooks/Createmove/CreateMove.h"
 #include "../Hooks/FrameStageNotify/FrameStageNotify.h"
 #include "../Hooks/RenderGlowEffect/renderGlowEffect.h"
+#include "../Hooks/TraceRay/TraceRay.h"
 
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"
@@ -44,4 +45,5 @@ namespace fn_runtime_adrs
 	extern uintptr_t fn_createmove;
 	extern uintptr_t fn_frame_stage_notify;
 	extern uintptr_t fn_renderGlowEffect;
+	extern uintptr_t fn_traceRay;
 };

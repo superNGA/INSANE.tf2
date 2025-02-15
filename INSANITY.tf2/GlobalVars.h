@@ -21,6 +21,8 @@
 #define ENGINETRACE_SERVER		"EngineTraceServer003"
 #define ENGINETRACE_CLIENT		"EngineTraceClient003"
 #define ENGINE_CLIENT_REPLAY	"EngineClientReplay001"
+#define IENGINETRACE			"EngineTraceClient003"
+#define IVDEBUGOVERLAY			"VDebugOverlay003"
 
 /* this is config file */
 #include "Features/config.h"
@@ -31,6 +33,8 @@
 #include "SDK/class/IVEngineClient.h"
 #include "SDK/class/I_EngineClientReplay.h"
 #include "SDK/class/GlowManager.h"
+#include "SDK/class/IEngineTrace.h"
+#include "SDK/class/IVDebugOverlay.h"
 
 /* entity information template struct */
 #include "SDK/entInfo_t.h"
@@ -59,6 +63,8 @@ struct raw_image_data
 namespace TF_objects
 {
 	inline glowManager* pGlowManager = nullptr;
+	inline std::atomic<IEngineTrace*> pEngineTrace;
+	// inline IEngineTrace* pEngineTrace = nullptr;
 }
 
 /* functions found via signature scanning. TO BE CALLED MANUALLY :) */
@@ -94,10 +100,11 @@ namespace entities
 	};
 
 	inline global_var_base* pGlobalVars = nullptr;
-
+	
 	/* imfo about local player */
 	namespace local
 	{
+		inline std::atomic<I_client_entity*> pLocalPlayer(nullptr);
 		inline player_class			localplayer_class;
 		inline I_client_entity*		active_weapon;
 		inline int32_t				ID_active_weapon;
@@ -110,8 +117,9 @@ namespace entities
 
 	inline int32_t* ARR_maxHealth = nullptr;
 
-	/* AIMBOT TARGET's angle */
+	/* AIMBOT TARGET's vars */
 	inline std::atomic<qangle> aimbotTargetAngles;
+	inline std::atomic<bool> shouldDoAimbot(false);
 
 	/* info about all possible / alive targets */
 	class C_targets
@@ -672,4 +680,6 @@ namespace interface_tf2
 	extern I_client_entity_list*	entity_list;
 	extern IVEngineClient013*		engine;
 	extern I_engine_client_replay*	engine_replay;
+	extern IEngineTrace*			pEngineTrace;
+	extern IVDebugOverlay*			pDebugOverlay;
 };

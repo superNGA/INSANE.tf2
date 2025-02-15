@@ -30,6 +30,7 @@ void execute_thread2(HINSTANCE instance)
 
 		/* LOCAL PLAYER */
 		I_client_entity* local_player = interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
+		entities::local::pLocalPlayer.store(local_player);
 		qangle viewangles_localplayer = local_player->GetAbsAngles();
 		if (!local_player || local_player->getLifeState() != LIFE_ALIVE) {
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
@@ -203,6 +204,7 @@ void execute_thread2(HINSTANCE instance)
 			default:
 				break;
 			}
+
 		}
 
 		entities::entManager.update_vecEntities(CHE_vecEntities); // updating global filtered entity list

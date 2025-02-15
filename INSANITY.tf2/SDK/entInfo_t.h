@@ -45,6 +45,8 @@ enum BIT_entInfo
 	IS_PLAYER, // is this entity a actual player or something like a dispenser or some shit
 	IS_BUILDING, // is Dispensor, Teleporter or Sentery gun?
 
+	IS_VISIBLE, // is this entity visible ?
+
 	// TEAM FLAG
 	FRENDLY,
 

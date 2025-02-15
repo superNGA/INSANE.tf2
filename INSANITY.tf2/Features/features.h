@@ -97,6 +97,7 @@ namespace feature
 	inline void aimbot(CUserCmd* cmd, bool& result)
 	{
 		if (!config::aimbot::global) return;
+		if (!entities::shouldDoAimbot.load()) return;
 
 		if (GetAsyncKeyState(VK_LBUTTON))
 		{

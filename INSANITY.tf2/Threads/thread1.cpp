@@ -36,29 +36,36 @@ void execute_thread1(HINSTANCE instance)
 
 
 	/* getting interfaces */
-	int entity_list_code, ivengineclient_code, iengineclientreplay_code;
+	int entity_list_code, ivengineclient_code, iengineclientreplay_code, ienginetrace_code, ivdebugoverlay_code;
 	interface_tf2::entity_list		= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entity_list_code);
 	interface_tf2::engine			= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &ivengineclient_code);
 	interface_tf2::engine_replay	= (I_engine_client_replay*)util.GetInterface(ENGINE_CLIENT_REPLAY, ENGINE_DLL, &iengineclientreplay_code);
+	interface_tf2::pEngineTrace		= (IEngineTrace*)util.GetInterface(IENGINETRACE, ENGINE_DLL, &ienginetrace_code);
+	interface_tf2::pDebugOverlay	= (IVDebugOverlay*)util.GetInterface(IVDEBUGOVERLAY, ENGINE_DLL, &ivdebugoverlay_code);
 
 	#ifdef _DEBUG
 	entity_list_code			? cons.Log(FG_RED, "ERROR","Failed to get IClientEntityList")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IClientEntityList");
 	ivengineclient_code			? cons.Log(FG_RED, "ERROR","Failed to get IVEngineClient014")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IVEngineClient014");
 	iengineclientreplay_code	? cons.Log(FG_RED, "ERROR","Failed to get EngineClientReplay001")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineClientReplay001");
+	ienginetrace_code			? cons.Log(FG_RED, "ERROR","Failed to get EngineTraceClient003")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineTraceClient003");
+	ivdebugoverlay_code			? cons.Log(FG_RED, "ERROR","Failed to get VDebugOverlay003")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived VDebugOverlay003");
 	#endif
 
 	/* getting fn runtime adrs */
 	fn_runtime_adrs::fn_createmove			= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
 	fn_runtime_adrs::fn_renderGlowEffect	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
+	fn_runtime_adrs::fn_traceRay			= util.FindPattern("48 89 54 24 ? 55 57 48 8D AC 24", ENGINE_DLL);
 	fn_runtime_adrs::fn_frame_stage_notify	= (uintptr_t)util.GetVirtualTable((void*)interface_tf2::base_client)[35];
 	
 	/* storing manually calling functions */
 	TF2_functions::lookUpBone = (TF2_functions::T_lookUpBone)util.FindPattern("40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL);
 
+
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(),							(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene); //End scene hook
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
-	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_renderGlowEffect,		(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect);
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_renderGlowEffect,		(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); // retrieves the glow manager object
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_traceRay,				(LPVOID)hook::traceRay::H_traceRay,							(LPVOID*)&hook::traceRay::O_traceRay); // retrieves the IEngineTrace pointer, creating and using IEngineTrace interface causes crashes
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_frame_stage_notify,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 
@@ -111,4 +118,5 @@ namespace fn_runtime_adrs
 	uintptr_t fn_createmove			= 0;
 	uintptr_t fn_frame_stage_notify = 0;
 	uintptr_t fn_renderGlowEffect	= 0;
+	uintptr_t fn_traceRay			= 0;
 };
