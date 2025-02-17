@@ -54,6 +54,7 @@ void execute_thread1(HINSTANCE instance)
 	/* getting fn runtime adrs */
 	fn_runtime_adrs::fn_createmove			= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
 	fn_runtime_adrs::fn_renderGlowEffect	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
+	fn_runtime_adrs::fn_overrideView		= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
 	fn_runtime_adrs::fn_traceRay			= util.FindPattern("48 89 54 24 ? 55 57 48 8D AC 24", ENGINE_DLL);
 	fn_runtime_adrs::fn_frame_stage_notify	= (uintptr_t)util.GetVirtualTable((void*)interface_tf2::base_client)[35];
 	
@@ -65,7 +66,8 @@ void execute_thread1(HINSTANCE instance)
 	MH_CreateHook((LPVOID*)get_endscene(),							(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene); //End scene hook
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_createmove,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_renderGlowEffect,		(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); // retrieves the glow manager object
-	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_traceRay,				(LPVOID)hook::traceRay::H_traceRay,							(LPVOID*)&hook::traceRay::O_traceRay); // retrieves the IEngineTrace pointer, creating and using IEngineTrace interface causes crashes
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_traceRay,				(LPVOID)hook::traceRay::H_traceRay,							(LPVOID*)&hook::traceRay::O_traceRay); // <- useless, might remove this
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_overrideView,			(LPVOID)hook::overrideView::H_overrideView,					(LPVOID*)&hook::overrideView::O_overrideView); // override view from IClientMode, game place as Createmove
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_frame_stage_notify,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 
@@ -119,4 +121,5 @@ namespace fn_runtime_adrs
 	uintptr_t fn_frame_stage_notify = 0;
 	uintptr_t fn_renderGlowEffect	= 0;
 	uintptr_t fn_traceRay			= 0;
+	uintptr_t fn_overrideView		= 0;
 };

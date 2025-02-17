@@ -23,6 +23,8 @@ might also do projectile aimbot caculations and other stuff */
 	extern Console_System cons;
 #endif
 
+#include "../SDK/class/BaseWeapon.h"
+
 extern local_netvars netvar;
 
 void execute_thread2(HINSTANCE instance);

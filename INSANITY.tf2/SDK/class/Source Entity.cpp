@@ -4,9 +4,9 @@
 extern local_netvars netvar;
 
 // 0x11D8 
-I_client_entity* I_client_entity::getActiveWeapon()
+baseWeapon* I_client_entity::getActiveWeapon()
 {
-	return interface_tf2::entity_list->GetClientEntity((*(int32_t*)((uintptr_t)this + netvar.m_hActiveWeapon)) & 0xFFF); // 0xFFF -> 1111 1111 1111 gets 12 least significant bits, which are the active weapon entity index.
+	return reinterpret_cast<baseWeapon*>(interface_tf2::entity_list->GetClientEntity((*(int32_t*)((uintptr_t)this + netvar.m_hActiveWeapon)) & 0xFFF)); // 0xFFF -> 1111 1111 1111 gets 12 least significant bits, which are the active weapon entity index.
 }
 
 // NOTE : this FN has hardcoded offsets, may break with an update. be careful :)
@@ -71,7 +71,7 @@ bool I_client_entity::isDisguised() {
 
 
 bool I_client_entity::isCloaked() {
-
+	
 	// is player a spy ?
 	if (getCharacterChoice() != TF_SPY)
 		return false;

@@ -11,23 +11,23 @@ void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_fr
 	{
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
 		break;
+
 	case FRAME_NET_UPDATE_END:
 		if (frameCounter2 == 2) { // calling every third frame
 			processGlow();
-			//processEntities();
 			frameCounter2 = 0; // reseting frame counter
 		}
 		frameCounter2++;
 		break;
-	case FRAME_RENDER_START:
 
+	case FRAME_RENDER_START:
 		if (frameCounter == 2) { // calling every third frame
 			processEntities();
 			frameCounter = 0; // reseting frame counter
 		}
-
 		frameCounter++;
 		break;
+
 	case FRAME_RENDER_END: 
 		break;
 	default: 

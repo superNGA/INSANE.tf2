@@ -1,5 +1,7 @@
 #pragma once
+#include "../GlobalVars.h"
 #include "../SDK/class/CUserCmd.h"
+#include "../SDK/class/BaseWeapon.h"
 #include "config.h"
 #include "../Libraries/Utility/Utility.h"
 
@@ -52,7 +54,7 @@ namespace feature
 		static bool isRocketJumping = false;
 		static int rocketJumpStage = 0;
 		if (GetAsyncKeyState(VK_XBUTTON2)) { // Hotkey for rocket jump
-			if (*(int32_t*)((uintptr_t)entities::local::active_weapon + netvar.m_iReloadMode) != 0) cmd->buttons |= IN_ATTACK;
+			if (entities::local::active_weapon.load()->getReloadMode() != reload_t::WPN_RELOAD_START) cmd->buttons |= IN_ATTACK;
 			if (!isRocketJumping) {
 				isRocketJumping = true;
 				rocketJumpStage = 0;
@@ -99,8 +101,11 @@ namespace feature
 		if (!config::aimbot::global) return;
 		if (!entities::shouldDoAimbot.load()) return;
 
-		if (GetAsyncKeyState(VK_LBUTTON))
-		{
+		if (GetAsyncKeyState(VK_LBUTTON)) {
+
+			// skip if MELLE
+			if (entities::local::active_weapon.load()->getSlot() == slot_t::WPN_SLOT_MELLE) return;
+
 			cmd->viewangles = entities::aimbotTargetAngles.load();
 			result = false;
 		}

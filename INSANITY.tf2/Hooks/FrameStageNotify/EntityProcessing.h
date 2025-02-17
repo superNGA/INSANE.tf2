@@ -17,6 +17,7 @@ inline bool isTargetVisible(const vec& vecEyePos, const vec& vecTargetPos, entIn
 	interface_tf2::pEngineTrace->TraceRay(ray, MASK_ALL, &filter, &gameTrace);
 
 	// draws lines from player eye pos to target bones. 
+	//interface_tf2::pDebugOverlay->ClearAllOverlays();
 	//interface_tf2::pDebugOverlay->AddLineOverlay(vecEyePos, vecTargetPos, 255, 255, 255, true, 0.2f);
 
 	bool didHit = (ent->p_ent == gameTrace.m_entity);
@@ -89,21 +90,19 @@ inline void processEntities()
 				targetBonePos = intialTargetBonePos;
 
 			// is this entity visible ?
-			if (!isTargetVisible(localEyePos, targetBonePos, &ent)) {
+			if (!isTargetVisible(localEyePos, intialTargetBonePos, &ent)) {
 				continue;
 			}
 
 			// getting view angles & distance for this entity...
 			ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
 			float entDisFromCrosshair = entities::getFOV(localPlayerViewAngles , ent.targetAngles);
-
-			/* calculating closest entity from crosshair */
-			if (disFromCrosshair < 0.0f) {
-				disFromCrosshair = entDisFromCrosshair;
-				closestEntAngles = ent.targetAngles;
-				p_bestEnt = &ent;
+			if (entDisFromCrosshair > config::aimbot::FOV) { // not in FOV
+				continue;
 			}
-			else if (entDisFromCrosshair < disFromCrosshair) {
+			
+			// finding best TARGET
+			if (disFromCrosshair < 0.0f || entDisFromCrosshair < disFromCrosshair) {
 				disFromCrosshair = entDisFromCrosshair;
 				closestEntAngles = ent.targetAngles;
 				p_bestEnt = &ent;

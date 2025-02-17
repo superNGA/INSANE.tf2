@@ -166,19 +166,4 @@ namespace directX
 
 	/* drawing background window sperately do reduce clutter*/
 	inline void draw_background();
-
-	namespace render_cheat_features
-	{
-		inline ImColor WHITE(1.0f, 1.0f, 1.0f, 1.0f); // white color FOV circle when no valid target
-		inline ImColor GREEN(0.0f, 1.0f, 0.0f, 1.0f); // green FOV circle with valid target
-
-		/* renders the esp box */
-		void render_esp_boxes(ImDrawList* drawList, std::vector<entInfo_t>& CHE_vecEntInfo);
-
-		/* renders the FOV circle and manages its colour */
-		void render_FOV_circle(ImDrawList* draw_list);
-
-		/* renders the projectile aim helper */
-		void render_proj_helper(ImDrawList* draw_list);
-	}
 };

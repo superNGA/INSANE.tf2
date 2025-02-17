@@ -22,6 +22,7 @@ class I_client_thinkable;
 class c_base_entity;
 class c_base_animating;
 class ICollideable_t;
+class baseWeapon;
 
 // forward declaring structs
 struct ray_t;
@@ -316,7 +317,7 @@ public:
 	// Return false to indicate sound is not audible
 	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
-	I_client_entity* getActiveWeapon();
+	baseWeapon* getActiveWeapon();
 	vec				getEntVelocity();
 
 	// Returns life state, anything other than 0 means dead
@@ -348,4 +349,5 @@ class c_base_entity : public I_client_entity
 {
 public:
 	/* no need to include all those bullshit virtual functions, just make whatever you need locally and call function via index if needed*/
+
 };

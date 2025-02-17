@@ -45,6 +45,8 @@
 extern Console_System cons;
 #endif // _DEBUG
 
+// Forward Declares
+class baseWeapon;
 
 /* just a little typedef, cause typing out map type is very annoying*/
 typedef std::unordered_map < std::string , int32_t> T_map;
@@ -106,7 +108,7 @@ namespace entities
 	{
 		inline std::atomic<I_client_entity*> pLocalPlayer(nullptr);
 		inline player_class			localplayer_class;
-		inline I_client_entity*		active_weapon;
+		inline std::atomic<baseWeapon*> active_weapon(nullptr);
 		inline int32_t				ID_active_weapon;
 		inline int16_t				team_num;
 		inline vec					pos;
@@ -469,6 +471,13 @@ namespace entities
 				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 				#endif
 			}
+			// WEAPONS
+			else if (name == "CBaseCombatWeapon") {
+				TEMPclassID = WEAPON;
+				#ifdef _DEBUG
+				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
+				#endif
+			}
 
 			// storing and returning ID
 			if (TEMPclassID != NOT_DEFINED) CHE_mapID[name] = TEMPclassID;
@@ -485,6 +494,7 @@ namespace entities
 	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
 
 	float getFOV(qangle& viewAngles, qangle& targetAngles);
+	float FOVToRadius(float fovDegrees, float gameFOV, int screenWidth);
 
 	/* returns view angles for the target world coordinates */
 	qangle worldToViewangles(const vec& localPosition, const vec& targetPosition);

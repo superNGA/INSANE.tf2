@@ -35,23 +35,17 @@ struct boneInfo_t {
 	int16_t pelvis = 0;
 };
 
-enum BIT_entInfo
-{
-	VALID_VELOCITY = 0,
-	ENT_ON_GROUND,
-	ON_SCREEN,
+enum BIT_entInfo {
+	ENT_ON_GROUND,	// is this entity ON ground or NOT ?
+	ON_SCREEN,		// is this entity ON screen or NOT ?
 	
 	SHOULD_LOCK_AIMBOT, // is this entity locked in for aimbot
-	IS_PLAYER, // is this entity a actual player or something like a dispenser or some shit
-	IS_BUILDING, // is Dispensor, Teleporter or Sentery gun?
-
-	IS_VISIBLE, // is this entity visible ?
-
-	// TEAM FLAG
-	FRENDLY,
-
-	IS_DISGUISED, // is disguised ?
-	IS_CLOAKED // is invisible ?
+	IS_PLAYER,		// is this entity a actual player or something like a dispenser or some shit
+	IS_BUILDING,	// is Dispensor, Teleporter or Sentery gun?
+	IS_VISIBLE,		// is this entity visible ?
+	FRENDLY,		// is friendly ?
+	IS_DISGUISED,	// is disguised ?
+	IS_CLOAKED		// is invisible ?
 };
 
 enum IDclass_t {
@@ -66,7 +60,7 @@ enum IDclass_t {
 	WEAPON,
 	PAYLOAD,
 
-	// CTFResourceManager
+	// CTFResourceManager, has max health arry for all entities :)
 	ENT_RESOURCE_MANAGER
 };
 
@@ -79,7 +73,7 @@ struct entInfo_t
 {
 	std::string entUserName = "NotPlayer";
 	I_client_entity* p_ent;
-	I_client_entity* pActiveWeapon;
+	baseWeapon* pActiveWeapon;
 	int16_t entIndex = 0;
 
 	/* is this entity a player or dispenser of what? */

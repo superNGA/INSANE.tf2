@@ -112,6 +112,14 @@ float entities::getFOV(qangle& viewAngles, qangle& targetAngles) {
 	return std::sqrt(delta.pitch * delta.pitch + delta.yaw * delta.yaw);
 }
 
+float entities::FOVToRadius(float fovDegrees, float gameFOV, int screenWidth) {
+	float fovRadians = fovDegrees * (M_PI / 180.0f); // Convert to radians
+	float gameFOVRadians = gameFOV * (M_PI / 180.0f);
+
+	float radius = tan(fovRadians / 2.0f) * (screenWidth / (2.0f * tan(gameFOVRadians / 2.0f)));
+	return radius;
+}
+
 
 /* HIT-SCAN aimbot calculations */
 qangle entities::worldToViewangles(const vec& localPosition, const vec& targetPosition) {

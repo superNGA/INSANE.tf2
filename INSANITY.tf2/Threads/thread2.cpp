@@ -45,13 +45,14 @@ void execute_thread2(HINSTANCE instance)
 		entities::local::viewAngles.store(local_player->GetAbsAngles()); // storing view angles 
 
 		/* get ACTIVE WEAPON */
-		entities::local::active_weapon = local_player->getActiveWeapon();
-		if (!entities::local::active_weapon) {
+		baseWeapon* pActiveWeapon = local_player->getActiveWeapon();
+		entities::local::active_weapon.store(pActiveWeapon);
+		if (!pActiveWeapon) {
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
-		entities::local::ID_active_weapon		= *(int32_t*)((uintptr_t)entities::local::active_weapon + netvar.m_AttributeManager + netvar.m_Item + netvar.m_iItemDefinitionIndex); //gets weapon ID
+		entities::local::ID_active_weapon = pActiveWeapon->getWeaponIndex(); // weapon ID
 		entities::local::b_hasProjectileWeapon	= getWeaponType(entities::local::ID_active_weapon); // are we holding a projectile weapon or a hitscan weapon
 
 		/* cache storages for things to be used in entity list loop */
@@ -199,7 +200,6 @@ void execute_thread2(HINSTANCE instance)
 			case TF_ITEM:
 			case PAYLOAD:
 				//printf("payload or item\n");
-
 				break;
 			default:
 				break;
