@@ -9,8 +9,9 @@
 #define M_PI 3.14159265358979323846
 
 /* game module names */
-#define CLIENT_DLL "client.dll"
-#define ENGINE_DLL "engine.dll"
+#define CLIENT_DLL	"client.dll"
+#define ENGINE_DLL	"engine.dll"
+#define VGUI2_DLL	"vgui2.dll"
 
 /* game interfaces names */
 #define IVENGIENCLIENT013		"VEngineClient014"
@@ -23,6 +24,7 @@
 #define ENGINE_CLIENT_REPLAY	"EngineClientReplay001"
 #define IENGINETRACE			"EngineTraceClient003"
 #define IVDEBUGOVERLAY			"VDebugOverlay003"
+#define VGUI_PANEL				"VGUI_Panel009"
 
 /* this is config file */
 #include "Features/config.h"
@@ -75,6 +77,13 @@ namespace TF2_functions
 	// 40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24
 	typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
 	extern T_lookUpBone lookUpBone;
+
+	// 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 83 EC
+	typedef char* (__fastcall* T_getName)(void*, int64_t);
+	inline T_getName FN_getName = nullptr;
+
+	typedef void(__fastcall* T_addToLeafSystem)(void*, renderGroup_t);
+	extern T_addToLeafSystem FN_addToLeafSystem;
 };
 
 /* this will hold information about when threads are started & teminated */
@@ -106,9 +115,9 @@ namespace entities
 	/* imfo about local player */
 	namespace local
 	{
-		inline std::atomic<I_client_entity*> pLocalPlayer(nullptr);
-		inline player_class			localplayer_class;
-		inline std::atomic<baseWeapon*> active_weapon(nullptr);
+		inline std::atomic<I_client_entity*>	pLocalPlayer(nullptr);
+		inline std::atomic<player_class>		localplayer_class;
+		inline std::atomic<baseWeapon*>			active_weapon(nullptr);
 		inline int32_t				ID_active_weapon;
 		inline int16_t				team_num;
 		inline vec					pos;
@@ -692,4 +701,5 @@ namespace interface_tf2
 	extern I_engine_client_replay*	engine_replay;
 	extern IEngineTrace*			pEngineTrace;
 	extern IVDebugOverlay*			pDebugOverlay;
+	extern void*					IPanel;
 };

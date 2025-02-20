@@ -343,6 +343,9 @@ public:
 
 	// is this spy cloaked?
 	bool isCloaked();
+
+	// make visible using addToLeafSystem()
+	void setVisibility(renderGroup_t renderGroup);
 };
 
 class c_base_entity : public I_client_entity

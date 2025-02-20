@@ -65,11 +65,13 @@ namespace interface_tf2
 	I_engine_client_replay* engine_replay	= nullptr;
 	IEngineTrace* pEngineTrace				= nullptr;
 	IVDebugOverlay* pDebugOverlay			= nullptr;
+	void* IPanel							= nullptr;
 };
 
 namespace TF2_functions
 {
 	T_lookUpBone lookUpBone = nullptr;
+	T_addToLeafSystem FN_addToLeafSystem = nullptr;
 }
 
 int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {

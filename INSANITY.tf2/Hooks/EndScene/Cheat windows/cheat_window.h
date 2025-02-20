@@ -50,4 +50,11 @@ namespace cheat_window
 		ImGui::Checkbox("Skip cloaked spy", &config::visuals::skipCloackedSpy);
 		ImGui::Checkbox("Name", &config::visuals::playerName);
 	}
+
+	inline void draw_view_visual_window() 
+	{
+		ImGui::SliderFloat("FOV", &config::view::FOV, 0.0f, 180.0f, "%.2f");
+		ImGui::Checkbox("Remove sniper scope overlay", &config::view::RemoveSniperScopeOverlay);
+		ImGui::Checkbox("Remove sniper charge overlay", &config::view::RemoveSniperChargeOverlay);
+	}
 };

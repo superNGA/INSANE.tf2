@@ -18,6 +18,12 @@ namespace config
 		extern bool skipCloackedSpy;
 		extern bool playerName;
 	}
+	namespace view
+	{
+		inline float FOV = 90.0f; // TODO : make it keep the default, and only change when user wants
+		extern bool RemoveSniperScopeOverlay;
+		extern bool RemoveSniperChargeOverlay;
+	}
 	namespace miscellaneous
 	{
 		extern bool bhop;

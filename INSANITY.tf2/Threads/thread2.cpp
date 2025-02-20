@@ -32,20 +32,26 @@ void execute_thread2(HINSTANCE instance)
 		I_client_entity* local_player = interface_tf2::entity_list->GetClientEntity(interface_tf2::engine->GetLocalPlayer());
 		entities::local::pLocalPlayer.store(local_player);
 		qangle viewangles_localplayer = local_player->GetAbsAngles();
-		if (!local_player || local_player->getLifeState() != LIFE_ALIVE) {
+		if (!local_player || local_player->getLifeState() != LIFE_ALIVE) { 
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
+
 		netvar.local_player					= (uintptr_t)local_player; //storing as uintptr_t
-		entities::local::localplayer_class	= (player_class)(*(int32_t*)(netvar.local_player + netvar.m_PlayerClass + netvar.m_iClass)); // player ingame class
+		entities::local::localplayer_class.store(local_player->getCharacterChoice());
 		entities::local::team_num			= *(int32_t*)(netvar.local_player + netvar.m_iTeamNum); // local players team
 		entities::local::pos				= local_player->GetAbsOrigin();
 		entities::local::eye_pos.store(entities::local::pos + vec(0.0f, 0.0f, *(float*)((uintptr_t)local_player + netvar.m_vecViewOffset))); // storing local player's eyepos
 		entities::local::viewAngles.store(local_player->GetAbsAngles()); // storing view angles 
+		local_player->setVisibility(renderGroup_t::RENDER_GROUP_VIEW_MODEL_OPAQUE);
 
 		/* get ACTIVE WEAPON */
 		baseWeapon* pActiveWeapon = local_player->getActiveWeapon();
+		if (pActiveWeapon->getSlot() != WPN_SLOT_MELLE) { // setting tracers
+			pActiveWeapon->setCustomTracer("merasmus_zap");
+		}
+		pActiveWeapon->setVisibility(renderGroup_t::RENDER_GROUP_OPAQUE_ENTITY);
 		entities::local::active_weapon.store(pActiveWeapon);
 		if (!pActiveWeapon) {
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit

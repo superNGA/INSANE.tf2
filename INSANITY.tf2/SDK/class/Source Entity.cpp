@@ -84,3 +84,9 @@ bool I_client_entity::isCloaked() {
 
 	return false;
 }
+
+
+void I_client_entity::setVisibility(renderGroup_t renderGroup) {
+
+	TF2_functions::FN_addToLeafSystem(this, renderGroup);
+}

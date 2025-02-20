@@ -23,6 +23,7 @@ might also do projectile aimbot caculations and other stuff */
 	extern Console_System cons;
 #endif
 
+#include "../SDK/FN index manager.h"
 #include "../SDK/class/BaseWeapon.h"
 
 extern local_netvars netvar;

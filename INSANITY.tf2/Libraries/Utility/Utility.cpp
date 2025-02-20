@@ -39,6 +39,15 @@ uintptr_t Utility::FindPattern(const char* Signature, const char* MoudleName)
 	return MemoryScanner(reinterpretedSignature, Mask, ModuleSize, Base);
 }
 
+bool Utility::FindPattern(const char* Signature, uintptr_t startAdrs) {
+	
+	// processing SIGNATURE
+	std::string Mask;
+	std::vector<BYTE> reinterpretedSignature = StringToByte(Signature, Mask);
+
+	return MemoryScanner(reinterpretedSignature, Mask, startAdrs);
+}
+
 void* Utility::GetInterface(const char* InterfaceName, const char* MouduleName, int* ReturnCode)
 {
 	T_CreateInterface* CreateInterface = (T_CreateInterface*)GetProcAddress(GetModuleHandle(MouduleName), CREATE_INTERFACE); //Pointer to CreateInterface Function
@@ -145,4 +154,16 @@ uintptr_t Utility::MemoryScanner(std::vector<BYTE> Signature, std::string Mask, 
 	}
 
 	return RunTimeAdrs;
+}
+
+bool Utility::MemoryScanner(std::vector<BYTE> Signature, std::string Mask, uintptr_t startAdrs)
+{
+	uint16_t signatureSize = Signature.size();
+	for (int i = 0; i < signatureSize; i++) {
+		if (Mask[i] != '?' && *reinterpret_cast<BYTE*>(startAdrs + i) != Signature[i]) {
+			return false;
+		}
+	}
+
+	return true;
 }

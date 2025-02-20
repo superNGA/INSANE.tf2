@@ -23,6 +23,11 @@ public:
 	@param Double check the module name, else cause error*/
 	uintptr_t FindPattern(const char* Signature, const char* MoudleName);
 
+	/* works with starting adrs 
+	@param signature to search
+	@param starting adrs for the search*/
+	bool FindPattern(const char* Signature, uintptr_t startAdrs);
+
 	/**Gets the interface pointer from source CreateInterface export function
 	*@param InterfaceName -> Name of the interface.
 	*@param MoudleName	  -> Name of the game module.
@@ -50,6 +55,12 @@ private:
 	/**Return 0 if nothing found!
 	Not using Viurtual Protect cause if it is gonna find it, it will find it anyways.*/
 	uintptr_t MemoryScanner( std::vector<BYTE> Signature, std::string Mask, uintptr_t ModuleSize, uintptr_t BaseAdrs);
+
+	/* works with start adrs, supposed to use for scanning in small regions. i.e. with the findPattern overload
+	@param the fucking signature to scan for
+	@param the fucking mask to use
+	@param the fucking starting adrs */
+	bool MemoryScanner(std::vector<BYTE> Signature, std::string Mask, uintptr_t startAdrs);
 };
 
 

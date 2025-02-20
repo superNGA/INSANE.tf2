@@ -20,6 +20,7 @@
 #include "../Hooks/RenderGlowEffect/renderGlowEffect.h"
 #include "../Hooks/TraceRay/TraceRay.h"
 #include "../Hooks/OverrideView/overrideView.h"
+#include "../Hooks/PaintTraverse/PaintTraverse.h"
 
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"
@@ -28,6 +29,9 @@
 
 /* game classes */
 #include "../SDK/class/I_BaseEntityDLL.h"
+
+/* Runtime FN index finding mechanism */
+#include "../SDK/FN index manager.h"
 
 /* NetVar managment */
 #include "../SDK/offsets/offsets.h"

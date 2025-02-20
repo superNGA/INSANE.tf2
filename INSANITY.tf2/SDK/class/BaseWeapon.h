@@ -27,4 +27,8 @@ class baseWeapon : public I_client_entity {
 public:
 	slot_t getSlot();
 	reload_t getReloadMode();
+	void setCustomTracer(const char* tracerName);
+
+private:
+	bool TracerHook = false;
 };
