@@ -158,6 +158,7 @@ inline void processEntities()
 			default:
 				break;
 			}
+
 		}
 	}
 

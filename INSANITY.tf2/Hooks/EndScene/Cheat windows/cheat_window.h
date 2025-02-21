@@ -40,6 +40,7 @@ namespace cheat_window
 		ImGui::SliderFloat("FOV", &config::aimbot::FOV, 0.0f, 180.0f, "%.2f");
 		ImGui::Checkbox("PROJ. AIMBOT", &config::aimbot::projectile_aimbot);
 		ImGui::Checkbox("Future position indicator", &config::aimbot::future_pos_helper);
+		ImGui::Checkbox("Auto shoot", &config::aimbot::autoShoot);
 	}
 
 	inline void draw_player_visual_window()
@@ -54,7 +55,9 @@ namespace cheat_window
 	inline void draw_view_visual_window() 
 	{
 		ImGui::SliderFloat("FOV", &config::view::FOV, 0.0f, 180.0f, "%.2f");
-		ImGui::Checkbox("Remove sniper scope overlay", &config::view::RemoveSniperScopeOverlay);
+		ImGui::Checkbox("Remove sniper scope overlay",	&config::view::RemoveSniperScopeOverlay);
 		ImGui::Checkbox("Remove sniper charge overlay", &config::view::RemoveSniperChargeOverlay);
+		ImGui::Checkbox("draw model in thirdperson",	&config::view::alwaysRenderInThirdPerson);
+		ImGui::Checkbox("keep viewModel while scopped",	&config::view::alwaysDrawViewModel);
 	}
 };

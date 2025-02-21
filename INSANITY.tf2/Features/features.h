@@ -100,14 +100,40 @@ namespace feature
 	{
 		if (!config::aimbot::global) return;
 		if (!entities::shouldDoAimbot.load()) return;
+		if (entities::local::active_weapon.load()->getSlot() == slot_t::WPN_SLOT_MELLE) return;
 
-		if (GetAsyncKeyState(VK_LBUTTON)) {
+		// AUTO SHOOT
+		if (config::aimbot::autoShoot) {
 
-			// skip if MELLE
-			if (entities::local::active_weapon.load()->getSlot() == slot_t::WPN_SLOT_MELLE) return;
+			// RELOAD MODE CHECK
+			reload_t reloadMode = entities::local::active_weapon.load()->getReloadMode();
+			if (reloadMode != reload_t::WPN_RELOAD_START &&
+				reloadMode != reload_t::WPN_RELOAD_FINISH) {
+				return;
+			}
 
+			// SNIPE AUTO SHOOT
+			if (entities::local::localplayer_class == TF_SNIPER) {
+				if (entities::local::pLocalPlayer.load()->getPlayerCond() & TF_COND_ZOOMED) {
+					cmd->buttons |= IN_ATTACK;
+				}
+			}
+			else { // OTHER CLASSES AUTO SHOOT
+				cmd->buttons |= IN_ATTACK;
+			}
+
+			// setting ANGLES
+			cmd->viewangles = entities::aimbotTargetAngles.load();
+			result = false;
+		}
+		// NORMAL AIMBOT
+		else if (GetAsyncKeyState(VK_LBUTTON)) {
+			
+			// setting ANGLES
 			cmd->viewangles = entities::aimbotTargetAngles.load();
 			result = false;
 		}
 	}
+
+
 };

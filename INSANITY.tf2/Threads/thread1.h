@@ -14,13 +14,14 @@
 /* global data */
 #include "../GlobalVars.h"
 
-/* hooks */
+// HOOKS
 #include "../Hooks/Createmove/CreateMove.h"
 #include "../Hooks/FrameStageNotify/FrameStageNotify.h"
 #include "../Hooks/RenderGlowEffect/renderGlowEffect.h"
 #include "../Hooks/TraceRay/TraceRay.h"
 #include "../Hooks/OverrideView/overrideView.h"
 #include "../Hooks/PaintTraverse/PaintTraverse.h"
+#include "../Hooks/ShouldDrawViewModel/ShouldDrawViewModel.h"
 
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"
@@ -52,4 +53,5 @@ namespace fn_runtime_adrs
 	extern uintptr_t fn_renderGlowEffect;
 	extern uintptr_t fn_traceRay;
 	extern uintptr_t fn_overrideView;
+	extern uintptr_t fn_shouldDrawViewModel;
 };

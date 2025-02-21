@@ -86,7 +86,30 @@ bool I_client_entity::isCloaked() {
 }
 
 
-void I_client_entity::setVisibility(renderGroup_t renderGroup) {
+void I_client_entity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
+
+	// skip if not in thirdpeson
+	if (!config::miscellaneous::third_person) {
+		return;
+	}
+
+	// skip if not selected
+	if (!config::view::alwaysRenderInThirdPerson) {
+		return;
+	}
 
 	TF2_functions::FN_addToLeafSystem(this, renderGroup);
+}
+
+
+vec I_client_entity::getLocalEyePos() {
+
+	// adding eye offset in abs origin for local player
+	return (this->GetAbsOrigin() + vec(0.0f, 0.0f, *(float*)((uintptr_t)this + netvar.m_vecViewOffset)));
+}
+
+
+int32_t I_client_entity::getPlayerCond() {
+
+	return *(int32_t*)((uintptr_t)this + netvar.m_Shared + netvar.m_nPlayerCond);
 }

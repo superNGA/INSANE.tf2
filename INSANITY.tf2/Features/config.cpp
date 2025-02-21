@@ -8,6 +8,7 @@ namespace config
 		float FOV				= 10.0f;
 		bool projectile_aimbot	= false;
 		bool future_pos_helper	= false;
+		bool autoShoot			= false;
 	}
 	namespace visuals
 	{
@@ -21,6 +22,8 @@ namespace config
 	{
 		bool RemoveSniperScopeOverlay	= false;
 		bool RemoveSniperChargeOverlay	= false;
+		bool alwaysRenderInThirdPerson	= false;
+		bool alwaysDrawViewModel		= false;
 	}
 	namespace miscellaneous
 	{

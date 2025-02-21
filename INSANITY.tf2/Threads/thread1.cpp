@@ -45,12 +45,12 @@ void execute_thread1(HINSTANCE instance)
 	interface_tf2::IPanel			= util.GetInterface(VGUI_PANEL, VGUI2_DLL, &ipanel_code);
 
 	#ifdef _DEBUG
-	entity_list_code			? cons.Log(FG_RED, "ERROR","Failed to get IClientEntityList")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IClientEntityList");
-	ivengineclient_code			? cons.Log(FG_RED, "ERROR","Failed to get IVEngineClient014")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IVEngineClient014");
-	iengineclientreplay_code	? cons.Log(FG_RED, "ERROR","Failed to get EngineClientReplay001")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineClientReplay001");
-	ienginetrace_code			? cons.Log(FG_RED, "ERROR","Failed to get EngineTraceClient003")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineTraceClient003");
-	ivdebugoverlay_code			? cons.Log(FG_RED, "ERROR","Failed to get VDebugOverlay003")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived VDebugOverlay003");
-	ipanel_code					? cons.Log(FG_RED, "ERROR","Failed to get VGUI_Panel009")			: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived VGUI_Panel009");
+	entity_list_code			? cons.Log(FG_RED, "ERROR","Failed to get IClientEntityList")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IClientEntityList     : %p", interface_tf2::entity_list);
+	ivengineclient_code			? cons.Log(FG_RED, "ERROR","Failed to get IVEngineClient014")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived IVEngineClient014     : %p", interface_tf2::engine);
+	iengineclientreplay_code	? cons.Log(FG_RED, "ERROR","Failed to get EngineClientReplay001")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineClientReplay001 : %p", interface_tf2::engine_replay);
+	ienginetrace_code			? cons.Log(FG_RED, "ERROR","Failed to get EngineTraceClient003")	: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived EngineTraceClient003  : %p", interface_tf2::pEngineTrace);
+	ivdebugoverlay_code			? cons.Log(FG_RED, "ERROR","Failed to get VDebugOverlay003")		: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived VDebugOverlay003      : %p", interface_tf2::pDebugOverlay);
+	ipanel_code					? cons.Log(FG_RED, "ERROR","Failed to get VGUI_Panel009")			: cons.Log(FG_GREEN, "INTERFACE","Successfully retrived VGUI_Panel009         : %p", interface_tf2::IPanel);
 	#endif
 
 	/* getting fn runtime adrs */
@@ -58,7 +58,8 @@ void execute_thread1(HINSTANCE instance)
 	fn_runtime_adrs::fn_renderGlowEffect	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
 	fn_runtime_adrs::fn_overrideView		= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
 	fn_runtime_adrs::fn_traceRay			= util.FindPattern("48 89 54 24 ? 55 57 48 8D AC 24", ENGINE_DLL);
-	fn_runtime_adrs::fn_frame_stage_notify	= (uintptr_t)util.GetVirtualTable((void*)interface_tf2::base_client)[35];
+	fn_runtime_adrs::fn_shouldDrawViewModel = util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
+	fn_runtime_adrs::fn_frame_stage_notify	= g_FNindexManager.getFnAdrs(FN_FRAME_STAGE_NOTIFY, (void*)interface_tf2::base_client);
 
 	TF2_functions::FN_getName				=  (TF2_functions::T_getName)g_FNindexManager.getFnAdrs(FN_GET_PANEL_NAME, interface_tf2::IPanel);
 
@@ -72,6 +73,7 @@ void execute_thread1(HINSTANCE instance)
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_renderGlowEffect,		(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); // retrieves the glow manager object
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_traceRay,				(LPVOID)hook::traceRay::H_traceRay,							(LPVOID*)&hook::traceRay::O_traceRay); // <- useless, might remove this
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_overrideView,			(LPVOID)hook::overrideView::H_overrideView,					(LPVOID*)&hook::overrideView::O_overrideView); // override view from IClientMode, game place as Createmove
+	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_shouldDrawViewModel,	(LPVOID)hook::shouldDrawViewModel::H_shouldDrawViewModel,	(LPVOID*)&hook::shouldDrawViewModel::O_shouldDrawViewModel); // this fn is from clientModeNormal or some shit like that
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)fn_runtime_adrs::fn_frame_stage_notify,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 	MH_CreateHook((LPVOID)g_FNindexManager.getFnAdrs(FN_PAINT_TRAVERSE, interface_tf2::IPanel), (LPVOID)hook::paintTraverse::H_paintTraverse, (LPVOID*)&hook::paintTraverse::O_paintTraverse);
@@ -84,6 +86,13 @@ void execute_thread1(HINSTANCE instance)
 	while (!directX::UI::UI_has_been_shutdown)
 	{
 		thread_termination_status::thread1_primed = true;
+		#ifdef _DEBUG
+		static bool thread1Notify = false;
+		if (!thread1Notify) {
+			cons.Log(FG_GREEN, "THREAD 1", "INITIALIZED !");
+			thread1Notify = true;
+		}
+		#endif // _DEBUG
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
@@ -122,9 +131,10 @@ void execute_thread1(HINSTANCE instance)
 
 namespace fn_runtime_adrs
 {
-	uintptr_t fn_createmove			= 0;
-	uintptr_t fn_frame_stage_notify = 0;
-	uintptr_t fn_renderGlowEffect	= 0;
-	uintptr_t fn_traceRay			= 0;
-	uintptr_t fn_overrideView		= 0;
+	uintptr_t fn_createmove				= 0;
+	uintptr_t fn_frame_stage_notify		= 0;
+	uintptr_t fn_renderGlowEffect		= 0;
+	uintptr_t fn_traceRay				= 0;
+	uintptr_t fn_overrideView			= 0;
+	uintptr_t fn_shouldDrawViewModel	= 0;
 };

@@ -148,7 +148,6 @@ public:
 	// Used by the leaf system to store its render handle.
 	virtual void* RenderHandle() = 0;
 
-	// Render baby!
 	virtual const model_t* GetModel() const = 0;
 	virtual int						DrawModel(int flags) = 0;
 
@@ -308,7 +307,7 @@ public:
 	virtual void			Release(void) = 0;
 
 	// Network origin + angles
-	virtual const vec& GetAbsOrigin(void) const = 0;
+	virtual vec& GetAbsOrigin(void) = 0;
 	virtual const qangle& GetAbsAngles(void) const = 0;
 
 	virtual CMouthInfo* GetMouth(void) = 0;
@@ -317,7 +316,11 @@ public:
 	// Return false to indicate sound is not audible
 	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
-	baseWeapon* getActiveWeapon();
+	// gets the eye pos, only works for local player, don't call for other entities
+	vec getLocalEyePos();
+	
+	baseWeapon*		getActiveWeapon();
+
 	vec				getEntVelocity();
 
 	// Returns life state, anything other than 0 means dead
@@ -345,7 +348,9 @@ public:
 	bool isCloaked();
 
 	// make visible using addToLeafSystem()
-	void setVisibility(renderGroup_t renderGroup);
+	void changeThirdPersonVisibility(renderGroup_t renderGroup);
+
+	int32_t getPlayerCond();
 };
 
 class c_base_entity : public I_client_entity

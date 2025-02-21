@@ -10,17 +10,19 @@ extern Utility util;
 extern Console_System cons;
 
 // FN SIGNATURES
-#define GET_TRACER_TYPE "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 4C 8D 0D"
-#define GET_PANEL_NAME	"48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 83 EC"
-#define PAINT_TRAVERSE	"48 89 5C 24 ? 57 48 83 EC ? 48 8B 01 41 0F B6 D9"
-#define GET_WPN_INFO	"66 3B 0D"
+#define GET_TRACER_TYPE		"48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 4C 8D 0D"
+#define GET_PANEL_NAME		"48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 83 EC"
+#define PAINT_TRAVERSE		"48 89 5C 24 ? 57 48 83 EC ? 48 8B 01 41 0F B6 D9"
+#define FRAME_STAGE_NOTIFY	"48 83 EC ? 89 15"
+#define GET_WPN_INFO		"66 3B 0D"
 
 // giving index for function names
 enum FN_name_t {
 	FN_GET_TRACER_TYPE=0,
 	FN_GET_WPN_INFO,
 	FN_GET_PANEL_NAME,
-	FN_PAINT_TRAVERSE
+	FN_PAINT_TRAVERSE,
+	FN_FRAME_STAGE_NOTIFY
 };
 
 // this is the threshold value for seaching in VTable, i.e. we only check this many functions in given VTable
@@ -68,6 +70,9 @@ public:
 			break;
 		case FN_PAINT_TRAVERSE:
 			index = searchPatter(pVTable, PAINT_TRAVERSE, SEARCH_THRESHOLD::THRESHOLD_50);
+			break;
+		case FN_FRAME_STAGE_NOTIFY:
+			index = searchPatter(pVTable, FRAME_STAGE_NOTIFY, SEARCH_THRESHOLD::THRESHOLD_50);
 			break;
 		default:
 			return 0;

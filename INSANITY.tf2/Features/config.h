@@ -9,6 +9,7 @@ namespace config
 		extern float FOV;
 		extern bool projectile_aimbot;
 		extern bool future_pos_helper;
+		extern bool autoShoot;
 	}
 	namespace visuals
 	{
@@ -23,6 +24,8 @@ namespace config
 		inline float FOV = 90.0f; // TODO : make it keep the default, and only change when user wants
 		extern bool RemoveSniperScopeOverlay;
 		extern bool RemoveSniperChargeOverlay;
+		extern bool alwaysRenderInThirdPerson;
+		extern bool alwaysDrawViewModel;
 	}
 	namespace miscellaneous
 	{

@@ -37,21 +37,19 @@ void execute_thread2(HINSTANCE instance)
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			continue;
 		}
-
 		netvar.local_player					= (uintptr_t)local_player; //storing as uintptr_t
 		entities::local::localplayer_class.store(local_player->getCharacterChoice());
 		entities::local::team_num			= *(int32_t*)(netvar.local_player + netvar.m_iTeamNum); // local players team
 		entities::local::pos				= local_player->GetAbsOrigin();
-		entities::local::eye_pos.store(entities::local::pos + vec(0.0f, 0.0f, *(float*)((uintptr_t)local_player + netvar.m_vecViewOffset))); // storing local player's eyepos
+		//entities::local::eye_pos.store(entities::local::pos + vec(0.0f, 0.0f, *(float*)((uintptr_t)local_player + netvar.m_vecViewOffset))); // storing local player's eyepos
+		entities::local::eye_pos.store(local_player->getLocalEyePos());
 		entities::local::viewAngles.store(local_player->GetAbsAngles()); // storing view angles 
-		local_player->setVisibility(renderGroup_t::RENDER_GROUP_VIEW_MODEL_OPAQUE);
+		local_player->changeThirdPersonVisibility(renderGroup_t::RENDER_GROUP_VIEW_MODEL_OPAQUE);
 
 		/* get ACTIVE WEAPON */
 		baseWeapon* pActiveWeapon = local_player->getActiveWeapon();
-		if (pActiveWeapon->getSlot() != WPN_SLOT_MELLE) { // setting tracers
-			pActiveWeapon->setCustomTracer("merasmus_zap");
-		}
-		pActiveWeapon->setVisibility(renderGroup_t::RENDER_GROUP_OPAQUE_ENTITY);
+		pActiveWeapon->setCustomTracer("merasmus_zap"); // ADDING TRACERS
+		pActiveWeapon->changeThirdPersonVisibility(renderGroup_t::RENDER_GROUP_OPAQUE_ENTITY); // MAKING VISIBLE ALWAYS RENDER IN THIRD PERSON
 		entities::local::active_weapon.store(pActiveWeapon);
 		if (!pActiveWeapon) {
 			entities::entManager.clearFlagBit(entities::C_targets::DOING_FIRST_HALF); // clearing 'DOING FIRST HALF OF THE ENTITY LIST' bit

@@ -13,16 +13,20 @@ reload_t baseWeapon::getReloadMode() {
 }
 
 //================== GET TRACER HOOK =======================
-/* multiple of these hooks will be made so I placed it here */
+/* VTable hook*/
 typedef const char* (__fastcall* T_getTracer)();
 T_getTracer O_getTracer = nullptr;
 const char* __fastcall H_getTracer() {
-    //O_getTracer();
+    //O_getTracer(); //<- if this is common fn for all entities, then it must take in pointer :), which your smart ass didn't pass :)!
     return "merasmus_zap";
 }
 
 void baseWeapon::setCustomTracer(const char* tracerName) {
     
+    // skipping melle weapon
+    if (this->getSlot() == WPN_SLOT_MELLE) return;
+
+    // hooking tracer
     if (!TracerHook) {
         uintptr_t adrs = g_FNindexManager.getFnAdrs(FN_GET_TRACER_TYPE, (void*)this);
         MH_CreateHook((LPVOID)adrs, (LPVOID)H_getTracer, (LPVOID*)&O_getTracer);
