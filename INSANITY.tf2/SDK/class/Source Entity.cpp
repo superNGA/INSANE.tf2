@@ -89,12 +89,12 @@ bool I_client_entity::isCloaked() {
 void I_client_entity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 
 	// skip if not in thirdpeson
-	if (!config::miscellaneous::third_person) {
+	if (!config.miscConfig.third_person) {
 		return;
 	}
 
 	// skip if not selected
-	if (!config::view::alwaysRenderInThirdPerson) {
+	if (!config.viewConfig.alwaysRenderInThirdPerson) {
 		return;
 	}
 

@@ -15,12 +15,12 @@ namespace directX {
             for (auto& ent : CHE_vecEntInfo) {
 
                 // skipping disguised spy if enabled feature
-                if (config::visuals::skipDisguisedSpy && ent.getFlagBit(IS_DISGUISED)) {
+                if (config.visualConfig.skipDisguisedSpy && ent.getFlagBit(IS_DISGUISED)) {
                     continue;
                 }
 
                 // skipping cloaked spy if enabled feature
-                if (config::visuals::skipCloackedSpy && ent.getFlagBit(IS_CLOAKED)) {
+                if (config.visualConfig.skipCloackedSpy && ent.getFlagBit(IS_CLOAKED)) {
                     continue;
                 }
 
@@ -68,7 +68,7 @@ namespace directX {
                 );
 
                 // HEALTH BAR
-                if (config::visuals::healthBar) {
+                if (config.visualConfig.healthBar) {
 
                     float healthBarWidth = entWidth * 0.2f;
 
@@ -88,7 +88,7 @@ namespace directX {
                 }
 
                 // PLAYER NAME
-                if (config::visuals::playerName) {
+                if (config.visualConfig.playerName) {
 
                     ImVec2 vec_nameSize = ImGui::CalcTextSize(ent.entUserName.c_str());
                     ImVec2 vec_namePos(

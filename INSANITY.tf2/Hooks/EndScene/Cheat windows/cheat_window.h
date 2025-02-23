@@ -27,37 +27,56 @@ namespace cheat_window
 	{
 		ImGui::PushFont(directX::fonts::agency_FB_small);
 
-		ImGui::Checkbox("bhop", &config::miscellaneous::bhop);
-		ImGui::Checkbox("auto rocket jump", &config::miscellaneous::rocket_jump);
-		ImGui::Checkbox("Third person", &config::miscellaneous::third_person);
+		ImGui::Checkbox("bhop", &config.miscConfig.bhop);
+		ImGui::Checkbox("auto rocket jump", &config.miscConfig.rocket_jump);
+		ImGui::Checkbox("Third person", &config.miscConfig.third_person);
 
 		ImGui::PopFont();
 	}
 
 	inline void draw_aimbot_window()
 	{
-		ImGui::Checkbox("GLOBAL", &config::aimbot::global);
-		ImGui::SliderFloat("FOV", &config::aimbot::FOV, 0.0f, 180.0f, "%.2f");
-		ImGui::Checkbox("PROJ. AIMBOT", &config::aimbot::projectile_aimbot);
-		ImGui::Checkbox("Future position indicator", &config::aimbot::future_pos_helper);
-		ImGui::Checkbox("Auto shoot", &config::aimbot::autoShoot);
+		ImGui::Checkbox("GLOBAL", &config.aimbotConfig.global);
+		ImGui::SliderFloat("FOV", &config.aimbotConfig.FOV, 0.0f, 180.0f, "%.2f");
+		ImGui::Checkbox("PROJ. AIMBOT", &config.aimbotConfig.projectile_aimbot);
+		ImGui::Checkbox("Future position indicator", &config.aimbotConfig.future_pos_helper);
+		ImGui::Checkbox("Auto shoot", &config.aimbotConfig.autoShoot);
 	}
 
 	inline void draw_player_visual_window()
 	{
-		ImGui::Checkbox("ESP", &config::visuals::ESP);
-		ImGui::Checkbox("Health bar", &config::visuals::healthBar);
-		ImGui::Checkbox("Skip disguised spy", &config::visuals::skipDisguisedSpy);
-		ImGui::Checkbox("Skip cloaked spy", &config::visuals::skipCloackedSpy);
-		ImGui::Checkbox("Name", &config::visuals::playerName);
+		ImGui::Checkbox("ESP", &config.visualConfig.ESP);
+		ImGui::Checkbox("Health bar", &config.visualConfig.healthBar);
+		ImGui::Checkbox("Skip disguised spy", &config.visualConfig.skipDisguisedSpy);
+		ImGui::Checkbox("Skip cloaked spy", &config.visualConfig.skipCloackedSpy);
+		ImGui::Checkbox("Name", &config.visualConfig.playerName);
 	}
 
 	inline void draw_view_visual_window() 
 	{
-		ImGui::SliderFloat("FOV", &config::view::FOV, 0.0f, 180.0f, "%.2f");
-		ImGui::Checkbox("Remove sniper scope overlay",	&config::view::RemoveSniperScopeOverlay);
-		ImGui::Checkbox("Remove sniper charge overlay", &config::view::RemoveSniperChargeOverlay);
-		ImGui::Checkbox("draw model in thirdperson",	&config::view::alwaysRenderInThirdPerson);
-		ImGui::Checkbox("keep viewModel while scopped",	&config::view::alwaysDrawViewModel);
+		ImGui::SliderFloat("FOV", &config.viewConfig.FOV, 0.0f, 180.0f, "%.2f");
+		ImGui::Checkbox("Remove sniper scope overlay",	&config.viewConfig.RemoveSniperScopeOverlay);
+		ImGui::Checkbox("Remove sniper charge overlay", &config.viewConfig.RemoveSniperChargeOverlay);
+		ImGui::Checkbox("draw model in thirdperson",	&config.viewConfig.alwaysRenderInThirdPerson);
+		ImGui::Checkbox("keep viewModel while scopped",	&config.viewConfig.alwaysDrawViewModel);
+	}
+
+	inline void draw_config_window()
+	{
+		if (ImGui::Button("create new file")) {
+
+		}
+
+		if (ImGui::Button("save file")) {
+
+		}
+
+		if (ImGui::Button("save as file")) {
+
+		}
+
+		if (ImGui::Button("load config")) {
+
+		}
 	}
 };

@@ -97,7 +97,7 @@ inline void processEntities()
 			// getting view angles & distance for this entity...
 			ent.targetAngles = entities::worldToViewangles(entities::local::eye_pos.load(), targetBonePos); // getting angles for target bone
 			float entDisFromCrosshair = entities::getFOV(localPlayerViewAngles , ent.targetAngles);
-			if (entDisFromCrosshair > config::aimbot::FOV) { // not in FOV
+			if (entDisFromCrosshair > config.aimbotConfig.FOV) { // not in FOV
 				continue;
 			}
 			

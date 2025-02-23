@@ -15,7 +15,7 @@ namespace feature
 	playing as scout.*/
 	inline void bhop(CUserCmd* cmd, uint8_t& bits)
 	{
-		if (!config::miscellaneous::bhop) return;
+		if (!config.miscConfig.bhop) return;
 
 		if (!global::entities_popullated) return;
 		int32_t flag = *(int32_t*)(netvar.local_player + netvar.m_fFlags);
@@ -48,7 +48,7 @@ namespace feature
 	/* I shall inprove upon this feature soon */
 	inline void rocket_jump(CUserCmd* cmd, bool& result)
 	{
-		if (!config::miscellaneous::rocket_jump) return;
+		if (!config.miscConfig.rocket_jump) return;
 		if (!global::entities_popullated) return;
 
 		static bool isRocketJumping = false;
@@ -90,7 +90,7 @@ namespace feature
 	/* this is a very basic third person mechanism */
 	inline void third_person()
 	{
-		if (!config::miscellaneous::third_person) return;
+		if (!config.miscConfig.third_person) return;
 
 		bool thirdperson_state = *(bool*)(netvar.local_player + netvar.m_nForceTauntCam);
 		if (thirdperson_state != input_util::key_detect(VK_XBUTTON1, true)) *(bool*)(netvar.local_player + netvar.m_nForceTauntCam) = !thirdperson_state;
@@ -98,12 +98,12 @@ namespace feature
 
 	inline void aimbot(CUserCmd* cmd, bool& result)
 	{
-		if (!config::aimbot::global) return;
+		if (!config.aimbotConfig.global) return;
 		if (!entities::shouldDoAimbot.load()) return;
 		if (entities::local::active_weapon.load()->getSlot() == slot_t::WPN_SLOT_MELLE) return;
 
 		// AUTO SHOOT
-		if (config::aimbot::autoShoot) {
+		if (config.aimbotConfig.autoShoot) {
 
 			// RELOAD MODE CHECK
 			reload_t reloadMode = entities::local::active_weapon.load()->getReloadMode();

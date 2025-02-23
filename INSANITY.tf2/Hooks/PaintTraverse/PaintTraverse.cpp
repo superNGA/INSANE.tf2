@@ -36,12 +36,12 @@ int64_t removePanel(void* pVTable, int64_t PANEL, const char* __restrict panelNa
 int64_t hook::paintTraverse::H_paintTraverse(void* pVTable, int64_t PANEL, uint8_t idk1, uint8_t idk2) {
 
 	// REMOVING SCOPE OVERLAY
-	if (config::view::RemoveSniperScopeOverlay && entities::local::localplayer_class.load() == TF_SNIPER) {
+	if (config.viewConfig.RemoveSniperScopeOverlay && entities::local::localplayer_class.load() == TF_SNIPER) {
 		PANEL = removePanel(pVTable, PANEL, "HudScope", panelIndex.scopeOverlay);
 	}
 
 	// REMOVING CHARGE OVERLAY
-	if (config::view::RemoveSniperChargeOverlay && entities::local::localplayer_class.load() == TF_SNIPER) {
+	if (config.viewConfig.RemoveSniperChargeOverlay && entities::local::localplayer_class.load() == TF_SNIPER) {
 		PANEL = removePanel(pVTable, PANEL, "HudScopeCharge", panelIndex.chargeOverlay);
 	}
 

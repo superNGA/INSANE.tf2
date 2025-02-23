@@ -5,7 +5,7 @@ hook::shouldDrawViewModel::T_shouldDrawViewModel hook::shouldDrawViewModel::O_sh
 bool __fastcall hook::shouldDrawViewModel::H_shouldDrawViewModel() {
 
 	bool result = O_shouldDrawViewModel();
-	if (!config::view::alwaysDrawViewModel) {
+	if (!config.viewConfig.alwaysDrawViewModel) {
 		return result;
 	}
 	

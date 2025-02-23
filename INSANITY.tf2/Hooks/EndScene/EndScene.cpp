@@ -165,9 +165,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         
         std::vector<entInfo_t> CHE_vecEntInfo = entities::entManager.get_vecEntities(true); // renderable processed entity list
 
-        if (config::visuals::ESP)               directX::render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
-        if (config::aimbot::global)             directX::render_cheat_features::render_FOV_circle(draw_list);
-        if (config::aimbot::future_pos_helper)  directX::render_cheat_features::render_proj_helper(draw_list);
+        if (config.visualConfig.ESP)               directX::render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
+        if (config.aimbotConfig.global)             directX::render_cheat_features::render_FOV_circle(draw_list);
+        if (config.aimbotConfig.future_pos_helper)  directX::render_cheat_features::render_proj_helper(draw_list);
 
         draw_list->PopClipRect();
     }
@@ -351,6 +351,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
             break;
         case VIEW_VISUALS_WINDOW:
             cheat_window::draw_view_visual_window();
+            break;
+        case CONFIG_WINDOW:
+            cheat_window::draw_config_window();
             break;
         default: break;
         }
