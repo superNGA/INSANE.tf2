@@ -63,20 +63,41 @@ namespace cheat_window
 
 	inline void draw_config_window()
 	{
-		if (ImGui::Button("create new file")) {
-
+		std::string testFile = "testConfig";
+		if (ImGui::Button("create file")) {
+			g_configManager.createFile(testFile);
 		}
-
-		if (ImGui::Button("save file")) {
-
-		}
-
-		if (ImGui::Button("save as file")) {
-
-		}
-
+		ImGui::SameLine();
 		if (ImGui::Button("load config")) {
+			g_configManager.loadConfigFromFile(testFile, config);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("save config")) {
+			g_configManager.saveConfigToFile(testFile, config);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Check file")) {
+			g_configManager.isFileSigned(testFile);
+		}
 
+		// file selection menu
+		g_configManager.update_vecAllConfigFiles();
+		if (ImGui::BeginCombo("select config", g_configManager.vec_allConfigFiles[g_configManager.activeConfigIndex].c_str())) {
+			for (int i = 0; i < g_configManager.vec_allConfigFiles.size(); i++) {
+				
+				// if this file is getting selected, then save its index
+				bool isSelected = (i == g_configManager.activeConfigIndex);
+				if (ImGui::Selectable(g_configManager.vec_allConfigFiles[i].c_str(), &isSelected)) {
+					g_configManager.activeConfigIndex = i;
+				}
+				
+				// if current item is the selected one
+				if (g_configManager.activeConfigIndex == i) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
 		}
 	}
 };
