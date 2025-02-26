@@ -8,12 +8,6 @@ namespace global
 	HWND target_hwnd					= nullptr;
 };
 
-namespace handle
-{
-	uintptr_t client_dll;
-	uintptr_t engine_dll;
-};
-
 namespace resource
 {
 	/* logo */
@@ -44,35 +38,6 @@ namespace resource
 	raw_image_data adobe_clean_light	(adobe_clean_light_data, sizeof(adobe_clean_light_data));
 }
 
-bool handle::initialize()
-{
-	client_dll = reinterpret_cast<uintptr_t>(GetModuleHandle("client.dll"));
-	engine_dll = reinterpret_cast<uintptr_t>(GetModuleHandle("engine.dll"));
-
-	if (!client_dll || !engine_dll)
-	{
-		return false;
-	}
-
-	return true;	
-}
-
-namespace interface_tf2
-{
-	IBaseClientDLL* base_client				= nullptr;
-	I_client_entity_list* entity_list		= nullptr;
-	IVEngineClient013* engine				= nullptr;
-	I_engine_client_replay* engine_replay	= nullptr;
-	IEngineTrace* pEngineTrace				= nullptr;
-	IVDebugOverlay* pDebugOverlay			= nullptr;
-	void* IPanel							= nullptr;
-};
-
-namespace TF2_functions
-{
-	T_lookUpBone lookUpBone = nullptr;
-	T_addToLeafSystem FN_addToLeafSystem = nullptr;
-}
 
 int entities::world_to_screen(const vec& worldPos, vec2& screen_pos, const view_matrix* matrix) {
 	// Matrix-vector multiplication to get homogeneous coordinates (x, y, z, w)

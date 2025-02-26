@@ -39,6 +39,16 @@ vec proj_aimbot_calc(vec ent_pos, vec ent_vel, bool on_ground, qangle viewangles
     return predicted_pos;
 }
 
+
+//=========================================================================
+// bool getWeaponType(int16_t weaponID) 
+//=========================================================================
+/**
+* tells if active weapon is projetile or hit-scan
+*
+* @param weaponID : weapon index for weapon, can be aquried by getWeaponIndex
+* FN in baseWeapon class.
+*/
 bool getWeaponType(int16_t weaponID) {
     switch (weaponID) {
         // Soldier

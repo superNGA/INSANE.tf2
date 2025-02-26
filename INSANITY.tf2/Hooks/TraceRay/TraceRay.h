@@ -1,5 +1,6 @@
 #pragma once
 #include"../../GlobalVars.h"
+#include "../../SDK/class/IEngineTrace.h"
 
 #ifdef _DEBUG
 #include "../../Libraries/Console System/Console_System.h"

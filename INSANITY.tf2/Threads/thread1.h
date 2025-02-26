@@ -1,8 +1,12 @@
-/* NOTE : 
-* This thread will manage all the hooking,
-* the single Utility object is made in this file
-* also hold the single netvars object. Dont make another one :)
-*/
+//=========================================================================
+//                      THREAD 1
+//=========================================================================
+// by      : INSANE
+// created : 26/02/2025
+// 
+// purpose : responsible for initializing, updating, and proper shutdown
+//           of the software.
+//-------------------------------------------------------------------------
 
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
@@ -11,10 +15,10 @@
 #include <mutex>
 #include <unordered_map>
 
-/* global data */
+// global data
 #include "../GlobalVars.h"
 
-// HOOKS
+//======================= GAME HOOKS =======================
 #include "../Hooks/Createmove/CreateMove.h"
 #include "../Hooks/FrameStageNotify/FrameStageNotify.h"
 #include "../Hooks/RenderGlowEffect/renderGlowEffect.h"
@@ -23,6 +27,7 @@
 #include "../Hooks/PaintTraverse/PaintTraverse.h"
 #include "../Hooks/ShouldDrawViewModel/ShouldDrawViewModel.h"
 
+//======================= UI / RENDERING HOOKS =======================
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"
 #include "../Hooks/DirectX Hook/DirectX_hook.h"
@@ -31,27 +36,29 @@
 /* game classes */
 #include "../SDK/class/I_BaseEntityDLL.h"
 
-/* Runtime FN index finding mechanism */
-#include "../SDK/FN index manager.h"
-
-/* NetVar managment */
+//======================= HELPER SYSTEMS =======================
+#include "../SDK/TF object manager/TFOjectManager.h"
+#include "../SDK/FN index Manager/FN index manager.h"
 #include "../SDK/offsets/offsets.h"
+
 extern local_netvars netvar; // <- this holds all the netvars
-
-#ifdef _DEBUG
-	extern Console_System cons;
-#endif // _DEBUG
-
 extern Utility util;
+#ifdef _DEBUG
+extern Console_System cons;
+#endif
 
-void execute_thread1(HINSTANCE instance);
-
-namespace fn_runtime_adrs
+class thread1_t
 {
-	extern uintptr_t fn_createmove;
-	extern uintptr_t fn_frame_stage_notify;
-	extern uintptr_t fn_renderGlowEffect;
-	extern uintptr_t fn_traceRay;
-	extern uintptr_t fn_overrideView;
-	extern uintptr_t fn_shouldDrawViewModel;
+public:
+	void execute_thread1(HINSTANCE instance);
+
+private:
+	bool _initializeNetvars();
+	bool _initializeHooks();
+	void _terminate(HINSTANCE instance);
+
+	// if hooks are not enabled then can exit the software
+	// without any problems, just exit the thread.
+	bool _hooksEnabled = false;
 };
+inline thread1_t thread1;

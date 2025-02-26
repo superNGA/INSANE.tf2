@@ -1,5 +1,5 @@
 #include "BaseWeapon.h"
-#include "../FN index manager.h"
+#include "../FN index Manager/FN index manager.h"
 
 #include "../../External Libraries/MinHook/MinHook.h"
 
@@ -14,11 +14,15 @@ reload_t baseWeapon::getReloadMode() {
 
 //================== GET TRACER HOOK =======================
 /* VTable hook*/
-typedef const char* (__fastcall* T_getTracer)();
+typedef const char* (__fastcall* T_getTracer)(void* pWeapon);
 T_getTracer O_getTracer = nullptr;
-const char* __fastcall H_getTracer() {
-    //O_getTracer(); //<- if this is common fn for all entities, then it must take in pointer :), which your smart ass didn't pass :)!
-    return "merasmus_zap";
+const char* __fastcall H_getTracer(void* pWeapon) {
+   
+    if (pWeapon == (void*)entities::local::active_weapon) {
+        return "merasmus_zap";
+    }
+    
+    return O_getTracer(pWeapon);
 }
 
 void baseWeapon::setCustomTracer(const char* tracerName) {

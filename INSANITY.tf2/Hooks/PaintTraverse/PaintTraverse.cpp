@@ -1,6 +1,7 @@
 #include "PaintTraverse.h"
 #include "../../GlobalVars.h"
 #include "../../Features/config.h"
+#include "../../SDK/TF object manager/TFOjectManager.h"
 
 #ifdef _DEBUG
 extern Console_System cons;
@@ -17,7 +18,7 @@ panelIndex_t panelIndex;
 int64_t removePanel(void* pVTable, int64_t PANEL, const char* __restrict panelName, int64_t& panelIndex) {
 
 	// CACHING index
-	if (!panelIndex && !strcmp(TF2_functions::FN_getName(pVTable, PANEL), panelName)) {
+	if (!panelIndex && !strcmp(tfObject.getName(pVTable, PANEL), panelName)) {
 		panelIndex = PANEL;
 		#ifdef _DEBUG
 		cons.Log(FG_GREEN, "PAINT TRAVERSE", "Cached [%s] panel index : %lld", panelName ,PANEL);

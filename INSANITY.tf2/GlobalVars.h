@@ -25,6 +25,7 @@
 #define IENGINETRACE			"EngineTraceClient003"
 #define IVDEBUGOVERLAY			"VDebugOverlay003"
 #define VGUI_PANEL				"VGUI_Panel009"
+#define BASE_CLIENT_DLL			"VClient017"
 
 /* this is config file */
 #include "Features/config.h"
@@ -35,7 +36,7 @@
 #include "SDK/class/IVEngineClient.h"
 #include "SDK/class/I_EngineClientReplay.h"
 #include "SDK/class/GlowManager.h"
-#include "SDK/class/IEngineTrace.h"
+//#include "SDK/class/IEngineTrace.h"
 #include "SDK/class/IVDebugOverlay.h"
 
 /* entity information template struct */
@@ -46,6 +47,17 @@
 #include "Libraries/Console System/Console_System.h"
 extern Console_System cons;
 #endif // _DEBUG
+
+#ifdef _DEBUG
+#define ERROR(caller, message) cons.Log(FG_RED, caller, message)
+#define LOG(caller, message) cons.Log(FG_GREEN, caller, message)
+#define WAIT_MSG(waitingFor, toDoWhat) cons.Log(FG_YELLOW, "waiting", "waiting for %s to %s", waitingFor, toDoWhat)
+#else
+#define ERROR(caller, message) (void)0
+#define LOG(caller, message) (void)0
+#define WAIT_MSG(waitingFor, toDoWhat) (void)0
+#endif 
+
 
 // Forward Declares
 class baseWeapon;
@@ -67,31 +79,13 @@ struct raw_image_data
 namespace TF_objects
 {
 	inline glowManager* pGlowManager = nullptr;
-	inline std::atomic<IEngineTrace*> pEngineTrace;
 	// inline IEngineTrace* pEngineTrace = nullptr;
 }
-
-/* functions found via signature scanning. TO BE CALLED MANUALLY :) */
-namespace TF2_functions
-{
-	// 40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24
-	typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
-	extern T_lookUpBone lookUpBone;
-
-	// 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 8B 02 48 8B CA 48 FF A0 ? ? ? ? CC CC CC 48 83 EC
-	typedef char* (__fastcall* T_getName)(void*, int64_t);
-	inline T_getName FN_getName = nullptr;
-
-	typedef void(__fastcall* T_addToLeafSystem)(void*, renderGroup_t);
-	extern T_addToLeafSystem FN_addToLeafSystem;
-};
 
 /* this will hold information about when threads are started & teminated */
 namespace thread_termination_status
 {
 	inline bool thread1 = false;
-	inline bool thread2 = false;
-	inline bool thread3 = false;
 
 	inline bool thread1_primed = false;
 }
@@ -268,234 +262,7 @@ namespace entities
 	};
 	inline allEntManager_t allEntManager;
 
-	class boneManager_t
-	{
-	private:
-		/* this is a 16-bit bit field, each booleans/bit holds whether that character models bones
-		are cached or not. and if they are not cached, they will be aquired and stored. */
-		int16_t BF_boneIndexCached = 0;
-		
-		/* used to toggle BF_boneIndexCached's bits */
-		void setBit_boneIndexCached(player_class characterModel) {
-			BF_boneIndexCached |= (1 << characterModel);
-		}
-		void clearBit_boneIndexCached(player_class characterModel) {
-			BF_boneIndexCached &= ~(1 << characterModel);
-		}
-		bool getBit_boneIndexCached(player_class characterModel) {
-			return BF_boneIndexCached & (1 << characterModel);
-		}
-
-		/* bone indexes to be cached */
-		boneInfo_t scoutBone;
-		boneInfo_t sniperBone;
-		boneInfo_t soldierBone;
-		boneInfo_t demomanBone;
-
-		boneInfo_t medicBone;
-		boneInfo_t heavyBone;
-		boneInfo_t pyroBone;
-		boneInfo_t engiBone;
-
-		boneInfo_t spyBone;
-		boneInfo_t nonPlayerEntities;
-
-	public:
-		/* loop up bone function, if bone IDs are not cached, the it caches them*/
-		boneInfo_t* getBone(entInfo_t* ent, player_class characterModel) {
-			
-			if (ent->classID != PLAYER) {
-				return &nonPlayerEntities;
-			}
-
-			void* pEnt = (void*)ent->p_ent;
-
-			/* caching 
-			only done once in the entire life of software */
-			if (!getBit_boneIndexCached(characterModel)) {
-				
-				boneInfo_t CHE_boneInfo;
-				CHE_boneInfo.head			= TF2_functions::lookUpBone(pEnt, "bip_head");
-				CHE_boneInfo.leftShoulder	= TF2_functions::lookUpBone(pEnt, "bip_collar_L");
-				CHE_boneInfo.rightShoulder	= TF2_functions::lookUpBone(pEnt, "bip_collar_R");
-				CHE_boneInfo.leftFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_L");
-				CHE_boneInfo.rightFoot		= TF2_functions::lookUpBone(pEnt, "bip_foot_R");
-				CHE_boneInfo.chest			= TF2_functions::lookUpBone(pEnt, "bip_spine_3");
-				CHE_boneInfo.pelvis			= TF2_functions::lookUpBone(pEnt, "bip_pelvis");
-
-				setBit_boneIndexCached(characterModel);
-
-				switch (characterModel)
-				{
-				case TF_SCOUT:
-					scoutBone = CHE_boneInfo;
-					break;
-				case TF_SNIPER:
-					sniperBone = CHE_boneInfo;
-					break;
-				case TF_SOLDIER:
-					soldierBone = CHE_boneInfo;
-					break;
-				case TF_DEMOMAN:
-					demomanBone = CHE_boneInfo;
-					break;
-				case TF_MEDIC:
-					medicBone = CHE_boneInfo;
-					break;
-				case TF_HEAVY:
-					heavyBone = CHE_boneInfo;
-					break;
-				case TF_PYRO:
-					pyroBone = CHE_boneInfo;
-					break;
-				case TF_SPY:
-					spyBone = CHE_boneInfo;
-					break;
-				case TF_ENGINEER:
-					engiBone = CHE_boneInfo;
-					break;
-				default:
-					#ifdef _DEBUG
-					cons.Log(FG_RED, "BONE MAMANGER", "Failed bone caching");
-					#endif
-					break;
-				}
-
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "BONE MANAGER", "Cached bone information for model : %d", characterModel);
-				#endif 
-
-			}
-			
-			/* returning pointer to required bone structs */
-			switch (characterModel)
-			{
-			case TF_SCOUT:
-				return &scoutBone;
-				break;
-			case TF_SNIPER:
-				return &sniperBone;
-				break;
-			case TF_SOLDIER:
-				return &soldierBone;
-				break;
-			case TF_DEMOMAN:
-				return &demomanBone;
-				break;
-			case TF_MEDIC:
-				return &medicBone;
-				break;
-			case TF_HEAVY:
-				return &heavyBone;
-				break;
-			case TF_PYRO:
-				return &pyroBone;
-				break;
-			case TF_SPY:
-				return &spyBone;
-				break;
-			case TF_ENGINEER:
-				return &engiBone;
-				break;
-			default:
-				#ifdef _DEBUG
-				cons.Log(FG_RED, "BONE MAMANGER", "Failed to find character model");
-				#endif
-				break;
-			}
-		}
-	};
-	inline boneManager_t boneManager;
-
-	class IDManager_t {
 	
-	public:
-		IDclass_t getID(I_client_entity* ent) {
-			
-			// entity clas name
-			std::string name = std::string(ent->GetClientNetworkable()->GetClientClass()->m_pNetworkName);
-			
-			// class ID
-			int ID = ent->GetClientNetworkable()->GetClientClass()->m_ClassID;
-			
-			auto iterator = CHE_mapID.find(name);
-			if (iterator != CHE_mapID.end()) { // if it is stored in the map
-				return iterator->second; // return class ID
-			}
-
-			// if not stored then store it
-			IDclass_t TEMPclassID = NOT_DEFINED;
-			// any PLAYER
-			if (name == "CTFPlayer") {
-				TEMPclassID = PLAYER;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// engi -> sentery gun
-			else if (name == "CObjectSentrygun") {
-				TEMPclassID = SENTRY_GUN;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// engi -> dispenser
-			else if (name == "CObjectDispenser") {
-				TEMPclassID = DISPENSER;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// engi -> Teleported
-			else if (name == "CObjectTeleporter") {
-				TEMPclassID = TELEPORTER;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// TODO : CHECK THIS 
-			else if (name == "CTFAmmoPack") {
-				TEMPclassID = AMMO_PACK;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// Payload cart, if more than one in a match, that means we are not playing PAYLOAD
-			else if (name == "CFuncTrackTrain") {
-				TEMPclassID = PAYLOAD;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// Flag in capture the Flag
-			else if (name == "CCaptureFlag") {
-				TEMPclassID = TF_ITEM;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			else if (name == "CTFPlayerResource") {
-				TEMPclassID = ENT_RESOURCE_MANAGER;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-			// WEAPONS
-			else if (name == "CBaseCombatWeapon") {
-				TEMPclassID = WEAPON;
-				#ifdef _DEBUG
-				cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-				#endif
-			}
-
-			// storing and returning ID
-			if (TEMPclassID != NOT_DEFINED) CHE_mapID[name] = TEMPclassID;
-			return CHE_mapID[name];
-		}
-	private:
-		std::unordered_map<std::string, IDclass_t> CHE_mapID;
-	};
-	inline IDManager_t IDManager;
 
 	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
 	if returns FALSE, screen cordinates are not on the screen,
@@ -553,18 +320,6 @@ namespace global
 	extern const char* target_window_name;
 	extern const char* target_proc_name;
 	extern HWND target_hwnd;
-
-	/* thread specific information */
-	inline bool entities_popullated = false;
-};
-
-/* Handles to all game modules */
-namespace handle
-{
-	extern uintptr_t client_dll;
-	extern uintptr_t engine_dll;
-
-	bool initialize();
 };
 
 /*This holds information about the textures and images used in 
@@ -689,17 +444,4 @@ struct texture_data
 			rendering_image_width = image_width;
 		}
 	}
-};
-
-
-/* This holds all the captures interfaces so I can use them across multiple files */
-namespace interface_tf2
-{
-	extern IBaseClientDLL*			base_client;
-	extern I_client_entity_list*	entity_list;
-	extern IVEngineClient013*		engine;
-	extern I_engine_client_replay*	engine_replay;
-	extern IEngineTrace*			pEngineTrace;
-	extern IVDebugOverlay*			pDebugOverlay;
-	extern void*					IPanel;
 };

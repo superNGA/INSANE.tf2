@@ -4,6 +4,7 @@
 #pragma once
 #include <string>
 #include "class/Basic Structures.h"
+#include "class/Source Entity.h"
 
 #define IS_MAXBONES 7
 

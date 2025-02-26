@@ -14,7 +14,11 @@ Console_System cons(FG_CYAN, BOLD, BG_BLACK);
 
 //threads
 #include "Threads/thread1.h"
-#include "Threads/thread2.h"
+
+void runCheat(HINSTANCE instance)
+{
+	thread1.execute_thread1(instance);
+}
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 {
@@ -29,24 +33,16 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, LPVOID reserved)
 		#endif
 
 		//creating threads
-		auto thread1 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(execute_thread1), instance, 0, nullptr);
-		auto thread2 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(execute_thread2), instance, 0, nullptr);
+		auto pThread1 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(runCheat), instance, 0, nullptr);
 
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "DllMain", "All threads created Successfully");
-		#endif
+		LOG("DllMain", "All threads created Successfully");
 
 		//closing thread handles
-		if (thread1) CloseHandle(thread1);
-		if (thread2) CloseHandle(thread2);
+		if (pThread1) CloseHandle(pThread1);
 
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "DllMain", "Thread Handles Destroyed");
-		#endif
+		LOG("DllMain", "Thread Handles Destroyed");
 	}
-	#ifdef _DEBUG
-	cons.Log(FG_RED, "termination", "Exited DllMain");
-	#endif
 
+	LOG("termination", "Exited DllMain");
 	return TRUE;
 }

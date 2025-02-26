@@ -92,6 +92,7 @@ public:
 	void Log(int8_t TextColor, const char* tagText,const char* LogMessage...);
 
 private:
+	bool   _isPrinting			= false;
 	int8_t D_TextColor			= FG_WHITE;
 	int8_t D_BackgroundColor	= BG_BLACK;
 	int8_t D_Format				= NORMAL;

@@ -1,3 +1,11 @@
+//=========================================================================
+//                                 CONFIG SYSTEM
+//=========================================================================
+// by      : INSANE
+// created : 02/25/2025
+// 
+// purpose : create, save, modify & check config files efficiently
+
 #include "config.h"
 #include <iostream>
 #include <fstream>
@@ -7,6 +15,22 @@
 config_t config; // global config object, this is the config that will be used as the active config
 configManager_t g_configManager; // global object for configManger
 
+//=========================================================================
+//                             PUBLIC METHODS
+//=========================================================================
+
+//=========================================================================
+// bool configManager_t::createFile(std::string& fileName, fileCreationPrivilage_t creationMethod)
+//=========================================================================
+/**
+* creates a file with .INSANE extension
+*
+* @param fileName : name of the file without extension, but can manage with extension 
+*                   by removing the extension
+* @param creationMethod : PVLG_CREATE_NEW will make a new file if file name is not avilable
+*                         PVLG_OVERWRITE will delete previous file and make a new one with 
+*						  that name
+*/
 bool configManager_t::createFile(std::string& fileName, fileCreationPrivilage_t creationMethod) {
 
 	std::string fileName_ = fileName;
@@ -58,6 +82,15 @@ bool configManager_t::createFile(std::string& fileName, fileCreationPrivilage_t 
 	return true;
 }
 
+//=========================================================================
+// void configManager_t::displayFile(std::string& fileName)
+//=========================================================================
+/**
+* displays the content of the file, if console if allocated
+*
+* @param fileName : name of the file without extension, but can manage with extension 
+*                   by removing the extension
+*/
 void configManager_t::displayFile(std::string& fileName) {
 
 	_processName(fileName);

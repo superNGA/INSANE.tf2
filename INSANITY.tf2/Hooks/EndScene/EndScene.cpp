@@ -158,19 +158,12 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* RENDERING CHEAT FEATURES */
-    if (global::entities_popullated && entities::entManager.getFlagBit(entities::C_targets::DOING_SECOND_HALF) && entities::entManager.getFlagBit(entities::C_targets::DOING_FIRST_HALF)) {
-
-        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-        draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible 
-        
-        std::vector<entInfo_t> CHE_vecEntInfo = entities::entManager.get_vecEntities(true); // renderable processed entity list
-
-        if (config.visualConfig.ESP)               directX::render_cheat_features::render_esp_boxes(draw_list, CHE_vecEntInfo);
-        if (config.aimbotConfig.global)             directX::render_cheat_features::render_FOV_circle(draw_list);
-        if (config.aimbotConfig.future_pos_helper)  directX::render_cheat_features::render_proj_helper(draw_list);
-
-        draw_list->PopClipRect();
-    }
+    //ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+    //draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible 
+    // 
+    // do processing here
+    // 
+    //draw_list->PopClipRect();
 
     if (UI::UI_visble)
     {

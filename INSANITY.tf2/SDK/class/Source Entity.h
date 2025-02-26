@@ -27,6 +27,7 @@ class baseWeapon;
 // forward declaring structs
 struct ray_t;
 
+typedef I_client_entity BaseEntity;
 
 class I_client_entity_list
 {

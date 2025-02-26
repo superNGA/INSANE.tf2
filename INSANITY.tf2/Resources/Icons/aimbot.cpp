@@ -1,5 +1,4 @@
-/* F:\Icons\aimbot.png (1/2/2025 1:45:10 PM)
-   StartOffset(h): 00000000, EndOffset(h): 00000240, Length(h): 00000241 */
+#include "../../GlobalVars.h"
 
 namespace resource
 {

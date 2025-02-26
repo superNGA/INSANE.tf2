@@ -1,4 +1,5 @@
 #include "offsets.h"
+#include "../TF object manager/TFOjectManager.h"
 
 local_netvars netvar;
 
@@ -33,10 +34,10 @@ bool offsets::initialize()
 
 	/* getting interface */
 	int error_code;
-	interface_tf2::base_client = (IBaseClientDLL*)util.GetInterface("VClient017", "client.dll", &error_code);
+	auto base_client = tfObject.baseClientDll;
 
 	/* iterating through all client classes */
-	ClientClass* client_class = interface_tf2::base_client->GetAllClasses();
+	ClientClass* client_class = base_client->GetAllClasses();
 	while (client_class) // <- this iterated throught the base classes
 	{
 		/* get the base tables and iterate through them */

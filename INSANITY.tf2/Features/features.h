@@ -1,5 +1,6 @@
 #pragma once
 #include "../GlobalVars.h"
+#include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/class/CUserCmd.h"
 #include "../SDK/class/BaseWeapon.h"
 #include "config.h"
@@ -17,8 +18,7 @@ namespace feature
 	{
 		if (!config.miscConfig.bhop) return;
 
-		if (!global::entities_popullated) return;
-		int32_t flag = *(int32_t*)(netvar.local_player + netvar.m_fFlags);
+		int32_t flag = *(int32_t*)((uintptr_t)entityManager.getLocalPlayer() + netvar.m_fFlags);
 
 		if (!GetAsyncKeyState(VK_SPACE))
 		{
@@ -49,7 +49,6 @@ namespace feature
 	inline void rocket_jump(CUserCmd* cmd, bool& result)
 	{
 		if (!config.miscConfig.rocket_jump) return;
-		if (!global::entities_popullated) return;
 
 		static bool isRocketJumping = false;
 		static int rocketJumpStage = 0;
@@ -90,10 +89,18 @@ namespace feature
 	/* this is a very basic third person mechanism */
 	inline void third_person()
 	{
-		if (!config.miscConfig.third_person) return;
+		if (config.miscConfig.third_person == false)
+		{
+			return;
+		}
 
-		bool thirdperson_state = *(bool*)(netvar.local_player + netvar.m_nForceTauntCam);
-		if (thirdperson_state != input_util::key_detect(VK_XBUTTON1, true)) *(bool*)(netvar.local_player + netvar.m_nForceTauntCam) = !thirdperson_state;
+		uintptr_t forceTauntCamState = (uintptr_t)entityManager.getLocalPlayer() + netvar.m_nForceTauntCam;
+		bool thirdperson_state = *(bool*)(forceTauntCamState);
+		
+		if (thirdperson_state != input_util::key_detect(VK_XBUTTON1, true))
+		{
+			*(bool*)(forceTauntCamState) = !thirdperson_state;
+		}
 	}
 
 	inline void aimbot(CUserCmd* cmd, bool& result)

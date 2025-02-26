@@ -84,6 +84,12 @@ void Console_System::DoIntroduction()
 
 void Console_System::Log(const char* LogMessage, int8_t TextColor, int8_t Format , int8_t BackgroundColor )
 {
+	while (_isPrinting == true)
+	{
+		Sleep(10);
+	}
+	_isPrinting = true;	
+
 	time_t NowTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	tm* LocalTime = localtime(&NowTime);
 
@@ -91,10 +97,17 @@ void Console_System::Log(const char* LogMessage, int8_t TextColor, int8_t Format
 
 	printf("\033[%d;%d;%dm", Format, TextColor, BackgroundColor); //Setting up printing config
 	printf("%s\033[0m\n", LogMessage); //printing text
+	_isPrinting = false;
 }
 
 void Console_System::Log(int8_t TextColor, const char* tagText, const char* LogMessage...)
 {
+	while (_isPrinting == true)
+	{
+		Sleep(10);
+	}
+	_isPrinting = true;
+
 	time_t NowTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	tm* LocalTime = localtime(&NowTime);
 
@@ -115,4 +128,5 @@ void Console_System::Log(int8_t TextColor, const char* tagText, const char* LogM
 	printf("\033[0m\n"); // Reset text formatting
 
 	va_end(args);
+	_isPrinting = false;
 }

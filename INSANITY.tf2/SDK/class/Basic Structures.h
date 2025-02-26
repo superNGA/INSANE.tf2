@@ -189,6 +189,7 @@ public:
 /* in game playable classes */
 enum player_class
 {
+	INVALID = 0,
 	TF_SCOUT = 1,
 	TF_SNIPER,
 	TF_SOLDIER,
