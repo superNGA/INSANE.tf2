@@ -53,7 +53,7 @@ namespace feature
 		static bool isRocketJumping = false;
 		static int rocketJumpStage = 0;
 		if (GetAsyncKeyState(VK_XBUTTON2)) { // Hotkey for rocket jump
-			if (entities::local::active_weapon.load()->getReloadMode() != reload_t::WPN_RELOAD_START) cmd->buttons |= IN_ATTACK;
+			if (entityManager.getActiveWeapon()->getReloadMode() != reload_t::WPN_RELOAD_START) cmd->buttons |= IN_ATTACK;
 			if (!isRocketJumping) {
 				isRocketJumping = true;
 				rocketJumpStage = 0;

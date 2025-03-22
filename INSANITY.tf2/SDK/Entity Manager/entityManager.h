@@ -37,7 +37,7 @@ public:
 	bool		isActiveWeaponProjectile();
 	vecEspData	getEspData();
 	BaseEntity* getLocalPlayer();
-	vecEspData  getEspData();
+	baseWeapon* getActiveWeapon();
 
 	std::atomic<bool> initialized;
 private:
@@ -49,7 +49,7 @@ private:
 	void _swapEspBuffer();
 	
 //=========================================================================
-//                        LOCAL PLAYER DATA
+//                     LOCAL PLAYER DATA
 //=========================================================================
 	std::atomic<BaseEntity*>	_pLocalPlayer;
 	uint32_t					_indexLocalPlayer  = 0;

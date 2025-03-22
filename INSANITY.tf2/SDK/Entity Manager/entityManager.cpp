@@ -138,6 +138,25 @@ BaseEntity* EntityManager_t::getLocalPlayer()
     return _pLocalPlayer.load();
 }
 
+
+//=========================================================================
+// baseWeapon* EntityManager_t::getActiveWeapon()
+//=========================================================================
+/**
+* gets active weapon poitner for local player safely
+*/
+//-------------------------------------------------------------------------
+baseWeapon* EntityManager_t::getActiveWeapon()
+{
+    if (initialized.load() == false)
+    {
+        ERROR("EntityManager", "not initialized yet");
+        return nullptr;
+    }
+
+    return _pActiveWeapon.load();
+}
+
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
@@ -147,6 +166,8 @@ BaseEntity* EntityManager_t::getLocalPlayer()
 // bool EntityManager_t::_processLocalPlayer()
 //=========================================================================
 /**
+* processes local player.
+* 
 * stores important imformation about local player and skips the rest of 
 * "processEntities" function if local player is invalid or dead.
 *
@@ -212,6 +233,7 @@ bool EntityManager_t::_processEntityList()
 
     for (int entIndex_ = 0; entIndex_ < entityCount_; entIndex_++)
     {
+        // skipping local player
         if (entIndex_ == _indexLocalPlayer)
         {
             continue;
@@ -256,6 +278,9 @@ bool EntityManager_t::_processEntityPlayer(BaseEntity* entity)
     {
         return false;
     }
+
+    // todo : remove this and make something proper
+    entity->setGlow(true);
 
     // getting player bone matrix...
     matrix3x4_t playerBoneMatrix_[MAX_STUDIO_BONES];
