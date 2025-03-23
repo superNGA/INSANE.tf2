@@ -1,5 +1,6 @@
 #include "CreateMove.h"
 #include "../../SDK/Entity Manager/entityManager.h"
+#include "../../SDK/FN index Manager/FN index manager.h"
 
 hook::createmove::template_createmove hook::createmove::original_createmove = nullptr;
 bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
@@ -10,14 +11,14 @@ bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
 		return result;
 	}
 
-	int64_t randomSeed = tfObject.MD5_PseudoRandom(cmd->command_number) & 0x7FFFFFFF;
-	//printf("random seed : %lld\n", randomSeed);
+	//int64_t randomSeed = tfObject.MD5_PseudoRandom(cmd->command_number) & 0x7FFFFFFF;
 
 	BaseEntity* pLocalPlayer	= entityManager.getLocalPlayer();
 	baseWeapon* pActiveWeapon	= pLocalPlayer->getActiveWeapon();
-	
-	float critChance = *(float*)((uintptr_t)pActiveWeapon + 0x1080);
-	printf("crit Chance : %.2f\n", critChance);
+
+	//int index = g_FNindexManager.getFnIndex(FN_name_t::FN_IS_ATTACK_CRIT, (void*)pActiveWeapon);
+	//typedef bool(__fastcall* T_isCrit)(void*);
+	//bool output = ((T_isCrit)g_FNindexManager.getFnAdrs(FN_name_t::FN_IS_ATTACK_CRIT, (void*)pActiveWeapon))(pActiveWeapon);
 
 	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
 		return result;

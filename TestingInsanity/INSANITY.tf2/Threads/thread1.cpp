@@ -107,10 +107,11 @@ bool thread1_t::_initializeHooks()
 	uintptr_t pRenderGlowEffect_	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
 	uintptr_t pOverrideView_		= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
 	uintptr_t pShouldDrawViewModel_ = util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
+	uintptr_t pDrawModelExecute_	= util.FindPattern("4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", ENGINE_DLL);
 	uintptr_t pFrameStageNotify_	= g_FNindexManager.getFnAdrs(FN_FRAME_STAGE_NOTIFY, (void*)tfObject.baseClientDll);
 	uintptr_t pProcessMovement_		= (uintptr_t)(util.GetVirtualTable(tfObject.iGameMovement)[1]); // its the first one nigga
 
-	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0)
+	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0 || pDrawModelExecute_ == 0)
 	{
 		ERROR("thread 1", "Failed signature scanning");
 		return false;
@@ -121,8 +122,7 @@ bool thread1_t::_initializeHooks()
 	MH_CreateHook((LPVOID)pCreateMove_,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
 	MH_CreateHook((LPVOID)pRenderGlowEffect_,	(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); 
 	MH_CreateHook((LPVOID)pOverrideView_,		(LPVOID)hook::overrideView::H_overrideView,					(LPVOID*)&hook::overrideView::O_overrideView); // override view from IClientMode, game place as Createmove
-	MH_CreateHook((LPVOID)pShouldDrawViewModel_,(LPVOID)hook::shouldDrawViewModel::H_shouldDrawViewModel,	(LPVOID*)&hook::shouldDrawViewModel::O_shouldDrawViewModel); // this fn is from clientModeNormal or some shit like that
-	//MH_CreateHook((LPVOID)pProcessMovement_,	(LPVOID)hook::processMovement::H_processMovement,			(LPVOID*)&hook::processMovement::O_processMovement); // might not need this
+	MH_CreateHook((LPVOID)pDrawModelExecute_,	(LPVOID)hook::DME::H_DME,									(LPVOID*)&hook::DME::O_DME);
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)pFrameStageNotify_,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 	MH_CreateHook((LPVOID)g_FNindexManager.getFnAdrs(FN_PAINT_TRAVERSE, tfObject.iPanel), (LPVOID)hook::paintTraverse::H_paintTraverse, (LPVOID*)&hook::paintTraverse::O_paintTraverse);

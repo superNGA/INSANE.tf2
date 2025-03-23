@@ -60,6 +60,7 @@ enum IDclass_t {
 	CAPTURE_POINT,
 	WEAPON,
 	PAYLOAD,
+	CBASEANIMATING, // <-- this seems to only hold medKits, rotating AmmoPacks and whatEver weapon you are holding
 
 	// CTFResourceManager, has max health arry for all entities :)
 	ENT_RESOURCE_MANAGER

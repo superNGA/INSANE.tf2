@@ -24,9 +24,9 @@
 * @param FnName : input a index of desired fn from the enum
 * @param pVTable : input pointer to vtable and cast it to void* too
 */
-uintptr_t FNindexManager_t::getFnAdrs(FN_name_t FnName, void* pVTable)
+uintptr_t FNindexManager_t::getFnAdrs(FN_name_t FnName, void* pObject)
 {
-    return (uintptr_t)util.GetVirtualTable(pVTable)[getFnIndex(FnName, pVTable)];
+	return (uintptr_t)util.GetVirtualTable(pObject)[getFnIndex(FnName, pObject)];
 }
 
 
@@ -39,7 +39,7 @@ uintptr_t FNindexManager_t::getFnAdrs(FN_name_t FnName, void* pVTable)
 * @param FnName : input a index of desired fn from the enum
 * @param pVTable : input pointer to vtable and cast it to void* too
 */
-uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pVTable)
+uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pObject)
 {
 	auto it = MAP_FnIndex.find(FnName);
 	if (it != MAP_FnIndex.end()) { // function already cached
@@ -50,19 +50,22 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pVTable)
 	switch (FnName)
 	{
 	case FN_GET_TRACER_TYPE:
-		index = searchPatter(pVTable, GET_TRACER_TYPE, SEARCH_THRESHOLD::THRESHOLD_250);
+		index = searchPatter(pObject, GET_TRACER_TYPE, SEARCH_THRESHOLD::THRESHOLD_250);
 		break;
 	case FN_GET_WPN_INFO:
-		index = searchPatter(pVTable, GET_WPN_INFO, SEARCH_THRESHOLD::THRESHOLD_250);
+		index = searchPatter(pObject, GET_WPN_INFO, SEARCH_THRESHOLD::THRESHOLD_250);
 		break;
 	case FN_GET_PANEL_NAME:
-		index = searchPatter(pVTable, GET_PANEL_NAME, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, GET_PANEL_NAME, SEARCH_THRESHOLD::THRESHOLD_50);
 		break;
 	case FN_PAINT_TRAVERSE:
-		index = searchPatter(pVTable, PAINT_TRAVERSE, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, PAINT_TRAVERSE, SEARCH_THRESHOLD::THRESHOLD_50);
 		break;
 	case FN_FRAME_STAGE_NOTIFY:
-		index = searchPatter(pVTable, FRAME_STAGE_NOTIFY, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, FRAME_STAGE_NOTIFY, SEARCH_THRESHOLD::THRESHOLD_50);
+		break;
+	case FN_IS_ATTACK_CRIT:
+		index = searchPatter(pObject, IS_ATTACK_CRIT, SEARCH_THRESHOLD::THRESHOLD_400);
 		break;
 	default:
 		return 0;
@@ -70,7 +73,7 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pVTable)
 
 	if (!index) { // if failed to find signature
 		#ifdef _DEBUG
-		cons.Log(FG_RED, "FN INDEX MANAGER", "FN [%d] doesn't exist for : %p", FnName, pVTable);
+		cons.Log(FG_RED, "FN INDEX MANAGER", "FN [%d] doesn't exist for : %p", FnName, pObject);
 		#endif // _DEBUG
 		return 0;
 	}
@@ -97,9 +100,9 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pVTable)
 * @param signature : signature to find in vtable
 * @param searchingThreadhold : number of signatures to seach before giving up
 */
-int16_t FNindexManager_t::searchPatter(void* pVTable, const char* signature, uint16_t seachingThreadHold)
+int16_t FNindexManager_t::searchPatter(void* pObject, const char* signature, uint16_t seachingThreadHold)
 {
-	void** VTable = util.GetVirtualTable(pVTable);
+	void** VTable = util.GetVirtualTable(pObject);
 	for (int i = 0; i < seachingThreadHold; i++) {
 		if (util.FindPattern(signature, (uintptr_t)VTable[i])) {
 			return i;

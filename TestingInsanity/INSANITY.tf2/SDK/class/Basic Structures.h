@@ -260,7 +260,6 @@ struct csurface_t
 /* Dummy stuctures */
 struct CBaseHandle {};
 struct ICollideable {};
-struct model_t {};
 struct ShadowType_t {};
 struct ShouldTransmitState_t {};
 struct DataUpdateType_t {};
@@ -270,13 +269,29 @@ struct SpatializationInfo_t {};
 struct ClientThinkHandle_t {};
 struct ITraceFilter {};
 struct client_textmessage_t {};
-struct IMaterial {};
+class IMaterial;
 struct SurfInfo {};
 struct ButtonCode_t {};
 struct AudioState_t {};
 struct color32 {};
 struct UNUSED{};
 
+struct model_t
+{
+	int					fnHandle; // is a 4 byte pointer handle
+	const char*			strName;
+
+	int					nLoadFlags;		// mark loaded/not loaded
+	int					nServerCount;	// marked at load
+	IMaterial**			ppMaterials;	// null-terminated runtime material cache; ((intptr_t*)(ppMaterials))[-1] == nMaterials
+
+	int					type; // ENUM HA BC
+	int					flags;			// MODELFLAG_???
+
+	// volume occupied by the model graphics	
+	vec					mins, maxs;
+	float				radius;
+};
 
 // player condition enum ( used for : m_playercond )
 enum FLAG_playerCond

@@ -103,6 +103,13 @@ IDclass_t IDManager_t::getID(I_client_entity* ent)
 		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
 		#endif
 	}
+	// ROTATING AMMO PACKS, MEDKITS & ACTIVE WEAPON
+	else if (name == "CBaseAnimating") {
+		TEMPclassID = CBASEANIMATING;
+		#ifdef _DEBUG
+		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		#endif
+	}
 
 	// storing and returning ID
 	if (TEMPclassID != NOT_DEFINED) CHE_mapID[name] = TEMPclassID;
