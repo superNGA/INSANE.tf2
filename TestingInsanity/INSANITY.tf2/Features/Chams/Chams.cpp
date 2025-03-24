@@ -9,8 +9,10 @@
 #include <iostream>
 #include "Chams.h"
 Chams_t chams;
+
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/Class ID Manager/classIDManager.h"
+#include "../../SDK/TF object manager/TFOjectManager.h"
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -18,14 +20,15 @@ Chams_t chams;
 
 int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
-    BaseEntity* entity      = reinterpret_cast<BaseEntity*>(renderInfo->pRenderable);
-    IDclass_t entId         = IDManager.getID(entity);
-    
     int8_t nMaterial        = modelState->m_pStudioHWData->m_pLODs->numMaterials;
     IMaterial** ppMaterial  = modelState->m_pStudioHWData->m_pLODs->ppMaterials;
-
     if (nMaterial == 0 || ppMaterial == nullptr)
         return hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+
+    BaseEntity* entity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
+    IDclass_t entId         = IDManager.getID(entity);
+
+    bool bIsMaterialOverridden = false;
 
     switch (entId)
     {
@@ -50,8 +53,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     case PAYLOAD:
         break;
     case CBASEANIMATING:
-        printf("%s\n", renderInfo->pModel->strName);
-        //_ChamsBaseAnimating(nMaterial, ppMaterial);
+        bIsMaterialOverridden = _ChamsBaseAnimating(nMaterial, ppMaterial);
         break;
     case ENT_RESOURCE_MANAGER:
         break;
@@ -60,6 +62,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     }
 
     auto result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+    /*if(bIsMaterialOverridden)
+        tfObject.pForcedMaterialOverride(tfObject.IVRenderModel, nullptr, OverrideType_t::OVERRIDE_NORMAL);*/
     return result;
 }
 
@@ -69,10 +73,23 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
 //=========================================================================
 
 
-void Chams_t::_ChamsBaseAnimating(int8_t nMaterial, IMaterial** ppMaterial)
+bool Chams_t::_ChamsBaseAnimating(int8_t nMaterial, IMaterial** ppMaterial)
 {
-    for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+    static IMaterial* customMat = nullptr;
+    if (customMat == nullptr)
+    {
+        printf("mat pointer : %p\n", customMat);
+        customMat = tfObject.FindMaterial(tfObject.IMaterialSystem, "debug/debugambientcube", TEXTURE_GROUP_MODEL, true, NULL);
+        printf("mat pointer : %p\n", customMat);
+        customMat->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        printf("mat pointer : %p\n", customMat);
+    }
+    tfObject.pForcedMaterialOverride(tfObject.IVRenderModel, customMat, OverrideType_t::OVERRIDE_NORMAL);
+
+    /*for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
     {
         ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
-    }
+    }*/
+
+    return true;
 }

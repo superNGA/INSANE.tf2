@@ -19,6 +19,6 @@ public:
     int64_t Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix);
 
 private:
-    void _ChamsBaseAnimating(int8_t nMaterial, IMaterial** ppMaterial);
+    bool _ChamsBaseAnimating(int8_t nMaterial, IMaterial** ppMaterial);
 };
 extern Chams_t chams;

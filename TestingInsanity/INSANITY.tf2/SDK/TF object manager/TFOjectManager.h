@@ -36,12 +36,12 @@ public:
 //=========================================================================
 //                     CALL-ABLE FUNCTIONS
 //=========================================================================
-	T_lookUpBone			lookUpBones					= nullptr;
-	T_getName				getName						= nullptr;
-	T_addToLeafSystem		addToLeafSystem				= nullptr;
-	T_MD5_PseudoRandom		MD5_PseudoRandom			= nullptr;
-	T_findMaterial			FindMaterial				= nullptr;
-	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
+	T_lookUpBone			 lookUpBones					= nullptr;
+	T_getName				 getName						= nullptr;
+	T_addToLeafSystem		 addToLeafSystem				= nullptr;
+	T_MD5_PseudoRandom		 MD5_PseudoRandom				= nullptr;
+	T_findMaterial			 FindMaterial					= nullptr;
+	T_forcedMaterialOverride pForcedMaterialOverride		= nullptr;
 
 	global_var_base*		pGlobalVar		 = nullptr;
 
