@@ -50,22 +50,25 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pObject)
 	switch (FnName)
 	{
 	case FN_GET_TRACER_TYPE:
-		index = searchPatter(pObject, GET_TRACER_TYPE, SEARCH_THRESHOLD::THRESHOLD_250);
+		index = searchPatter(pObject, GET_TRACER_TYPE,		SEARCH_THRESHOLD::THRESHOLD_250);
 		break;
 	case FN_GET_WPN_INFO:
-		index = searchPatter(pObject, GET_WPN_INFO, SEARCH_THRESHOLD::THRESHOLD_250);
+		index = searchPatter(pObject, GET_WPN_INFO,			SEARCH_THRESHOLD::THRESHOLD_250);
 		break;
 	case FN_GET_PANEL_NAME:
-		index = searchPatter(pObject, GET_PANEL_NAME, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, GET_PANEL_NAME,		SEARCH_THRESHOLD::THRESHOLD_50);
 		break;
 	case FN_PAINT_TRAVERSE:
-		index = searchPatter(pObject, PAINT_TRAVERSE, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, PAINT_TRAVERSE,		SEARCH_THRESHOLD::THRESHOLD_50);
 		break;
 	case FN_FRAME_STAGE_NOTIFY:
-		index = searchPatter(pObject, FRAME_STAGE_NOTIFY, SEARCH_THRESHOLD::THRESHOLD_50);
+		index = searchPatter(pObject, FRAME_STAGE_NOTIFY,	SEARCH_THRESHOLD::THRESHOLD_50);
 		break;
 	case FN_IS_ATTACK_CRIT:
-		index = searchPatter(pObject, IS_ATTACK_CRIT, SEARCH_THRESHOLD::THRESHOLD_400);
+		index = searchPatter(pObject, IS_ATTACK_CRIT,		SEARCH_THRESHOLD::THRESHOLD_400);
+		break;
+	case FN_FIND_MATERIAL:
+		index = searchPatter(pObject, FIND_MATERIAL,		SEARCH_THRESHOLD::THRESHOLD_100);
 		break;
 	default:
 		return 0;

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Source Entity.h"
 
 enum MaterialVarFlags_t
 {
@@ -39,6 +39,99 @@ enum MaterialVarFlags_t
 	// NOTE: Only add flags here that either should be read from
 	// .vmts or can be set directly from client code. Other, internal
 	// flags should to into the flag enum in imaterialinternal.h
+};
+
+
+
+#define TEXTURE_GROUP_LIGHTMAP						"Lightmaps"
+#define TEXTURE_GROUP_WORLD							"World textures"
+#define TEXTURE_GROUP_MODEL							"Model textures"
+#define TEXTURE_GROUP_VGUI							"VGUI textures"
+#define TEXTURE_GROUP_PARTICLE						"Particle textures"
+#define TEXTURE_GROUP_DECAL							"Decal textures"
+#define TEXTURE_GROUP_SKYBOX						"SkyBox textures"
+#define TEXTURE_GROUP_CLIENT_EFFECTS				"ClientEffect textures"
+#define TEXTURE_GROUP_OTHER							"Other textures"
+#define TEXTURE_GROUP_PRECACHED						"Precached"				// TODO: assign texture groups to the precached materials
+#define TEXTURE_GROUP_CUBE_MAP						"CubeMap textures"
+#define TEXTURE_GROUP_RENDER_TARGET					"RenderTargets"
+#define TEXTURE_GROUP_RUNTIME_COMPOSITE				"Runtime Composite"
+#define TEXTURE_GROUP_UNACCOUNTED					"Unaccounted textures"	// Textures that weren't assigned a texture group.
+#define TEXTURE_GROUP_STATIC_INDEX_BUFFER			"Static Indices"
+#define TEXTURE_GROUP_STATIC_VERTEX_BUFFER_DISP		"Displacement Verts"
+#define TEXTURE_GROUP_STATIC_VERTEX_BUFFER_COLOR	"Lighting Verts"
+#define TEXTURE_GROUP_STATIC_VERTEX_BUFFER_WORLD	"World Verts"
+#define TEXTURE_GROUP_STATIC_VERTEX_BUFFER_MODELS	"Model Verts"
+#define TEXTURE_GROUP_STATIC_VERTEX_BUFFER_OTHER	"Other Verts"
+#define TEXTURE_GROUP_DYNAMIC_INDEX_BUFFER			"Dynamic Indices"
+#define TEXTURE_GROUP_DYNAMIC_VERTEX_BUFFER			"Dynamic Verts"
+#define TEXTURE_GROUP_DEPTH_BUFFER					"DepthBuffer"
+#define TEXTURE_GROUP_VIEW_MODEL					"ViewModel"
+#define TEXTURE_GROUP_PIXEL_SHADERS					"Pixel Shaders"
+#define TEXTURE_GROUP_VERTEX_SHADERS				"Vertex Shaders"
+#define TEXTURE_GROUP_RENDER_TARGET_SURFACE			"RenderTarget Surfaces"
+#define TEXTURE_GROUP_MORPH_TARGETS					"Morph Targets"
+
+
+enum OverrideType_t
+{
+	OVERRIDE_NORMAL = 0,
+	OVERRIDE_BUILD_SHADOWS,
+	OVERRIDE_DEPTH_WRITE,
+	OVERRIDE_SSAO_DEPTH_WRITE,
+};
+
+
+struct studioloddata_t
+{
+	void* m_pMeshData; // there are studiohwdata_t.m_NumStudioMeshes of these.
+	float					m_SwitchPoint;
+
+	int						numMaterials;
+	IMaterial** ppMaterials; /* will have studiohdr_t.numtextures elements allocated */
+
+	int* pMaterialFlags; /* will have studiohdr_t.numtextures elements allocated */
+	int* m_pHWMorphDecalBoneRemap;
+	int						m_nDecalBoneCount;
+};
+
+
+struct studiohwdata_t
+{
+	int						m_RootLOD;	// calced and clamped, nonzero for lod culling
+	int						m_NumLODs;
+	studioloddata_t* m_pLODs;
+	int						m_NumStudioMeshes;
+};
+
+
+struct DrawModelState_t
+{
+	void* m_pStudioHdr;
+	studiohwdata_t* m_pStudioHWData;
+	I_client_renderable* m_pRenderable;
+	const void* m_pModelToWorld;
+	int						m_decals;
+	int						m_drawFlags;
+	int						m_lod;
+};
+
+
+struct ModelRenderInfo_t
+{
+	vec						origin;
+	qangle					angles;
+	I_client_renderable*	pRenderable;
+	const model_t*			pModel;
+	const matrix3x4_t*		pModelToWorld;
+	const matrix3x4_t*		pLightingOffset;
+	const vec*				pLightingOrigin;
+	int						flags;
+	int						entity_index;
+	int						skin;
+	int						body;
+	int						hitboxset;
+	int16_t					instance;
 };
 
 

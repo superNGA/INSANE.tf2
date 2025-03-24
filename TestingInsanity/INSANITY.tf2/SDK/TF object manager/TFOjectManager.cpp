@@ -23,13 +23,16 @@ TFObjectManager_t tfObject;
 */
 bool TFObjectManager_t::initializeFns()
 {
-	getName			 = (T_getName)g_FNindexManager.getFnAdrs(FN_GET_PANEL_NAME, iPanel);
-	lookUpBones		 = (T_lookUpBone)util.FindPattern("40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL);
-	addToLeafSystem  = (T_addToLeafSystem)util.FindPattern("40 53 48 83 EC ? B8 ? ? ? ? 44 8B C2", CLIENT_DLL);
-	MD5_PseudoRandom = (T_MD5_PseudoRandom)util.FindPattern("89 4C 24 ? 55 48 8B EC 48 81 EC", CLIENT_DLL);
-	pGlobalVar		 = engineReplay->GetClientGlobalVars();
+	getName					= (T_getName)g_FNindexManager.getFnAdrs(FN_GET_PANEL_NAME, iPanel);
+	lookUpBones				= (T_lookUpBone)util.FindPattern("40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL);
+	addToLeafSystem			= (T_addToLeafSystem)util.FindPattern("40 53 48 83 EC ? B8 ? ? ? ? 44 8B C2", CLIENT_DLL);
+	MD5_PseudoRandom		= (T_MD5_PseudoRandom)util.FindPattern("89 4C 24 ? 55 48 8B EC 48 81 EC", CLIENT_DLL);
+	FindMaterial			= (T_findMaterial)g_FNindexManager.getFnAdrs(FN_FIND_MATERIAL, IMaterialSystem);
+	pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 48 83 EC ? 48 8B 1D", ENGINE_DLL);
 
-	if (getName == nullptr || lookUpBones == nullptr || addToLeafSystem == nullptr || pGlobalVar == nullptr || MD5_PseudoRandom == nullptr)
+	pGlobalVar				= engineReplay->GetClientGlobalVars();
+
+	if (getName == nullptr || lookUpBones == nullptr || addToLeafSystem == nullptr || pGlobalVar == nullptr || MD5_PseudoRandom == nullptr || pForcedMaterialOverride == nullptr)
 	{
 		ERROR("TFObjectManager", "Failed intialization");
 		return false;
@@ -84,14 +87,16 @@ bool TFObjectManager_t::initializeModuleHandles()
 bool TFObjectManager_t::initializeInterfaces()
 {
 	// error codes...
-	int entityList_		= 0;
-	int engineClient_	= 0;
-	int engineReplay_	= 0;
-	int engineTrace_	= 0;
-	int debugOverlay_	= 0;
-	int iPanel_			= 0;
-	int baseClient_		= 0;
-	int gameMovement_	= 0;
+	int entityList_		 = 0;
+	int engineClient_	 = 0;
+	int engineReplay_	 = 0;
+	int engineTrace_	 = 0;
+	int debugOverlay_	 = 0;
+	int iPanel_			 = 0;
+	int baseClient_		 = 0;
+	int gameMovement_	 = 0;
+	int iMaterialSystem_ = 0;
+	int ivRenderModel_	 = 0;
 
 	entityList		= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entityList_);
 	engine			= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &engineClient_);
@@ -101,12 +106,18 @@ bool TFObjectManager_t::initializeInterfaces()
 	baseClientDll   = (IBaseClientDLL*)util.GetInterface(BASE_CLIENT_DLL, CLIENT_DLL, &baseClient_);
 	iPanel			= util.GetInterface(VGUI_PANEL, VGUI2_DLL, &iPanel_);
 	iGameMovement	= util.GetInterface(GAME_MOVEMENT, CLIENT_DLL, &gameMovement_);
+	IMaterialSystem = util.GetInterface(IMATERIAL_SYSTEM, MATERIALSYSTEM_DLL, &iMaterialSystem_);
+	IVRenderModel	= util.GetInterface(IVRENDER_MODEL, ENGINE_DLL, &ivRenderModel_);
 
 
 	// if adding new interface, ADD IT HERE :)
-	if (entityList_ != 0 || engineClient_ != 0 || engineReplay_ != 0 || engineTrace_ != 0 || debugOverlay_ != 0 || iPanel_ != 0 || baseClient_ != 0 || gameMovement_ != 0)
+	if (entityList_ != 0  || engineClient_ != 0 || engineReplay_ != 0 || 
+		engineTrace_ != 0 || debugOverlay_ != 0 || iPanel_ != 0		  || 
+		baseClient_ != 0  || gameMovement_ != 0 || iMaterialSystem_ != 0||
+		ivRenderModel_ != 0)
 	{
 		ERROR("TFObjectManager", "Failed to capture interfaces");
+		printf("%d\n", iMaterialSystem_);
 		return false;
 	}
 	LOG("TFObjectManager", "successfully captured interfaces");

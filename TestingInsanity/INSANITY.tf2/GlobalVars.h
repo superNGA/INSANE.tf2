@@ -9,9 +9,10 @@
 #define M_PI 3.14159265358979323846
 
 /* game module names */
-#define CLIENT_DLL	"client.dll"
-#define ENGINE_DLL	"engine.dll"
-#define VGUI2_DLL	"vgui2.dll"
+#define CLIENT_DLL			"client.dll"
+#define ENGINE_DLL			"engine.dll"
+#define VGUI2_DLL			"vgui2.dll"
+#define MATERIALSYSTEM_DLL	"materialsystem.dll"
 
 /* game interfaces names */
 #define IVENGIENCLIENT013		"VEngineClient014"
@@ -27,6 +28,8 @@
 #define VGUI_PANEL				"VGUI_Panel009"
 #define BASE_CLIENT_DLL			"VClient017"
 #define GAME_MOVEMENT			"GameMovement001"
+#define IMATERIAL_SYSTEM		"VMaterialSystem082"
+#define IVRENDER_MODEL			"VEngineModel016"
 
 /* this is config file */
 #include "Features/config.h"

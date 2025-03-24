@@ -27,31 +27,39 @@ namespace cheat_window
 	{
 		ImGui::PushFont(directX::fonts::agency_FB_small);
 
-		ImGui::Checkbox("bhop", &config.miscConfig.bhop);
-		ImGui::Checkbox("auto rocket jump", &config.miscConfig.rocket_jump);
-		ImGui::Checkbox("Third person", &config.miscConfig.third_person);
-		ImGui::Checkbox("Auto BackStab", &config.miscConfig.autoBackStab);
-		ImGui::Checkbox("Air Move ( in-complete )", &config.miscConfig.airMove);
+		ImGui::Checkbox("bhop",							&config.miscConfig.bhop);
+		ImGui::Checkbox("auto rocket jump",				&config.miscConfig.rocket_jump);
+		ImGui::Checkbox("Third person",					&config.miscConfig.third_person);
+		ImGui::Checkbox("Auto BackStab",				&config.miscConfig.autoBackStab);
+		ImGui::Checkbox("Air Move ( in-complete )",		&config.miscConfig.airMove);
 
 		ImGui::PopFont();
 	}
 
 	inline void draw_aimbot_window()
 	{
-		ImGui::Checkbox("GLOBAL", &config.aimbotConfig.global);
-		ImGui::SliderFloat("FOV", &config.aimbotConfig.FOV, 0.0f, 180.0f, "%.2f");
-		ImGui::Checkbox("PROJ. AIMBOT", &config.aimbotConfig.projectile_aimbot);
-		ImGui::Checkbox("Future position indicator", &config.aimbotConfig.future_pos_helper);
-		ImGui::Checkbox("Auto shoot", &config.aimbotConfig.autoShoot);
+		ImGui::Checkbox("GLOBAL",						&config.aimbotConfig.global);
+		ImGui::SliderFloat("FOV",						&config.aimbotConfig.FOV, 0.0f, 180.0f, "%.2f");
+		ImGui::Checkbox("PROJ. AIMBOT",					&config.aimbotConfig.projectile_aimbot);
+		ImGui::Checkbox("Future position indicator",	&config.aimbotConfig.future_pos_helper);
+		ImGui::Checkbox("Auto shoot",					&config.aimbotConfig.autoShoot);
 	}
 
 	inline void draw_player_visual_window()
 	{
-		ImGui::Checkbox("ESP", &config.visualConfig.ESP);
-		ImGui::Checkbox("Health bar", &config.visualConfig.healthBar);
-		ImGui::Checkbox("Skip disguised spy", &config.visualConfig.skipDisguisedSpy);
-		ImGui::Checkbox("Skip cloaked spy", &config.visualConfig.skipCloackedSpy);
-		ImGui::Checkbox("Name", &config.visualConfig.playerName);
+		ImGui::Checkbox("ESP",							&config.visualConfig.ESP);
+		ImGui::Checkbox("Health bar",					&config.visualConfig.healthBar);
+		ImGui::Checkbox("Skip disguised spy",			&config.visualConfig.skipDisguisedSpy);
+		ImGui::Checkbox("Skip cloaked spy",				&config.visualConfig.skipCloackedSpy);
+		ImGui::Checkbox("Name",							&config.visualConfig.playerName);
+
+		ImGui::Checkbox("Player Chams",					&config.visualConfig.playerChams);
+		ImGui::Checkbox("Sentry Chams",					&config.visualConfig.sentryChams);
+		ImGui::Checkbox("Teleporter Chams",				&config.visualConfig.teleporterChams);
+		ImGui::Checkbox("Dispenser Chams",				&config.visualConfig.dispenserChams);
+		ImGui::Checkbox("MedKit Chams",					&config.visualConfig.baseAnimating);
+		ImGui::Checkbox("AmmoPack Chams",				&config.visualConfig.ammoPackChams);
+		ImGui::Checkbox("intelligence Chams",			&config.visualConfig.tfItemChams);
 	}
 
 	inline void draw_view_visual_window() 

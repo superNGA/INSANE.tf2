@@ -103,15 +103,17 @@ bool thread1_t::_initializeHooks()
 	LOG("thread 1", "Minhook started");
 
 	// signature scanning...
-	uintptr_t pCreateMove_			= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
-	uintptr_t pRenderGlowEffect_	= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
-	uintptr_t pOverrideView_		= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
-	uintptr_t pShouldDrawViewModel_ = util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
-	uintptr_t pDrawModelExecute_	= util.FindPattern("4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", ENGINE_DLL);
-	uintptr_t pFrameStageNotify_	= g_FNindexManager.getFnAdrs(FN_FRAME_STAGE_NOTIFY, (void*)tfObject.baseClientDll);
-	uintptr_t pProcessMovement_		= (uintptr_t)(util.GetVirtualTable(tfObject.iGameMovement)[1]); // its the first one nigga
+	uintptr_t pCreateMove_				= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+	uintptr_t pRenderGlowEffect_		= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
+	uintptr_t pOverrideView_			= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
+	uintptr_t pShouldDrawViewModel_		= util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
+	uintptr_t pDrawModelExecute_		= util.FindPattern("4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", ENGINE_DLL);
+	uintptr_t pFrameStageNotify_		= g_FNindexManager.getFnAdrs(FN_FRAME_STAGE_NOTIFY, (void*)tfObject.baseClientDll);
+	uintptr_t pProcessMovement_			= (uintptr_t)(util.GetVirtualTable(tfObject.iGameMovement)[1]); // its the first one nigga
 
-	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0 || pDrawModelExecute_ == 0)
+	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || 
+		pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0 || 
+		pDrawModelExecute_ == 0)
 	{
 		ERROR("thread 1", "Failed signature scanning");
 		return false;

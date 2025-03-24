@@ -26,11 +26,19 @@ struct aimbotConfig_t
 };
 struct visualConfig_t
 {
-	bool ESP						= false;
+	bool ESP						= false; // <- not working from here...
 	bool healthBar					= false;
 	bool skipDisguisedSpy			= false;
 	bool skipCloackedSpy			= false;
-	bool playerName					= false;
+	bool playerName					= false; // till here...
+
+	bool playerChams				= false;
+	bool sentryChams				= false;
+	bool dispenserChams				= false;
+	bool teleporterChams			= false;
+	bool ammoPackChams				= false;
+	bool baseAnimating				= false;
+	bool tfItemChams				= false;
 };
 struct viewConfig_t
 {

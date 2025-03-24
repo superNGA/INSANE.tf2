@@ -21,6 +21,8 @@ extern Console_System cons;
 #define PAINT_TRAVERSE		"48 89 5C 24 ? 57 48 83 EC ? 48 8B 01 41 0F B6 D9"
 #define FRAME_STAGE_NOTIFY	"48 83 EC ? 89 15"
 #define GET_WPN_INFO		"66 3B 0D"
+#define FIND_MATERIAL		"48 83 EC ? 48 8B 44 24 ? 4C 8B 11"
+
 //#define IS_ATTACK_CRIT		"48 89 74 24 ? 57 48 83 EC ? 48 8B F9 E8 ? ? ? ? 48 8B C8 C7 44 24 ? ? ? ? ? 4C 8D 0D ? ? ? ? 33 D2 4C 8D 05 ? ? ? ? E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? 48 8B 10"
 //#define IS_ATTACK_CRIT		"48 89 5C 24 ? 55 56 57 48 81 EC ? ? ? ? 0F 29 74 24"
 #define IS_ATTACK_CRIT		"40 57 48 83 EC ? 48 8B 05 ? ? ? ? 48 8B F9 83 78 ? ? 75"
@@ -32,6 +34,7 @@ enum FN_name_t {
 	FN_GET_PANEL_NAME,
 	FN_PAINT_TRAVERSE,
 	FN_FRAME_STAGE_NOTIFY,
+	FN_FIND_MATERIAL,
 	FN_IS_ATTACK_CRIT
 };
 

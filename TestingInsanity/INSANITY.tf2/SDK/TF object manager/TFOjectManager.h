@@ -11,6 +11,8 @@
 #include <cstdint>
 #include "../../GlobalVars.h"
 #include "../../Hooks/ProcessMovement/ProcessMovement.h"
+#include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
+#include "../class/IMaterial.h"
 
 class IEngineTrace;
 struct global_var_base;
@@ -20,6 +22,8 @@ typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
 typedef char* (__fastcall* T_getName)(void*, int64_t);
 typedef void(__fastcall* T_addToLeafSystem)	(void*, renderGroup_t);
 typedef int64_t(__fastcall* T_MD5_PseudoRandom)(int);
+typedef IMaterial* (__fastcall* T_findMaterial)(void*, const char*, const char*, bool, const char*);
+typedef void(__fastcall* T_forcedMaterialOverride)(void*, IMaterial*, OverrideType_t);
 
 class TFObjectManager_t
 {
@@ -32,10 +36,13 @@ public:
 //=========================================================================
 //                     CALL-ABLE FUNCTIONS
 //=========================================================================
-	T_lookUpBone			lookUpBones		 = nullptr;
-	T_getName				getName			 = nullptr;
-	T_addToLeafSystem		addToLeafSystem	 = nullptr;
-	T_MD5_PseudoRandom		MD5_PseudoRandom = nullptr;
+	T_lookUpBone			lookUpBones					= nullptr;
+	T_getName				getName						= nullptr;
+	T_addToLeafSystem		addToLeafSystem				= nullptr;
+	T_MD5_PseudoRandom		MD5_PseudoRandom			= nullptr;
+	T_findMaterial			FindMaterial				= nullptr;
+	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
+
 	global_var_base*		pGlobalVar		 = nullptr;
 
 //=========================================================================
@@ -56,6 +63,8 @@ public:
 	IVDebugOverlay*			debugOverlay	= nullptr;
 	void*					iPanel			= nullptr;
 	void*					iGameMovement	= nullptr;
+	void*					IMaterialSystem = nullptr;
+	void*					IVRenderModel	= nullptr;
 
 //=========================================================================
 //                     OBJECTS :)
