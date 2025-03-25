@@ -24,26 +24,32 @@ typedef void(__fastcall* T_addToLeafSystem)	(void*, renderGroup_t);
 typedef int64_t(__fastcall* T_MD5_PseudoRandom)(int);
 typedef IMaterial* (__fastcall* T_findMaterial)(void*, const char*, const char*, bool, const char*);
 typedef void(__fastcall* T_forcedMaterialOverride)(void*, IMaterial*, OverrideType_t);
+typedef IMaterial* (__fastcall* T_createMaterial)(void*, void*);
 
 class TFObjectManager_t
 {
 public:
+	TFObjectManager_t();
+
     bool initializeFns();
     void update();
 	bool initializeModuleHandles();
 	bool initializeInterfaces();
 
+	std::atomic<bool> bIsInitialized;
+
 //=========================================================================
 //                     CALL-ABLE FUNCTIONS
 //=========================================================================
-	T_lookUpBone			 lookUpBones					= nullptr;
-	T_getName				 getName						= nullptr;
-	T_addToLeafSystem		 addToLeafSystem				= nullptr;
-	T_MD5_PseudoRandom		 MD5_PseudoRandom				= nullptr;
-	T_findMaterial			 FindMaterial					= nullptr;
-	T_forcedMaterialOverride pForcedMaterialOverride		= nullptr;
+	T_lookUpBone			 lookUpBones				= nullptr;
+	T_getName				 getName					= nullptr;
+	T_addToLeafSystem		 addToLeafSystem			= nullptr;
+	T_MD5_PseudoRandom		 MD5_PseudoRandom			= nullptr;
+	T_findMaterial			 FindMaterial				= nullptr;
+	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
+	T_createMaterial		 pCreateMaterial			= nullptr;
 
-	global_var_base*		pGlobalVar		 = nullptr;
+	global_var_base*		pGlobalVar					= nullptr;
 
 //=========================================================================
 //                     MODULE ADRS
@@ -65,6 +71,7 @@ public:
 	void*					iGameMovement	= nullptr;
 	void*					IMaterialSystem = nullptr;
 	void*					IVRenderModel	= nullptr;
+	void*					IStudioRender	= nullptr;
 
 //=========================================================================
 //                     OBJECTS :)

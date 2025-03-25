@@ -9,10 +9,11 @@
 #define M_PI 3.14159265358979323846
 
 /* game module names */
-#define CLIENT_DLL			"client.dll"
-#define ENGINE_DLL			"engine.dll"
-#define VGUI2_DLL			"vgui2.dll"
-#define MATERIALSYSTEM_DLL	"materialsystem.dll"
+#define CLIENT_DLL				"client.dll"
+#define ENGINE_DLL				"engine.dll"
+#define VGUI2_DLL				"vgui2.dll"
+#define MATERIALSYSTEM_DLL		"materialsystem.dll"
+#define STUDIORENDER_DLL		"studiorender.dll"
 
 /* game interfaces names */
 #define IVENGIENCLIENT013		"VEngineClient014"
@@ -30,6 +31,7 @@
 #define GAME_MOVEMENT			"GameMovement001"
 #define IMATERIAL_SYSTEM		"VMaterialSystem082"
 #define IVRENDER_MODEL			"VEngineModel016"
+#define ISTUDIO_RENDER			"VStudioRender025"
 
 /* this is config file */
 #include "Features/config.h"
