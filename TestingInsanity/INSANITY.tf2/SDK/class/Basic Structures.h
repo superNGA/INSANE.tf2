@@ -172,6 +172,13 @@ struct vec2
 	}
 };
 
+struct clr_t
+{
+	clr_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
+	clr_t(float red, float green, float blue,float alpha) : r(red), g(green), b(blue), a(alpha){}
+	float r, g, b, a;
+};
+
 /* view matrix, stores world-to-view or world-to-screen transformation matrix given
 by the engine*/
 struct view_matrix

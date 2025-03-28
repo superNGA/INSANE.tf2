@@ -20,5 +20,11 @@ public:
 
 private:
     bool _ChamsBaseAnimating(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
+    bool _ChamsPlayer(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity * pEntity);
+    bool _ChamsDispenser(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
+    bool _ChamsSentery(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
+    bool _ChamsTeleporter(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
+    bool _ChamsItems(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
+    bool _ChamsAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
 };
 extern Chams_t chams;

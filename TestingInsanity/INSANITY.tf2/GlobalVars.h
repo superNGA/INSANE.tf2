@@ -32,6 +32,7 @@
 #define IMATERIAL_SYSTEM		"VMaterialSystem082"
 #define IVRENDER_MODEL			"VEngineModel016"
 #define ISTUDIO_RENDER			"VStudioRender025"
+#define IVRENDER_VIEW			"VEngineRenderView014"
 
 /* this is config file */
 #include "Features/config.h"

@@ -13,6 +13,7 @@
 #include "../../Hooks/ProcessMovement/ProcessMovement.h"
 #include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
 #include "../class/IMaterial.h"
+#include "../class/IVRenderView.h"
 
 class IEngineTrace;
 struct global_var_base;
@@ -72,6 +73,7 @@ public:
 	void*					IMaterialSystem = nullptr;
 	void*					IVRenderModel	= nullptr;
 	void*					IStudioRender	= nullptr;
+	IVRenderView*			iVRenderView	= nullptr;
 
 //=========================================================================
 //                     OBJECTS :)

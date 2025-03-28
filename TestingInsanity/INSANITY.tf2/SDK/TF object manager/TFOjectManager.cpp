@@ -116,6 +116,7 @@ bool TFObjectManager_t::initializeInterfaces()
 	int iMaterialSystem_ = 0;
 	int ivRenderModel_	 = 0;
 	int iStudioRender_	 = 0;
+	int iVRenderView_	 = 0;
 
 	entityList		= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entityList_);
 	engine			= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &engineClient_);
@@ -128,13 +129,14 @@ bool TFObjectManager_t::initializeInterfaces()
 	IMaterialSystem = util.GetInterface(IMATERIAL_SYSTEM, MATERIALSYSTEM_DLL, &iMaterialSystem_);
 	IVRenderModel	= util.GetInterface(IVRENDER_MODEL, ENGINE_DLL, &ivRenderModel_);
 	IStudioRender	= util.GetInterface(ISTUDIO_RENDER, STUDIORENDER_DLL, &iStudioRender_);
+	iVRenderView	= (IVRenderView*)util.GetInterface(IVRENDER_VIEW, ENGINE_DLL, &iVRenderView_);
 
 
 	// if adding new interface, ADD IT HERE :)
 	if (entityList_ != 0  || engineClient_ != 0 || engineReplay_ != 0 || 
 		engineTrace_ != 0 || debugOverlay_ != 0 || iPanel_ != 0		  || 
 		baseClient_ != 0  || gameMovement_ != 0 || iMaterialSystem_ != 0||
-		ivRenderModel_ != 0 || iStudioRender_ != 0)
+		ivRenderModel_ != 0 || iStudioRender_ != 0 || iVRenderView_ != 0)
 	{
 		ERROR("TFObjectManager", "Failed to capture interfaces");
 		printf("%d\n", iMaterialSystem_);

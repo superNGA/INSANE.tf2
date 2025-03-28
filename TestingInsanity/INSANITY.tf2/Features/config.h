@@ -33,12 +33,20 @@ struct visualConfig_t
 	bool playerName					= false; // till here...
 
 	bool playerChams				= false;
+	clr_t clrFriendlyPlayerCham;
+	clr_t clrEnemyPlayerCham;
 	bool sentryChams				= false;
+	clr_t clrSentryCham;
 	bool dispenserChams				= false;
+	clr_t clrDispenserCham;
 	bool teleporterChams			= false;
+	clr_t clrTeleporterCham;
 	bool ammoPackChams				= false;
+	clr_t clrAmmoPackCham;
 	bool baseAnimating				= false;
+	clr_t clrBaseAnimatingCham;
 	bool tfItemChams				= false;
+	clr_t clrTfItemCham;
 };
 struct viewConfig_t
 {

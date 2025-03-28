@@ -54,12 +54,26 @@ namespace cheat_window
 		ImGui::Checkbox("Name",							&config.visualConfig.playerName);
 
 		ImGui::Checkbox("Player Chams",					&config.visualConfig.playerChams);
+		ImGui::ColorEdit4("team mates cham color",		&config.visualConfig.clrFriendlyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4("enemy cham color",			&config.visualConfig.clrEnemyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
+
 		ImGui::Checkbox("Sentry Chams",					&config.visualConfig.sentryChams);
+		ImGui::ColorEdit4("Sentry cham color",			&config.visualConfig.clrSentryCham.r, ImGuiColorEditFlags_AlphaBar);
+
 		ImGui::Checkbox("Teleporter Chams",				&config.visualConfig.teleporterChams);
+		ImGui::ColorEdit4("Teleporter cham color",		&config.visualConfig.clrTeleporterCham.r, ImGuiColorEditFlags_AlphaBar);
+
 		ImGui::Checkbox("Dispenser Chams",				&config.visualConfig.dispenserChams);
-		ImGui::Checkbox("MedKit Chams",					&config.visualConfig.baseAnimating);
+		ImGui::ColorEdit4("Dispenser cham color",		&config.visualConfig.clrDispenserCham.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("BaseAnimating Chams",			&config.visualConfig.baseAnimating);
+		ImGui::ColorEdit4("BaseAnimating cham color",	&config.visualConfig.clrBaseAnimatingCham.r, ImGuiColorEditFlags_AlphaBar);
+
 		ImGui::Checkbox("AmmoPack Chams",				&config.visualConfig.ammoPackChams);
+		ImGui::ColorEdit4("AmmoPack cham color",		&config.visualConfig.clrAmmoPackCham.r, ImGuiColorEditFlags_AlphaBar);
+
 		ImGui::Checkbox("intelligence Chams",			&config.visualConfig.tfItemChams);
+		ImGui::ColorEdit4("intelligence cham color",	&config.visualConfig.clrTfItemCham.r, ImGuiColorEditFlags_AlphaBar);
 	}
 
 	inline void draw_view_visual_window() 

@@ -28,6 +28,7 @@
 #include "../Hooks/ShouldDrawViewModel/ShouldDrawViewModel.h"
 #include "../Hooks/ProcessMovement/ProcessMovement.h"
 #include "../Hooks/DrawModelExecute/DrawModelExecute.h"
+#include "../Hooks/CheckForPureServerWhitelist/sv_pure.h"
 
 //======================= UI / RENDERING HOOKS =======================
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
