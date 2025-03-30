@@ -110,6 +110,27 @@ IDclass_t IDManager_t::getID(I_client_entity* ent)
 		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
 		#endif
 	}
+	else if (name == "CTFProjectile_Rocket")
+	{
+		TEMPclassID = ROCKET;
+		#ifdef _DEBUG
+		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		#endif
+	}
+	else if (name == "CTFGrenadePipebombProjectile")
+	{
+		TEMPclassID = DEMO_PROJECTILES;
+		#ifdef _DEBUG
+		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		#endif
+	}
+	else if (name == "CTFDroppedWeapon")
+	{
+		TEMPclassID = ID_DROPPED_WEAPON;
+		#ifdef _DEBUG
+		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		#endif
+	}
 
 	// storing and returning ID
 	if (TEMPclassID != NOT_DEFINED) CHE_mapID[name] = TEMPclassID;

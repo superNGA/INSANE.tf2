@@ -97,26 +97,6 @@ bool thread1_t::_initializeNetvars()
 * signature scan & hook all required fns
 */
 //-------------------------------------------------------------------------
-
-// delete this 
-T_createMaterial O_createMaterial = nullptr;
-IMaterial* __fastcall H_createMaterial(void* arg1, void* arg2)
-{
-	if (arg1 == tfObject.pCreateMaterial)
-	{
-		std::cout << "argument 1 is vTable pointer\n";
-	}
-	else if (arg2 == tfObject.pCreateMaterial)
-	{
-		std::cout << "Argumnet 2 is vTable pointer\n";
-	}
-
-	std::cout << "argument 1 as string : " << (const char*)arg1 << '\n';
-	std::cout << "argument 2 as string : " << (const char*)arg2 << '\n';
-
-	return O_createMaterial(arg1, arg2);
-}
-
 bool thread1_t::_initializeHooks()
 {
 	MH_Initialize();
@@ -152,9 +132,6 @@ bool thread1_t::_initializeHooks()
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)pFrameStageNotify_,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 	MH_CreateHook((LPVOID)g_FNindexManager.getFnAdrs(FN_PAINT_TRAVERSE, tfObject.iPanel), (LPVOID)hook::paintTraverse::H_paintTraverse, (LPVOID*)&hook::paintTraverse::O_paintTraverse);
-
-	// delete this 
-	MH_CreateHook((LPVOID)tfObject.pCreateMaterial, (LPVOID)H_createMaterial, (LPVOID*)&O_createMaterial);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc();

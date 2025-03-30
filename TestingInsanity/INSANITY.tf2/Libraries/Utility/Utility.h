@@ -96,3 +96,14 @@ namespace input_util
 		}
 	}
 }
+
+constexpr uint32_t FNV1A32(const char* str) {
+	uint32_t hash = 2166136261u;
+	while (*str)
+	{
+		hash ^= static_cast<uint8_t>(*str);
+		hash *= 16777619u;
+		++str;
+	}
+	return hash;
+}

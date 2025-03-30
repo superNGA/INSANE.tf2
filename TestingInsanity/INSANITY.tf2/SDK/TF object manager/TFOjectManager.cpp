@@ -45,6 +45,9 @@ bool TFObjectManager_t::initializeFns()
 	FindMaterial			= (T_findMaterial)g_FNindexManager.getFnAdrs(FN_FIND_MATERIAL, IMaterialSystem);
 	pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("48 89 91 ? ? ? ? 44 89 81", STUDIORENDER_DLL); // <- this one is from IStudioRender interface
 	pCreateMaterial			= (T_createMaterial)util.FindPattern("48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL);
+	pInitKeyValue			= (T_initKeyValue)util.FindPattern("40 53 48 83 EC ? 48 8B D9 C7 01", MATERIALSYSTEM_DLL);
+	pKVSetInt				= (T_KVsetInt)util.FindPattern("40 53 48 83 EC ? 41 8B D8 41 B0", MATERIALSYSTEM_DLL);
+
 	pGlobalVar				= engineReplay->GetClientGlobalVars();
 	//pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 48 83 EC ? 48 8B 1D", ENGINE_DLL); // this is from IVModelRender or someshit like that
 
@@ -117,6 +120,7 @@ bool TFObjectManager_t::initializeInterfaces()
 	int ivRenderModel_	 = 0;
 	int iStudioRender_	 = 0;
 	int iVRenderView_	 = 0;
+	int iVModelInfo_	 = 0;
 
 	entityList		= (I_client_entity_list*)util.GetInterface(ICLIENTENTITYLIST, CLIENT_DLL, &entityList_);
 	engine			= (IVEngineClient013*)util.GetInterface(IVENGIENCLIENT013, ENGINE_DLL, &engineClient_);
@@ -130,13 +134,14 @@ bool TFObjectManager_t::initializeInterfaces()
 	IVRenderModel	= util.GetInterface(IVRENDER_MODEL, ENGINE_DLL, &ivRenderModel_);
 	IStudioRender	= util.GetInterface(ISTUDIO_RENDER, STUDIORENDER_DLL, &iStudioRender_);
 	iVRenderView	= (IVRenderView*)util.GetInterface(IVRENDER_VIEW, ENGINE_DLL, &iVRenderView_);
-
+	iVModelInfo		= (IVModelInfo*)util.GetInterface(IVMODELINFO, ENGINE_DLL, &iVModelInfo_);
 
 	// if adding new interface, ADD IT HERE :)
 	if (entityList_ != 0  || engineClient_ != 0 || engineReplay_ != 0 || 
 		engineTrace_ != 0 || debugOverlay_ != 0 || iPanel_ != 0		  || 
 		baseClient_ != 0  || gameMovement_ != 0 || iMaterialSystem_ != 0||
-		ivRenderModel_ != 0 || iStudioRender_ != 0 || iVRenderView_ != 0)
+		ivRenderModel_ != 0 || iStudioRender_ != 0 || iVRenderView_ != 0 ||
+		iVModelInfo_ != 0)
 	{
 		ERROR("TFObjectManager", "Failed to capture interfaces");
 		printf("%d\n", iMaterialSystem_);

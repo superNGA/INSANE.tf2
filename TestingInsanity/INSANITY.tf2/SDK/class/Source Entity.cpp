@@ -1,6 +1,7 @@
 #include "Source Entity.h"
 #include "../offsets/offsets.h"
 #include "../TF object manager/TFOjectManager.h"
+#include "../Entity Manager/entityManager.h"
 
 extern local_netvars netvar;
 
@@ -31,6 +32,14 @@ player_class I_client_entity::getCharacterChoice() {
 // returns the team num for this entity
 int16_t I_client_entity::getTeamNum() {
 	return *(int16_t*)((uintptr_t)this + netvar.m_iTeamNum);
+}
+
+bool I_client_entity::isEnemy()
+{
+	if (entityManager.getLocalPlayer() == nullptr)
+		return false;
+
+	return entityManager.getLocalPlayer()->getTeamNum() != this->getTeamNum();
 }
 
 // 0x11DD

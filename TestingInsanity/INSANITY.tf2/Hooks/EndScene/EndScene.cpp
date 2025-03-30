@@ -303,25 +303,26 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         ImGui::SameLine();
 
         /*child : MAIN MENU*/
-        ImGui::BeginChild("features", ImVec2(UI::width_window - 200.0f, UI::height_window), false);
+        ImGui::BeginChild("features", ImVec2(UI::width_window - 200.0f, UI::height_window), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
         /*spacing*/
         asthetic::top_spacing();
 
         /*text : I      N      S      A      N      E*/
-        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - UI::top_text_width) / 2);
+        //ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - UI::top_text_width) / 2);
         ImGui::PushFont(fonts::haas_black);
         ImGui::Text(UI::heading);
         ImGui::PopFont();
+        ImGui::SameLine();
 
         /*button : CLOSE*/
-        ImGui::SetCursorScreenPos(ImVec2(window_pos.x + UI::width_window - UI::close_button_size.x, window_pos.y + 0.0f));
+        //ImGui::SetCursorScreenPos(ImVec2(window_pos.x + UI::width_window - UI::close_button_size.x, window_pos.y + 0.0f));
         ImGui::PushFont(fonts::adobe_clean_bold);
         if (ImGui::Button("x", UI::close_button_size)) UI::shutdown_UI = true;
         ImGui::PopFont();
 
         /*RENDERING CHEAT FEATURE WINDOWS HERE*/
-        UI::content_start_point = ImGui::GetCursorScreenPos();
+        //UI::content_start_point = ImGui::GetCursorScreenPos();
         //draw_list->AddRect(cursor_pos, ImVec2(cursor_pos.x + ImGui::GetContentRegionAvail().x, cursor_pos.y + ImGui::GetContentRegionAvail().y), ImColor(255, 255, 255, 255));
 
         ImGui::PushFont(directX::fonts::agency_FB_small); // <- change this to change UI font :)
@@ -371,10 +372,12 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
             bg_draw_list->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, ImColor(0, 0, 0, 255));
 
             ImGui::PushFont(UI::shutdown_anim_font);
+            #ifdef _DEBUG
             if (!UI::shutdown_anim_font)
             {
                 printf("font is null\n");
             }
+            #endif
             bg_draw_list->AddText(ImVec2((io.DisplaySize.x - UI::end_meassage_size.x) / 2.0f, (io.DisplaySize.y - UI::end_meassage_size.y) / 2.0f), ImColor(255, 255, 255, 255), UI::end_message);
             ImGui::PopFont();
 

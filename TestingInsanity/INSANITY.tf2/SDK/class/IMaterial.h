@@ -1,5 +1,6 @@
 #pragma once
 #include "Source Entity.h"
+#include "../../SDK/TF object manager/TFOjectManager.h"
 
 enum MaterialVarFlags_t
 {
@@ -74,15 +75,27 @@ enum MaterialVarFlags_t
 
 
 //=========================================================================
-// PURPOSE : This KeyValue structure is used to define materials and give 
+// PURPOSE : This KeyValue structure is used to define / Create materials and give 
 //			 them this characteristics.
 //=========================================================================
+enum types_t
+{
+	TYPE_NONE = 0,
+	TYPE_STRING,
+	TYPE_INT,
+	TYPE_FLOAT,
+	TYPE_PTR,
+	TYPE_WSTRING,
+	TYPE_COLOR,
+	TYPE_UINT64,
+	TYPE_NUMTYPES,
+};
 struct KeyValues
 {
 	int m_iKeyName;	// keyname is a symbol defined in KeyValuesSystem
 
 	// These are needed out of the union because the API returns string pointers
-	char* m_sValue;
+	const char* m_sValue;
 	wchar_t* m_wsValue;
 
 	// we don't delete these
@@ -99,10 +112,17 @@ struct KeyValues
 	char	   m_bEvaluateConditionals; // true, if while parsing this KeyValue, conditionals blocks are evaluated (default true)
 	char	   unused[1];
 
-	KeyValues* m_pPeer;	// pointer to next key in list
-	KeyValues* m_pSub;	// pointer to Start of a new sub key list
-	KeyValues* m_pChain;// Search here if it's not in our list
+	KeyValues* m_pPeer  = nullptr;	// pointer to next key in list
+	KeyValues* m_pSub   = nullptr;	// pointer to Start of a new sub key list
+	KeyValues* m_pChain = nullptr;// Search here if it's not in our list
 };
+
+inline void KV_Initialize(KeyValues* kv)
+{
+	KeyValues* pNewKV = tfObject.pInitKeyValue(kv, "UnlitGeneric");
+	tfObject.pKVSetInt(pNewKV, "$ignorez", 1);
+	printf("new keyValues : %p\n", pNewKV);
+}
 
 
 enum OverrideType_t

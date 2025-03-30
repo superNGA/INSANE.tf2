@@ -62,6 +62,10 @@ enum IDclass_t {
 	PAYLOAD,
 	CBASEANIMATING, // <-- this seems to only hold medKits, rotating AmmoPacks and whatEver weapon you are holding
 
+	ROCKET,
+	DEMO_PROJECTILES,
+	ID_DROPPED_WEAPON,
+
 	// CTFResourceManager, has max health arry for all entities :)
 	ENT_RESOURCE_MANAGER
 };

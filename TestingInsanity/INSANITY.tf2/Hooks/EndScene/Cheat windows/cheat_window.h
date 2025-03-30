@@ -53,27 +53,60 @@ namespace cheat_window
 		ImGui::Checkbox("Skip cloaked spy",				&config.visualConfig.skipCloackedSpy);
 		ImGui::Checkbox("Name",							&config.visualConfig.playerName);
 
-		ImGui::Checkbox("Player Chams",					&config.visualConfig.playerChams);
-		ImGui::ColorEdit4("team mates cham color",		&config.visualConfig.clrFriendlyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4("enemy cham color",			&config.visualConfig.clrEnemyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
+		//======================= Player Chams =======================
+		ImGui::Checkbox("Friendly Player Chams player",		&config.visualConfig.bPlayerChamsFriendly);
+		ImGui::Checkbox("enemy Chams player",				&config.visualConfig.bPlayerChamsEnemy);
+		ImGui::Checkbox("IgnoreZ Friendly player",			&config.visualConfig.ignorezFriendlyPlayer);
+		ImGui::Checkbox("IgnoreZ enemy player",				&config.visualConfig.ignorezEnemyPlayer);
+		ImGui::ColorEdit4("team mates cham color",			&config.visualConfig.clrFriendlyPlayerChams.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::ColorEdit4("enemy cham color",				&config.visualConfig.clrEnemyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("Sentry Chams",					&config.visualConfig.sentryChams);
-		ImGui::ColorEdit4("Sentry cham color",			&config.visualConfig.clrSentryCham.r, ImGuiColorEditFlags_AlphaBar);
+		//======================= Sentry Chams =======================
+		ImGui::Checkbox("IgnoreZ sentry",					&config.visualConfig.ignorezEnemySentry);
+		ImGui::Checkbox("Sentry Chams",						&config.visualConfig.bSentryEnemy);
+		ImGui::ColorEdit4("Sentry cham color",				&config.visualConfig.clrSentryEnemy.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("Teleporter Chams",				&config.visualConfig.teleporterChams);
-		ImGui::ColorEdit4("Teleporter cham color",		&config.visualConfig.clrTeleporterCham.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ sentry",					&config.visualConfig.ignorezFriendlySentry);
+		ImGui::Checkbox("Sentry Chams",						&config.visualConfig.bSentryFriendly);
+		ImGui::ColorEdit4("Sentry cham color",				&config.visualConfig.clrSentryFriendly.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("Dispenser Chams",				&config.visualConfig.dispenserChams);
-		ImGui::ColorEdit4("Dispenser cham color",		&config.visualConfig.clrDispenserCham.r, ImGuiColorEditFlags_AlphaBar);
+		//======================= Teleporter Chams =======================
+		ImGui::Checkbox("IgnoreZ teleporter",				&config.visualConfig.ignorezTeleporterEnemy);
+		ImGui::Checkbox("Teleporter Chams",					&config.visualConfig.bTeleporterEnemy);
+		ImGui::ColorEdit4("Teleporter cham color",			&config.visualConfig.clrTeleporterEnemy.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("BaseAnimating Chams",			&config.visualConfig.baseAnimating);
-		ImGui::ColorEdit4("BaseAnimating cham color",	&config.visualConfig.clrBaseAnimatingCham.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ teleporter",				&config.visualConfig.ignorezTeleporterFriendly);
+		ImGui::Checkbox("Teleporter Chams",					&config.visualConfig.bTeleporterFriendly);
+		ImGui::ColorEdit4("Teleporter cham color",			&config.visualConfig.clrTeleporterFriendly.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("AmmoPack Chams",				&config.visualConfig.ammoPackChams);
-		ImGui::ColorEdit4("AmmoPack cham color",		&config.visualConfig.clrAmmoPackCham.r, ImGuiColorEditFlags_AlphaBar);
+		//======================= Dispenser Chams =======================
+		ImGui::Checkbox("IgnoreZ dispenser Enemy",			&config.visualConfig.ignorezDispenserEnemy);
+		ImGui::Checkbox("Dispenser Chams Enemy",			&config.visualConfig.bDispenserEnemy);
+		ImGui::ColorEdit4("Dispenser cham color Enemy",		&config.visualConfig.clrDispenserEnemy.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("intelligence Chams",			&config.visualConfig.tfItemChams);
-		ImGui::ColorEdit4("intelligence cham color",	&config.visualConfig.clrTfItemCham.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ dispenser Friendly",		&config.visualConfig.ignorezDispenserFirendly);
+		ImGui::Checkbox("Dispenser Chams Friendly",			&config.visualConfig.bDispenserFirendly);
+		ImGui::ColorEdit4("Dispenser cham color Friendly",	&config.visualConfig.clrDispenserFriendly.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ animating Ammo Pack",		&config.visualConfig.ignorezDropAmmoPack);
+		ImGui::Checkbox("Animating Ammo Pack chams",		&config.visualConfig.bAnimAmmoPack);
+		ImGui::ColorEdit4("Animating Ammo Pack cham color",	&config.visualConfig.clrAnimAmmoPackChams.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ Medkit",					&config.visualConfig.ignorezMedkit);
+		ImGui::Checkbox("Medkit Chams",						&config.visualConfig.bMedkit);
+		ImGui::ColorEdit4("Medkit cham color",				&config.visualConfig.clrMedkit.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ ammo Pack",				&config.visualConfig.ignorezAnimAmmoPack);
+		ImGui::Checkbox("AmmoPack Chams",					&config.visualConfig.bDropAmmoPackChams);
+		ImGui::ColorEdit4("AmmoPack cham color",			&config.visualConfig.clrDropAmmoPackChams.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ tf item",					&config.visualConfig.ignorezTfItem);
+		ImGui::Checkbox("intelligence Chams",				&config.visualConfig.bTfItemChams);
+		ImGui::ColorEdit4("intelligence cham color",		&config.visualConfig.clrTfItemCham.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ projectile",				&config.visualConfig.ignorezProjectiles);
+		ImGui::Checkbox("projectile Chams",					&config.visualConfig.bProjectileChams);
+		ImGui::ColorEdit4("projectile cham color",			&config.visualConfig.clrProjectilesChams.r, ImGuiColorEditFlags_AlphaBar);
 	}
 
 	inline void draw_view_visual_window() 

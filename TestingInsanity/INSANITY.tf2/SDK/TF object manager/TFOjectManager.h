@@ -12,9 +12,13 @@
 #include "../../GlobalVars.h"
 #include "../../Hooks/ProcessMovement/ProcessMovement.h"
 #include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
-#include "../class/IMaterial.h"
+//#include "../class/IMaterial.h"
 #include "../class/IVRenderView.h"
 
+class IVModelInfo;
+enum OverrideType_t;
+struct KeyValues;
+class IMaterial;
 class IEngineTrace;
 struct global_var_base;
 enum renderGroup_t;
@@ -25,7 +29,9 @@ typedef void(__fastcall* T_addToLeafSystem)	(void*, renderGroup_t);
 typedef int64_t(__fastcall* T_MD5_PseudoRandom)(int);
 typedef IMaterial* (__fastcall* T_findMaterial)(void*, const char*, const char*, bool, const char*);
 typedef void(__fastcall* T_forcedMaterialOverride)(void*, IMaterial*, OverrideType_t);
-typedef IMaterial* (__fastcall* T_createMaterial)(void*, void*);
+typedef IMaterial* (__fastcall* T_createMaterial)(void*, const char*, KeyValues*);
+typedef KeyValues* (__fastcall* T_initKeyValue)(void*, const char*);
+typedef void (__fastcall* T_KVsetInt)(KeyValues*, const char*, int64_t);
 
 class TFObjectManager_t
 {
@@ -49,6 +55,8 @@ public:
 	T_findMaterial			 FindMaterial				= nullptr;
 	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
 	T_createMaterial		 pCreateMaterial			= nullptr;
+	T_initKeyValue			 pInitKeyValue				= nullptr;
+	T_KVsetInt				 pKVSetInt					= nullptr;
 
 	global_var_base*		pGlobalVar					= nullptr;
 
@@ -74,6 +82,7 @@ public:
 	void*					IVRenderModel	= nullptr;
 	void*					IStudioRender	= nullptr;
 	IVRenderView*			iVRenderView	= nullptr;
+	IVModelInfo*					iVModelInfo		= nullptr;
 
 //=========================================================================
 //                     OBJECTS :)

@@ -333,6 +333,8 @@ public:
 	// returns the team num for this entity
 	int16_t			getTeamNum();
 
+	bool			isEnemy();
+
 	// setting glow for this entity
 	void			setGlow(bool b_glowStatus);
 

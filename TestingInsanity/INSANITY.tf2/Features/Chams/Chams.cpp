@@ -14,6 +14,8 @@ Chams_t chams;
 #include "../../SDK/Class ID Manager/classIDManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../SDK/Entity Manager/entityManager.h"
+#include "../../SDK/class/IVModelInfo.h"
+#include "../../Libraries/Utility/Utility.h"
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -35,8 +37,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     if (nMaterial == 0 || ppMaterial == nullptr)
         return hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
 
-    BaseEntity* entity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
-    IDclass_t entId         = IDManager.getID(entity);
+    BaseEntity* pEntity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
+    IDclass_t entId          = IDManager.getID(pEntity);
 
     bool bIsMaterialOverridden = false;
 
@@ -44,32 +46,34 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     static IMaterial* customMat = nullptr;
     if (customMat == nullptr)
     {
-        customMat = tfObject.FindMaterial(tfObject.IMaterialSystem, "chamed.vmt", nullptr, true, NULL);
-        customMat->IncrementReferenceCount();
-        customMat->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
-
+        KeyValues* kasutaMat = new KeyValues;
+        KV_Initialize(kasutaMat);
+        customMat = tfObject.pCreateMaterial(tfObject.IMaterialSystem, "KasutaMat", kasutaMat);
         printf("mat pointer : %p\n", customMat);
     }
-
+    
     switch (entId)
     {
-    case NOT_DEFINED:
-        break;
     case PLAYER:
-        // do a little bit of error handling here or maybe in the function
-        bIsMaterialOverridden = _ChamsPlayer(nMaterial, customMat, ppMaterial, entity);
+        bIsMaterialOverridden = _ChamsPlayer(nMaterial, customMat, ppMaterial, pEntity);
         break;
     case AMMO_PACK:
         bIsMaterialOverridden = _ChamsAmmoPack(nMaterial, customMat, ppMaterial);
         break;
     case DISPENSER:
-        bIsMaterialOverridden = _ChamsDispenser(nMaterial, customMat, ppMaterial);
+        pEntity->isEnemy() ?
+            bIsMaterialOverridden = _ChamsDispenserEnemy(nMaterial, customMat, ppMaterial) :
+            bIsMaterialOverridden = _ChamsDispenserFriendly(nMaterial, customMat, ppMaterial);
         break;
     case SENTRY_GUN:
-        bIsMaterialOverridden = _ChamsSentery(nMaterial, customMat, ppMaterial);
+        pEntity->isEnemy() ?
+            bIsMaterialOverridden = _ChamsSenteryEnemy(nMaterial, customMat, ppMaterial, pEntity) :
+            bIsMaterialOverridden = _ChamsSenteryFriendly(nMaterial, customMat, ppMaterial, pEntity);
         break;
     case TELEPORTER:
-        bIsMaterialOverridden = _ChamsTeleporter(nMaterial, customMat, ppMaterial);
+        pEntity->isEnemy() ?
+            bIsMaterialOverridden = _ChamsTeleporterEnemy(nMaterial, customMat, ppMaterial) :
+            bIsMaterialOverridden = _ChamsTeleporterFriendly(nMaterial, customMat, ppMaterial);
         break;
     case TF_ITEM:
         bIsMaterialOverridden = _ChamsItems(nMaterial, customMat, ppMaterial);
@@ -81,9 +85,23 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     case PAYLOAD:
         break;
     case CBASEANIMATING:
-        bIsMaterialOverridden = _ChamsBaseAnimating(nMaterial, customMat, ppMaterial);
+        //printf("%d @ %s\n", tfObject.iVModelInfo->GetModelIndex(renderInfo->pModel->strName), tfObject.iVModelInfo->GetModelName(renderInfo->pModel));
+        if(_IsAmmoPack(FNV1A32(renderInfo->pModel->strName)))
+        {
+            bIsMaterialOverridden = _ChamsAnimAmmoPack(nMaterial, customMat, ppMaterial);
+        }
+        else if (_IsMedKit(FNV1A32(renderInfo->pModel->strName)))
+        {
+            bIsMaterialOverridden = _ChamsMedKit(nMaterial, customMat, ppMaterial);
+        }
+        break;    
+    case ROCKET:
+    case DEMO_PROJECTILES:
+        bIsMaterialOverridden = _ChamsProjectiles(nMaterial, customMat, ppMaterial);
         break;
-    case ENT_RESOURCE_MANAGER:
+    
+    case ID_DROPPED_WEAPON:
+        bIsMaterialOverridden = _ChamsAnimAmmoPack(nMaterial, customMat, ppMaterial);
         break;
     default:
         break;
@@ -104,98 +122,376 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
 //=========================================================================
 
 
-bool Chams_t::_ChamsBaseAnimating(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
-{    
-    if (config.visualConfig.baseAnimating == false)
+bool Chams_t::_ChamsAnimAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+{   
+    switch (config.visualConfig.ignorezAnimAmmoPack + config.visualConfig.bAnimAmmoPack * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrBaseAnimatingCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrBaseAnimatingCham.a);
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrAnimAmmoPackChams.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrAnimAmmoPackChams.a);
+        return true;
 
-    /*for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_ChamsMedKit(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+{
+    switch (config.visualConfig.ignorezMedkit + config.visualConfig.bMedkit * 2)
     {
-        ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
-    }*/
+    case 0:
+        return false;
 
-    return true;
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrMedkit.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrMedkit.a);
+        return true;
+
+    default:
+        return false;
+    }
 }
 
 bool Chams_t::_ChamsPlayer(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity* pEntity)
 {
-    if (config.visualConfig.playerChams == false)
-        return false;
+    // FRIENDLY PLAYERS CHAMS
+    if (entityManager.getLocalPlayer()->getTeamNum() == pEntity->getTeamNum())
+    {
+        switch (config.visualConfig.ignorezFriendlyPlayer + config.visualConfig.bPlayerChamsFriendly * 2)
+        {
+        case 0:
+            return false;
 
-    if (entityManager.getLocalPlayer() == nullptr)
-        return false;
+        case 1:
+            for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+            {
+                ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+            }
+            return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        case 2:
+        case 3:
+            tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+            tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrFriendlyPlayerChams.r);
+            tfObject.iVRenderView->SetBlend(config.visualConfig.clrFriendlyPlayerChams.a);
+            return true;
+
+        default:
+            return false;
+        }
+    }
     
-    if(pEntity->getTeamNum() != entityManager.getLocalPlayer()->getTeamNum())
-        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrEnemyPlayerCham.r);
+    // ENEMY CHAMS
     else
-        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrSentryCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrFriendlyPlayerCham.a);
-    return true;
+    {
+        switch (config.visualConfig.ignorezEnemyPlayer + config.visualConfig.bPlayerChamsEnemy * 2)
+        {
+        case 0:
+            return false;
+
+        case 1:
+            for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+            {
+                ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+            }
+            return false;
+
+        case 2:
+        case 3:
+            tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+            tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrEnemyPlayerCham.r);
+            tfObject.iVRenderView->SetBlend(config.visualConfig.clrEnemyPlayerCham.a);
+            return true;
+
+        default:
+            return false;
+        }
+    }
 }
 
-bool Chams_t::_ChamsDispenser(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+bool Chams_t::_ChamsDispenserEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
 {
-    if (config.visualConfig.dispenserChams == false)
+    switch (config.visualConfig.ignorezDispenserEnemy + config.visualConfig.bDispenserEnemy * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrDispenserCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrDispenserCham.a);
-    return true;
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrDispenserEnemy.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrDispenserEnemy.a);
+        return true;
+
+    default:
+        return false;
+    }
 }
 
-bool Chams_t::_ChamsSentery(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+
+bool Chams_t::_ChamsDispenserFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
 {
-    if (config.visualConfig.sentryChams == false)
+    switch (config.visualConfig.ignorezDispenserFirendly + config.visualConfig.bDispenserFirendly * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrSentryCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrSentryCham.a);
-    return true;
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrDispenserFriendly.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrDispenserFriendly.a);
+        return true;
+
+    default:
+        return false;
+    }
 }
 
-bool Chams_t::_ChamsTeleporter(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+
+bool Chams_t::_ChamsSenteryEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity* pEntity)
 {
-    if (config.visualConfig.teleporterChams == false)
+    switch (config.visualConfig.ignorezEnemySentry + config.visualConfig.bSentryEnemy * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrTeleporterCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrTeleporterCham.a);
-    return true;
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrSentryEnemy.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrSentryEnemy.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_ChamsSenteryFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity* pEntity)
+{
+    switch (config.visualConfig.ignorezFriendlySentry + config.visualConfig.bSentryFriendly * 2)
+    {
+    case 0:
+        return false;
+
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrSentryFriendly.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrSentryFriendly.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_ChamsTeleporterEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+{
+    switch (config.visualConfig.ignorezTeleporterEnemy + config.visualConfig.bTeleporterEnemy *2)
+    {
+    case 0:
+        return false;
+
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrTeleporterEnemy.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrTeleporterEnemy.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_ChamsTeleporterFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+{
+    switch (config.visualConfig.ignorezTeleporterFriendly + config.visualConfig.bTeleporterFriendly * 2)
+    {
+    case 0:
+        return false;
+
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrTeleporterFriendly.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrTeleporterFriendly.a);
+        return true;
+
+    default:
+        return false;
+    }
 }
 
 bool Chams_t::_ChamsItems(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
 {
-    if (config.visualConfig.tfItemChams == false)
+    switch (config.visualConfig.ignorezTfItem + config.visualConfig.bTfItemChams * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrTfItemCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrTfItemCham.a);
-    return true;
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrTfItemCham.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrTfItemCham.a);
+        return true;
+
+    default:
+        return false;
+    }
 }
 
 bool Chams_t::_ChamsAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
 {
-    if (config.visualConfig.ammoPackChams == false)
+    switch (config.visualConfig.ignorezDropAmmoPack + config.visualConfig.bDropAmmoPackChams * 2)
+    {
+    case 0:
         return false;
 
-    tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
 
-    tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrAmmoPackCham.r);
-    tfObject.iVRenderView->SetBlend(config.visualConfig.clrAmmoPackCham.a);
-    return true;
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrDropAmmoPackChams.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrAnimAmmoPackChams.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_ChamsProjectiles(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
+{
+    switch (config.visualConfig.ignorezProjectiles + config.visualConfig.bProjectileChams * 2)
+    {
+    case 0:
+        return false;
+
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterial && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+
+    case 2:
+    case 3:
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&config.visualConfig.clrProjectilesChams.r);
+        tfObject.iVRenderView->SetBlend(config.visualConfig.clrProjectilesChams.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+bool Chams_t::_IsAmmoPack(uint32_t iHash)
+{
+    switch (iHash)
+    {
+    case FNV1A32("models/items/ammopack_large.mdl"):
+    case FNV1A32("models/items/ammopack_medium.mdl"):
+    case FNV1A32("models/items/ammopack_small.mdl"):
+        return true;
+    default: 
+        return false;
+    }
+}
+
+bool Chams_t::_IsMedKit(uint32_t iHash)
+{
+    switch (iHash)
+    {
+    case FNV1A32("models/items/medkit_small.mdl"):
+    case FNV1A32("models/items/medkit_medium.mdl"):
+    case FNV1A32("models/items/medkit_large.mdl"):
+    case FNV1A32("models/props_halloween/halloween_medkit_medium.mdl"):
+    case FNV1A32("models/props_halloween/halloween_medkit_small.mdl"):
+    case FNV1A32("models/props_halloween/halloween_medkit_large.mdl"):
+        return true;
+    default:
+        return false;
+    }
 }

@@ -32,21 +32,61 @@ struct visualConfig_t
 	bool skipCloackedSpy			= false;
 	bool playerName					= false; // till here...
 
-	bool playerChams				= false;
-	clr_t clrFriendlyPlayerCham;
+//----------------------- Chams -----------------------
+	// PLAYER CHAMS
+	bool ignorezFriendlyPlayer		= false;
+	bool ignorezEnemyPlayer			= false;
+	bool bPlayerChamsFriendly		= false;
+	bool bPlayerChamsEnemy			= false;
+	clr_t clrFriendlyPlayerChams;
 	clr_t clrEnemyPlayerCham;
-	bool sentryChams				= false;
-	clr_t clrSentryCham;
-	bool dispenserChams				= false;
-	clr_t clrDispenserCham;
-	bool teleporterChams			= false;
-	clr_t clrTeleporterCham;
-	bool ammoPackChams				= false;
-	clr_t clrAmmoPackCham;
-	bool baseAnimating				= false;
-	clr_t clrBaseAnimatingCham;
-	bool tfItemChams				= false;
+
+	// SENTRY CHAMS
+	bool ignorezEnemySentry			= false;
+	bool bSentryEnemy				= false;
+	clr_t clrSentryEnemy;
+
+	bool ignorezFriendlySentry		= false;
+	bool bSentryFriendly			= false;
+	clr_t clrSentryFriendly;
+
+	// DISPENSER CHAMS
+	bool ignorezDispenserEnemy		= false;
+	bool bDispenserEnemy			= false;
+	clr_t clrDispenserEnemy;
+
+	bool ignorezDispenserFirendly	= false;
+	bool bDispenserFirendly			= false;
+	clr_t clrDispenserFriendly;
+
+	// TELEPORTER CHAMS
+	bool ignorezTeleporterEnemy		= false;
+	bool bTeleporterEnemy			= false;
+	clr_t clrTeleporterEnemy;		
+
+	bool ignorezTeleporterFriendly	= false;
+	bool bTeleporterFriendly		= false;
+	clr_t clrTeleporterFriendly;
+
+	bool ignorezDropAmmoPack		= false;
+	bool bDropAmmoPackChams			= false;
+	clr_t clrDropAmmoPackChams;
+
+	bool ignorezMedkit				= false;
+	bool bMedkit					= false;
+	clr_t clrMedkit;
+
+	bool ignorezAnimAmmoPack		= false;
+	bool bAnimAmmoPack				= false;
+	clr_t clrAnimAmmoPackChams;
+
+	bool ignorezTfItem				= false;
+	bool bTfItemChams				= false;
 	clr_t clrTfItemCham;
+
+	bool ignorezProjectiles			= false;
+	bool bProjectileChams			= false;
+	clr_t clrProjectilesChams;
 };
 struct viewConfig_t
 {
