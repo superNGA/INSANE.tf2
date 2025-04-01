@@ -62,22 +62,22 @@ namespace cheat_window
 		ImGui::ColorEdit4("enemy cham color",				&config.visualConfig.clrEnemyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
 
 		//======================= Sentry Chams =======================
-		ImGui::Checkbox("IgnoreZ sentry",					&config.visualConfig.ignorezEnemySentry);
-		ImGui::Checkbox("Sentry Chams",						&config.visualConfig.bSentryEnemy);
-		ImGui::ColorEdit4("Sentry cham color",				&config.visualConfig.clrSentryEnemy.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ sentry Enemy",				&config.visualConfig.ignorezEnemySentry);
+		ImGui::Checkbox("Sentry Chams Enemy",				&config.visualConfig.bSentryEnemy);
+		ImGui::ColorEdit4("Sentry cham color Enemy",		&config.visualConfig.clrSentryEnemy.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("IgnoreZ sentry",					&config.visualConfig.ignorezFriendlySentry);
-		ImGui::Checkbox("Sentry Chams",						&config.visualConfig.bSentryFriendly);
-		ImGui::ColorEdit4("Sentry cham color",				&config.visualConfig.clrSentryFriendly.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ sentry Friendly",			&config.visualConfig.ignorezFriendlySentry);
+		ImGui::Checkbox("Sentry Chams Friendly",			&config.visualConfig.bSentryFriendly);
+		ImGui::ColorEdit4("Sentry cham color Friendly",		&config.visualConfig.clrSentryFriendly.r, ImGuiColorEditFlags_AlphaBar);
 
 		//======================= Teleporter Chams =======================
-		ImGui::Checkbox("IgnoreZ teleporter",				&config.visualConfig.ignorezTeleporterEnemy);
-		ImGui::Checkbox("Teleporter Chams",					&config.visualConfig.bTeleporterEnemy);
-		ImGui::ColorEdit4("Teleporter cham color",			&config.visualConfig.clrTeleporterEnemy.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ teleporter Enemy",			&config.visualConfig.ignorezTeleporterEnemy);
+		ImGui::Checkbox("Teleporter Chams Enemy",			&config.visualConfig.bTeleporterEnemy);
+		ImGui::ColorEdit4("Teleporter cham color Enemy",	&config.visualConfig.clrTeleporterEnemy.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("IgnoreZ teleporter",				&config.visualConfig.ignorezTeleporterFriendly);
-		ImGui::Checkbox("Teleporter Chams",					&config.visualConfig.bTeleporterFriendly);
-		ImGui::ColorEdit4("Teleporter cham color",			&config.visualConfig.clrTeleporterFriendly.r, ImGuiColorEditFlags_AlphaBar);
+		ImGui::Checkbox("IgnoreZ teleporter Friendly",		&config.visualConfig.ignorezTeleporterFriendly);
+		ImGui::Checkbox("Teleporter Chams Friendly",		&config.visualConfig.bTeleporterFriendly);
+		ImGui::ColorEdit4("Teleporter cham color Friendly",	&config.visualConfig.clrTeleporterFriendly.r, ImGuiColorEditFlags_AlphaBar);
 
 		//======================= Dispenser Chams =======================
 		ImGui::Checkbox("IgnoreZ dispenser Enemy",			&config.visualConfig.ignorezDispenserEnemy);
@@ -104,9 +104,18 @@ namespace cheat_window
 		ImGui::Checkbox("intelligence Chams",				&config.visualConfig.bTfItemChams);
 		ImGui::ColorEdit4("intelligence cham color",		&config.visualConfig.clrTfItemCham.r, ImGuiColorEditFlags_AlphaBar);
 
-		ImGui::Checkbox("IgnoreZ projectile",				&config.visualConfig.ignorezProjectiles);
-		ImGui::Checkbox("projectile Chams",					&config.visualConfig.bProjectileChams);
-		ImGui::ColorEdit4("projectile cham color",			&config.visualConfig.clrProjectilesChams.r, ImGuiColorEditFlags_AlphaBar);
+		//======================= Projectile Chams =======================
+		ImGui::Checkbox("IgnoreZ projectile Enemy",			&config.visualConfig.ignorezProjectilesEnemy);
+		ImGui::Checkbox("projectile Chams Enemy",			&config.visualConfig.bProjectileEnemy);
+		ImGui::ColorEdit4("projectile cham color Enemy",	&config.visualConfig.clrProjectileEnemy.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ projectile Friendly",		&config.visualConfig.ignorezProjectileFriendly);
+		ImGui::Checkbox("projectile Chams Friendly",		&config.visualConfig.bProjectileFriendly);
+		ImGui::ColorEdit4("projectile cham color Friendly",	&config.visualConfig.clrProjectileFirendly.r, ImGuiColorEditFlags_AlphaBar);
+
+		ImGui::Checkbox("IgnoreZ viewmodel",				&config.visualConfig.ignorezViewModel);
+		ImGui::Checkbox("view model chams",					&config.visualConfig.bViewModelChams);
+		ImGui::ColorEdit4("view model chams clr",			&config.visualConfig.clrViewModelChams.r, ImGuiColorEditFlags_AlphaBar);
 	}
 
 	inline void draw_view_visual_window() 

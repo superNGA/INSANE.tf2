@@ -45,14 +45,18 @@ bool TFObjectManager_t::initializeFns()
 	FindMaterial			= (T_findMaterial)g_FNindexManager.getFnAdrs(FN_FIND_MATERIAL, IMaterialSystem);
 	pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("48 89 91 ? ? ? ? 44 89 81", STUDIORENDER_DLL); // <- this one is from IStudioRender interface
 	pCreateMaterial			= (T_createMaterial)util.FindPattern("48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL);
+	
 	pInitKeyValue			= (T_initKeyValue)util.FindPattern("40 53 48 83 EC ? 48 8B D9 C7 01", MATERIALSYSTEM_DLL);
 	pKVSetInt				= (T_KVsetInt)util.FindPattern("40 53 48 83 EC ? 41 8B D8 41 B0", MATERIALSYSTEM_DLL);
+	pKVSetFloat				= (T_KVSetFloat)util.FindPattern("48 83 EC ? 0F 29 74 24 ? 41 B0", MATERIALSYSTEM_DLL);
+	pKVSetString			= (T_KVSetString)util.FindPattern("48 89 5C 24 ? 55 48 83 EC ? 49 8B D8", MATERIALSYSTEM_DLL);
 
 	pGlobalVar				= engineReplay->GetClientGlobalVars();
 	//pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 48 83 EC ? 48 8B 1D", ENGINE_DLL); // this is from IVModelRender or someshit like that
 
 	if (getName == nullptr || lookUpBones == nullptr || addToLeafSystem == nullptr || pGlobalVar == nullptr || 
-		MD5_PseudoRandom == nullptr || pForcedMaterialOverride == nullptr || pCreateMaterial == nullptr)
+		MD5_PseudoRandom == nullptr || pForcedMaterialOverride == nullptr || pCreateMaterial == nullptr ||
+		pInitKeyValue == nullptr || pKVSetFloat == nullptr || pKVSetInt == nullptr || pKVSetString == nullptr)
 	{
 		ERROR("TFObjectManager", "Failed intialization");
 		return false;

@@ -30,8 +30,11 @@ typedef int64_t(__fastcall* T_MD5_PseudoRandom)(int);
 typedef IMaterial* (__fastcall* T_findMaterial)(void*, const char*, const char*, bool, const char*);
 typedef void(__fastcall* T_forcedMaterialOverride)(void*, IMaterial*, OverrideType_t);
 typedef IMaterial* (__fastcall* T_createMaterial)(void*, const char*, KeyValues*);
+
 typedef KeyValues* (__fastcall* T_initKeyValue)(void*, const char*);
 typedef void (__fastcall* T_KVsetInt)(KeyValues*, const char*, int64_t);
+typedef void (__fastcall* T_KVSetFloat)(KeyValues*, const char*, float);
+typedef void (__fastcall* T_KVSetString)(KeyValues*, const char*, const char*);
 
 class TFObjectManager_t
 {
@@ -55,8 +58,11 @@ public:
 	T_findMaterial			 FindMaterial				= nullptr;
 	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
 	T_createMaterial		 pCreateMaterial			= nullptr;
+	
 	T_initKeyValue			 pInitKeyValue				= nullptr;
 	T_KVsetInt				 pKVSetInt					= nullptr;
+	T_KVSetFloat			 pKVSetFloat				= nullptr;
+	T_KVSetString			 pKVSetString				= nullptr;
 
 	global_var_base*		pGlobalVar					= nullptr;
 
@@ -82,7 +88,7 @@ public:
 	void*					IVRenderModel	= nullptr;
 	void*					IStudioRender	= nullptr;
 	IVRenderView*			iVRenderView	= nullptr;
-	IVModelInfo*					iVModelInfo		= nullptr;
+	IVModelInfo*			iVModelInfo		= nullptr;
 
 //=========================================================================
 //                     OBJECTS :)

@@ -119,8 +119,13 @@ struct KeyValues
 
 inline void KV_Initialize(KeyValues* kv)
 {
+	/*KeyValues* pNewKV = tfObject.pInitKeyValue(kv, "UnlitGeneric");
+	tfObject.pKVSetInt(pNewKV, "$ignorez", 1);*/
+
 	KeyValues* pNewKV = tfObject.pInitKeyValue(kv, "UnlitGeneric");
 	tfObject.pKVSetInt(pNewKV, "$ignorez", 1);
+	tfObject.pKVSetInt(pNewKV, "$wireframe", 0);
+
 	printf("new keyValues : %p\n", pNewKV);
 }
 

@@ -84,9 +84,17 @@ struct visualConfig_t
 	bool bTfItemChams				= false;
 	clr_t clrTfItemCham;
 
-	bool ignorezProjectiles			= false;
-	bool bProjectileChams			= false;
-	clr_t clrProjectilesChams;
+	bool ignorezProjectilesEnemy	= false;
+	bool bProjectileEnemy			= false;
+	clr_t clrProjectileEnemy;
+
+	bool ignorezProjectileFriendly	= false;
+	bool bProjectileFriendly		= false;
+	clr_t clrProjectileFirendly;
+
+	bool ignorezViewModel			= false;
+	bool bViewModelChams			= false;
+	clr_t clrViewModelChams;
 };
 struct viewConfig_t
 {
