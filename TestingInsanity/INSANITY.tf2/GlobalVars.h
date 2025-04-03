@@ -66,6 +66,11 @@ extern Console_System cons;
 #define WAIT_MSG(waitingFor, toDoWhat) (void)0
 #endif 
 
+// delete this
+namespace Timer
+{
+	inline std::atomic<float> flDMETimeInMs(0.0f);
+};
 
 // Forward Declares
 class baseWeapon;

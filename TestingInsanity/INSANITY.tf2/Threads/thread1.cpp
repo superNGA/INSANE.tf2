@@ -177,6 +177,8 @@ void thread1_t::_terminate(HINSTANCE instance)
 		MH_DisableHook(MH_ALL_HOOKS);
 		MH_Uninitialize();
 
+		chams.FreeAllMaterial();
+
 		// freeing terminal..
 		LOG("thread 1", "uninitiazed everything, teminated software gracefully");
 		#ifdef _DEBUG

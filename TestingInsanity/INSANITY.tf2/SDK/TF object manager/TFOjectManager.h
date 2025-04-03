@@ -35,6 +35,7 @@ typedef KeyValues* (__fastcall* T_initKeyValue)(void*, const char*);
 typedef void (__fastcall* T_KVsetInt)(KeyValues*, const char*, int64_t);
 typedef void (__fastcall* T_KVSetFloat)(KeyValues*, const char*, float);
 typedef void (__fastcall* T_KVSetString)(KeyValues*, const char*, const char*);
+typedef void(__fastcall* T_KVSetColor)(KeyValues*, const char*, TFclr_t);
 
 class TFObjectManager_t
 {
@@ -63,6 +64,7 @@ public:
 	T_KVsetInt				 pKVSetInt					= nullptr;
 	T_KVSetFloat			 pKVSetFloat				= nullptr;
 	T_KVSetString			 pKVSetString				= nullptr;
+	T_KVSetColor			 pKVSetColor				= nullptr;
 
 	global_var_base*		pGlobalVar					= nullptr;
 

@@ -6,6 +6,7 @@
 // 
 // purpose : Handles chams for all desiered entities. :)
 //-------------------------------------------------------------------------
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
 #include "Chams.h"
 Chams_t chams;
@@ -17,10 +18,11 @@ Chams_t chams;
 #include "../../SDK/class/IVModelInfo.h"
 #include "../../Libraries/Utility/Utility.h"
 
+#include "../../Libraries/Timer.h"
+
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-
 int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
     // Checking if cheat backEnd is initialized
@@ -44,19 +46,30 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
 
     // remove this and make mechanism
     static IMaterial* customMat = nullptr;
-    if (customMat == nullptr)
+    /*if (customMat == nullptr)
     {
         KeyValues* kasutaMat = new KeyValues;
         KV_Initialize(kasutaMat);
         customMat = tfObject.pCreateMaterial(tfObject.IMaterialSystem, "KasutaMat", kasutaMat);
         printf("mat pointer : %p\n", customMat);
+    }*/
+    if (customMat == nullptr)
+    {
+        if (_CreateMaterial("UnlitGeneric", "FlatMat"))
+        {
+            std::cout << "Created new mat successfully\n";
+            customMat = UM_materials["FlatMat"]->pMaterial;
+            printf("%p\n", customMat);
+        }
     }
     
+    StartTimer();
+
     switch (entId)
     {
     case PLAYER:
-        pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ChamsPlayerEnemy(nMaterial, customMat, ppMaterial, pEntity) :
+        pEntity->isEnemy() ? // Fix this shit nigga, and fuck you bastard. I want this done by today or you dead >:( !!!!
+            bIsMaterialOverridden = _ApplyChams(modelState, customMat, config.visualConfig.ignorezEnemyPlayer, config.visualConfig.bPlayerChamsEnemy, config.visualConfig.clrEnemyPlayerCham) :
             bIsMaterialOverridden = _ChamsPlayerFriendly(nMaterial, customMat, ppMaterial, pEntity);
         break;
     case AMMO_PACK:
@@ -121,6 +134,17 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         break;
     }
 
+    static int nTick = 0;
+    static float nTotalTime = 0.0f;
+    nTotalTime += EndTimer();
+    if(nTick >= 64)
+    {
+        Timer::flDMETimeInMs.store(nTotalTime/64.0f);
+        nTotalTime = 0.0f;
+        nTick = 0;
+    }
+    nTick++;
+
     auto result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
     if (bIsMaterialOverridden)
     {
@@ -130,11 +154,52 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     return result;
 }
 
+bool Chams_t::FreeAllMaterial()
+{
+    for (auto& iterator : UM_materials)
+    {
+        delete iterator.second->pKV;
+        #ifdef _DEBUG
+        cons.Log(FG_GREEN, "DME", "successfully free'ed material [ %s ]", iterator.second->szMatName);
+        #endif
+        delete iterator.second;
+    }
+    cons.Log(FG_GREEN, "DME", "FREE'ED ALL MATERIALS");
+    return true;
+}
+
 
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
 
+
+bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, bool bIgnoreZConfig, bool bChamToggleConfig, clr_t& clrCham)
+{
+    int32_t nMaterials     = pModelState->m_pStudioHWData->m_pLODs->numMaterials;
+    IMaterial** ppMaterial = pModelState->m_pStudioHWData->m_pLODs->ppMaterials;
+
+    switch (bIgnoreZConfig + bChamToggleConfig * 2)
+    {
+    case 0:
+        return false;
+    case 1:
+        for (int8_t matIndex = 0; matIndex < nMaterials && ppMaterial[matIndex] != nullptr; matIndex++)
+        {
+            ppMaterial[matIndex]->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, true);
+        }
+        return false;
+    case 2 :
+    case 3 : 
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pChamMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        tfObject.iVRenderView->SetColorModulation(&clrCham.r);
+        tfObject.iVRenderView->SetBlend(clrCham.a);
+        return true;
+
+    default:
+        return false;
+    }
+}
 
 bool Chams_t::_ChamsAnimAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial)
 {   
@@ -557,4 +622,73 @@ bool Chams_t::_IsMedKit(uint32_t iHash)
     default:
         return false;
     }
+}
+
+bool Chams_t::_CreateMaterial(const char* pBaseMaterialType, std::string szMatName)
+{
+    if (pBaseMaterialType == nullptr || szMatName == "")
+    {
+        #ifdef _DEBUG
+        cons.Log(FG_RED, "DME", "Bad material name given [ %s ] & [ %s ]", pBaseMaterialType, szMatName.c_str());
+        #endif 
+        return false;
+    }
+
+    // returning if already created.
+    auto it = UM_materials.find(szMatName);
+    if (it != UM_materials.end())
+    {
+        #ifdef _DEBUG
+        cons.Log(FG_RED, "DME", "Material with name [ %s ] already exists @ [ %p ]", szMatName.c_str(), it->second->pMaterial);
+        #endif
+        return false;
+    }
+
+    // Creating Material
+    Material_t* newMat = new Material_t;
+    newMat->pKV        = new KeyValues;
+    static TFclr_t red = { 255, 0, 0, 255 };
+    static TFclr_t white = { 255, 255, 255, 255 };
+    static TFclr_t cyan = { 0, 255, 255, 255 };
+    KeyValues* pInitializedKV = tfObject.pInitKeyValue(newMat->pKV, pBaseMaterialType);
+    tfObject.pKVSetInt(pInitializedKV, "$ignorez", 1);
+
+    // Metallic Chams
+    //tfObject.pKVSetString(pInitializedKV, "$envmap", "env_cubemap");
+    //tfObject.pKVSetColor(pInitializedKV, "$envmaptint", red);
+    //tfObject.pKVSetInt(pInitializedKV, "$envmapfresnel", 1);
+    //tfObject.pKVSetInt(pInitializedKV, "$phong", 1);
+    //tfObject.pKVSetInt(pInitializedKV, "phongexponent", 20);
+    //tfObject.pKVSetInt(pInitializedKV, "phongboost", 2);
+    //tfObject.pKVSetInt(pInitializedKV, "$ignorez", 1);
+    //tfObject.pKVSetInt(pInitializedKV, "$wireframe", 0);
+    
+    // filling up material object
+    newMat->pMaterial = tfObject.pCreateMaterial(tfObject.IMaterialSystem, szMatName.c_str(), newMat->pKV);
+    strncpy(newMat->szMatName, szMatName.c_str(), MAX_MATERIAL_NAME_SIZE-1);
+    newMat->szMatName[MAX_MATERIAL_NAME_SIZE - 1] = '\0';
+    UM_materials[szMatName] = newMat;
+    #ifdef _DEBUG
+    cons.Log(FG_GREEN, "DME", "Successfully Created Material [ %s ]", newMat->szMatName);
+    #endif 
+    return true;
+}
+
+bool Chams_t::_DeleteMaterial(std::string szMatName)
+{
+    auto it = UM_materials.find(szMatName);
+    if (it == UM_materials.end())
+    {
+        #ifdef _DEBUG
+        cons.Log(FG_RED, "DME", "Material [ %s ] doesn't exist", szMatName.c_str());
+        #endif // _DEBUG
+        return false;
+    }
+
+    delete it->second->pKV;
+    delete it->second;
+    #ifdef _DEBUG
+    cons.Log(FG_GREEN, "DME", "successfully free'ed material [ %s ]", szMatName);
+    #endif
+    return true;
 }

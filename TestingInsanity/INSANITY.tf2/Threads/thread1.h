@@ -44,6 +44,9 @@
 #include "../SDK/FN index Manager/FN index manager.h"
 #include "../SDK/offsets/offsets.h"
 
+//======================= FEATURES =======================
+#include "../Features/Chams/Chams.h"
+
 extern local_netvars netvar; // <- this holds all the netvars
 extern Utility util;
 #ifdef _DEBUG

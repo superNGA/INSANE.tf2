@@ -159,11 +159,20 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     /* RENDERING CHEAT FEATURES */
     //ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    //draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible 
-    // 
-    // do processing here
-    // 
+    //draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible  
     //draw_list->PopClipRect();
+
+    // PERFORMANCE TRACKING
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+    ImGui::Begin("Performance", nullptr, 
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+    ImGui::Text("\n    ");
+    ImGui::Text("DME exec.time : % .4f", Timer::flDMETimeInMs.load());
+    ImGui::Text("    \n");
+    ImGui::End();
+    //ImGui::PopFont();
+
 
     if (UI::UI_visble)
     {
@@ -185,7 +194,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         /* making new default font */
         ImGui::PushFont(fonts::agency_FB);
 
-        /* Drawing background window & clock, fade in mechanism is also done here*/
+        /* Drawing background window & clock, fade-in mechanism is also done here*/
         draw_background();
 
         /* Initializing window*/

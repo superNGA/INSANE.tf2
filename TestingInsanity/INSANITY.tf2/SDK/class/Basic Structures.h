@@ -179,6 +179,11 @@ struct clr_t
 	float r, g, b, a;
 };
 
+struct TFclr_t
+{
+	char clr[4];
+};
+
 /* view matrix, stores world-to-view or world-to-screen transformation matrix given
 by the engine*/
 struct view_matrix

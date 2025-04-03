@@ -50,13 +50,16 @@ bool TFObjectManager_t::initializeFns()
 	pKVSetInt				= (T_KVsetInt)util.FindPattern("40 53 48 83 EC ? 41 8B D8 41 B0", MATERIALSYSTEM_DLL);
 	pKVSetFloat				= (T_KVSetFloat)util.FindPattern("48 83 EC ? 0F 29 74 24 ? 41 B0", MATERIALSYSTEM_DLL);
 	pKVSetString			= (T_KVSetString)util.FindPattern("48 89 5C 24 ? 55 48 83 EC ? 49 8B D8", MATERIALSYSTEM_DLL);
+	// For some reason, this signature is in Client.dll and not MaterialSystem.dll
+	pKVSetColor				= (T_KVSetColor)util.FindPattern("44 89 44 24 ? 53 48 83 EC ? 41 8B D8", CLIENT_DLL); 
 
 	pGlobalVar				= engineReplay->GetClientGlobalVars();
 	//pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 48 83 EC ? 48 8B 1D", ENGINE_DLL); // this is from IVModelRender or someshit like that
 
 	if (getName == nullptr || lookUpBones == nullptr || addToLeafSystem == nullptr || pGlobalVar == nullptr || 
 		MD5_PseudoRandom == nullptr || pForcedMaterialOverride == nullptr || pCreateMaterial == nullptr ||
-		pInitKeyValue == nullptr || pKVSetFloat == nullptr || pKVSetInt == nullptr || pKVSetString == nullptr)
+		pInitKeyValue == nullptr || pKVSetFloat == nullptr || pKVSetInt == nullptr || pKVSetString == nullptr ||
+		pKVSetColor == nullptr)
 	{
 		ERROR("TFObjectManager", "Failed intialization");
 		return false;
