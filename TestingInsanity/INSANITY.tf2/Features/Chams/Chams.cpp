@@ -55,7 +55,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     }*/
     if (customMat == nullptr)
     {
-        if (_CreateMaterial("UnlitGeneric", "FlatMat"))
+        if (_CreateMaterial("FlatMat", szMat01))
         {
             std::cout << "Created new mat successfully\n";
             customMat = UM_materials["FlatMat"]->pMaterial;
@@ -69,7 +69,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     {
     case PLAYER:
         pEntity->isEnemy() ? // Fix this shit nigga, and fuck you bastard. I want this done by today or you dead >:( !!!!
-            bIsMaterialOverridden = _ApplyChams(modelState, customMat, config.visualConfig.ignorezEnemyPlayer, config.visualConfig.bPlayerChamsEnemy, config.visualConfig.clrEnemyPlayerCham) :
+            bIsMaterialOverridden = _ChamsPlayerEnemy(nMaterial, customMat, ppMaterial, pEntity) :
             bIsMaterialOverridden = _ChamsPlayerFriendly(nMaterial, customMat, ppMaterial, pEntity);
         break;
     case AMMO_PACK:
@@ -624,12 +624,214 @@ bool Chams_t::_IsMedKit(uint32_t iHash)
     }
 }
 
-bool Chams_t::_CreateMaterial(const char* pBaseMaterialType, std::string szMatName)
+TFclr_t Chams_t::_GetClrFromString(std::string input)
 {
-    if (pBaseMaterialType == nullptr || szMatName == "")
+    TFclr_t output = { 0, 0, 0, 0 };
+    int index = 0;
+    int temp = 0;
+    bool firstNumOccured = false;
+    for (const char x : input)
+    {
+        if (index >= 4)
+            return output;
+
+        if (x - '0' < 0 || x - '0' > 9)
+        {
+            if (firstNumOccured)
+            {
+                output.clr[index] = temp;
+                printf("inserting %d @ %d | terminating char : %c\n", temp, index, x);
+                index++;
+                temp = 0;
+                firstNumOccured = false;
+            }
+        }
+        else
+        {
+            firstNumOccured = true;
+            temp *= 10;
+            temp += x - '0';
+        }
+    }
+    return output;
+}
+
+std::string Chams_t::_GetMaterialType(const char* szMaterialVMT)
+{
+    int32_t len = strlen(szMaterialVMT);
+    if (len == 0)
+        return "";
+
+    bool bStringStarted = false;
+    int iStartIndex = 0;
+    int iIndex = 0;
+    for (int i = 0; i < len; i++)
+    {
+        if (szMaterialVMT[i] == ' ')
+            continue;
+
+        if (szMaterialVMT[i] == '{' || (bStringStarted == true && (szMaterialVMT[i] == ' ' || szMaterialVMT[i] == '\n')))
+        {
+            char szOutput[MAX_PROP_NAME];
+            strncpy(szOutput, &szMaterialVMT[iStartIndex], iIndex);
+            szOutput[iIndex] = '\0';
+            return std::string(szOutput);
+            break;
+        }
+        else
+        {
+            if (bStringStarted == false)
+                iStartIndex = i;
+
+            iIndex++;
+            bStringStarted = true;
+        }
+    }
+
+    return "";
+}
+
+
+types_t Chams_t::_GetMatPropDataType(data_t& data, std::string input)
+{
+    printf("getting input for [ %s ]\n", input.c_str());
+
+    bool hasDot = false;
+    float tempData = 0;
+    types_t dataDetermined = TYPE_NONE;
+    int indexAfterDotCounter = 0;
+    for (const char x : input)
+    {
+        // if string then return as it is.
+        if ((x - '0' < 0 || x - '0' > 9) && x != '.')
+        {
+            if (x == '[' || x == ']' || x == ',')
+            {
+                data.clrData = _GetClrFromString(input);
+                return types_t::TYPE_COLOR;
+            }
+            return types_t::TYPE_STRING;
+        }
+        else if (x == '.')
+        {
+            std::cout << "FLOAT -> [ " << input << " ]\n";
+            hasDot = true;
+        }
+        else
+        {
+            if (hasDot == true)
+            {
+                std::cout << "FLOAT -> [ " << input << " ]\n";
+                dataDetermined = types_t::TYPE_FLOAT;
+                indexAfterDotCounter++;
+                tempData += (float)(x - '0') / (float)pow(10, indexAfterDotCounter);
+            }
+            else
+            {
+                dataDetermined = types_t::TYPE_INT;
+                tempData *= 10.0f;
+                tempData += x - '0';
+            }
+        }
+    }
+
+    switch (dataDetermined)
+    {
+    case TYPE_INT:
+        data.iData = tempData;
+        return dataDetermined;
+    default:
+        data.flData = tempData;
+        return dataDetermined;
+    }
+}
+
+
+bool Chams_t::_GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, const char* szMaterialVMT)
+{
+    int32_t len = strlen(szMaterialVMT);
+    if (len == 0)
+        return false;
+
+    vecMatPropOut.clear();
+
+    MatProp_t tempMatProp;
+    bool bPropStarted = false;
+    bool bDataStarted = false;
+    bool bThisIsFloat = false;
+    bool bThisIsName = false;
+    bool bVmtEnded = false;
+    
+    // Getting Mateiral type
+    std::string szMatType = _GetMaterialType(szMaterialVMT).c_str();
+    if (szMatType == "")
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Bad material name given [ %s ] & [ %s ]", pBaseMaterialType, szMatName.c_str());
+        cons.Log(FG_RED, "DME", "Failed to find material type");
+        #endif 
+        return false;
+    }
+    strcpy(tempMatProp.szPropName, szMatType.c_str());
+    tempMatProp.dataType = TYPE_MATERIAL_TYPE;
+    vecMatPropOut.push_back(tempMatProp);
+
+    // Getting mateiral properties
+    int start = 0;
+    int propLen = 0;
+    std::string temp;
+    for (int i = 0; i < len && !bVmtEnded; i++)
+    {
+        switch (szMaterialVMT[i])
+        {
+        case '"':
+            bPropStarted = !bPropStarted;
+            // if new prop just started, clean / prep for data
+            if (bPropStarted == true)
+            {
+                temp.clear();
+            }
+            else
+            {
+                // if prop ended and what we stored is a property name then store in the fucking name storage for MatProp_t
+                if (bThisIsName == true)
+                {
+                    strcpy(tempMatProp.szPropName, temp.c_str());
+                    printf("prop name added [ %s ]\n", tempMatProp.szPropName);
+                }
+                else
+                {
+                    tempMatProp.dataType = _GetMatPropDataType(tempMatProp.data, temp);
+                    if (tempMatProp.dataType == types_t::TYPE_STRING)
+                        strcpy(tempMatProp.data.szData, temp.c_str());
+
+                    printf("data added of type [ %d ]\n", tempMatProp.dataType);
+
+                    vecMatPropOut.push_back(tempMatProp);
+                }
+                bThisIsName = false;
+                temp.clear(); // onces insearted clear this shit!
+            }
+            break;
+        case '$':
+            bThisIsName = true;
+            temp.clear(); // clear and put $ sign in front
+            temp.push_back('$');
+            break;
+        default:
+            temp.push_back(szMaterialVMT[i]);
+            break;
+        }
+    }
+
+    return true;
+}
+
+bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
+{
+    if (szMatName == "" || szMaterialVMT == nullptr)
+    {
+        #ifdef _DEBUG
+        cons.Log(FG_RED, "DME", "Bad material name given [ %s ] & [ %s ]", szMatName.c_str());
         #endif 
         return false;
     }
@@ -644,25 +846,50 @@ bool Chams_t::_CreateMaterial(const char* pBaseMaterialType, std::string szMatNa
         return false;
     }
 
+    // Getting Material properity vector
+    std::vector<MatProp_t> vecMaterialVMT;
+    vecMaterialVMT.clear();
+    _GetMaterialPropVector(vecMaterialVMT, szMaterialVMT);
+    if (vecMaterialVMT.empty() == true || vecMaterialVMT[0].dataType != TYPE_MATERIAL_TYPE)
+    {
+        #ifdef _DEBUG
+        cons.Log(FG_RED, "DME", "Failed to convert material VMT string to vector or Couldn't identify material type");
+        #endif
+        return false;
+    }
+#ifdef _DEBUG
+    else
+        cons.Log(FG_GREEN, "DME", "Successfully conveted Mateiral string to vector for [ %s ]. Detected mat type [ %s ]", szMatName.c_str(), vecMaterialVMT[0].szPropName);
+#endif
+
     // Creating Material
     Material_t* newMat = new Material_t;
     newMat->pKV        = new KeyValues;
-    static TFclr_t red = { 255, 0, 0, 255 };
-    static TFclr_t white = { 255, 255, 255, 255 };
-    static TFclr_t cyan = { 0, 255, 255, 255 };
-    KeyValues* pInitializedKV = tfObject.pInitKeyValue(newMat->pKV, pBaseMaterialType);
-    tfObject.pKVSetInt(pInitializedKV, "$ignorez", 1);
+    KeyValues* pInitializedKV = tfObject.pInitKeyValue(newMat->pKV, vecMaterialVMT[0].szPropName); // 0th index holds the mateiral type
 
-    // Metallic Chams
-    //tfObject.pKVSetString(pInitializedKV, "$envmap", "env_cubemap");
-    //tfObject.pKVSetColor(pInitializedKV, "$envmaptint", red);
-    //tfObject.pKVSetInt(pInitializedKV, "$envmapfresnel", 1);
-    //tfObject.pKVSetInt(pInitializedKV, "$phong", 1);
-    //tfObject.pKVSetInt(pInitializedKV, "phongexponent", 20);
-    //tfObject.pKVSetInt(pInitializedKV, "phongboost", 2);
-    //tfObject.pKVSetInt(pInitializedKV, "$ignorez", 1);
-    //tfObject.pKVSetInt(pInitializedKV, "$wireframe", 0);
-    
+    int nMatPropSize = vecMaterialVMT.size();
+    for (int index = 1; index < nMatPropSize; index++)
+    {
+        MatProp_t& matProp = vecMaterialVMT[index];
+        switch (matProp.dataType)
+        {
+        case TYPE_INT:
+            tfObject.pKVSetInt(pInitializedKV, matProp.szPropName, matProp.data.iData);
+            break;
+        case TYPE_FLOAT:
+            tfObject.pKVSetFloat(pInitializedKV, matProp.szPropName, matProp.data.flData);
+            break;
+        case TYPE_STRING:
+            tfObject.pKVSetString(pInitializedKV, matProp.szPropName, matProp.data.szData);
+            break;
+        case TYPE_COLOR:
+            tfObject.pKVSetColor(pInitializedKV, matProp.szPropName, matProp.data.clrData);
+            break;
+        default:
+            break;
+        }
+    }
+
     // filling up material object
     newMat->pMaterial = tfObject.pCreateMaterial(tfObject.IMaterialSystem, szMatName.c_str(), newMat->pKV);
     strncpy(newMat->szMatName, szMatName.c_str(), MAX_MATERIAL_NAME_SIZE-1);

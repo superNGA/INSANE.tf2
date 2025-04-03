@@ -53,11 +53,28 @@
 */
 
 #define MAX_MATERIAL_NAME_SIZE 32
+#define MAX_PROP_NAME 32
 struct Material_t
 {
     IMaterial* pMaterial                    = nullptr;
     KeyValues* pKV                          = nullptr;
     char szMatName[MAX_MATERIAL_NAME_SIZE]  = "NOT DEFINED";
+};
+
+
+union data_t
+{
+    int32_t iData;
+    float flData;
+    char szData[MAX_PROP_NAME];
+    TFclr_t clrData;
+}; 
+struct MatProp_t
+{
+    MatProp_t() : szPropName(""), dataType(TYPE_NONE) {}
+    char szPropName[MAX_PROP_NAME];
+    data_t data;
+    types_t dataType;
 };
 
 class Chams_t
@@ -100,12 +117,48 @@ private:
     bool _IsAmmoPack(uint32_t iHash);
     bool _IsMedKit(uint32_t iHash);
 
-    // can use unordered map for material storing logic
-    bool _CreateMaterial(const char* pBaseMaterialType, std::string szMatName);
+    TFclr_t _GetClrFromString(std::string input);
+    std::string _GetMaterialType(const char* szMaterialVMT);
+    types_t _GetMatPropDataType(data_t& data, std::string input);
+    bool _GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, const char* szMaterialVMT);
+
+    bool _CreateMaterial(std::string szMatName, const char* szMaterialVMT);
     bool _DeleteMaterial(std::string szMatName);
     
     // this stores all custom made materials, reason for using a map is so I can 
     // scale is easily in future.
-    std::unordered_map<std::string, Material_t*> UM_materials; 
+    std::unordered_map<std::string, Material_t*> UM_materials;
+
+//=========================================================================
+//                     MATERIALS ( FOR NOW )
+//=========================================================================
+    const char* szMat01 = R"(UnlitGeneric
+    {
+        "$ignorez" "1"
+    })";
+    
+    const char* szMat02 = R"(VertexLitGeneric
+    {
+        "$basetexture" "vgui/white"
+        "$envmap" "env_cubemap"
+        "$envmaptint" "[1 1 1]"
+        "$ignorez" "1"
+        "$envmapfresnel" "1"
+        "$phong" "1"
+        "$phongexponent" "20"
+        "$phongboost" "2"
+    })";
+
+    const char* szMat03 = R"(VertexLitGeneric
+    {
+        "$basetexture" "vgui/white"
+        "$ignorez" "0"
+        "$envmap" "env_cubemap"
+        "$alpha" "0.5" // 0.0 = fully invisible, 1.0 = fully solid
+        "$phong" "1"
+        "$phongexponent" "10"
+        "$phongboost" "2"
+    }
+)";
 };
 extern Chams_t chams;
