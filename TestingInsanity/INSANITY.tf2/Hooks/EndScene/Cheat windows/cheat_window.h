@@ -45,6 +45,15 @@ namespace cheat_window
 		ImGui::Checkbox("Auto shoot",					&config.aimbotConfig.autoShoot);
 	}
 
+	// Make something proper in final release, but for now it should do.
+	inline void DrawChamButtons(ChamSetting_t& chamConfig, std::string text)
+	{
+		ImGui::Text(text.c_str());
+		ImGui::Checkbox((text + "IgnoreZ").c_str(), &chamConfig.bIgnorez);
+		ImGui::Checkbox((text + "toggle").c_str(), &chamConfig.bChams);
+		ImGui::ColorEdit4((text + "color").c_str(), &chamConfig.clrChams.r, ImGuiColorEditFlags_AlphaBar);
+	}
+
 	inline void draw_player_visual_window()
 	{
 		ImGui::Checkbox("ESP",							&config.visualConfig.ESP);
@@ -53,69 +62,28 @@ namespace cheat_window
 		ImGui::Checkbox("Skip cloaked spy",				&config.visualConfig.skipCloackedSpy);
 		ImGui::Checkbox("Name",							&config.visualConfig.playerName);
 
-		//======================= Player Chams =======================
-		ImGui::Checkbox("Friendly Player Chams player",		&config.visualConfig.bPlayerChamsFriendly);
-		ImGui::Checkbox("enemy Chams player",				&config.visualConfig.bPlayerChamsEnemy);
-		ImGui::Checkbox("IgnoreZ Friendly player",			&config.visualConfig.ignorezFriendlyPlayer);
-		ImGui::Checkbox("IgnoreZ enemy player",				&config.visualConfig.ignorezEnemyPlayer);
-		ImGui::ColorEdit4("team mates cham color",			&config.visualConfig.clrFriendlyPlayerChams.r, ImGuiColorEditFlags_AlphaBar);
-		ImGui::ColorEdit4("enemy cham color",				&config.visualConfig.clrEnemyPlayerCham.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamEnemyPlayer,		"Enemy player");
+		DrawChamButtons(config.visualConfig.ChamFriendlyPlayer,		"Friendly player");
 
-		//======================= Sentry Chams =======================
-		ImGui::Checkbox("IgnoreZ sentry Enemy",				&config.visualConfig.ignorezEnemySentry);
-		ImGui::Checkbox("Sentry Chams Enemy",				&config.visualConfig.bSentryEnemy);
-		ImGui::ColorEdit4("Sentry cham color Enemy",		&config.visualConfig.clrSentryEnemy.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamEnemySentry,		"Enemy Sentry");
+		DrawChamButtons(config.visualConfig.ChamFriendlySentry,		"Friendly sentry");
 
-		ImGui::Checkbox("IgnoreZ sentry Friendly",			&config.visualConfig.ignorezFriendlySentry);
-		ImGui::Checkbox("Sentry Chams Friendly",			&config.visualConfig.bSentryFriendly);
-		ImGui::ColorEdit4("Sentry cham color Friendly",		&config.visualConfig.clrSentryFriendly.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamEnemyDispenser,		"Enemy dispenser");
+		DrawChamButtons(config.visualConfig.ChamFriendlyDispenser,	"Friendly dispenser");
 
-		//======================= Teleporter Chams =======================
-		ImGui::Checkbox("IgnoreZ teleporter Enemy",			&config.visualConfig.ignorezTeleporterEnemy);
-		ImGui::Checkbox("Teleporter Chams Enemy",			&config.visualConfig.bTeleporterEnemy);
-		ImGui::ColorEdit4("Teleporter cham color Enemy",	&config.visualConfig.clrTeleporterEnemy.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamEnemyTeleporter,	"Enemy teleporter");
+		DrawChamButtons(config.visualConfig.ChamFriendlyTeleporter, "Friendly Teleporter");
 
-		ImGui::Checkbox("IgnoreZ teleporter Friendly",		&config.visualConfig.ignorezTeleporterFriendly);
-		ImGui::Checkbox("Teleporter Chams Friendly",		&config.visualConfig.bTeleporterFriendly);
-		ImGui::ColorEdit4("Teleporter cham color Friendly",	&config.visualConfig.clrTeleporterFriendly.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamDroppedAmmoPack,    "dropped ammo pack");
+		DrawChamButtons(config.visualConfig.ChamMedkit,			    "Med kit");
+		DrawChamButtons(config.visualConfig.ChamAnimAmmoPack,	    "Animation ammo pack");
+		DrawChamButtons(config.visualConfig.ChamTFItem,			    "tf item");
+																    
+		DrawChamButtons(config.visualConfig.ChamEnemyProjectile,    "Enemy projectile");
+		DrawChamButtons(config.visualConfig.ChamFriendlyProjectile, "Friendly projectle");
 
-		//======================= Dispenser Chams =======================
-		ImGui::Checkbox("IgnoreZ dispenser Enemy",			&config.visualConfig.ignorezDispenserEnemy);
-		ImGui::Checkbox("Dispenser Chams Enemy",			&config.visualConfig.bDispenserEnemy);
-		ImGui::ColorEdit4("Dispenser cham color Enemy",		&config.visualConfig.clrDispenserEnemy.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ dispenser Friendly",		&config.visualConfig.ignorezDispenserFirendly);
-		ImGui::Checkbox("Dispenser Chams Friendly",			&config.visualConfig.bDispenserFirendly);
-		ImGui::ColorEdit4("Dispenser cham color Friendly",	&config.visualConfig.clrDispenserFriendly.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ animating Ammo Pack",		&config.visualConfig.ignorezDropAmmoPack);
-		ImGui::Checkbox("Animating Ammo Pack chams",		&config.visualConfig.bAnimAmmoPack);
-		ImGui::ColorEdit4("Animating Ammo Pack cham color",	&config.visualConfig.clrAnimAmmoPackChams.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ Medkit",					&config.visualConfig.ignorezMedkit);
-		ImGui::Checkbox("Medkit Chams",						&config.visualConfig.bMedkit);
-		ImGui::ColorEdit4("Medkit cham color",				&config.visualConfig.clrMedkit.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ ammo Pack",				&config.visualConfig.ignorezAnimAmmoPack);
-		ImGui::Checkbox("AmmoPack Chams",					&config.visualConfig.bDropAmmoPackChams);
-		ImGui::ColorEdit4("AmmoPack cham color",			&config.visualConfig.clrDropAmmoPackChams.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ tf item",					&config.visualConfig.ignorezTfItem);
-		ImGui::Checkbox("intelligence Chams",				&config.visualConfig.bTfItemChams);
-		ImGui::ColorEdit4("intelligence cham color",		&config.visualConfig.clrTfItemCham.r, ImGuiColorEditFlags_AlphaBar);
-
-		//======================= Projectile Chams =======================
-		ImGui::Checkbox("IgnoreZ projectile Enemy",			&config.visualConfig.ignorezProjectilesEnemy);
-		ImGui::Checkbox("projectile Chams Enemy",			&config.visualConfig.bProjectileEnemy);
-		ImGui::ColorEdit4("projectile cham color Enemy",	&config.visualConfig.clrProjectileEnemy.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ projectile Friendly",		&config.visualConfig.ignorezProjectileFriendly);
-		ImGui::Checkbox("projectile Chams Friendly",		&config.visualConfig.bProjectileFriendly);
-		ImGui::ColorEdit4("projectile cham color Friendly",	&config.visualConfig.clrProjectileFirendly.r, ImGuiColorEditFlags_AlphaBar);
-
-		ImGui::Checkbox("IgnoreZ viewmodel",				&config.visualConfig.ignorezViewModel);
-		ImGui::Checkbox("view model chams",					&config.visualConfig.bViewModelChams);
-		ImGui::ColorEdit4("view model chams clr",			&config.visualConfig.clrViewModelChams.r, ImGuiColorEditFlags_AlphaBar);
+		DrawChamButtons(config.visualConfig.ChamViewModel,			"view model");
+		DrawChamButtons(config.visualConfig.ChamDroppedWeapon,		"Dropped weapon");
 	}
 
 	inline void draw_view_visual_window() 

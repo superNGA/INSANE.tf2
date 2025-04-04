@@ -88,42 +88,17 @@ private:
     // been done with a single fucking function. This shows how smart I am
     // and I truly am just a dumb fuck. FIX THIS SHIT!
 
-    bool _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, 
-        bool bIgnoreZConfig, bool bChamToggleConfig, clr_t& clrCham);
+    bool        _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, ChamSetting_t& pChamConfig);
+    bool        _IsAmmoPack(uint32_t iHash);
+    bool        _IsMedKit(uint32_t iHash);
 
-    // fix it plz
-    bool _ChamsAnimAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsMedKit(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    
-    bool _ChamsPlayerEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity * pEntity);
-    bool _ChamsPlayerFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity * pEntity);
-    
-    bool _ChamsDispenserEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsDispenserFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    
-    bool _ChamsSenteryEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity* pEntity);
-    bool _ChamsSenteryFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial, BaseEntity* pEntity);
-    
-    bool _ChamsTeleporterEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsTeleporterFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-
-    bool _ChamsItems(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsAmmoPack(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsViewModel(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-
-    bool _ChamsProjectilesEnemy(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-    bool _ChamsProjectilesFriendly(int8_t nMaterial, IMaterial* pMaterial, IMaterial** ppMaterial);
-
-    bool _IsAmmoPack(uint32_t iHash);
-    bool _IsMedKit(uint32_t iHash);
-
-    TFclr_t _GetClrFromString(std::string input);
+    TFclr_t _GetClrFromString(std::string szColorString);
     std::string _GetMaterialType(const char* szMaterialVMT);
-    types_t _GetMatPropDataType(data_t& data, std::string input);
-    bool _GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, const char* szMaterialVMT);
+    types_t _GetMatPropDataType(data_t & dataOut, std::string szData);
+    bool        _GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, const char* szMaterialVMT);
 
-    bool _CreateMaterial(std::string szMatName, const char* szMaterialVMT);
-    bool _DeleteMaterial(std::string szMatName);
+    bool        _CreateMaterial(std::string szMatName, const char* szMaterialVMT);
+    bool        _DeleteMaterial(std::string szMatName);
     
     // this stores all custom made materials, reason for using a map is so I can 
     // scale is easily in future.

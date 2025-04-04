@@ -16,6 +16,15 @@
 
 #define MAX_FILENAME_SIZE 50
 
+//======================= HELPER FOR CONFIG STRUCTS =======================
+struct ChamSetting_t
+{
+	bool bIgnorez = false;
+	bool bChams	  = false;
+	clr_t clrChams;
+};
+
+//======================= CONFIG STRUCTS =======================
 struct aimbotConfig_t
 {
 	bool global						= false;
@@ -34,67 +43,31 @@ struct visualConfig_t
 
 //----------------------- Chams -----------------------
 	// PLAYER CHAMS
-	bool ignorezFriendlyPlayer		= false;
-	bool ignorezEnemyPlayer			= false;
-	bool bPlayerChamsFriendly		= false;
-	bool bPlayerChamsEnemy			= false;
-	clr_t clrFriendlyPlayerChams;
-	clr_t clrEnemyPlayerCham;
+	ChamSetting_t ChamEnemyPlayer;
+	ChamSetting_t ChamFriendlyPlayer;
 
 	// SENTRY CHAMS
-	bool ignorezEnemySentry			= false;
-	bool bSentryEnemy				= false;
-	clr_t clrSentryEnemy;
-
-	bool ignorezFriendlySentry		= false;
-	bool bSentryFriendly			= false;
-	clr_t clrSentryFriendly;
+	ChamSetting_t ChamEnemySentry;
+	ChamSetting_t ChamFriendlySentry;
 
 	// DISPENSER CHAMS
-	bool ignorezDispenserEnemy		= false;
-	bool bDispenserEnemy			= false;
-	clr_t clrDispenserEnemy;
-
-	bool ignorezDispenserFirendly	= false;
-	bool bDispenserFirendly			= false;
-	clr_t clrDispenserFriendly;
+	ChamSetting_t ChamEnemyDispenser;
+	ChamSetting_t ChamFriendlyDispenser;
 
 	// TELEPORTER CHAMS
-	bool ignorezTeleporterEnemy		= false;
-	bool bTeleporterEnemy			= false;
-	clr_t clrTeleporterEnemy;		
+	ChamSetting_t ChamEnemyTeleporter;
+	ChamSetting_t ChamFriendlyTeleporter;
 
-	bool ignorezTeleporterFriendly	= false;
-	bool bTeleporterFriendly		= false;
-	clr_t clrTeleporterFriendly;
+	ChamSetting_t ChamDroppedAmmoPack;
+	ChamSetting_t ChamMedkit;
+	ChamSetting_t ChamAnimAmmoPack;
+	ChamSetting_t ChamTFItem;
 
-	bool ignorezDropAmmoPack		= false;
-	bool bDropAmmoPackChams			= false;
-	clr_t clrDropAmmoPackChams;
+	ChamSetting_t ChamEnemyProjectile;
+	ChamSetting_t ChamFriendlyProjectile;
 
-	bool ignorezMedkit				= false;
-	bool bMedkit					= false;
-	clr_t clrMedkit;
-
-	bool ignorezAnimAmmoPack		= false;
-	bool bAnimAmmoPack				= false;
-	clr_t clrAnimAmmoPackChams;
-
-	bool ignorezTfItem				= false;
-	bool bTfItemChams				= false;
-	clr_t clrTfItemCham;
-
-	bool ignorezProjectilesEnemy	= false;
-	bool bProjectileEnemy			= false;
-	clr_t clrProjectileEnemy;
-
-	bool ignorezProjectileFriendly	= false;
-	bool bProjectileFriendly		= false;
-	clr_t clrProjectileFirendly;
-
-	bool ignorezViewModel			= false;
-	bool bViewModelChams			= false;
-	clr_t clrViewModelChams;
+	ChamSetting_t ChamViewModel;
+	ChamSetting_t ChamDroppedWeapon;
 };
 struct viewConfig_t
 {
