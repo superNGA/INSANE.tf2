@@ -13,7 +13,6 @@
 //                     PUBLIC METHODS
 //=========================================================================
 
-
 //=========================================================================
 // uintptr_t getFnAdrs(FN_name_t FnName, void* pVTable)
 //=========================================================================
@@ -85,6 +84,32 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pObject)
 	#endif
 
 	MAP_FnIndex[FnName] = index;
+	return index;
+}
+
+uint32_t FNindexManager_t::getFnIndex(const char* signature, void* pObject, SEARCH_THRESHOLD iSearchThreshold)
+{
+	uint32_t hashSignature = FNV1A32(signature);
+	
+	auto it = MAP_FnIndex2.find(hashSignature);
+	if (it != MAP_FnIndex2.end()) { // function already cached
+		return it->second; // return FN index
+	}
+
+	auto index = searchPatter(pObject, signature, iSearchThreshold);
+	if (index == 0)
+	{
+		#ifdef _DEBUG
+		cons.Log(FG_RED, "Fn Index managment", "Failed to find funcition with signature [ %s ]", signature);
+		#endif
+		return 0;
+	}
+
+	#ifdef _DEBUG
+	cons.Log(FG_GREEN, "Fn Index Managment", "Found signature [ %s ] @ index [ %d ]", signature, index);
+	#endif
+
+	MAP_FnIndex2[hashSignature] = index;
 	return index;
 }
 

@@ -43,6 +43,8 @@ namespace cheat_window
 		ImGui::Checkbox("PROJ. AIMBOT",					&config.aimbotConfig.projectile_aimbot);
 		ImGui::Checkbox("Future position indicator",	&config.aimbotConfig.future_pos_helper);
 		ImGui::Checkbox("Auto shoot",					&config.aimbotConfig.autoShoot);
+
+		ImGui::Checkbox("No Spread",					&config.aimbotConfig.bNoSpread);
 	}
 
 	// Make something proper in final release, but for now it should do.

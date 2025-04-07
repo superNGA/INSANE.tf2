@@ -29,6 +29,9 @@
 #include "../Hooks/ProcessMovement/ProcessMovement.h"
 #include "../Hooks/DrawModelExecute/DrawModelExecute.h"
 #include "../Hooks/CheckForPureServerWhitelist/sv_pure.h"
+#include "../Hooks/RandomFloat/RandomFloat.h"
+#include "../Hooks/FX_FireBullet/FX_FireBullets.h"
+#include "../Hooks/DispatchUserMessage/DispatchUserMessage.h"
 
 //======================= UI / RENDERING HOOKS =======================
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init

@@ -14,6 +14,7 @@
 #define VGUI2_DLL				"vgui2.dll"
 #define MATERIALSYSTEM_DLL		"materialsystem.dll"
 #define STUDIORENDER_DLL		"studiorender.dll"
+#define VSTDLIB_DLL				"vstdlib.dll"
 
 /* game interfaces names */
 #define IVENGIENCLIENT013		"VEngineClient014"

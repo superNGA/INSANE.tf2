@@ -111,6 +111,11 @@ struct vec
 		return vec(x - other.x, y - other.y, z - other.z);
 	}
 
+	vec operator*(float other)
+	{
+		return vec(x * other, y * other, z * other);
+	}
+
 	const float mag()
 	{
 		return sqrt(x * x + y * y + z * z);
@@ -275,7 +280,7 @@ struct ICollideable {};
 struct ShadowType_t {};
 struct ShouldTransmitState_t {};
 struct DataUpdateType_t {};
-struct bf_read {};
+class bf_read;
 struct CMouthInfo {};
 struct SpatializationInfo_t {};
 struct ClientThinkHandle_t {};

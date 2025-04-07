@@ -52,14 +52,27 @@ bool TFObjectManager_t::initializeFns()
 	pKVSetString			= (T_KVSetString)util.FindPattern("48 89 5C 24 ? 55 48 83 EC ? 49 8B D8", MATERIALSYSTEM_DLL);
 	// For some reason, this signature is in Client.dll and not MaterialSystem.dll
 	pKVSetColor				= (T_KVSetColor)util.FindPattern("44 89 44 24 ? 53 48 83 EC ? 41 8B D8", CLIENT_DLL); 
+	
+	pGetWeaponSpread		= (T_GetWeaponSpread)util.FindPattern("48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL);
+	pRandomGausianFloat		= (T_RandomGausianFloat)util.FindPattern("0F 28 D1 48 8D 0D", VSTDLIB_DLL);
+	pWeaponIdToAlias		= (T_WeaponIDToAlias)util.FindPattern("48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL);
+	pLookUpWeaponInfoSlot	= (T_LookUpWeaponInfoSlot)util.FindPattern("48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL);
+	pGetWeaponFileHandle	= (T_GetWeaponFileHandle)util.FindPattern("66 3B 0D", CLIENT_DLL);
+
+	// this shit is getting really messy!, gotta fix & make it more scalable. Will do this after the No Spread shit is done.
+	pRandomSeed  = (T_RandomSeed)GetProcAddress(GetModuleHandle(VSTDLIB_DLL), "RandomSeed");
+	pRandomFloat = (T_RandomFloat)GetProcAddress(GetModuleHandle(VSTDLIB_DLL), "RandomFloat");
+	if (pRandomSeed == nullptr || pRandomFloat == nullptr)
+		return false;
 
 	pGlobalVar				= engineReplay->GetClientGlobalVars();
 	//pForcedMaterialOverride = (T_forcedMaterialOverride)util.FindPattern("4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 48 83 EC ? 48 8B 1D", ENGINE_DLL); // this is from IVModelRender or someshit like that
 
-	if (getName == nullptr || lookUpBones == nullptr || addToLeafSystem == nullptr || pGlobalVar == nullptr || 
-		MD5_PseudoRandom == nullptr || pForcedMaterialOverride == nullptr || pCreateMaterial == nullptr ||
-		pInitKeyValue == nullptr || pKVSetFloat == nullptr || pKVSetInt == nullptr || pKVSetString == nullptr ||
-		pKVSetColor == nullptr)
+	if (getName == nullptr					|| lookUpBones == nullptr				|| addToLeafSystem == nullptr	|| pGlobalVar == nullptr || 
+		MD5_PseudoRandom == nullptr			|| pForcedMaterialOverride == nullptr	|| pCreateMaterial == nullptr	||
+		pInitKeyValue == nullptr			|| pKVSetFloat == nullptr				|| pKVSetInt == nullptr			|| pKVSetString == nullptr ||
+		pKVSetColor == nullptr				|| pRandomGausianFloat == nullptr		|| pGetWeaponSpread == nullptr	|| pWeaponIdToAlias == nullptr ||
+		pLookUpWeaponInfoSlot == nullptr	|| pGetWeaponFileHandle == nullptr)
 	{
 		ERROR("TFObjectManager", "Failed intialization");
 		return false;

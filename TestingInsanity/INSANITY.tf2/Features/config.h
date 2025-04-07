@@ -27,11 +27,13 @@ struct ChamSetting_t
 //======================= CONFIG STRUCTS =======================
 struct aimbotConfig_t
 {
-	bool global						= false;
+	bool global						= false; // <- ain't working from here
 	float FOV						= 10.0f;
 	bool projectile_aimbot			= false;
 	bool future_pos_helper			= false;
-	bool autoShoot					= false;
+	bool autoShoot					= false; // till here...
+	
+	bool bNoSpread					= false;
 };
 struct visualConfig_t
 {

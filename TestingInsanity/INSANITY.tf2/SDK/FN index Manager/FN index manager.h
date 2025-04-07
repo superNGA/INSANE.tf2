@@ -61,9 +61,11 @@ class FNindexManager_t
 public:
 	uintptr_t getFnAdrs(FN_name_t FnName, void* pObject);
 	uint16_t getFnIndex(FN_name_t FnName, void* pObject);
+	uint32_t getFnIndex(const char* signature, void* pObject, SEARCH_THRESHOLD iSearchThreshold = THRESHOLD_100);
 
 private:
 	int16_t searchPatter(void* pObject, const char* signature, uint16_t seachingThreadHold = 25);
 	std::unordered_map<FN_name_t, uint16_t> MAP_FnIndex;
+	std::unordered_map<uint32_t, uint16_t> MAP_FnIndex2;
 };
 inline FNindexManager_t g_FNindexManager;

@@ -22,7 +22,9 @@ class IMaterial;
 class IEngineTrace;
 struct global_var_base;
 enum renderGroup_t;
+struct FileWeaponInfo_t;
 
+// GENERAL
 typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
 typedef char* (__fastcall* T_getName)(void*, int64_t);
 typedef void(__fastcall* T_addToLeafSystem)	(void*, renderGroup_t);
@@ -31,11 +33,22 @@ typedef IMaterial* (__fastcall* T_findMaterial)(void*, const char*, const char*,
 typedef void(__fastcall* T_forcedMaterialOverride)(void*, IMaterial*, OverrideType_t);
 typedef IMaterial* (__fastcall* T_createMaterial)(void*, const char*, KeyValues*);
 
+// CHAMS
 typedef KeyValues* (__fastcall* T_initKeyValue)(void*, const char*);
 typedef void (__fastcall* T_KVsetInt)(KeyValues*, const char*, int64_t);
 typedef void (__fastcall* T_KVSetFloat)(KeyValues*, const char*, float);
 typedef void (__fastcall* T_KVSetString)(KeyValues*, const char*, const char*);
 typedef void(__fastcall* T_KVSetColor)(KeyValues*, const char*, TFclr_t);
+
+// NO SPREAD
+typedef float(__fastcall* T_GetWeaponSpread)(void*);
+typedef float(__fastcall* T_RandomGausianFloat)(float, float);
+typedef char* (__fastcall* T_WeaponIDToAlias)(int32_t);
+typedef int16_t(__fastcall* T_LookUpWeaponInfoSlot)(char*);
+typedef FileWeaponInfo_t* (__fastcall* T_GetWeaponFileHandle)(int16_t);
+typedef int64_t(__fastcall* T_RandomSeed)(int64_t);
+typedef float(__fastcall* T_RandomFloat)(float, float);
+
 
 class TFObjectManager_t
 {
@@ -60,11 +73,21 @@ public:
 	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
 	T_createMaterial		 pCreateMaterial			= nullptr;
 	
+	// Mateiral related fns...
 	T_initKeyValue			 pInitKeyValue				= nullptr;
 	T_KVsetInt				 pKVSetInt					= nullptr;
 	T_KVSetFloat			 pKVSetFloat				= nullptr;
 	T_KVSetString			 pKVSetString				= nullptr;
 	T_KVSetColor			 pKVSetColor				= nullptr;
+
+	// No spread related
+	T_GetWeaponSpread		 pGetWeaponSpread			= nullptr;
+	T_RandomGausianFloat	 pRandomGausianFloat		= nullptr;
+	T_WeaponIDToAlias		 pWeaponIdToAlias			= nullptr;
+	T_LookUpWeaponInfoSlot   pLookUpWeaponInfoSlot		= nullptr;
+	T_GetWeaponFileHandle	 pGetWeaponFileHandle		= nullptr;
+	T_RandomSeed			 pRandomSeed				= nullptr;
+	T_RandomFloat			 pRandomFloat				= nullptr;
 
 	global_var_base*		pGlobalVar					= nullptr;
 
