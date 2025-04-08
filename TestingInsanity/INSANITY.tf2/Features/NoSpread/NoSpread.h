@@ -13,6 +13,9 @@ class CUserCmd;
 /* Conclusions : 
 * -> weaponFileInfo_t seems to be something of very constant nature and looping through bullets
 *		from weaponFIleINfo ain't necessary. avoid it.
+* -> the bullet tracers tell me that I have absolute 0 spread and the bullet holes in the
+*       walls and the damage output tells me that I have all the fucking spread. even in local
+*       servers. now what the fuck is that?
 */
 
 /* DONE :
@@ -24,6 +27,9 @@ class CUserCmd;
 *       in the fucking air and shit.
 * -> underStand what the AngleVectors fn is doing
 * -> clamp the values
+* -> look the cStd clam and gMod and make a proper efficient clamping logic.
+* -> underStand what the VectorAngles function is doing
+* -> for Heavy the Base spread seems to have some random-ness. get that after some progress.
 */
 
 /* TODO :
@@ -36,11 +42,8 @@ class CUserCmd;
 * -> make a imformation window ( translucent ) and display some good imformation on it.
 * 
 * -> get server seed.
-* -> look the cStd clam and gMod and make a proper efficient clamping logic.
-* -> underStand what the VectorAngles function is doing
 * 
 * -> completely understand how game is calculating spread.
-* -> for Heavy the Base spread seems to have some random-ness. get that after some progress.
 */
 
 
@@ -51,6 +54,5 @@ public:
 
 private:
 	uint32_t _GetSeed(CUserCmd* cmd);
-    uint32_t _GetSeed();
 };
 extern NoSpread_t noSpread;
