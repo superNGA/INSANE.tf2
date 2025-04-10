@@ -53,7 +53,7 @@ ConsoleSystem_t::ConsoleSystem_t()
 * handles console allocation and intro
 */
 //-------------------------------------------------------------------------
-bool ConsoleSystem_t::inititalize(consTextClr_t introClr)
+bool ConsoleSystem_t::inititalize(consTextClr_t introClr, bool bDoIntro)
 {
     if (_isInitialized == true)
         return true;

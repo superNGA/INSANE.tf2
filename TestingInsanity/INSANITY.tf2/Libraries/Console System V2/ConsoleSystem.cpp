@@ -53,7 +53,7 @@ ConsoleSystem_t::ConsoleSystem_t()
 * handles console allocation and intro
 */
 //-------------------------------------------------------------------------
-bool ConsoleSystem_t::inititalize(consTextClr_t introClr)
+bool ConsoleSystem_t::inititalize(consTextClr_t introClr, bool bDoIntro)
 {
     // if console not already allocated
     if (_isConsoleAllocated() == false)
@@ -72,8 +72,11 @@ bool ConsoleSystem_t::inititalize(consTextClr_t introClr)
         ASSERT_TEXTCLR(introClr);
     }
 
-    _printIntro(introClr);
-    drawDevider();
+    if(bDoIntro)
+    {
+        _printIntro(introClr);
+        drawDevider();
+    }
 
     _isInitialized = true;
 

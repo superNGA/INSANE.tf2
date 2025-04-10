@@ -23,17 +23,17 @@ uintptr_t Utility::FindPattern(const char* Signature, const char* MoudleName)
 		printf("Failed to get Module size!\n");
 	
 	//Printing Debug information only if CONSOLE is allocated
-	if (IsConsoleAllocated)
-	{
-		printf("Signature     : %s\n", Signature); // <- Printing original signature
-		
-		//Printing Formated Signature
-		printf("Formated Sig. : ");
-		for (BYTE x : reinterpretedSignature) printf("%02X ", x);
-		printf("\n");
-		for (char x : Mask) printf("%c ", x); // <- Printing Mask
-		printf("\n Base Adrs -> 0x%p\n MoudleSize -> 0x%ld\n", Base, ModuleSize); // <- printing Base Adrs and Module size...
-	}
+	//if (IsConsoleAllocated)
+	//{
+	//	printf("Signature     : %s\n", Signature); // <- Printing original signature
+	//	
+	//	//Printing Formated Signature
+	//	printf("Formated Sig. : ");
+	//	for (BYTE x : reinterpretedSignature) printf("%02X ", x);
+	//	printf("\n");
+	//	for (char x : Mask) printf("%c ", x); // <- Printing Mask
+	//	printf("\n Base Adrs -> 0x%p\n MoudleSize -> 0x%ld\n", Base, ModuleSize); // <- printing Base Adrs and Module size...
+	//}
 
 	//Returning the Siganture address...
 	return MemoryScanner(reinterpretedSignature, Mask, ModuleSize, Base);

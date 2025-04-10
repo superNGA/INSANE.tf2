@@ -3,12 +3,17 @@
 #include "../../SDK/FN index Manager/FN index manager.h"
 #include "../../Extra/math.h"
 #include "../../Features/NoSpread/NoSpread.h"
+#include "../../Utility/signatures.h"
+#include "../../Utility/Hook_t.h"
 
 
 hook::createmove::template_createmove hook::createmove::original_createmove = nullptr;
-bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
+//bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
+//MAKE_SIG(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
+	int64_t a1, int64_t a2, CUserCmd* cmd)
 {
-	bool result = original_createmove(a1, a2, cmd);
+	bool result = Hook::CreateMove::O_CreateMove(a1, a2, cmd);
 
 	if (!cmd || !cmd->command_number || entityManager.initialized.load() == false) {
 		return result;

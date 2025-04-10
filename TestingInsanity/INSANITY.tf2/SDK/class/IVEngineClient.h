@@ -1,5 +1,6 @@
 #pragma once
 #include "Basic Structures.h"
+#include "../../Utility/Interface.h"
 
 class IVEngineClient013
 {
@@ -240,3 +241,5 @@ public:
 	// returns the name of the background level
 	virtual void		GetMainMenuBackgroundName(char* dest, int destlen) = 0;
 };
+
+MAKE_INTERFACE_VERSION(iEngine, "VEngineClient014", IVEngineClient013, ENGINE_DLL);

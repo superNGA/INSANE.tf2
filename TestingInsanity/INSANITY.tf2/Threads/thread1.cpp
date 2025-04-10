@@ -9,6 +9,9 @@
 //-------------------------------------------------------------------------
 
 #include "thread1.h"
+#include "../Utility/signatures.h"
+#include "../Utility/Interface.h"
+#include "../Utility/Hook_t.h"
 Utility util;
 
 //=========================================================================
@@ -43,6 +46,21 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}	
 	
 	if (_initializeHooks() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (allSignatures.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (interfaceInitialize.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+
+	if(hook_t.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -103,7 +121,7 @@ bool thread1_t::_initializeHooks()
 	LOG("thread 1", "Minhook started");
 
 	// signature scanning...
-	uintptr_t pCreateMove_				= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
+	//uintptr_t pCreateMove_				= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
 	uintptr_t pRenderGlowEffect_		= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
 	uintptr_t pOverrideView_			= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
 	uintptr_t pShouldDrawViewModel_		= util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
@@ -118,7 +136,7 @@ bool thread1_t::_initializeHooks()
 	uintptr_t pDispatchUserMsg_			= util.FindPattern("40 56 48 83 EC ? 49 8B F0", CLIENT_DLL);
 	uintptr_t pSendStringCommand_		= util.FindPattern("48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL);
 
-	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || 
+	if (/*pCreateMove_ == 0 || */pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || 
 		pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0 || 
 		pDrawModelExecute_ == 0 || pSvPure_ == 0 || pFXFireBullet_ == 0 || pDispatchUserMsg_ == 0 || 
 		pSendStringCommand_ == 0)
@@ -131,7 +149,7 @@ bool thread1_t::_initializeHooks()
 
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(),		(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene);
-	MH_CreateHook((LPVOID)pCreateMove_,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
+	//MH_CreateHook((LPVOID)pCreateMove_,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
 	MH_CreateHook((LPVOID)pRenderGlowEffect_,	(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); 
 	MH_CreateHook((LPVOID)pOverrideView_,		(LPVOID)hook::overrideView::H_overrideView,					(LPVOID*)&hook::overrideView::O_overrideView); // override view from IClientMode, game place as Createmove
 	MH_CreateHook((LPVOID)pDrawModelExecute_,	(LPVOID)hook::DME::H_DME,									(LPVOID*)&hook::DME::O_DME);

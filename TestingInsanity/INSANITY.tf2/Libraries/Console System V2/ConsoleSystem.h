@@ -9,7 +9,12 @@
 
 #pragma once
 
+#ifdef _DEBUG
 #define ENABLE_CONSOLE 1 // set to 0 to disable console
+#else
+#define ENABLE_CONSOLE 0
+#endif // DEBUG
+
 
 //======================= COLOR MACROS =======================
 // text colors
@@ -99,7 +104,7 @@ class ConsoleSystem_t
 {
 public:
     ConsoleSystem_t();
-    bool inititalize(consTextClr_t introClr = FG_INVALID);
+    bool inititalize(consTextClr_t introClr = FG_INVALID, bool bDoIntro = false);
     void uninitialize();
 
     void drawDevider();

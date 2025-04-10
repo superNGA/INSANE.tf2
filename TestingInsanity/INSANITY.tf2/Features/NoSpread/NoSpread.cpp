@@ -16,6 +16,9 @@
 #include "../../SDK/class/FileWeaponInfo.h"
 #include "../../Extra/math.h"
 #include <algorithm>
+#include "../../Utility/signatures.h"
+
+MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL)
 
 NoSpread_t noSpread;
 
@@ -50,7 +53,8 @@ void NoSpread_t::run(CUserCmd* cmd, bool& result)
 		_AskForPlayerPerf();
 
 	uint32_t iSeed   = _GetSeed();
-	float flBaseSpread = tfObject.pGetWeaponSpread((void*)pActiveWeapon);
+	//float flBaseSpread = tfObject.pGetWeaponSpread((void*)pActiveWeapon);
+	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
 	printf("EST. seed : %d | base spread : %f\n", iSeed, flBaseSpread);
 	
 	tfObject.pRandomSeed(iSeed);
