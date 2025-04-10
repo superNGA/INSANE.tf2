@@ -116,14 +116,18 @@ bool thread1_t::_initializeHooks()
 	//uintptr_t pRandomFloat_				= util.FindPattern("48 8B 0D ? ? ? ? 0F 28 D1", VSTDLIB_DLL);
 	uintptr_t pFXFireBullet_			= util.FindPattern("48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", CLIENT_DLL);
 	uintptr_t pDispatchUserMsg_			= util.FindPattern("40 56 48 83 EC ? 49 8B F0", CLIENT_DLL);
+	uintptr_t pSendStringCommand_		= util.FindPattern("48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL);
 
 	if (pCreateMove_ == 0 || pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || 
 		pShouldDrawViewModel_ == 0 || pFrameStageNotify_ == 0 || pProcessMovement_ == 0 || 
-		pDrawModelExecute_ == 0 || pSvPure_ == 0 || pFXFireBullet_ == 0)
+		pDrawModelExecute_ == 0 || pSvPure_ == 0 || pFXFireBullet_ == 0 || pDispatchUserMsg_ == 0 || 
+		pSendStringCommand_ == 0)
 	{
 		ERROR("thread 1", "Failed signature scanning");
 		return false;
 	}
+
+	tfObject.pSendStringCommand = (T_SendStringCommand2)pSendStringCommand_;
 
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(),		(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene);
@@ -134,7 +138,8 @@ bool thread1_t::_initializeHooks()
 	MH_CreateHook((LPVOID)pSvPure_,				(LPVOID)hook::sv_pure::H_svPure,							(LPVOID*)&hook::sv_pure::O_svPure);
 	MH_CreateHook((LPVOID)pFXFireBullet_,		(LPVOID)hook::FX_FireBullets::H_FireBulets,					(LPVOID*)&hook::FX_FireBullets::O_FireBullets);
 	MH_CreateHook((LPVOID)pDispatchUserMsg_,	(LPVOID)hook::DispatchUserMsg::H_DispatchUserMsg,			(LPVOID*)&hook::DispatchUserMsg::O_DispatchUserMsg);
-	
+	MH_CreateHook((LPVOID)pSendStringCommand_,	(LPVOID)hook::SendStringCommand::H_SendStringCommand,		(LPVOID*)&hook::SendStringCommand::O_SendStringCommand);
+
 	/* hooking FNs by index */
 	MH_CreateHook((LPVOID)pFrameStageNotify_,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
 	MH_CreateHook((LPVOID)g_FNindexManager.getFnAdrs(FN_PAINT_TRAVERSE, tfObject.iPanel), (LPVOID)hook::paintTraverse::H_paintTraverse, (LPVOID*)&hook::paintTraverse::O_paintTraverse);

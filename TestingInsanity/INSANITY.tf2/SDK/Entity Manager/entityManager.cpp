@@ -208,7 +208,7 @@ bool EntityManager_t::_processActiveWeapon()
 		return false;
 	}
 	_pActiveWeapon.store(pWeapon_);
-	//pWeapon_->setCustomTracer("merasmus_zap"); // fix this, make it only for local player
+	pWeapon_->setCustomTracer("merasmus_zap"); // fix this, make it only for local player
 	_activeWeaponId.store(pWeapon_->getWeaponIndex());
 
     return true;

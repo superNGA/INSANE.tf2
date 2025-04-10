@@ -60,7 +60,8 @@ extern Console_System cons;
 #ifdef _DEBUG
 #define ERROR(caller, message) cons.Log(FG_RED, caller, message)
 #define LOG(caller, message) cons.Log(FG_GREEN, caller, message)
-#define WAIT_MSG(waitingFor, toDoWhat) cons.Log(FG_YELLOW, "waiting", "waiting for %s to %s", waitingFor, toDoWhat)
+//#define WAIT_MSG(waitingFor, toDoWhat) cons.Log(FG_YELLOW, "waiting", "waiting for %s to %s", waitingFor, toDoWhat)
+#define WAIT_MSG(waitingFor, toDoWhat) (void)0
 #else
 #define ERROR(caller, message) (void)0
 #define LOG(caller, message) (void)0

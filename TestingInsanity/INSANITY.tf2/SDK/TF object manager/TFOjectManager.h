@@ -24,6 +24,16 @@ struct global_var_base;
 enum renderGroup_t;
 struct FileWeaponInfo_t;
 
+
+/* TODO : 
+* -> Make it cleaner and more scalable. Signature scan and call these function from their
+*		respective classes only and don't write out all of these fucking bullshit in the 
+*		open with no fucking encapsulation.
+* -> Pro-Tip : do the latest ones first and the older ones later. and check it frequently
+*		to ensure no seveare breakabe occuring form fucking nowhere.
+*/
+
+
 // GENERAL
 typedef int64_t(__fastcall* T_lookUpBone)(void* pEnt, const char* boneName);
 typedef char* (__fastcall* T_getName)(void*, int64_t);
@@ -48,7 +58,7 @@ typedef int16_t(__fastcall* T_LookUpWeaponInfoSlot)(char*);
 typedef FileWeaponInfo_t* (__fastcall* T_GetWeaponFileHandle)(int16_t);
 typedef int64_t(__fastcall* T_RandomSeed)(int64_t);
 typedef float(__fastcall* T_RandomFloat)(float, float);
-
+typedef void(__fastcall* T_SendStringCommand2)(void*, const char*);
 
 class TFObjectManager_t
 {
@@ -88,6 +98,10 @@ public:
 	T_GetWeaponFileHandle	 pGetWeaponFileHandle		= nullptr;
 	T_RandomSeed			 pRandomSeed				= nullptr;
 	T_RandomFloat			 pRandomFloat				= nullptr;
+	T_SendStringCommand2	 pSendStringCommand			= nullptr;
+
+	//delete this
+	std::atomic<void*> pCBaseClientState;
 
 	global_var_base*		pGlobalVar					= nullptr;
 

@@ -8,6 +8,8 @@
 //-------------------------------------------------------------------------
 #pragma once
 #include <cstdint>
+#include <string>
+#include <atomic>
 class CUserCmd;
 
 /* Conclusions : 
@@ -30,13 +32,16 @@ class CUserCmd;
 * -> look the cStd clam and gMod and make a proper efficient clamping logic.
 * -> underStand what the VectorAngles function is doing
 * -> for Heavy the Base spread seems to have some random-ness. get that after some progress.
+* -> device a method to send in commands on the in-game console.
+* -> send in the playerperf command & store / read it.
+* -> fix the no-spread logic for minigun & make no spread work user cmd seed enabled.
 */
 
 /* TODO :
-* -> device a method to send in commands on the in-game console.
-* -> send in the playerperf command & store / read it.
+* -> make it the calculated server seed match the client seed on local server.
+* -> Mantissa calc?
+* -> add time for 1 tick?
 * -> get the seed and learn what the syncing logic even does in bigger softwares.
-* -> fix the no-spread logic for minigun & make no spread work user cmd seed enabled.
 * 
 * -> maybe even aquire the in-game ping
 * -> make a imformation window ( translucent ) and display some good imformation on it.
@@ -47,12 +52,29 @@ class CUserCmd;
 */
 
 
+typedef double(__fastcall* T_PlatFloatTime)(void);
 class NoSpread_t
 {
 public:
+    NoSpread_t();
+
     void run(CUserCmd* cmd, bool& result);
+    bool ParsePlayerPerf(std::string strPlayerperf);
+
+    std::atomic<bool>  m_bStoredServerTime;
+    std::atomic<float> m_flCurServerEngineTime;
+    std::atomic<float> m_flServerEngineTime;
+    std::atomic<float> m_flClientEngineTime;
+    uint32_t m_iStorageTick = 0;
+    float m_flStepSize = 0.0f;
 
 private:
 	uint32_t _GetSeed(CUserCmd* cmd);
+	uint32_t _GetSeed();
+    uint32_t _GetLocalSeed();
+    float _GetMantissa(float flInput);
+
+    bool _AskForPlayerPerf();
+    T_PlatFloatTime PlatFloatTime = nullptr;
 };
 extern NoSpread_t noSpread;

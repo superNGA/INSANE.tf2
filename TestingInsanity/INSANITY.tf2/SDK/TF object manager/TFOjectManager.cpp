@@ -27,6 +27,9 @@ TFObjectManager_t::TFObjectManager_t()
 {
 	bIsInitialized.store(false);
 	pMove.store(nullptr);
+
+	// delete this
+	pCBaseClientState.store(nullptr);
 }
 
 
@@ -58,6 +61,7 @@ bool TFObjectManager_t::initializeFns()
 	pWeaponIdToAlias		= (T_WeaponIDToAlias)util.FindPattern("48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL);
 	pLookUpWeaponInfoSlot	= (T_LookUpWeaponInfoSlot)util.FindPattern("48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL);
 	pGetWeaponFileHandle	= (T_GetWeaponFileHandle)util.FindPattern("66 3B 0D", CLIENT_DLL);
+	//pSendStringCommand		= (T_SendStringCommand2)util.FindPattern("48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL); // (engine.dll base) + 0x53A690;
 
 	// this shit is getting really messy!, gotta fix & make it more scalable. Will do this after the No Spread shit is done.
 	pRandomSeed  = (T_RandomSeed)GetProcAddress(GetModuleHandle(VSTDLIB_DLL), "RandomSeed");
@@ -72,9 +76,9 @@ bool TFObjectManager_t::initializeFns()
 		MD5_PseudoRandom == nullptr			|| pForcedMaterialOverride == nullptr	|| pCreateMaterial == nullptr	||
 		pInitKeyValue == nullptr			|| pKVSetFloat == nullptr				|| pKVSetInt == nullptr			|| pKVSetString == nullptr ||
 		pKVSetColor == nullptr				|| pRandomGausianFloat == nullptr		|| pGetWeaponSpread == nullptr	|| pWeaponIdToAlias == nullptr ||
-		pLookUpWeaponInfoSlot == nullptr	|| pGetWeaponFileHandle == nullptr)
+		pLookUpWeaponInfoSlot == nullptr	|| pGetWeaponFileHandle == nullptr		/*|| pSendStringCommand == nullptr*/)
 	{
-		ERROR("TFObjectManager", "Failed intialization");
+		ERROR("TFObjectManager", "Failed intialization Fns");
 		return false;
 	}
 	LOG("TFObjectManager", "successfully initiazed Fns");
@@ -104,9 +108,9 @@ void TFObjectManager_t::update()
 //-------------------------------------------------------------------------
 bool TFObjectManager_t::initializeModuleHandles()
 {
-	clientDll	= (uintptr_t)GetModuleHandle(CLIENT_DLL);
-	engineDll	= (uintptr_t)GetModuleHandle(ENGINE_DLL);
-	vguiDll		= (uintptr_t)GetModuleHandle(VGUI2_DLL);
+	clientDll = (uintptr_t)GetModuleHandle(CLIENT_DLL);
+	engineDll = (uintptr_t)GetModuleHandle(ENGINE_DLL);
+	vguiDll = (uintptr_t)GetModuleHandle(VGUI2_DLL);
 
 	if (clientDll == 0 || engineDll == 0 || vguiDll == 0)
 	{

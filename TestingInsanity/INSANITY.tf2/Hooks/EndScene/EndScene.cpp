@@ -4,6 +4,8 @@
 #include "EndScene.h"
 #include "cheatFeaturesRendering.h"
 #include "Cheat windows/cheat_window.h"
+#include "../../Features/NoSpread/NoSpread.h"
+
 
 /*================ Giving namespace variables default value here ========================*/
 namespace directX {
@@ -167,9 +169,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui::Begin("Performance", nullptr, 
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-    ImGui::Text("\n    ");
-    ImGui::Text("DME exec.time : % .4f", Timer::flDMETimeInMs.load());
-    ImGui::Text("    \n");
+    ImGui::Text("DME exec.time              : %.4f\n", Timer::flDMETimeInMs.load());
+    ImGui::Text("EST. server time           : %.6f\n", noSpread.m_flCurServerEngineTime.load());
+    ImGui::Text("server time storage status : %s\n", noSpread.m_bStoredServerTime.load() ? "Stored :)" : "Not stored :(");
     ImGui::End();
     //ImGui::PopFont();
 

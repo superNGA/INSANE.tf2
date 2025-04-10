@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <string>
 #include "../../SDK/class/bf_buf.h"
+#include "../../Features/NoSpread/NoSpread.h"
 
 inline const char* GetMsgName(void* pCUserMsg, int iMsgType)
 {
@@ -27,6 +28,8 @@ bool __fastcall hook::DispatchUserMsg::H_DispatchUserMsg(void* pVTable, int iDat
         msg->Seek(0);
         std::string sMsg = rawMsg;
         std::cout << sMsg << '\n';
+        
+        noSpread.ParsePlayerPerf(sMsg);
     }
     //printf("data type recieved : %d -> [ %s ]\n", iDataType, GetMsgName(pVTable, iDataType));
 
