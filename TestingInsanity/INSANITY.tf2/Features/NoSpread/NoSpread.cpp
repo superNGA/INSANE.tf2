@@ -12,6 +12,7 @@
 #include <regex>
 #include <string>
 #include <numeric>
+#include <bit>
 
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/CUserCmd.h"
@@ -27,6 +28,11 @@
 
 GET_EXPORT_FN(Plat_FloatTime, "tier0.dll");
 
+// weapon porperty related fns
+MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL)
+MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL)
+MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL)
+
 MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL)
 MAKE_SIG(CBaseClientState_SendStringCmd, "48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL)
 MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57",void, ENGINE_DLL, 0x3)
@@ -41,30 +47,30 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	if (_ShouldRun(cmd) == false)
 		return;
 
-    BaseEntity* pLocalPlayer  = entityManager.getLocalPlayer();
-    baseWeapon* pActiveWeapon = entityManager.getActiveWeapon();
-    if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
-        return;
+	BaseEntity* pLocalPlayer = entityManager.getLocalPlayer();
+	baseWeapon* pActiveWeapon = entityManager.getActiveWeapon();
+	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
+		return;
 
 	_DemandPlayerPerf();
 
 	uint32_t iSeed = _GetSeed();
-	
+
 	_FixSpread(cmd, iSeed, pActiveWeapon);
 
 #ifdef DEBUG_NOSPREAD
-	Render::InfoWindow.AddToInfoWindow("serverType",	(m_bLoopBack ? "local server" : "OFFICAL SERVER! :)"));
-	Render::InfoWindow.AddToInfoWindow("Mantissa step", std::format("Mantissa step : {:.6f}", m_flMantissaStep));
-	Render::InfoWindow.AddToInfoWindow("Request time ", std::format("Request time : {:.6f}", m_flRequestTime));
-	Render::InfoWindow.AddToInfoWindow("delta time ",	std::format("delta time : {:.6f}", m_flDeltaClientServer));
-	Render::InfoWindow.AddToInfoWindow("request latency ",	std::format("outgoing latency at request : {}ms", m_flLatencyAtRecordTime));
-	Render::InfoWindow.AddToInfoWindow("Approax server up time :  ", _GetServerUpTime(m_flServerEngineTime));
-	printf("using seed : %d\n", iSeed);
+	Render::InfoWindow.AddToInfoWindow("serverType",			 (m_bLoopBack ? "local server" : "OFFICAL SERVER! :)"));
+	Render::InfoWindow.AddToInfoWindow("Mantissa step",			 std::format("Mantissa step : {:.6f}", m_flMantissaStep));
+	Render::InfoWindow.AddToInfoWindow("Request time",			 std::format("Request time : {:.6f}", m_flRequestTime));
+	Render::InfoWindow.AddToInfoWindow("delta time",			 std::format("delta time : {:.6f}", m_flDeltaClientServer));
+	Render::InfoWindow.AddToInfoWindow("request latency",		 std::format("outgoing latency at request : {}ms", m_flLatencyAtRecordTime));
+	Render::InfoWindow.AddToInfoWindow("Approax server up time", std::format("Server has been up for {}", _GetServerUpTime(m_flServerEngineTime)));
+	Render::InfoWindow.AddToInfoWindow("time deltas count",		 std::format("Stored {} deltas", m_vecTimeDeltas.size()));
+	//printf("using seed : %d\n", iSeed);
 #endif
 
 	result = false;
 }
-
 
 //=========================================================================
 //                     PRIVATE METHODS
@@ -91,6 +97,13 @@ uint32_t NoSpread_t::_GetSeed()
 
 bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon)
 {
+	// testing with bullet count
+	const char* weaponAlias = Sig::baseWeapon_WeaponIDToAlias.Call<char*>(pActiveWeapon->getWeaponIndex());
+	auto wpnInfo = Sig::baseWeapon_LookUpWeaponInfoSlot.Call<int16_t>(weaponAlias);
+	auto wpnFile = static_cast<CTFWeaponInfo*>(Sig::baseWeapon_GetWeaponFileHandle.Call<FileWeaponInfo_t*>(wpnInfo));
+	LOG("%s has %d bullets", weaponAlias, wpnFile->GetWeaponData(1).m_nBulletsPerShot);
+
+	// working stuff here.
 	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
 	
 	tfObject.pRandomSeed(seed);
@@ -118,10 +131,13 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 
 void NoSpread_t::_DemandPlayerPerf()
 {
-	if (m_bIsSynced == true)
+	if (m_bWaitingForPlayerPerf == true)
 		return;
 
-	if (m_bWaitingForPlayerPerf == true)
+	if (m_vecTimeDeltas.size() >= MAX_TIME_RECORDS) // if we have enought of these fucking records
+		return;
+
+	if (m_bIsSynced == true)
 		return;
 
 	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
@@ -156,7 +172,6 @@ std::string NoSpread_t::_GetServerUpTime(float flServerEngineTime)
 	else
 		return std::format("{}m {}s", iMinutes, iSeconds);
 }
-
 
 bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
 {
@@ -193,12 +208,17 @@ bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
 	m_flServerEngineTime = flNewServerEngineTime; // if got latest time, then store it.
 
 	// calculating delta :)
-	m_flDeltaClientServer = m_flServerEngineTime - m_flRequestTime + tfObject.pGlobalVar->interval_per_tick; // +m_flLatencyAtRecordTime + I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_INCOMING);
-	
+	m_vecTimeDeltas.push_back(m_flServerEngineTime - m_flRequestTime + tfObject.pGlobalVar->interval_per_tick); // +m_flLatencyAtRecordTime + I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_INCOMING);
+	if (m_vecTimeDeltas.empty() == false && m_vecTimeDeltas.size() > MAX_TIME_RECORDS)
+		m_vecTimeDeltas.pop_front();
+
+	// storing the average delta
+	m_flDeltaClientServer = std::reduce(m_vecTimeDeltas.begin(), m_vecTimeDeltas.end()) / m_vecTimeDeltas.size();
+
 	// calculating the mantissa step.
 	m_flMantissaStep = _CalcMantissaStep(m_flServerEngineTime);
 
-	if (m_flMantissaStep > 1.0f)
+	if (m_flMantissaStep > 1.0f && m_vecTimeDeltas.size() >= MAX_TIME_RECORDS)
 		m_bIsSynced = true;
 
 	return true;

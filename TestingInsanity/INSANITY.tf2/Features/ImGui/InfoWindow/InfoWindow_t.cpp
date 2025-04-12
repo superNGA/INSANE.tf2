@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "InfoWindow_t.h"
 #include "../../../External Libraries/ImGui/imgui.h"
+#include "../../../Hooks/EndScene/EndScene.h"
 
 void InfoWindow_t::Draw()
 {
@@ -25,11 +26,13 @@ void InfoWindow_t::_DrawInfoWindow()
     ImGui::Begin("Performance", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoCollapse);
-    
+    ImGui::PushFont(directX::fonts::roboto);
+
     for (auto& data : m_mapAllDataInfoWindow)
     {
         ImGui::Text(data.second.c_str());
     }
 
+    ImGui::PopFont();
     ImGui::End();
 }

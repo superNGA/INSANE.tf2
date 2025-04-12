@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <string>
 #include <atomic>
+#include <deque>
 #include "../features.h"
 class CUserCmd;
 
@@ -36,25 +37,27 @@ class CUserCmd;
 * -> device a method to send in commands on the in-game console.
 * -> send in the playerperf command & store / read it.
 * -> fix the no-spread logic for minigun & make no spread work user cmd seed enabled.
-*/
-
-/* TODO :
 * -> make it the calculated server seed match the client seed on local server.
 * -> Mantissa calc?
 * -> add time for 1 tick?
 * -> get the seed and learn what the syncing logic even does in bigger softwares.
-* 
 * -> maybe even aquire the in-game ping
 * -> make a imformation window ( translucent ) and display some good imformation on it.
-* 
-* -> get server seed.
-* 
 * -> completely understand how game is calculating spread.
+* check where spread fix is being called.
+*/
+
+/* TODO :
+* aquire bullets per shot
+* make a spread fix, with the bullets per shots. iterate over all bullets and remove spread 
+*   by incrementin seed for each bullet.
+* keep updating records, and don't just store specific number of records in teh begninig.
 */
 
 #define DEBUG_NOSPREAD
 
-typedef double(__fastcall* T_PlatFloatTime)(void);
+#define MAX_TIME_RECORDS 20
+
 class NoSpread_t
 {
 public:
@@ -77,6 +80,8 @@ private:
     bool        m_bLoopBack = false;
     float       m_flMantissaStep = 0.0f;
     float       m_flLatencyAtRecordTime = 0.0f;
+    
+    std::deque<float> m_vecTimeDeltas = {};
 };
 
 ADD_FEATURE(noSpread, NoSpread_t);
