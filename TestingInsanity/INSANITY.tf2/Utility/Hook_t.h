@@ -21,9 +21,10 @@ class Hook_t
 public:
     void AddHook(HookInfo_t* hookInfo) { m_vecAllHooks.push_back(hookInfo); }
     bool Initialize();
+    int GetNumberOfHooks() { return m_vecAllHooks.size(); }
 
 private:
-    std::vector<HookInfo_t*> m_vecAllHooks = {};
+    std::vector<HookInfo_t*> m_vecAllHooks;
 
 };
 inline Hook_t hook_t;

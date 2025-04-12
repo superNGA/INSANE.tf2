@@ -5,6 +5,7 @@
 #include "cheatFeaturesRendering.h"
 #include "Cheat windows/cheat_window.h"
 #include "../../Features/NoSpread/NoSpread.h"
+#include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 
 
 /*================ Giving namespace variables default value here ========================*/
@@ -164,17 +165,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     //draw_list->PushClipRectFullScreen(); // if you don't do this then it isn't visible  
     //draw_list->PopClipRect();
 
-    // PERFORMANCE TRACKING
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-    ImGui::Begin("Performance", nullptr, 
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-    ImGui::Text("DME exec.time              : %.4f\n", Timer::flDMETimeInMs.load());
-    ImGui::Text("EST. server time           : %.6f\n", noSpread.m_flCurServerEngineTime.load());
-    ImGui::Text("server time storage status : %s\n", noSpread.m_bStoredServerTime.load() ? "Stored :)" : "Not stored :(");
-    ImGui::End();
-    //ImGui::PopFont();
+    Render::InfoWindow.Draw();
 
+    //ImGui::PopFont();
 
     if (UI::UI_visble)
     {

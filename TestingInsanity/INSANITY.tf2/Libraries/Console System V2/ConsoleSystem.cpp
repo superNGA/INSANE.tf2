@@ -15,9 +15,7 @@ ConsoleSystem_t CONS;
 #include <chrono>
 #include <thread>
 
-#if ENABLE_CONSOLE == 1
 #define ASSERT_TEXTCLR(clr) if(clr > FG_WHITE || clr < FG_BLACK) clr = FG_WHITE
-#endif // ENABLE_CONSOLE
 
 //=========================================================================
 // ConsoleSystem_t::ConsoleSystem_t()

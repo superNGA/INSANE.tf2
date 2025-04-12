@@ -1,4 +1,6 @@
 #pragma once
+#include "../../Utility/Interface.h"
+#include "INetChannelInfo.h"
 
 struct global_var_base
 {
@@ -23,7 +25,9 @@ class I_engine_client_replay
 {
 private:
 	virtual void* DUMMY_FUNCTION_00() = 0;
-	virtual void* DUMMY_FUNCTION_01() = 0;
+public:
+	virtual INetChannel* GetNetChannel() = 0;
+private:
 	virtual void* DUMMY_FUNCTION_02() = 0;
 	virtual void* DUMMY_FUNCTION_03() = 0;
 	virtual void* DUMMY_FUNCTION_04() = 0;
@@ -35,7 +39,8 @@ private:
 	virtual void* DUMMY_FUNCTION_10() = 0;
 	virtual void* DUMMY_FUNCTION_11() = 0;
 	virtual void* DUMMY_FUNCTION_12() = 0;
-
 public:
-	virtual global_var_base* GetClientGlobalVars() = 0;
+	virtual global_var_base* GetClientGlobalVars() = 0; // 13th starting from 0
 };
+
+MAKE_INTERFACE_VERSION(iEngineClientReplay, "EngineClientReplay001", I_engine_client_replay, ENGINE_DLL);

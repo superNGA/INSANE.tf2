@@ -16,6 +16,8 @@ HookInfo_t::HookInfo_t(const char* szSignature, const char* szDll, void* pHookFn
 
 bool Hook_t::Initialize()
 {
+    LOG("%d hooks found", m_vecAllHooks.size());
+
     for (HookInfo_t* hook : m_vecAllHooks)
     {
         if (hook->m_pHook == nullptr || hook->m_ppOriginal == nullptr || hook->m_pTarget == NULL)

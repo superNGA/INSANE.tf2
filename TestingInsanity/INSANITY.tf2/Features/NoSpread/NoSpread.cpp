@@ -8,6 +8,11 @@
 //-------------------------------------------------------------------------
 
 #include "NoSpread.h"
+#include <algorithm>
+#include <regex>
+#include <string>
+#include <numeric>
+
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
@@ -15,66 +20,48 @@
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/FileWeaponInfo.h"
 #include "../../Extra/math.h"
-#include <algorithm>
 #include "../../Utility/signatures.h"
+#include "../../SDK/class/I_EngineClientReplay.h"
+#include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../../Utility/ExportFnHelper.h"
+
+GET_EXPORT_FN(Plat_FloatTime, "tier0.dll");
 
 MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL)
-
-NoSpread_t noSpread;
+MAKE_SIG(CBaseClientState_SendStringCmd, "48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL)
+MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57",void, ENGINE_DLL, 0x3)
+//MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? F3 0F 5E 05", void, ENGINE_DLL)
 
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
 
-#define TIME_FOR_TICKS(x) ((float)(x) * (1.0f / 64.0f))
-
-NoSpread_t::NoSpread_t()
+void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 {
-	m_bStoredServerTime.store(false);
-	m_flServerEngineTime.store(0.0f);
-	m_flClientEngineTime.store(0.0f);
-}
-
-void NoSpread_t::run(CUserCmd* cmd, bool& result)
-{
-    if (config.aimbotConfig.bNoSpread == false)
-        return;
+	if (_ShouldRun(cmd) == false)
+		return;
 
     BaseEntity* pLocalPlayer  = entityManager.getLocalPlayer();
     baseWeapon* pActiveWeapon = entityManager.getActiveWeapon();
     if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
         return;
 
-	if (!(cmd->buttons & IN_ATTACK))
-		return;
+	_DemandPlayerPerf();
+
+	uint32_t iSeed = _GetSeed();
 	
-	// asking for server for playerPerf
-	if (m_bStoredServerTime.load() == false)
-		_AskForPlayerPerf();
+	_FixSpread(cmd, iSeed, pActiveWeapon);
 
-	uint32_t iSeed   = _GetSeed();
-	//float flBaseSpread = tfObject.pGetWeaponSpread((void*)pActiveWeapon);
-	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
-	printf("EST. seed : %d | base spread : %f\n", iSeed, flBaseSpread);
-	
-	tfObject.pRandomSeed(iSeed);
-	// random X & Y
-	float flRandomX = tfObject.pRandomFloat(-0.5, 0.5) + tfObject.pRandomFloat(-0.5, 0.5);
-	float flRandomY = tfObject.pRandomFloat(-0.5, 0.5) + tfObject.pRandomFloat(-0.5, 0.5);
+#ifdef DEBUG_NOSPREAD
+	Render::InfoWindow.AddToInfoWindow("serverType",	(m_bLoopBack ? "local server" : "OFFICAL SERVER! :)"));
+	Render::InfoWindow.AddToInfoWindow("Mantissa step", std::format("Mantissa step : {:.6f}", m_flMantissaStep));
+	Render::InfoWindow.AddToInfoWindow("Request time ", std::format("Request time : {:.6f}", m_flRequestTime));
+	Render::InfoWindow.AddToInfoWindow("delta time ",	std::format("delta time : {:.6f}", m_flDeltaClientServer));
+	Render::InfoWindow.AddToInfoWindow("request latency ",	std::format("outgoing latency at request : {}ms", m_flLatencyAtRecordTime));
+	Render::InfoWindow.AddToInfoWindow("Approax server up time :  ", _GetServerUpTime(m_flServerEngineTime));
+	printf("using seed : %d\n", iSeed);
+#endif
 
-	vec vecDirShooting, vecRight, vecUp;
-	Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp); 
-
-	vec vecDir = vecDirShooting + (vecRight * flRandomX * flBaseSpread) + (vecUp * flRandomY * flBaseSpread);
-	// vecDis seems to be a unit vector at all times, so this can be avoided but still keeping it here just for the seak of certanity...
-	vecDir.Normalize(); 
-
-	qangle qFinal;
-	Maths::VectorAngles(vecDir, qFinal);
-	Maths::ClampQAngle(qFinal);
-	
-	cmd->viewangles = cmd->viewangles + (cmd->viewangles - qFinal);
-	Maths::ClampQAngle(cmd->viewangles);
 	result = false;
 }
 
@@ -83,149 +70,136 @@ void NoSpread_t::run(CUserCmd* cmd, bool& result)
 //                     PRIVATE METHODS
 //=========================================================================
 
-uint32_t NoSpread_t::_GetSeed(CUserCmd* cmd)
+
+bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
 {
-    return tfObject.MD5_PseudoRandom(cmd->command_number) & 255; // <- this is the real shit.
+	if (config.aimbotConfig.bNoSpread == false)
+		return false;
+
+	if ((cmd->buttons & IN_ATTACK) == false)
+		return false;
+
+	return true;
 }
 
 uint32_t NoSpread_t::_GetSeed()
 {
-	if (m_bStoredServerTime.load() == false)
-	{
-		cons.Log(FG_RED, "NO SPREAD", "server time no stored yet");
-		return 0;
-	}
-
-	float delta = m_flServerEngineTime.load() - m_flClientEngineTime.load();
-	m_flCurServerEngineTime.store(PlatFloatTime() + delta);
-	float allo = m_flCurServerEngineTime - std::fmod(m_flCurServerEngineTime.load(), m_flStepSize);
-	m_flCurServerEngineTime.store(allo);
-	float flSpreadTime = allo * 1000.0f;
-
-	return std::bit_cast<int32_t>(flSpreadTime) & 255;
+	double flPredictedServerTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDeltaClientServer;// +(I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_OUTGOING));
+	float flTime = static_cast<float>(flPredictedServerTime * 1000.0);
+	return std::bit_cast<int32_t>(flTime) & 255;
 }
 
-uint32_t NoSpread_t::_GetLocalSeed()
+bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon)
 {
-	if (PlatFloatTime == nullptr)
-		return 0;
-	return std::bit_cast<int32_t>((float)PlatFloatTime()) & 255;
-}
+	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
+	
+	tfObject.pRandomSeed(seed);
+	// random X & Y
+	float flRandomX = tfObject.pRandomFloat(-0.5, 0.5) + tfObject.pRandomFloat(-0.5, 0.5);
+	float flRandomY = tfObject.pRandomFloat(-0.5, 0.5) + tfObject.pRandomFloat(-0.5, 0.5);
 
+	vec vecDirShooting, vecRight, vecUp;
+	Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp);
 
-float NoSpread_t::_GetMantissa(float flInput)
-{
-	// Interpret float as integer bits
-	uint32_t bits = *(uint32_t*)&flInput;
+	vec vecDir = vecDirShooting + (vecRight * flRandomX * flBaseSpread) + (vecUp * flRandomY * flBaseSpread);
+	// vecDis seems to be a unit vector at all times, so this can be avoided but still keeping it here just for the seak of certanity...
+	vecDir.Normalize();
 
-	// Extract mantissa (lower 23 bits)
-	uint32_t mantissaBits = bits & 0x007FFFFF;
+	qangle qFinal;
+	Maths::VectorAngles(vecDir, qFinal);
+	Maths::ClampQAngle(qFinal);
 
-	// Convert mantissa bits to float fraction (normalized)
-	float mantissa = 1.0f; // implicit leading 1
+	cmd->viewangles = cmd->viewangles + (cmd->viewangles - qFinal);
+	Maths::ClampQAngle(cmd->viewangles);
 
-	for (int i = 0; i < 23; ++i)
-	{
-		if (mantissaBits & (1 << (22 - i)))
-		{
-			mantissa += std::pow(2.0f, -(i + 1));
-		}
-	}
-
-	return mantissa;
-}
-
-
-// this seems to be working now. 
-bool NoSpread_t::_AskForPlayerPerf()
-{
-	void* pCS = tfObject.pCBaseClientState.load();
-	if (pCS == nullptr || tfObject.pSendStringCommand == nullptr)
-	{
-		cons.Log(FG_RED, "NO SPREAD", "CBaseClientState global object not initialized yet");
-		return false;
-	}
-
-	tfObject.pSendStringCommand(pCS, "playerperf\n");
 	return true;
+}
+
+
+void NoSpread_t::_DemandPlayerPerf()
+{
+	if (m_bIsSynced == true)
+		return;
+
+	if (m_bWaitingForPlayerPerf == true)
+		return;
+
+	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
+	m_flRequestTime = static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
+	m_flLatencyAtRecordTime = I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_OUTGOING);
+	m_bWaitingForPlayerPerf = true;
+}
+
+// I totally made it myself. like 100%. you feel me, like fucking 100%. I am really good at fucking maths and shi..
+float NoSpread_t::_CalcMantissaStep(float flInput)
+{
+	// Calculate the delta to the next representable value
+	float nextValue = std::nextafter(flInput, std::numeric_limits<float>::infinity());
+	float mantissaStep = (nextValue - flInput) * 1000;
+
+	// Get the closest mantissa (next power of 2)
+	return powf(2, ceilf(logf(mantissaStep) / logf(2)));
+}
+
+std::string NoSpread_t::_GetServerUpTime(float flServerEngineTime)
+{
+	uint64_t iServerEngineTime = static_cast<uint64_t>(flServerEngineTime);
+	int iDays	 = iServerEngineTime / 86400;
+	int iHours	 = iServerEngineTime / 3600 % 24;
+	int iMinutes = iServerEngineTime / 60 % 60;
+	int iSeconds = iServerEngineTime % 60;
+
+	if (iDays != 0)
+		return std::format("{}d {}h", iDays, iHours);
+	else if (iHours != 0)
+		return std::format("{}h {}m", iHours, iMinutes);
+	else
+		return std::format("{}m {}s", iMinutes, iSeconds);
 }
 
 
 bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
 {
-	/*if (m_bStoredServerTime.load() == true)
-		return true;*/
+	m_bWaitingForPlayerPerf = false;
 
-	// given string is not playerperf
-	if (strPlayerperf.find("vel") == std::string::npos)
-		return false;
-
-	//const char* szPlayerPerf = strPlayerperf.c_str();
-	// Extracting server engine time from string.
-	bool bServerTimeStarted = false;	
-	bool bPointOccured		= false;
-	float flExtractedTime	= 0.0f;
-	uint16_t iDecimalIndex	= 1;
-
-	static float flLastExtractedTime = 0.0f;
-
-	for (char x : strPlayerperf)
+	// LoopBack server check
+	auto* pNetChannel = I::iEngineClientReplay->GetNetChannel();
+	m_bLoopBack = pNetChannel != nullptr && pNetChannel->IsLoopback();
+	if (m_bLoopBack == true)
 	{
-		if (x == ' ' && bServerTimeStarted)
-			break;
-
-		if (x == '.')
-			bPointOccured = true;
-
-		float nX = (float)(x - '0');
-		if (nX >= 0 && nX <= 9)
-		{
-			if(bPointOccured == false)
-			{
-				bServerTimeStarted = true;
-				flExtractedTime *= 10.0f;
-				flExtractedTime += (float)nX;
-			}
-			else
-			{
-				nX = nX / (float)pow(10.0f, (float)iDecimalIndex);
-				iDecimalIndex++;
-				flExtractedTime += (float)nX;
-			}
-		}
-
-		if (iDecimalIndex == 4)
-			break;
+		m_flDeltaClientServer = 0.0f;
+		m_bIsSynced = true;
+		return true;
 	}
 
-	if (flExtractedTime == 0.0f)
-		return false;
-
-	flExtractedTime += tfObject.pGlobalVar->interval_per_tick;
-
-	// getting client time at the time of storing server time.
-	static bool setup = false;
-	static uintptr_t fn = NULL;
-	if (!setup)
-	{
-		fn = (uintptr_t)GetProcAddress(GetModuleHandle("tier0.dll"), "Plat_FloatTime");
-		setup = true;
-	}
-	if(fn != NULL)
-	{
-		m_flClientEngineTime.store(((double(*)())fn)());
-		PlatFloatTime = (T_PlatFloatTime)fn;
-	}
+	// Actual server stuff
+	std::smatch match;
+	if (strPlayerperf[0] == 2)
+		strPlayerperf = strPlayerperf.substr(1);
 	
-	if(m_bStoredServerTime.load() == false)
-		m_flServerEngineTime.store(flExtractedTime);
+	// extracing first float. i.e. the server's engine time
+	if (std::regex_match(strPlayerperf, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
+		return false;
 
-	if (flLastExtractedTime != 0.0f)
-		m_flStepSize = abs(flLastExtractedTime - flExtractedTime);
-	flLastExtractedTime = flExtractedTime;
+	// checking if match found is valid to prevent false positives ( kinda redundant but its ok )
+	if (match.size() != 2)
+		return false;
 
-	m_bStoredServerTime.store(true);
-	m_iStorageTick = tfObject.pGlobalVar->tickcount;
-	printf("EXTRACTED SERVER ENGINE TIME : %f @ client time : %f | MANTISSA : %f | determined step : %f\n", m_flServerEngineTime.load(), m_flClientEngineTime.load(), _GetMantissa(flExtractedTime), m_flStepSize);
+	float flNewServerEngineTime = std::stof(match[1]);
+
+	// skipping older times, and keeping only the latest time.
+	if (flNewServerEngineTime < m_flServerEngineTime)
+		return true;
+	m_flServerEngineTime = flNewServerEngineTime; // if got latest time, then store it.
+
+	// calculating delta :)
+	m_flDeltaClientServer = m_flServerEngineTime - m_flRequestTime + tfObject.pGlobalVar->interval_per_tick; // +m_flLatencyAtRecordTime + I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_INCOMING);
+	
+	// calculating the mantissa step.
+	m_flMantissaStep = _CalcMantissaStep(m_flServerEngineTime);
+
+	if (m_flMantissaStep > 1.0f)
+		m_bIsSynced = true;
+
 	return true;
 }

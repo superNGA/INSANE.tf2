@@ -8,6 +8,9 @@
 #include "config.h"
 #include "../Libraries/Utility/Utility.h"
 
+#define ADD_FEATURE_CUSTOM(name, type, spaceName) namespace spaceName {inline type name;}
+#define ADD_FEATURE(name, type) namespace Features{inline type name;}
+
 extern local_netvars netvar;
 
 #define SPACEBAR_STATE (1<<0)

@@ -29,7 +29,7 @@ bool __fastcall hook::DispatchUserMsg::H_DispatchUserMsg(void* pVTable, int iDat
         std::string sMsg = rawMsg;
         std::cout << sMsg << '\n';
         
-        noSpread.ParsePlayerPerf(sMsg);
+        Features::noSpread.ParsePlayerPerf(sMsg);
     }
     //printf("data type recieved : %d -> [ %s ]\n", iDataType, GetMsgName(pVTable, iDataType));
 

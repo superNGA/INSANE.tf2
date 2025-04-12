@@ -17,8 +17,11 @@ Chams_t chams;
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/class/IVModelInfo.h"
 #include "../../Libraries/Utility/Utility.h"
+#include "../ImGui/InfoWindow/InfoWindow_t.h"
 
 #include "../../Libraries/Timer.h"
+
+#define MIN_TIME 0.0001
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -75,7 +78,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     switch (entId)
     {
     case PLAYER:
-        pEntity->isEnemy() ? // Fix this shit nigga, and fuck you bastard. I want this done by today or you dead >:( !!!!
+        pEntity->isEnemy() ?
             bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemyPlayer) :
             bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlyPlayer);
         break;
@@ -147,7 +150,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     nTotalTime += EndTimer();
     if(nTick >= 64)
     {
-        Timer::flDMETimeInMs.store(nTotalTime/64.0f);
+        float flAvgTime = nTotalTime / 64.0f;
+        Render::InfoWindow.AddToInfoWindow("Chams", std::format("DME exec. time : {:.6f} ms", flAvgTime < MIN_TIME ? 0.0f : flAvgTime));
         nTotalTime = 0.0f;
         nTick = 0;
     }

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <string>
 #include <atomic>
+#include "../features.h"
 class CUserCmd;
 
 /* Conclusions : 
@@ -51,30 +52,31 @@ class CUserCmd;
 * -> completely understand how game is calculating spread.
 */
 
+#define DEBUG_NOSPREAD
 
 typedef double(__fastcall* T_PlatFloatTime)(void);
 class NoSpread_t
 {
 public:
-    NoSpread_t();
-
-    void run(CUserCmd* cmd, bool& result);
-    bool ParsePlayerPerf(std::string strPlayerperf);
-
-    std::atomic<bool>  m_bStoredServerTime;
-    std::atomic<float> m_flCurServerEngineTime;
-    std::atomic<float> m_flServerEngineTime;
-    std::atomic<float> m_flClientEngineTime;
-    uint32_t m_iStorageTick = 0;
-    float m_flStepSize = 0.0f;
+    void        Run(CUserCmd* cmd, bool& result);
+    bool        ParsePlayerPerf(std::string strPlayerperf);
 
 private:
-	uint32_t _GetSeed(CUserCmd* cmd);
-	uint32_t _GetSeed();
-    uint32_t _GetLocalSeed();
-    float _GetMantissa(float flInput);
+    bool        _ShouldRun(CUserCmd* cmd);
+    uint32_t    _GetSeed();
+    bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
+    void        _DemandPlayerPerf();
+    float       _CalcMantissaStep(float flInput);
+    std::string _GetServerUpTime(float flServerEngineTime);
 
-    bool _AskForPlayerPerf();
-    T_PlatFloatTime PlatFloatTime = nullptr;
+    bool        m_bIsSynced = false;
+    float       m_flRequestTime = 0.0f;
+    bool        m_bWaitingForPlayerPerf = false;
+    float       m_flDeltaClientServer = 0.0f;
+    float       m_flServerEngineTime = 0.0f;
+    bool        m_bLoopBack = false;
+    float       m_flMantissaStep = 0.0f;
+    float       m_flLatencyAtRecordTime = 0.0f;
 };
-extern NoSpread_t noSpread;
+
+ADD_FEATURE(noSpread, NoSpread_t);

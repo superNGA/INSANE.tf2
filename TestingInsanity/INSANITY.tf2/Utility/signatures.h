@@ -27,6 +27,7 @@ class AllSignatures_t
 public:
     void AddSig(Signature_t* pSignature) { m_vecSignatures.push_back(pSignature); }
     bool Initialize();
+    int GetNumberOfSignatures() { return m_vecSignatures.size(); }
     
 private:
     std::vector<Signature_t*> m_vecSignatures = {};
