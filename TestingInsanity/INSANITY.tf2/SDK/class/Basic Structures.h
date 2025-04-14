@@ -116,6 +116,26 @@ struct vec
 		return vec(x * other, y * other, z * other);
 	}
 
+	vec operator/(float other)
+	{
+		return vec(x / other, y / other, z / other);
+	}
+
+	vec operator +=(vec other)
+	{
+		return vec(x + other.x, y + other.y, z + other.z);
+	}
+
+	float length()
+	{
+		return sqrtf(x * x + y * y + z * z);
+	}
+
+	float DistTo(vec& other)
+	{
+		return (*this - other).length();
+	}
+
 	const float mag()
 	{
 		return sqrt(x * x + y * y + z * z);
@@ -132,10 +152,10 @@ struct vec
 
 	void Normalize()
 	{
-		float mag = this->mag();
-		x /= mag;
-		y /= mag;
-		z /= mag;
+		float flLength = sqrtf(x * x + y * y + z * z);
+		x = x / flLength;
+		y = y / flLength;
+		z = z / flLength;
 	}
 
 	float Dot(vec other) const

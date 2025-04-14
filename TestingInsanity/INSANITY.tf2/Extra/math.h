@@ -9,6 +9,12 @@ const inline float MIN_YAW = -180.0f;
 
 namespace Maths
 {
+    inline void SinCos(float flRadians, float* pSin, float* pCos)
+    {
+        *pSin = std::sin(flRadians);
+        *pCos = std::cos(flRadians);
+    }
+
 //=========================================================================
 // inline void AngleVectors(const qangle& angles, vec* forward, vec* right = nullptr, vec* up = nullptr)
 //=========================================================================
@@ -20,41 +26,36 @@ namespace Maths
 * @param right : right output vector
 * @param up : up output vector
 **************************************************************************/
-    inline void AngleVectors(const qangle& angles, vec* forward, vec* right = nullptr, vec* up = nullptr)
+    inline void AngleVectors(const qangle& vAngles, vec* pForward = nullptr, vec* pRight = nullptr, vec* pUp = nullptr)
     {
-        float sp, sy, sr;
-        float cp, cy, cr;
+        float sp, sy, sr, cp, cy, cr;
+        SinCos(DEG2RAD * vAngles.pitch , &sp, &cp);
+        SinCos(DEG2RAD * vAngles.yaw , &sy, &cy);
 
-        float pitch = DEG2RAD * angles.pitch;
-        float yaw = DEG2RAD * angles.yaw;
-        float roll = DEG2RAD * angles.roll;
-
-        sp = sinf(pitch);
-        cp = cosf(pitch);
-        sy = sinf(yaw);
-        cy = cosf(yaw);
-        sr = sinf(roll);
-        cr = cosf(roll);
-
-        if (forward)
+        if (pForward)
         {
-            forward->x = cp * cy;
-            forward->y = cp * sy;
-            forward->z = -sp;
+            pForward->x = cp * cy;
+            pForward->y = cp * sy;
+            pForward->z = -sp;
         }
 
-        if (right)
+        if (pRight || pUp)
         {
-            right->x = -1 * sr * sp * cy + -1 * cr * -sy;
-            right->y = -1 * sr * sp * sy + -1 * cr * cy;
-            right->z = -1 * sr * cp;
-        }
+            SinCos(DEG2RAD * vAngles.roll, &sr, &cr);
 
-        if (up)
-        {
-            up->x = cr * sp * cy + -sr * -sy;
-            up->y = cr * sp * sy + -sr * cy;
-            up->z = cr * cp;
+            if (pRight)
+            {
+                pRight->x = (-1 * sr * sp * cy + -1 * cr * -sy);
+                pRight->y = (-1 * sr * sp * sy + -1 * cr * cy);
+                pRight->z = -1 * sr * cp;
+            }
+
+            if (pUp)
+            {
+                pUp->x = (cr * sp * cy + -sr * -sy);
+                pUp->y = (cr * sp * sy + -sr * cy);
+                pUp->z = cr * cp;
+            }
         }
     }
 
@@ -81,6 +82,18 @@ namespace Maths
 
         // Fixxing ROLL
         anglesIn.roll = 0.0f;
+    }
+
+    inline float NormalizeAngle(float flAngle, float flRange = 360.f)
+    {
+        return std::isfinite(flAngle) ? std::remainder(flAngle, flRange) : 0.f;
+    }
+
+    inline void ClampAngles(qangle& angles)
+    {
+        angles.pitch = std::clamp(NormalizeAngle(angles.pitch), -89.f, 89.f);
+        angles.yaw = NormalizeAngle(angles.yaw);
+        angles.roll = 0.f;
     }
 
 
@@ -116,6 +129,31 @@ namespace Maths
         angles.pitch = pitch;
         angles.yaw   = yaw;
         angles.roll  = 0.0f;
+    }
+
+    inline void VectorAnglesFromSDK(const vec& vForward, qangle& vAngles)
+    {
+        float yaw, pitch;
+
+        if (vForward.y == 0 && vForward.x == 0)
+        {
+            yaw = 0;
+            pitch = vForward.z > 0 ? 270 : 90;
+        }
+        else
+        {
+            yaw = RAD2DEG * atan2f(vForward.y, vForward.x);
+            if (yaw < 0)
+                yaw += 360;
+
+            pitch = RAD2DEG * atan2f(-vForward.z, sqrtf(vForward.x * vForward.x + vForward.y * vForward.y));
+            if (pitch < 0)
+                pitch += 360;
+        }
+
+        vAngles.pitch = pitch;
+        vAngles.yaw = yaw;
+        vAngles.roll = 0;
     }
 
 }

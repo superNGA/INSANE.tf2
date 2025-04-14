@@ -8,7 +8,7 @@
 class BulletTarcers_t
 {
 public:
-    const char* Run(void* pWeapon); 
+    const char* Run(void* pWeapon, const char* szOriginalOutput);
 
 private:
     bool _ShouldRun(void* pWeapon);

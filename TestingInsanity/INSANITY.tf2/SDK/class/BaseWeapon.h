@@ -1,13 +1,14 @@
 #pragma once
 #include "Basic Structures.h"
-
-#include "../../Libraries/Utility/Utility.h"
-extern Utility util;
-
 #include "../offsets/offsets.h"
+#include "../../Libraries/Utility/Utility.h"
+
+
+extern Utility util;
 extern local_netvars netvar;
 
 class I_client_entity;
+class CTFWeaponInfo;
 
 enum slot_t {
 	WPN_SLOT_PRIMARY=0,
@@ -29,6 +30,8 @@ public:
 	reload_t	getReloadMode();
 	void		setCustomTracer(const char* tracerName);
 	bool		canBackStab();
+	CTFWeaponInfo* GetTFWeaponInfo();
+	int			GetWeaponID();
 
 private:
 	bool TracerHook = false;

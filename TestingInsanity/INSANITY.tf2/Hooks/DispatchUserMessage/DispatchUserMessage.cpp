@@ -22,14 +22,15 @@ bool __fastcall hook::DispatchUserMsg::H_DispatchUserMsg(void* pVTable, int iDat
 
     if (iDataType == 5)
     {
-        printf("Recieved textMsg from server\n");
+        //printf("Recieved textMsg from server\n");
 
         char rawMsg[256]; msg->ReadString(rawMsg, sizeof(rawMsg), true);
         msg->Seek(0);
         std::string sMsg = rawMsg;
-        std::cout << sMsg << '\n';
+        //std::cout << sMsg << '\n';
         
-        Features::noSpread.ParsePlayerPerf(sMsg);
+        //Features::noSpread.ParsePlayerPerf(sMsg);
+        Features::noSpread.ParsePlayerPerfExperimental(sMsg);
     }
     //printf("data type recieved : %d -> [ %s ]\n", iDataType, GetMsgName(pVTable, iDataType));
 

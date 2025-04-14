@@ -26,7 +26,7 @@ void InfoWindow_t::_DrawInfoWindow()
     ImGui::Begin("Performance", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoCollapse);
-    ImGui::PushFont(directX::fonts::roboto);
+    ImGui::PushFont(directX::fonts::roboto); // <- gonna change it to something like JetBrains mono semi-bold.
 
     for (auto& data : m_mapAllDataInfoWindow)
     {

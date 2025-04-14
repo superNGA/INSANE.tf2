@@ -45,13 +45,25 @@ class CUserCmd;
 * -> make a imformation window ( translucent ) and display some good imformation on it.
 * -> completely understand how game is calculating spread.
 * check where spread fix is being called.
+* aquire bullets per shot
+* make a spread fix, with the bullets per shots. iterate over all bullets and remove spread
+*   by incrementin seed for each bullet.
 */
 
 /* TODO :
-* aquire bullets per shot
-* make a spread fix, with the bullets per shots. iterate over all bullets and remove spread 
-*   by incrementin seed for each bullet.
+* Fix no spread on loop back server first. Then onto server time syncing.
 * keep updating records, and don't just store specific number of records in teh begninig.
+*/
+
+/*
+* SUSPECTS : 
+* -> on our local servers, the servers engine time seems to be a little less than client 
+*       engine time ( cause servers engine maybe starts later , IDK won't they both be running
+*       on the same engine or something like that ). so that can be the issue for the no spread?
+*       I mean server will be using its engine time and it must be correct to the last 
+*       fucking decimal init?
+*   Amalgum just used the client's engine time for local servers ( i.e. delta = 0.0f ). and IDk 
+*   how well it works.
 */
 
 #define DEBUG_NOSPREAD
@@ -63,12 +75,13 @@ class NoSpread_t
 public:
     void        Run(CUserCmd* cmd, bool& result);
     bool        ParsePlayerPerf(std::string strPlayerperf);
+    bool        ParsePlayerPerfExperimental(std::string szMsg);
 
 private:
     bool        _ShouldRun(CUserCmd* cmd);
-    uint32_t    _GetSeed();
+    uint32_t    _GetSeed(CUserCmd* cmd) const;
     bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
-    void        _DemandPlayerPerf();
+    void        _DemandPlayerPerf(CUserCmd* cmd);
     float       _CalcMantissaStep(float flInput);
     std::string _GetServerUpTime(float flServerEngineTime);
 
@@ -79,9 +92,22 @@ private:
     float       m_flServerEngineTime = 0.0f;
     bool        m_bLoopBack = false;
     float       m_flMantissaStep = 0.0f;
-    float       m_flLatencyAtRecordTime = 0.0f;
-    
+    float       m_flAquisitionDelay = 0.0f;
     std::deque<float> m_vecTimeDeltas = {};
+
+    // new implementation shit
+    float m_flServertime = 0.0f;
+    float m_flPrevServertime = 0.0f;
+    float m_flEstimatedServerTime = 0.0f;
+    float m_flEstimatedServerTimeDelta = 0.0f;
+    float m_flResponseTime = 0.0f;
+    float m_flSyncOffset = 0.0f;
+
+    enum {
+        SYNC_INPROGRESS=0,
+        SYNC_DONE,
+        SYNC_LOST
+    } m_syncStatus = SYNC_INPROGRESS;
 };
 
 ADD_FEATURE(noSpread, NoSpread_t);

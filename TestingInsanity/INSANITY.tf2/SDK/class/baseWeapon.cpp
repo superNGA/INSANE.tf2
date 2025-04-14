@@ -2,6 +2,13 @@
 #include "../FN index Manager/FN index manager.h"
 #include "../Entity Manager/entityManager.h"
 #include "../../External Libraries/MinHook/MinHook.h"
+#include "../../Utility/signatures.h"
+#include "FileWeaponInfo.h"
+
+//----------------------- SIGNATURES -----------------------
+MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL)
+MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL)
+MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL)
 
 slot_t baseWeapon::getSlot() {
     typedef slot_t(__fastcall* O_getSlot)(void*);
@@ -46,4 +53,22 @@ bool baseWeapon::canBackStab()
         return false;
 
     return *(bool*)((uintptr_t)this + netvar.m_bReadyToBackstab);
+}
+
+CTFWeaponInfo* baseWeapon::GetTFWeaponInfo()
+{
+    // make something better to get weapon id
+    auto output = Sig::baseWeapon_GetWeaponFileHandle.Call<FileWeaponInfo_t*>(
+        Sig::baseWeapon_LookUpWeaponInfoSlot.Call<int16_t>(
+            Sig::baseWeapon_WeaponIDToAlias.Call<const char*>(this->GetWeaponID()
+            )
+        )
+    );
+    return static_cast<CTFWeaponInfo*>(output);
+}
+
+int baseWeapon::GetWeaponID()
+{
+    typedef int(__fastcall* T_getID)(void*);
+    return reinterpret_cast<T_getID>(util.GetVirtualTable(this)[382])(this);
 }
