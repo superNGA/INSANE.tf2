@@ -33,6 +33,9 @@ namespace cheat_window
 		ImGui::Checkbox("Auto BackStab",				&config.miscConfig.autoBackStab);
 		ImGui::Checkbox("Air Move ( in-complete )",		&config.miscConfig.airMove);
 
+		//ImGui::SliderFloat("No Spread offset", &config.miscConfig.flNoSpreadOffset, -1.0f, 1.0f, "%.6f");
+		ImGui::SliderInt("No Spread offset", &config.miscConfig.iServerTimeOffset,-10, 10, "%d");
+
 		ImGui::PopFont();
 	}
 

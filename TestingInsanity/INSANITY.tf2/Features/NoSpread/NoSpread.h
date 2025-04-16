@@ -76,11 +76,15 @@ public:
     void        Run(CUserCmd* cmd, bool& result);
     bool        ParsePlayerPerf(std::string strPlayerperf);
     bool        ParsePlayerPerfExperimental(std::string szMsg);
+    bool        ParsePlayerPerfV3(std::string sMsg);
+    float adjustServerTime(int offset, float flServerTime);
+    uint32_t GetSeed();
+    std::atomic<uint32_t> m_iSeed;
 
 private:
     bool        _ShouldRun(CUserCmd* cmd);
-    uint32_t    _GetSeed(CUserCmd* cmd) const;
     bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
+    bool        _FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
     void        _DemandPlayerPerf(CUserCmd* cmd);
     float       _CalcMantissaStep(float flInput);
     std::string _GetServerUpTime(float flServerEngineTime);
@@ -102,6 +106,10 @@ private:
     float m_flEstimatedServerTimeDelta = 0.0f;
     float m_flResponseTime = 0.0f;
     float m_flSyncOffset = 0.0f;
+
+    // 3rd Implementation. 3rd time's the charm, init?
+    float m_flFineTuneOffset = 0.0f;
+    float m_flIsThisServerTime = 0.0f;
 
     enum {
         SYNC_INPROGRESS=0,

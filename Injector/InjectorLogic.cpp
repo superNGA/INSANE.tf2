@@ -588,7 +588,7 @@ bool injector_t::_injectManualMap()
         Sleep(10);
         waitcounter += 10.0f;
 
-        if (waitcounter >= 500.0f)
+        if (waitcounter >= 1000.0f)
         {
             CONS_LOG_ERROR("Taking too long, likely shellCode failed");
             break;

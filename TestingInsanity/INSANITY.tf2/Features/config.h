@@ -86,6 +86,9 @@ struct miscConfig_t
 	bool third_person				= false;
 	bool autoBackStab				= false;
 	bool airMove					= false;
+
+	float flNoSpreadOffset			= 0.0f;
+	int32_t iServerTimeOffset = 0;
 };
 
 struct config_t 

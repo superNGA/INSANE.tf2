@@ -46,11 +46,6 @@ MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57
 
 void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 {
-	if (config.aimbotConfig.bNoSpread == false)
-		return;
-
-	_DemandPlayerPerf(cmd);
-
 	if (_ShouldRun(cmd) == false)
 		return;
 
@@ -59,22 +54,24 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
 		return;
 
-	//_DemandPlayerPerf(cmd);
+	_DemandPlayerPerf(cmd);
 
-	uint32_t iSeed = _GetSeed(cmd);
-
-	_FixSpread(cmd, iSeed, pActiveWeapon);
+	uint32_t iSeed = GetSeed();
+	m_iSeed.store(iSeed);
+	//_FixSpread(cmd, iSeed, pActiveWeapon);
+	_FixSpreadSingleBullet(cmd, iSeed, pActiveWeapon);
 
 #ifdef DEBUG_NOSPREAD
 	Render::InfoWindow.AddToInfoWindow("serverType",			 (m_bLoopBack ? "local server" : "OFFICAL SERVER! :)"));
 	//Render::InfoWindow.AddToInfoWindow("Mantissa step",			 std::format("Mantissa step : {:.6f}", m_flMantissaStep));
 	Render::InfoWindow.AddToInfoWindow("Request time",			 std::format("Request time : {:.6f}", m_flRequestTime));
 	Render::InfoWindow.AddToInfoWindow("delta time",			 std::format("delta time : {:.6f}", m_flDeltaClientServer));
-	Render::InfoWindow.AddToInfoWindow("Sync Status",			 std::format("SYNC STATUS : {}", m_syncStatus == SYNC_DONE ? "SYNCED :)" : "syncing :("));
-	Render::InfoWindow.AddToInfoWindow("Approax server up time", std::format("Server has been up for {}", _GetServerUpTime(m_flServerEngineTime)));
+	Render::InfoWindow.AddToInfoWindow("est.serverTime",		 std::format("EST. SERVER TIME : {:.6f} [ OFFSET : {} ]", m_flIsThisServerTime, config.miscConfig.iServerTimeOffset));
+	Render::InfoWindow.AddToInfoWindow("fine tune offset",		 std::format("fine tune offset {:.6f}", m_flFineTuneOffset));
+	Render::InfoWindow.AddToInfoWindow("Approax server up time", std::format("Server has been up for {}", _GetServerUpTime(m_flIsThisServerTime)));
 	Render::InfoWindow.AddToInfoWindow("time deltas count",		 std::format("Stored {} deltas", m_vecTimeDeltas.size()));
 	Render::InfoWindow.AddToInfoWindow("Last Aquisition delay",	 std::format("Last Aquisition delay {}", m_flAquisitionDelay));
-	//printf("using seed : %d\n", iSeed);
+	printf("using seed : %d\n", iSeed);
 #endif
 
 	result = false;
@@ -99,11 +96,15 @@ bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
 }
 
 // the problem is most likely not here! 
-uint32_t NoSpread_t::_GetSeed(CUserCmd* cmd) const
+uint32_t NoSpread_t::GetSeed()
 {
-	double flPredictedServerTime = m_flServertime + m_flSyncOffset + m_flResponseTime;
-	//double flPredictedServerTime = ExportFn::Plat_FloatTime.Call<double>() + m_flSyncOffset + m_flResponseTime;
-	float flTime = static_cast<float>(flPredictedServerTime * 1000.0);
+	//double flPredictedServerTime = m_flServertime + m_flSyncOffset + m_flResponseTime;
+	double flPredictedServerTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDeltaClientServer;
+	
+	// adjust it with a offset.
+	m_flIsThisServerTime = adjustServerTime(config.miscConfig.iServerTimeOffset, static_cast<float>(flPredictedServerTime));
+
+	float flTime = static_cast<float>(m_flIsThisServerTime * 1000.0f);
 	return std::bit_cast<int32_t>(flTime) & 255;
 
 	//float time{ (m_flServertime + m_flSyncOffset + m_flResponseTime) * 1000.0f };
@@ -165,6 +166,30 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 	return true;
 }
 
+bool NoSpread_t::_FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon)
+{
+	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
+
+	ExportFn::RandomSeed.Call<void>(seed);
+
+	// random X & Y
+	float flRandomX = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
+	float flRandomY = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
+
+	vec vecDirShooting, vecRight, vecUp;
+	Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp);
+
+	vec vBulletSpread = vecDirShooting + ((vecRight * flRandomX) * flBaseSpread) + ((vecUp * flRandomY) * flBaseSpread);
+	vBulletSpread.Normalize();
+	
+	qangle qFinal;
+	Maths::VectorAngles(vBulletSpread, qFinal);
+	cmd->viewangles = cmd->viewangles + (cmd->viewangles - qFinal);
+	Maths::ClampQAngle(cmd->viewangles);
+
+	return true;
+}
+
 
 void NoSpread_t::_DemandPlayerPerf(CUserCmd* cmd)
 {
@@ -172,6 +197,8 @@ void NoSpread_t::_DemandPlayerPerf(CUserCmd* cmd)
 		return;
 
 	//LOG("Asked for player perf");
+	if (m_bIsSynced == true)
+		return;
 
 	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
 	m_flRequestTime			= static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
@@ -209,15 +236,6 @@ std::string NoSpread_t::_GetServerUpTime(float flServerEngineTime)
 // The fucking loopback server's engine time is also at a constant difference of 0.1 to 0.01 MF
 bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
 {
-	// Actual server stuff
-	std::smatch match;
-	if (strPlayerperf[0] == 2)
-		strPlayerperf = strPlayerperf.substr(1);
-
-	// extracing first float. i.e. the server's engine time
-	if (std::regex_match(strPlayerperf, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")))
-		printf("[ %f ] <- request time\n[ %f ] receieved time | Time for 1 tick : %f\n", m_flRequestTime, std::stof(match[1]), tfObject.pGlobalVar->interval_per_tick);
-
 	m_bWaitingForPlayerPerf = false;
 
 	// LoopBack server check
@@ -230,20 +248,20 @@ bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
 		return true;
 	}
 
-	//// Actual server stuff
-	//std::smatch match;
-	//if (strPlayerperf[0] == 2)
-	//	strPlayerperf = strPlayerperf.substr(1);
-	//
-	//// extracing first float. i.e. the server's engine time
-	//if (std::regex_match(strPlayerperf, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
-	//	return false;
+	// Actual server stuff
+	std::smatch match;
+	if (strPlayerperf[0] == 2)
+		strPlayerperf = strPlayerperf.substr(1);
+	
+	// extracing first float. i.e. the server's engine time
+	if (std::regex_match(strPlayerperf, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
+		return false;
 
-	//// checking if match found is valid to prevent false positives ( kinda redundant but its ok )
-	//if (match.size() != 2)
-	//	return false;
+	// checking if match found is valid to prevent false positives ( kinda redundant but its ok )
+	if (match.size() != 2)
+		return false;
 
-	////delete this
+	//delete this
 	//printf("[ %f ] <- request time\n[ %f ] receieved time | Time for 1 tick : %f\n", m_flRequestTime, std::stof(match[1]), tfObject.pGlobalVar->interval_per_tick);
 
 	float flNewServerEngineTime = std::stof(match[1]);
@@ -337,4 +355,42 @@ bool NoSpread_t::ParsePlayerPerfExperimental(std::string szMsg)
 	m_flEstimatedServerTime		 = m_flServertime + m_flEstimatedServerTimeDelta;
 
 	return true;
+}
+
+bool NoSpread_t::ParsePlayerPerfV3(std::string sMsg)
+{
+	std::smatch match;
+	if (std::regex_match(sMsg, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
+		return false;
+
+	float flScrappedTime = std::stof(match[1].str());
+	if (flScrappedTime < m_flServertime)
+		return false;
+
+	m_flServertime = flScrappedTime;
+	m_flDeltaClientServer = m_flServerEngineTime - m_flRequestTime; // simple one here, cause we are about to fine tune this manually in-game.
+
+	WIN_LOG("EXTRACTED TIME : %.6f", m_flServertime);
+
+	m_bIsSynced = true;
+	return true;
+}
+
+float NoSpread_t::adjustServerTime(int offset, float flServerTime)
+{
+	// we are assuming that float will work like it is supposed to do, and automatically snap to 
+	// a proper step size'ed gap just like the server would.
+
+	if (offset == 0)
+		return flServerTime;
+
+	bool bIsNegative = (offset < 0);
+
+	float flAdjustedServerTime	= 0.0f;
+	flAdjustedServerTime		= std::nextafterf(flServerTime, std::numeric_limits<float>::infinity());
+	m_flFineTuneOffset			= flAdjustedServerTime - flServerTime;
+	
+	flAdjustedServerTime += float(offset) * m_flFineTuneOffset;
+
+	return flAdjustedServerTime;
 }
