@@ -69,53 +69,43 @@ class CUserCmd;
 #define DEBUG_NOSPREAD
 
 #define MAX_TIME_RECORDS 20
+constexpr int DELTA_UPDATE_FREQUENCY = 20; // we will be updating delta every 20 tickss
 
 class NoSpread_t
 {
 public:
     void        Run(CUserCmd* cmd, bool& result);
-    bool        ParsePlayerPerf(std::string strPlayerperf);
-    bool        ParsePlayerPerfExperimental(std::string szMsg);
-    bool        ParsePlayerPerfV3(std::string sMsg);
-    float adjustServerTime(int offset, float flServerTime);
-    uint32_t GetSeed();
+    bool        _ParsePlayerPerf(std::string sMsg);
+
+    uint32_t    GetSeed();
     std::atomic<uint32_t> m_iSeed;
 
 private:
     bool        _ShouldRun(CUserCmd* cmd);
-    bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
-    bool        _FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
-    void        _DemandPlayerPerf(CUserCmd* cmd);
+    void        _RequestPlayerPerf(CUserCmd* cmd);
     float       _CalcMantissaStep(float flInput);
     std::string _GetServerUpTime(float flServerEngineTime);
 
-    bool        m_bIsSynced = false;
-    float       m_flRequestTime = 0.0f;
-    bool        m_bWaitingForPlayerPerf = false;
-    float       m_flDeltaClientServer = 0.0f;
-    float       m_flServerEngineTime = 0.0f;
-    bool        m_bLoopBack = false;
-    float       m_flMantissaStep = 0.0f;
-    float       m_flAquisitionDelay = 0.0f;
-    std::deque<float> m_vecTimeDeltas = {};
+    bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
+    bool        _FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
 
-    // new implementation shit
-    float m_flServertime = 0.0f;
-    float m_flPrevServertime = 0.0f;
-    float m_flEstimatedServerTime = 0.0f;
-    float m_flEstimatedServerTimeDelta = 0.0f;
-    float m_flResponseTime = 0.0f;
-    float m_flSyncOffset = 0.0f;
+    enum SyncState_t
+    {
+        SYNC_NULL=-1,
+        SYNC_STARTING=0,
+        SYNC_DONE
+    };
+    SyncState_t m_eSyncState = SYNC_NULL;
+    float m_flRequestTime = 0.0f;
+    bool m_bWaitingForPlayerPerf = false;
+    float m_flServerTime = 0.0f;
+    float m_flDelta = 0.0f;
+    float m_flOffset = 0.0f;
 
-    // 3rd Implementation. 3rd time's the charm, init?
-    float m_flFineTuneOffset = 0.0f;
-    float m_flIsThisServerTime = 0.0f;
-
-    enum {
-        SYNC_INPROGRESS=0,
-        SYNC_DONE,
-        SYNC_LOST
-    } m_syncStatus = SYNC_INPROGRESS;
+    uint32_t counter = 0;
+    uint32_t m_iRequestTick = 0;
+    
+    std::deque<float> m_qServerTimes;
 };
 
 ADD_FEATURE(noSpread, NoSpread_t);

@@ -46,6 +46,14 @@ MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57
 
 void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 {
+	if (config.aimbotConfig.bNoSpread == false)
+		return;
+
+	_RequestPlayerPerf(cmd);
+
+	if (m_eSyncState != SYNC_DONE)
+		return;
+
 	if (_ShouldRun(cmd) == false)
 		return;
 
@@ -54,24 +62,16 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
 		return;
 
-	_DemandPlayerPerf(cmd);
-
 	uint32_t iSeed = GetSeed();
 	m_iSeed.store(iSeed);
-	//_FixSpread(cmd, iSeed, pActiveWeapon);
-	_FixSpreadSingleBullet(cmd, iSeed, pActiveWeapon);
+
+	_FixSpread(cmd, iSeed, pActiveWeapon);
+	//_FixSpreadSingleBullet(cmd, iSeed, pActiveWeapon);
 
 #ifdef DEBUG_NOSPREAD
-	Render::InfoWindow.AddToInfoWindow("serverType",			 (m_bLoopBack ? "local server" : "OFFICAL SERVER! :)"));
-	//Render::InfoWindow.AddToInfoWindow("Mantissa step",			 std::format("Mantissa step : {:.6f}", m_flMantissaStep));
-	Render::InfoWindow.AddToInfoWindow("Request time",			 std::format("Request time : {:.6f}", m_flRequestTime));
-	Render::InfoWindow.AddToInfoWindow("delta time",			 std::format("delta time : {:.6f}", m_flDeltaClientServer));
-	Render::InfoWindow.AddToInfoWindow("est.serverTime",		 std::format("EST. SERVER TIME : {:.6f} [ OFFSET : {} ]", m_flIsThisServerTime, config.miscConfig.iServerTimeOffset));
-	Render::InfoWindow.AddToInfoWindow("fine tune offset",		 std::format("fine tune offset {:.6f}", m_flFineTuneOffset));
-	Render::InfoWindow.AddToInfoWindow("Approax server up time", std::format("Server has been up for {}", _GetServerUpTime(m_flIsThisServerTime)));
-	Render::InfoWindow.AddToInfoWindow("time deltas count",		 std::format("Stored {} deltas", m_vecTimeDeltas.size()));
-	Render::InfoWindow.AddToInfoWindow("Last Aquisition delay",	 std::format("Last Aquisition delay {}", m_flAquisitionDelay));
-	printf("using seed : %d\n", iSeed);
+	Render::InfoWindow.AddToInfoWindow("sync status", m_eSyncState == SYNC_DONE ? "SYNCED :)" : "sync-ing :(");
+	Render::InfoWindow.AddToInfoWindow("delta", std::format("delta : {:.6f}", m_flDelta));
+	Render::InfoWindow.AddToInfoWindow("offset", std::format("offset : {:.6f}", m_flOffset));
 #endif
 
 	result = false;
@@ -80,6 +80,74 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
+
+
+bool NoSpread_t::_ParsePlayerPerf(std::string sMsg)
+{
+	m_bWaitingForPlayerPerf = false;
+	
+	if (sMsg[0] == 2)
+		sMsg = sMsg.substr(1);
+
+	// for now we are skipping loopback server stuff and just getting the MM server stuff to work.
+	std::smatch match;
+	if (std::regex_match(sMsg, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
+		return false;
+	
+	if (match.size() != 2)
+		return false;
+	float flScrappedTime = std::stof(match[1].str());
+
+	if (flScrappedTime < m_flServerTime)
+		return true;
+	
+	m_flServerTime = flScrappedTime;
+
+	if (m_flDelta > 0.0f)
+	{
+		float flEstimatedServerTime = m_flRequestTime + m_flDelta + m_flOffset; // request time + delta ( which is calculated from last time ) + offset
+		if (flEstimatedServerTime == m_flServerTime)
+		{
+			LOG("Estimated correctly!, server time : %.6f, delta : %.6f, offset : %.6f", m_flServerTime, m_flDelta, m_flOffset);
+			counter++;
+			if (counter == 10)
+				m_eSyncState = SYNC_DONE;
+		}
+		else
+		{
+			FAIL_LOG("wrong prediction, est time : %.6f, server time : %.6f, delta : %.6f, offset : %.6f",flEstimatedServerTime, m_flServerTime, m_flDelta, m_flOffset);
+			counter = 0;
+			m_flOffset = m_flServerTime - (m_flRequestTime + m_flDelta);
+			m_eSyncState = SYNC_STARTING;
+		}
+	}
+
+	m_flDelta = m_flServerTime - m_flRequestTime;
+
+	return true;
+}
+
+void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
+{
+	if (m_bWaitingForPlayerPerf == true)
+		return;
+
+	if (cmd->tick_count - m_iRequestTick < DELTA_UPDATE_FREQUENCY && m_eSyncState == SYNC_DONE)
+		return;
+
+	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
+	m_flRequestTime = static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
+	m_bWaitingForPlayerPerf = true;
+}
+
+
+uint32_t NoSpread_t::GetSeed()
+{
+	// compensating for lantecy.
+	double flflTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDelta + m_flOffset + I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
+	float  flTime	= float(flflTime * 1000.0f);
+	return std::bit_cast<int32_t>(flTime) & 255;
+}
 
 
 bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
@@ -93,22 +161,6 @@ bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
 	// perform a melle cheak on active weapon here.
 
 	return true;
-}
-
-// the problem is most likely not here! 
-uint32_t NoSpread_t::GetSeed()
-{
-	//double flPredictedServerTime = m_flServertime + m_flSyncOffset + m_flResponseTime;
-	double flPredictedServerTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDeltaClientServer;
-	
-	// adjust it with a offset.
-	m_flIsThisServerTime = adjustServerTime(config.miscConfig.iServerTimeOffset, static_cast<float>(flPredictedServerTime));
-
-	float flTime = static_cast<float>(m_flIsThisServerTime * 1000.0f);
-	return std::bit_cast<int32_t>(flTime) & 255;
-
-	//float time{ (m_flServertime + m_flSyncOffset + m_flResponseTime) * 1000.0f };
-	//return *reinterpret_cast<int*>((char*)&time) & 255;
 }
 
 
@@ -190,21 +242,6 @@ bool NoSpread_t::_FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon
 	return true;
 }
 
-
-void NoSpread_t::_DemandPlayerPerf(CUserCmd* cmd)
-{
-	if (m_bWaitingForPlayerPerf == true)
-		return;
-
-	//LOG("Asked for player perf");
-	if (m_bIsSynced == true)
-		return;
-
-	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
-	m_flRequestTime			= static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
-	m_bWaitingForPlayerPerf = true;
-}
-
 // I totally made it myself. like 100%. you feel me, like fucking 100%. I am really good at fucking maths and shi..
 float NoSpread_t::_CalcMantissaStep(float flInput)
 {
@@ -230,167 +267,4 @@ std::string NoSpread_t::_GetServerUpTime(float flServerEngineTime)
 		return std::format("{}h {}m", iHours, iMinutes);
 	else
 		return std::format("{}m {}s", iMinutes, iSeconds);
-}
-
-
-// The fucking loopback server's engine time is also at a constant difference of 0.1 to 0.01 MF
-bool NoSpread_t::ParsePlayerPerf(std::string strPlayerperf)
-{
-	m_bWaitingForPlayerPerf = false;
-
-	// LoopBack server check
-	auto* pNetChannel = I::iEngineClientReplay->GetNetChannel();
-	m_bLoopBack = pNetChannel != nullptr && pNetChannel->IsLoopback();
-	if (m_bLoopBack == true)
-	{
-		m_flDeltaClientServer = 0.0f;
-		m_bIsSynced = false;
-		return true;
-	}
-
-	// Actual server stuff
-	std::smatch match;
-	if (strPlayerperf[0] == 2)
-		strPlayerperf = strPlayerperf.substr(1);
-	
-	// extracing first float. i.e. the server's engine time
-	if (std::regex_match(strPlayerperf, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
-		return false;
-
-	// checking if match found is valid to prevent false positives ( kinda redundant but its ok )
-	if (match.size() != 2)
-		return false;
-
-	//delete this
-	//printf("[ %f ] <- request time\n[ %f ] receieved time | Time for 1 tick : %f\n", m_flRequestTime, std::stof(match[1]), tfObject.pGlobalVar->interval_per_tick);
-
-	float flNewServerEngineTime = std::stof(match[1]);
-
-	// skipping older times, and keeping only the latest time.
-	if (flNewServerEngineTime < m_flServerEngineTime)
-		return true;
-	m_flServerEngineTime = flNewServerEngineTime; // if got latest time, then store it.
-
-	// calculating deltas :)
-	m_flAquisitionDelay = static_cast<float>(ExportFn::Plat_FloatTime.Call<double>()) - m_flRequestTime; // time difference between requesting and reciving message from server.
-	m_vecTimeDeltas.push_back(m_flServerEngineTime - m_flRequestTime + tfObject.pGlobalVar->interval_per_tick); // +m_flLatencyAtRecordTime + I::iEngineClientReplay->GetNetChannel()->GetLatency(NET_FLOW_TYPE::FLOW_INCOMING);
-	if (m_vecTimeDeltas.empty() == false && m_vecTimeDeltas.size() > MAX_TIME_RECORDS)
-		m_vecTimeDeltas.pop_front();
-
-	/// NOTE : Although amalgun has used 1 tick as the delay "Aquisition Delay" from observing the tick counts between aquiring and requesting
-	///			seems to be a significantly more then 1 tick. The "tick delta" was ranging from 8 to 20 ticks.
-
-	// storing the average delta
-	m_flDeltaClientServer = std::reduce(m_vecTimeDeltas.begin(), m_vecTimeDeltas.end()) / m_vecTimeDeltas.size();
-
-	// calculating the mantissa step.
-	m_flMantissaStep = _CalcMantissaStep(m_flServerEngineTime);
-
-	if (m_flMantissaStep > 1.0f && m_vecTimeDeltas.size() >= MAX_TIME_RECORDS)
-		m_bIsSynced = true;
-
-	return true;
-}
-
-
-/*
-ASSUMPTION :
-	we will believe that, when we ask for playerperf at tick 1, it will give us playerperf message at tick 1 but the data will be of last simulating time, 
-	i.e. tick 0. so add 1 tick worth of time to the receieved engine time to get time "which must have been at the time of asking playerperf" i.e. at tick 1.
-*/
-bool NoSpread_t::ParsePlayerPerfExperimental(std::string szMsg)
-{
-	// std::regex_match(szMsg, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)"))
-	if (szMsg[0] == 2)
-		szMsg = szMsg.substr(1);
-
-	std::smatch match;
-	if (std::regex_match(szMsg, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
-		return false;
-
-	/*if (match.size() != 2)
-		return false;*/
-
-	m_bWaitingForPlayerPerf = false;
-	//FAIL_LOG("ready to ask player perf again NIGA");
-
-	float flNewTime = std::stof(match[1].str());
-
-	// if refering to old time, then skip
-	if (flNewTime < m_flServertime)
-		return true;
-
-	m_flPrevServertime  = m_flServertime;
-	m_flServertime		= flNewTime;
-
-	m_flResponseTime	= ExportFn::Plat_FloatTime.Call<double>() - m_flRequestTime;
-
-	if (m_flPrevServertime <= 0.0f)
-		return true;
-
-	// if this not zero then this iteration is not our first iteration.
-	if (m_flEstimatedServerTime > 0.0f)
-	{
-		float flDelta = m_flServertime - m_flEstimatedServerTime;
-		if (flDelta == 0.0f) // if we estimated the server time successfully
-		{
-			m_flSyncOffset  = m_flEstimatedServerTimeDelta;
-			m_bIsSynced		= true;
-			m_syncStatus	= SYNC_DONE;
-
-			static bool printed = false;
-			if (!printed)
-			{
-				WIN_LOG("%.6f = %.6f | SYNCED :) now if not no spread then maths wrong.", m_flEstimatedServerTime, m_flServertime);
-				printed = false;
-			}
-		}
-		else if(m_syncStatus == SYNC_DONE)
-		{
-			m_syncStatus = SYNC_LOST;
-		}
-	}
-
-	m_flEstimatedServerTimeDelta = m_flServertime - m_flPrevServertime;
-	m_flEstimatedServerTime		 = m_flServertime + m_flEstimatedServerTimeDelta;
-
-	return true;
-}
-
-bool NoSpread_t::ParsePlayerPerfV3(std::string sMsg)
-{
-	std::smatch match;
-	if (std::regex_match(sMsg, match, std::regex(R"((\d+.\d+)\s\d+\s\d+\s\d+.\d+\s\d+.\d+\svel\s\d+.\d+)")) == false)
-		return false;
-
-	float flScrappedTime = std::stof(match[1].str());
-	if (flScrappedTime < m_flServertime)
-		return false;
-
-	m_flServertime = flScrappedTime;
-	m_flDeltaClientServer = m_flServerEngineTime - m_flRequestTime; // simple one here, cause we are about to fine tune this manually in-game.
-
-	WIN_LOG("EXTRACTED TIME : %.6f", m_flServertime);
-
-	m_bIsSynced = true;
-	return true;
-}
-
-float NoSpread_t::adjustServerTime(int offset, float flServerTime)
-{
-	// we are assuming that float will work like it is supposed to do, and automatically snap to 
-	// a proper step size'ed gap just like the server would.
-
-	if (offset == 0)
-		return flServerTime;
-
-	bool bIsNegative = (offset < 0);
-
-	float flAdjustedServerTime	= 0.0f;
-	flAdjustedServerTime		= std::nextafterf(flServerTime, std::numeric_limits<float>::infinity());
-	m_flFineTuneOffset			= flAdjustedServerTime - flServerTime;
-	
-	flAdjustedServerTime += float(offset) * m_flFineTuneOffset;
-
-	return flAdjustedServerTime;
 }
