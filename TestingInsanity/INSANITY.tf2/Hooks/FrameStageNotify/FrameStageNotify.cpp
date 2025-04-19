@@ -1,6 +1,7 @@
 #include "FrameStageNotify.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
+#include "../../Features/Anti Aim/AntiAim.h"
 
 hook::frame_stage_notify::template_frame_stage_notify hook::frame_stage_notify::original_frame_stage_notify = nullptr;
 void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_frame_stage frame_stage)
@@ -10,7 +11,14 @@ void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_fr
 
 	switch (frame_stage)
 	{
+	case FRAME_NET_UPDATE_START:
+		break;
+	
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
+		break;
+
+	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
+		//Features::antiAim.StoreAABones();
 		break;
 
 	case FRAME_NET_UPDATE_END:

@@ -87,7 +87,6 @@ private:
     std::string _GetServerUpTime(float flServerEngineTime);
 
     bool        _FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
-    bool        _FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon);
 
     enum SyncState_t
     {
@@ -96,7 +95,11 @@ private:
         SYNC_DONE
     };
     SyncState_t m_eSyncState = SYNC_NULL;
-    float m_flRequestTime = 0.0f;
+    
+    float m_flRequestTime    = 0.0f;
+    float m_flRequestDelay = 0.0f;
+    float m_flRequestLatency = 0.0f;
+
     bool m_bWaitingForPlayerPerf = false;
     float m_flServerTime = 0.0f;
     float m_flDelta = 0.0f;
@@ -105,6 +108,8 @@ private:
     uint32_t counter = 0;
     uint32_t m_iRequestTick = 0;
     
+    CUserCmd* pCmd = nullptr;
+
     std::deque<float> m_qServerTimes;
 };
 

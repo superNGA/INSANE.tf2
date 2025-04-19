@@ -18,7 +18,9 @@ Chams_t chams;
 #include "../../SDK/class/IVModelInfo.h"
 #include "../../Libraries/Utility/Utility.h"
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../Anti Aim/AntiAim.h"
 
+#include "../../Utility/ConsoleLogging.h"
 #include "../../Libraries/Timer.h"
 
 #define MIN_TIME 0.0001
@@ -28,7 +30,7 @@ Chams_t chams;
 //=========================================================================
 int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
-    // Checking if cheat backEnd is initialized
+    // Checking if cheat's backEnd is initialized
     if (tfObject.bIsInitialized.load() == false || tfObject.FindMaterial == nullptr)
     {
         WAIT_MSG("TFObject Manager", "initialize");
@@ -83,7 +85,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
             bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlyPlayer);
         break;
     case AMMO_PACK:
-        bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamDroppedAmmoPack);
+        bIsMaterialOverridden     = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamDroppedAmmoPack);
         break;
     case DISPENSER:
         pEntity->isEnemy() ?
@@ -157,7 +159,20 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     }
     nTick++;
 
-    auto result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+    int64_t result = 0;
+
+    // anti aim cham rendering logic, sketchy one, will make proper one, once I see that it is working.
+    auto* me = entityManager.getLocalPlayer();
+    if(me != nullptr && pEntity == me->GetClientRenderable())
+    {
+        result = hook::DME::O_DME(pVTable, modelState, renderInfo, Features::antiAim.pBone);
+        LOG("Drawing anti aim chams");
+    }
+    else
+    {
+        result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+    }
+
     if (bIsMaterialOverridden)
     {
         tfObject.pForcedMaterialOverride(tfObject.IStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
@@ -177,15 +192,12 @@ bool Chams_t::FreeAllMaterial()
 {
     for (auto& iterator : UM_materials)
     {
-        delete iterator.second->pKV;
-        #ifdef _DEBUG
-        cons.Log(FG_GREEN, "DME", "successfully free'ed material [ %s ]", iterator.second->szMatName);
-        #endif
-        delete iterator.second;
+        if (_DeleteMaterial(iterator.first) == false)
+            FAIL_LOG("FAILED TO DELETE MATERIAL [ %s ]", iterator.first.c_str());
+        else
+            WIN_LOG("successfully free'ed material [ %s ]", iterator.second->szMatName);
     }
-    #ifdef _DEBUG
-    cons.Log(FG_GREEN, "DME", "FREE'ED ALL MATERIALS");
-    #endif 
+    WIN_LOG("FREE'ED ALL MATERIALS");
     return true;
 }
 
@@ -607,6 +619,8 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
         #endif // _DEBUG
         return false;
     }
+
+    it->second->pMaterial->DecrementReferenceCount();
 
     delete it->second->pKV;
     delete it->second;

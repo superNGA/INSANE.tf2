@@ -49,10 +49,16 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	if (config.aimbotConfig.bNoSpread == false)
 		return;
 
+	pCmd = cmd;
+
 	_RequestPlayerPerf(cmd);
 
-	if (m_eSyncState != SYNC_DONE)
-		return;
+#ifdef DEBUG_NOSPREAD
+	Render::InfoWindow.AddToInfoWindow("sync status",	m_eSyncState == SYNC_DONE ? "SYNCED :)" : "sync-ing :(");
+	Render::InfoWindow.AddToInfoWindow("delta",			std::format("delta : {:.6f}", m_flDelta));
+	Render::InfoWindow.AddToInfoWindow("offset",		std::format("offset : {:.6f}", m_flOffset));
+	Render::InfoWindow.AddToInfoWindow("Mantissa step", std::format("Mantisa step : {:.3f}", _CalcMantissaStep(m_flServerTime)));
+#endif
 
 	if (_ShouldRun(cmd) == false)
 		return;
@@ -68,12 +74,6 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	_FixSpread(cmd, iSeed, pActiveWeapon);
 	//_FixSpreadSingleBullet(cmd, iSeed, pActiveWeapon);
 
-#ifdef DEBUG_NOSPREAD
-	Render::InfoWindow.AddToInfoWindow("sync status", m_eSyncState == SYNC_DONE ? "SYNCED :)" : "sync-ing :(");
-	Render::InfoWindow.AddToInfoWindow("delta", std::format("delta : {:.6f}", m_flDelta));
-	Render::InfoWindow.AddToInfoWindow("offset", std::format("offset : {:.6f}", m_flOffset));
-#endif
-
 	result = false;
 }
 
@@ -84,8 +84,6 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 
 bool NoSpread_t::_ParsePlayerPerf(std::string sMsg)
 {
-	m_bWaitingForPlayerPerf = false;
-	
 	if (sMsg[0] == 2)
 		sMsg = sMsg.substr(1);
 
@@ -96,33 +94,25 @@ bool NoSpread_t::_ParsePlayerPerf(std::string sMsg)
 	
 	if (match.size() != 2)
 		return false;
+	m_bWaitingForPlayerPerf = false;
+	
 	float flScrappedTime = std::stof(match[1].str());
-
 	if (flScrappedTime < m_flServerTime)
 		return true;
-	
 	m_flServerTime = flScrappedTime;
 
-	if (m_flDelta > 0.0f)
-	{
-		float flEstimatedServerTime = m_flRequestTime + m_flDelta + m_flOffset; // request time + delta ( which is calculated from last time ) + offset
-		if (flEstimatedServerTime == m_flServerTime)
-		{
-			LOG("Estimated correctly!, server time : %.6f, delta : %.6f, offset : %.6f", m_flServerTime, m_flDelta, m_flOffset);
-			counter++;
-			if (counter == 10)
-				m_eSyncState = SYNC_DONE;
-		}
-		else
-		{
-			FAIL_LOG("wrong prediction, est time : %.6f, server time : %.6f, delta : %.6f, offset : %.6f",flEstimatedServerTime, m_flServerTime, m_flDelta, m_flOffset);
-			counter = 0;
-			m_flOffset = m_flServerTime - (m_flRequestTime + m_flDelta);
-			m_eSyncState = SYNC_STARTING;
-		}
-	}
+	float flRecieveTime = ExportFn::Plat_FloatTime.Call<double>();
+	float flResponseTime = flRecieveTime - m_flRequestTime;
 
-	m_flDelta = m_flServerTime - m_flRequestTime;
+	m_qServerTimes.push_back(m_flServerTime - flRecieveTime + flResponseTime);
+	if (m_qServerTimes.size() > MAX_TIME_RECORDS)
+		m_qServerTimes.pop_front();
+	m_flDelta = std::reduce(m_qServerTimes.begin(), m_qServerTimes.end()) / m_qServerTimes.size();
+	m_flDelta += tfObject.pGlobalVar->interval_per_tick * float(config.miscConfig.iServerTimeOffset); // adding offset for finner adjustment.
+
+	float flMantissaStep = _CalcMantissaStep(m_flServerTime);
+	if (flMantissaStep > 1.0f && m_qServerTimes.size() >= MAX_TIME_RECORDS)
+		m_eSyncState = SYNC_DONE;
 
 	return true;
 }
@@ -132,11 +122,16 @@ void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
 	if (m_bWaitingForPlayerPerf == true)
 		return;
 
-	if (cmd->tick_count - m_iRequestTick < DELTA_UPDATE_FREQUENCY && m_eSyncState == SYNC_DONE)
+	if (m_eSyncState == SYNC_DONE)
 		return;
 
+	/*if (cmd->tick_count - m_iRequestTick < DELTA_UPDATE_FREQUENCY && m_eSyncState == SYNC_DONE)
+		return;*/
+
 	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
-	m_flRequestTime = static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
+	m_flRequestTime		= static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
+	m_iRequestTick		= cmd->tick_count;
+	m_flRequestLatency	= I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
 	m_bWaitingForPlayerPerf = true;
 }
 
@@ -144,7 +139,7 @@ void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
 uint32_t NoSpread_t::GetSeed()
 {
 	// compensating for lantecy.
-	double flflTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDelta + m_flOffset + I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
+	double flflTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDelta;// +m_flOffset + I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
 	float  flTime	= float(flflTime * 1000.0f);
 	return std::bit_cast<int32_t>(flTime) & 255;
 }
@@ -187,15 +182,13 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 		vec vecDirShooting, vecRight, vecUp;
 		Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp);
 
-		vec vbulletSpread = vecDirShooting + ((vecRight * flRandomX) * flBaseSpread) + ((vecUp * flRandomY) * flBaseSpread);
+		vec vbulletSpread = vecDirShooting + (vecRight * (flRandomX * flBaseSpread)) + (vecUp * (flRandomY * flBaseSpread));
 		vbulletSpread.Normalize();
 
 		vAverageSpread = vAverageSpread + vbulletSpread; // adding up to the average.
 		vecBulletCorrections.push_back(vbulletSpread);   // pushing into record.
 	}
 
-	// this averging out logic from amalgun, seems like will only work with single bullet weapons and shotguns. 
-	// ( don't know how well minigums will work with this. )
 	vAverageSpread = vAverageSpread / static_cast<float>(iBullets); // Calculating the actual average.
 	vec vFixedSpread(FLT_MAX, FLT_MAX, FLT_MAX);
 	for (auto& spread : vecBulletCorrections)
@@ -205,39 +198,16 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 			vFixedSpread = spread;
 		}
 	}
+	//printf("calculated spread : %.2f %.2f %.2f\n", vFixedSpread.x, vFixedSpread.y, vFixedSpread.z);
 
 	qangle qFinal;
-	Maths::VectorAngles(vAverageSpread, qFinal);
+	//Maths::VectorAngles(vAverageSpread, qFinal);
+	Maths::VectorAngles(vFixedSpread, qFinal);
 	//Maths::VectorAnglesFromSDK(vFixedSpread, qFinal);
-	//Maths::ClampQAngle(qFinal);
 
 	cmd->viewangles = cmd->viewangles + (cmd->viewangles - qFinal);
 	Maths::ClampQAngle(cmd->viewangles);
 	//Maths::ClampAngles(cmd->viewangles);
-
-	return true;
-}
-
-bool NoSpread_t::_FixSpreadSingleBullet(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon)
-{
-	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
-
-	ExportFn::RandomSeed.Call<void>(seed);
-
-	// random X & Y
-	float flRandomX = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
-	float flRandomY = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
-
-	vec vecDirShooting, vecRight, vecUp;
-	Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp);
-
-	vec vBulletSpread = vecDirShooting + ((vecRight * flRandomX) * flBaseSpread) + ((vecUp * flRandomY) * flBaseSpread);
-	vBulletSpread.Normalize();
-	
-	qangle qFinal;
-	Maths::VectorAngles(vBulletSpread, qFinal);
-	cmd->viewangles = cmd->viewangles + (cmd->viewangles - qFinal);
-	Maths::ClampQAngle(cmd->viewangles);
 
 	return true;
 }

@@ -80,21 +80,17 @@ struct MatProp_t
 class Chams_t
 {
 public:
-    int64_t Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix);
-    bool FreeAllMaterial();
+    int64_t     Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix);
+    bool        FreeAllMaterial();
 
 private:
-    // All of these fucking functions do the same thing, and it could have
-    // been done with a single fucking function. This shows how smart I am
-    // and I truly am just a dumb fuck. FIX THIS SHIT!
-
     bool        _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, ChamSetting_t& pChamConfig);
     bool        _IsAmmoPack(uint32_t iHash);
     bool        _IsMedKit(uint32_t iHash);
 
-    TFclr_t _GetClrFromString(std::string szColorString);
+    TFclr_t     _GetClrFromString(std::string szColorString);
     std::string _GetMaterialType(const char* szMaterialVMT);
-    types_t _GetMatPropDataType(data_t & dataOut, std::string szData);
+    types_t     _GetMatPropDataType(data_t & dataOut, std::string szData);
     bool        _GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, const char* szMaterialVMT);
 
     bool        _CreateMaterial(std::string szMatName, const char* szMaterialVMT);

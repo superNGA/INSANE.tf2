@@ -97,6 +97,10 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_TFPlayer")				&& map["m_Shared"])					netvar.m_Shared					= map["m_Shared"];
 	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_nPlayerCond"])			netvar.m_nPlayerCond			= map["m_nPlayerCond"];
 	if (!strcmp(table_name, "DT_TFWeaponKnife")			&& map["m_bReadyToBackstab"])		netvar.m_bReadyToBackstab		= map["m_bReadyToBackstab"];
+	
+	if (!strcmp(table_name, "DT_BaseAnimating")			&& map["m_flPoseParameter"])		netvar.m_flPoseParameter		= map["m_flPoseParameter"];
+	if (!strcmp(table_name, "DT_BaseAnimating")			&& map["m_nSequence"])				netvar.m_nSequence				= map["m_nSequence"];
+	if (!strcmp(table_name, "DT_ServerAnimationData")	&& map["m_flCycle"])				netvar.m_flCycle				= map["m_flCycle"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];
@@ -104,4 +108,5 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (map["m_iReloadMode"])		netvar.m_iReloadMode	= map["m_iReloadMode"];
 	if (map["m_hActiveWeapon"])		netvar.m_hActiveWeapon	= map["m_hActiveWeapon"];
 	if (map["m_bGlowEnabled"])		netvar.m_bGlowEnabled	= map["m_bGlowEnabled"];
+	if (map["m_hItem"])				netvar.m_hItem			= map["m_hItem"];
 }

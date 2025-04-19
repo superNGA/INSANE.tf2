@@ -3,12 +3,11 @@
 #include "../../SDK/FN index Manager/FN index manager.h"
 #include "../../Extra/math.h"
 #include "../../Features/NoSpread/NoSpread.h"
+#include "../../Features/Anti Aim/AntiAim.h"
 #include "../../Utility/signatures.h"
 #include "../../Utility/Hook_t.h"
 
 hook::createmove::template_createmove hook::createmove::original_createmove = nullptr;
-//bool hook::createmove::hooked_createmove(int64_t a1, int64_t a2, CUserCmd* cmd)
-//MAKE_SIG(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
 	int64_t a1, int64_t a2, CUserCmd* cmd)
 {
@@ -38,7 +37,9 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	feature::aimbot(cmd, result);
 
 	/* No spread */
-	Features::noSpread.Run(cmd, result);
+	Features::noSpread.Run(cmd, result); // incomplete, not working
+
+	Features::antiAim.Run(cmd, result);
 
 	return result;
 }

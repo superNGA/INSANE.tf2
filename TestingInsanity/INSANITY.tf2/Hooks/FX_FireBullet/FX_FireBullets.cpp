@@ -15,8 +15,8 @@ int64_t __fastcall hook::FX_FireBullets::H_FireBulets(float* a1,
     float a9,
     char a10)
 {
-    iSeed = Features::noSpread.m_iSeed.load();
-    //iSeed = Features::noSpread.GetSeed();
-    printf("spread : %f W/ seed : %d\n", flBaseSpread, iSeed);
+    if(config.aimbotConfig.bNoSpread == true)
+        iSeed = Features::noSpread.m_iSeed.load();
+    
     return O_FireBullets(a1, a2, a3, a4, a5, a6, iSeed, flBaseSpread, a9, a10);
 }

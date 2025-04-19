@@ -53,6 +53,11 @@ struct local_netvars
 	uintptr_t m_nPlayerCond				= 0;
 	uintptr_t m_bReadyToBackstab		= 0;
 	uintptr_t m_velocity				= 0;
+	uintptr_t m_hItem					= 0;
+
+	uintptr_t m_nSequence				= 0;
+	uintptr_t m_flCycle					= 0;
+	uintptr_t m_flPoseParameter			= 0;
 };
 
 extern local_netvars netvar;

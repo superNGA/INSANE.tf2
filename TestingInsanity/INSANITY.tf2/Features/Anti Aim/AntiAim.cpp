@@ -1,0 +1,100 @@
+#include "AntiAim.h"
+#include "../../SDK/class/CUserCmd.h"
+#include "../../SDK/class/IVEngineClient.h"
+#include "../../SDK/class/CMultAnimState.h"
+
+#include "../../SDK/offsets/offsets.h"
+#include "../../SDK/Entity Manager/entityManager.h"
+#include "../../Utility/Interface.h"
+#include "../../Utility/signatures.h"
+
+extern local_netvars netvar;
+
+MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL);
+
+//=========================================================================
+//                     PUBLIC METHODS
+//=========================================================================
+void AntiAim_t::Run(CUserCmd* cmd, bool& bResult)
+{
+	auto ent = entityManager.getLocalPlayer();
+	if (ent == nullptr)
+		return;
+
+	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)ent + netvar.m_hItem - 88);
+
+	m_qAAAngles.pitch = 0.0f;
+	m_qAAAngles.yaw	  = 180.0f;
+
+	cmd->viewangles = m_qAAAngles;
+	StoreAABones();
+
+	_FixMovement(cmd);
+	bResult = false;
+}
+
+
+//=========================================================================
+//                     PRIVATE METHODS
+//=========================================================================
+void AntiAim_t::StoreAABones()
+{
+	auto* pLocalPlayer = entityManager.getLocalPlayer();
+	if (pLocalPlayer == nullptr)
+		return;
+	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + netvar.m_hItem - 88);
+
+	// storing old data
+	float flOldFrameTime = tfObject.pGlobalVar->frametime;
+	float flOldCycle = *reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle);
+	float flOldPose[24];
+	memcpy(flOldPose, (void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), sizeof(float) * 24);
+	int nOldSeqence = *reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence);
+
+	char oldAnimState[sizeof(CMultiPlayerAnimState)];
+	memcpy(&oldAnimState, pAnimState, sizeof(CMultiPlayerAnimState));
+
+	// setupBones
+	tfObject.pGlobalVar->frametime = 0.0f;
+	
+	pAnimState->m_flCurrentFeetYaw = m_qAAAngles.yaw;
+	pAnimState->m_flGoalFeetYaw = m_qAAAngles.yaw;
+	pAnimState->Update(m_qAAAngles.yaw, m_qAAAngles.pitch);
+
+	Sig::CBaseAnimating_InvalidateBoneCache.Call<int64_t, void*>(pLocalPlayer->GetBaseEntity());
+	entityManager.getLocalPlayer()->SetupBones(pBone, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, tfObject.pGlobalVar->curtime);
+
+	// resetting back to original
+	tfObject.pGlobalVar->frametime = flOldFrameTime;
+	*reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle) = flOldCycle;
+	memcpy((void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), flOldPose, sizeof(float) * 24);
+	*reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence) = nOldSeqence;
+
+	memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
+}
+
+
+inline float normalizeAngle(float angle)
+{
+	if (angle < 0.0f)
+		return angle + 360.0f;
+	return angle;
+}
+
+
+void AntiAim_t::_FixMovement(CUserCmd* pCmd)
+{
+	qangle qEngineAngles;
+	I::iEngine->GetViewAngles(qEngineAngles);
+
+	float fakeAnglesInDeg	 = 360.0f - normalizeAngle(pCmd->viewangles.yaw);
+	float realAnglesInDeg	 = 360.0f - normalizeAngle(qEngineAngles.yaw);
+							 
+	float deltaAngleInRad	 = (realAnglesInDeg - fakeAnglesInDeg) * DEG2RAD;
+
+	float orignalForwardMove = pCmd->forwardmove;
+	float orignalSideMove	 = pCmd->sidemove;
+
+	pCmd->forwardmove		 = cos(deltaAngleInRad) * orignalForwardMove - sin(deltaAngleInRad) * orignalSideMove;
+	pCmd->sidemove			 = cos(deltaAngleInRad) * orignalSideMove + sin(deltaAngleInRad) * orignalForwardMove;
+}
