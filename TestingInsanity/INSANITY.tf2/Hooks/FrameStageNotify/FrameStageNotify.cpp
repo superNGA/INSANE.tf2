@@ -1,15 +1,17 @@
-#include "FrameStageNotify.h"
+#include "../../Utility/Hook_t.h"
+#include "../../Utility/ConsoleLogging.h"
+
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
-#include "../../Features/Anti Aim/AntiAim.h"
 
-hook::frame_stage_notify::template_frame_stage_notify hook::frame_stage_notify::original_frame_stage_notify = nullptr;
-void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_frame_stage frame_stage)
+//void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_frame_stage frame_stage)
+MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, void* pVTable, client_frame_stage frameStage)
 {
-	original_frame_stage_notify(p_vtable, frame_stage);
+	Hook::FrameStateNotify::O_FrameStateNotify(pVTable, frameStage);
+
 	static int16_t frameCounter = 0; // counts frames elapsed
 
-	switch (frame_stage)
+	switch (frameStage)
 	{
 	case FRAME_NET_UPDATE_START:
 		break;

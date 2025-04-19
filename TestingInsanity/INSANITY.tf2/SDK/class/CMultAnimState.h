@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Basic Structures.h"
 #include "Activity.h"
 
@@ -129,7 +130,7 @@ public:
 	virtual void				GANDU_COLLEGE();
 	virtual void				ClearAnimationState();
 	virtual void				DoAnimationEvent(PlayerAnimEvent_t event, int nData = 0);
-	virtual void				CalcMainActivity();
+	virtual Activity			CalcMainActivity();
 	virtual void				Update(float eyeYaw, float eyePitch);
 	virtual void				Release(void);
 	virtual Activity			TranslateActivity(Activity actDesired);
@@ -200,6 +201,8 @@ public:
 
 	MultiPlayerMovementData_t	m_MovementData;
 
+	char padding[0x18];
+
 	// Jumping.
 	bool						m_bJumping;
 	float						m_flJumpStartTime;
@@ -218,4 +221,30 @@ public:
 
 	// Specific full-body sequence to play
 	int							m_nSpecificMainSequence;
+};
+
+class CTFPlayerAnimState : public CMultiPlayerAnimState
+{
+public:
+	virtual void ClearAnimationState();
+	virtual Activity TranslateActivity(Activity actDesired);
+	virtual void Update(float eyeYaw, float eyePitch);
+
+	virtual void CheckStunAnimation();
+	virtual Activity CalcMainActivity();
+	virtual void ComputePoseParam_AimYaw(void* pStudioHdr);
+	virtual float GetCurrentMaxGroundSpeed();
+	virtual float GetGesturePlaybackRate(void);
+	virtual bool ShouldUpdateAnimState();
+	virtual void GetOuterAbsVelocity(vec& vel);
+	virtual void RestartGesture(int iGestureSlot, Activity iGestureActivity, bool bAutoKill = true);
+
+	void* m_pTFPlayer;
+	bool		m_bInAirWalk;
+	float		m_flHoldDeployedPoseUntilTime;
+	float		m_flTauntMoveX;
+	float		m_flTauntMoveY;
+	float		m_flVehicleLeanVel;
+	float		m_flVehicleLeanPos;
+	vec		m_vecSmoothedUp;
 };

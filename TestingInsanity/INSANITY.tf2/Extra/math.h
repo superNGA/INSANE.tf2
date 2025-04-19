@@ -29,8 +29,8 @@ namespace Maths
     inline void AngleVectors(const qangle& vAngles, vec* pForward = nullptr, vec* pRight = nullptr, vec* pUp = nullptr)
     {
         float sp, sy, sr, cp, cy, cr;
-        SinCos(DEG2RAD * vAngles.pitch , &sp, &cp);
-        SinCos(DEG2RAD * vAngles.yaw , &sy, &cy);
+        SinCos(DEG2RAD(vAngles.pitch), &sp, &cp);
+        SinCos(DEG2RAD(vAngles.yaw) , &sy, &cy);
 
         if (pForward)
         {
@@ -41,7 +41,7 @@ namespace Maths
 
         if (pRight || pUp)
         {
-            SinCos(DEG2RAD * vAngles.roll, &sr, &cr);
+            SinCos(DEG2RAD(vAngles.roll), &sr, &cr);
 
             if (pRight)
             {
@@ -122,9 +122,9 @@ namespace Maths
             return;
         }
 
-        yaw       = (atan2(forward.y, forward.x) * RAD2DEG);
+        yaw       = (RAD2DEG(atan2(forward.y, forward.x)));
         float tmp = sqrtf(forward.x * forward.x + forward.y * forward.y);
-        pitch     = (atan2(-forward.z, tmp) * RAD2DEG);
+        pitch     = (RAD2DEG(atan2(-forward.z, tmp)));
 
         angles.pitch = pitch;
         angles.yaw   = yaw;
@@ -142,11 +142,11 @@ namespace Maths
         }
         else
         {
-            yaw = RAD2DEG * atan2f(vForward.y, vForward.x);
+            yaw = RAD2DEG(atan2f(vForward.y, vForward.x));
             if (yaw < 0)
                 yaw += 360;
 
-            pitch = RAD2DEG * atan2f(-vForward.z, sqrtf(vForward.x * vForward.x + vForward.y * vForward.y));
+            pitch = RAD2DEG(atan2f(-vForward.z, sqrtf(vForward.x * vForward.x + vForward.y * vForward.y)));
             if (pitch < 0)
                 pitch += 360;
         }
@@ -154,6 +154,49 @@ namespace Maths
         vAngles.pitch = pitch;
         vAngles.yaw = yaw;
         vAngles.roll = 0;
+    }
+
+    inline void MatrixSetColumn(const vec& in, int column, matrix3x4_t& out)
+    {
+        out.m[0][column] = in.x;
+        out.m[1][column] = in.y;
+        out.m[2][column] = in.z;
+    }
+
+    inline void AngleMatrix(const qangle& angles, matrix3x4_t& matrix)
+    {
+        float sr, sp, sy, cr, cp, cy;
+
+        SinCos(DEG2RAD(angles.yaw), &sy, &cy);
+        SinCos(DEG2RAD(angles.pitch), &sp, &cp);
+        SinCos(DEG2RAD(angles.roll), &sr, &cr);
+
+        // matrix = (YAW * PITCH) * ROLL
+        matrix.m[0][0] = cp * cy;
+        matrix.m[1][0] = cp * sy;
+        matrix.m[2][0] = -sp;
+
+        float crcy = cr * cy;
+        float crsy = cr * sy;
+        float srcy = sr * cy;
+        float srsy = sr * sy;
+        matrix.m[0][1] = sp * srcy - crsy;
+        matrix.m[1][1] = sp * srsy + crcy;
+        matrix.m[2][1] = sr * cp;
+
+        matrix.m[0][2] = (sp * crcy + srsy);
+        matrix.m[1][2] = (sp * crsy - srcy);
+        matrix.m[2][2] = cr * cp;
+
+        matrix.m[0][3] = 0.0f;
+        matrix.m[1][3] = 0.0f;
+        matrix.m[2][3] = 0.0f;
+    }
+
+    inline void AngleMatrix(const qangle& angles, const vec& position, matrix3x4_t& matrix)
+    {
+        AngleMatrix(angles, matrix);
+        MatrixSetColumn(position, 3, matrix);
     }
 
 }

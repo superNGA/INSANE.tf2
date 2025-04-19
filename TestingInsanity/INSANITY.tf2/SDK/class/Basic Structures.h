@@ -34,7 +34,10 @@
 
 /* METH */
 #define DEG2RAD (M_PI / 180.0f)
+#define DEG2RAD(x) (static_cast<float>(x) * (M_PI / 180.0f))
+
 #define RAD2DEG (180.0f / M_PI)
+#define RAD2DEG(x) (static_cast<float>(x) * (180.0f / M_PI))
 
 /* game constants */
 #define TF2_GRAVITY 800.0f

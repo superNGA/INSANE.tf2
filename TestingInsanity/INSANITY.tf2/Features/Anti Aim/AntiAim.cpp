@@ -8,6 +8,8 @@
 #include "../../Utility/Interface.h"
 #include "../../Utility/signatures.h"
 
+#include "../../Extra/math.h"
+
 extern local_netvars netvar;
 
 MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL);
@@ -23,8 +25,10 @@ void AntiAim_t::Run(CUserCmd* cmd, bool& bResult)
 
 	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)ent + netvar.m_hItem - 88);
 
-	m_qAAAngles.pitch = 0.0f;
+	m_qAAAngles.pitch = -89.0f;
 	m_qAAAngles.yaw	  = 180.0f;
+
+	//Maths::ClampQAngle(m_qAAAngles);
 
 	cmd->viewangles = m_qAAAngles;
 	StoreAABones();
@@ -43,33 +47,40 @@ void AntiAim_t::StoreAABones()
 	if (pLocalPlayer == nullptr)
 		return;
 	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + netvar.m_hItem - 88);
+	//
+	//// storing old data
+	//float flOldFrameTime = tfObject.pGlobalVar->frametime;
 
-	// storing old data
-	float flOldFrameTime = tfObject.pGlobalVar->frametime;
-	float flOldCycle = *reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle);
-	float flOldPose[24];
-	memcpy(flOldPose, (void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), sizeof(float) * 24);
-	int nOldSeqence = *reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence);
-
+	// PoseParameters are "CInterpolatedVarArray" which are supposed to arrays of 24 floats,
+	// But it also has virtual functions from the class it inherits from. So maybe we need to store more than 24 bytes.
+	//constexpr uint32_t POSE_PARAMETER_SIZE = (sizeof(float) * 24) + 0x8; //<- compensating for virtual table pointer.
+	//char flOldPose[POSE_PARAMETER_SIZE];
+	//memcpy(flOldPose, (void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), POSE_PARAMETER_SIZE);
+	//int nOldSeqence = *reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence);
+	//float flOldCycle = *reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle);
+	//
 	char oldAnimState[sizeof(CMultiPlayerAnimState)];
 	memcpy(&oldAnimState, pAnimState, sizeof(CMultiPlayerAnimState));
 
 	// setupBones
-	tfObject.pGlobalVar->frametime = 0.0f;
+	//tfObject.pGlobalVar->frametime = 0.0f;
 	
-	pAnimState->m_flCurrentFeetYaw = m_qAAAngles.yaw;
-	pAnimState->m_flGoalFeetYaw = m_qAAAngles.yaw;
-	pAnimState->Update(m_qAAAngles.yaw, m_qAAAngles.pitch);
+	pAnimState->m_flCurrentFeetYaw  = m_qAAAngles.yaw;
+	pAnimState->Update(m_qAAAngles.yaw, m_qAAAngles.pitch); // <- this is important.
 
 	Sig::CBaseAnimating_InvalidateBoneCache.Call<int64_t, void*>(pLocalPlayer->GetBaseEntity());
+	
+	const qangle qOriRenderAngles = pLocalPlayer->GetRenderAngles();
+	pLocalPlayer->GetRenderAngles().yaw = m_qAAAngles.yaw;
 	entityManager.getLocalPlayer()->SetupBones(pBone, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, tfObject.pGlobalVar->curtime);
+	pLocalPlayer->GetRenderAngles() = qOriRenderAngles;
 
 	// resetting back to original
-	tfObject.pGlobalVar->frametime = flOldFrameTime;
-	*reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle) = flOldCycle;
-	memcpy((void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), flOldPose, sizeof(float) * 24);
-	*reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence) = nOldSeqence;
-
+	//tfObject.pGlobalVar->frametime = flOldFrameTime;
+	//*reinterpret_cast<float*>((uintptr_t)pLocalPlayer + netvar.m_flCycle) = flOldCycle;
+	//memcpy((void*)((uintptr_t)pLocalPlayer + netvar.m_flPoseParameter), flOldPose, POSE_PARAMETER_SIZE);
+	//*reinterpret_cast<int*>((uintptr_t)pLocalPlayer + netvar.m_nSequence) = nOldSeqence;
+	//
 	memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
 }
 
@@ -90,7 +101,7 @@ void AntiAim_t::_FixMovement(CUserCmd* pCmd)
 	float fakeAnglesInDeg	 = 360.0f - normalizeAngle(pCmd->viewangles.yaw);
 	float realAnglesInDeg	 = 360.0f - normalizeAngle(qEngineAngles.yaw);
 							 
-	float deltaAngleInRad	 = (realAnglesInDeg - fakeAnglesInDeg) * DEG2RAD;
+	float deltaAngleInRad	 = DEG2RAD((realAnglesInDeg - fakeAnglesInDeg));
 
 	float orignalForwardMove = pCmd->forwardmove;
 	float orignalSideMove	 = pCmd->sidemove;

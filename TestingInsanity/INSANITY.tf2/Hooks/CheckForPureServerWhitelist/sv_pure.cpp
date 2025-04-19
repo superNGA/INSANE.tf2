@@ -1,12 +1,8 @@
-#include "sv_pure.h"
-#include <iostream>
-#include "../../SDK/TF object manager/TFOjectManager.h"
+#include "../../Utility/Hook_t.h"
+#include "../../Utility/ConsoleLogging.h"
 
-hook::sv_pure::T_svPure hook::sv_pure::O_svPure = nullptr;
-void __fastcall hook::sv_pure::H_svPure(void* pFile)
+MAKE_HOOK(CheckForWhiteListServer, "40 56 48 83 EC ? 83 3D ? ? ? ? ? 48 8B F1 0F 8E", __fastcall, ENGINE_DLL, void, void* pFile)
 {
-#ifdef _DEBUG
-    cons.Log(FG_GREEN, "sv_pure", "bypassed sv_pure :)");
-#endif
+    WIN_LOG("SKIPPED SV-PURE CHECK!");
     return;
 }

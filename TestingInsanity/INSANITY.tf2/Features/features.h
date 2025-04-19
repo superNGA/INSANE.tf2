@@ -170,18 +170,6 @@ namespace feature
 		if (wishDir.isEmpty() == true)
 			return;
 
-		/* STEPS : 
-		* 1. get the wish direction vector
-		* 2. get the angle between the wish direction and the ENGINE Angles
-		* 3. get the angles between the wish Directions and the velocity <- DO WE EVEN NEED THIS STEP? idk
-		* 4. rotate the viewAngles until by view angles direction is equal to the wish direction
-		*/
-
-		/* NOTES : 
-		* Engins angles are absolute, so 0 will always point in same direction,
-		* also they are oriented the same way as the view angles.
-		*/
-
 		qangle engineAngles;
 		tfObject.engine->GetViewAngles(engineAngles);
 		float yaw = engineAngles.yaw;
@@ -193,16 +181,16 @@ namespace feature
 		{
 			if (wishDir.y > 0.0f)
 			{
-				deltaAngleInDeg = (atan(wishDir.y / -wishDir.x) + (M_PI / 2.0f)) * RAD2DEG;
+				deltaAngleInDeg = RAD2DEG((atan(wishDir.y / -wishDir.x) + (M_PI / 2.0f)));
 			}
 			else if (wishDir.y < 0.0f)
 			{
-				deltaAngleInDeg = (atan(wishDir.y / -wishDir.x) - (M_PI / 2.0f)) * RAD2DEG;
+				deltaAngleInDeg = RAD2DEG((atan(wishDir.y / -wishDir.x) - (M_PI / 2.0f)));
 			}
 		}
 		else
 		{
-			deltaAngleInDeg = atan(wishDir.y / wishDir.x) * RAD2DEG;
+			deltaAngleInDeg = RAD2DEG(atan(wishDir.y / wishDir.x));
 		}
 		deltaAngleInDeg *= -1.0f;
 

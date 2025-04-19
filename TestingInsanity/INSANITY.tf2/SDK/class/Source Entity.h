@@ -137,8 +137,8 @@ public:
 	virtual I_client_unknown* GetI_client_unknown() = 0;
 
 	// Data accessors
-	virtual vec						const& GetRenderOrigin(void) = 0;
-	virtual qangle					const& GetRenderAngles(void) = 0;
+	virtual vec&					GetRenderOrigin(void) = 0;
+	virtual qangle&					GetRenderAngles(void) = 0;
 	virtual bool					ShouldDraw(void) = 0;
 	virtual bool					IsTransparent(void) = 0;
 	virtual bool					UsesPowerOfTwoFrameBufferTexture() = 0;

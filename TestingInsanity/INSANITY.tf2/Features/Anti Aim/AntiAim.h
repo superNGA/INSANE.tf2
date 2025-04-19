@@ -12,7 +12,8 @@ class CMultiPlayerAnimState;
 
 /*
 * TODO : 
-* -> Render the anti aim chams
+* -> taunt yaw fix
+* -> scoped in yaw ?
 * -> make some macro that allow for easy features addition to config.
 */
 

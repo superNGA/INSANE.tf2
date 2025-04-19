@@ -23,6 +23,8 @@ Chams_t chams;
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Libraries/Timer.h"
 
+#include "../../Extra/math.h"
+
 #define MIN_TIME 0.0001
 
 //=========================================================================
@@ -165,8 +167,10 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     auto* me = entityManager.getLocalPlayer();
     if(me != nullptr && pEntity == me->GetClientRenderable())
     {
-        result = hook::DME::O_DME(pVTable, modelState, renderInfo, Features::antiAim.pBone);
-        LOG("Drawing anti aim chams");
+        hook::DME::O_DME(pVTable, modelState, renderInfo, Features::antiAim.pBone); // <- fake me
+        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
+        result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix); // <- real me
+        return result;
     }
     else
     {
