@@ -57,7 +57,7 @@ bool InterfaceInitialize_t::Initialize()
         }
         I->m_bToBeScanned ?
             WIN_LOG("found %s [ %s ] from %s @ [ %p ]", I->m_szInterfaceName, I->m_szIdentifier, I->m_szDll, *I->m_pDestination) :
-            WIN_LOG("found %s from %s @ [ %p ]", I->m_szInterfaceName, I->m_szDll, *I->m_pDestination);
+            WIN_LOG("found %s from %s @ [ %p ]", I->m_szIdentifier, I->m_szDll, *I->m_pDestination);
     }
     
     return true;

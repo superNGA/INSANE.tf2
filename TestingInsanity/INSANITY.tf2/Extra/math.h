@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include <algorithm>
 #include "../SDK/class/Basic Structures.h"
 
 const inline float MAX_PITCH = 89.0f;

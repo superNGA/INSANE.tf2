@@ -15,6 +15,10 @@
 #include "../Class ID Manager/classIDManager.h"
 #include "../class/BaseWeapon.h"
 #include "../../Libraries/Console System/Console_System.h"
+
+#include "../class/IVEngineClient.h"
+#include "../class/Source Entity.h"
+
 extern Console_System cons;
 
 EntityManager_t entityManager;
@@ -176,8 +180,8 @@ baseWeapon* EntityManager_t::getActiveWeapon()
 */
 bool EntityManager_t::_processLocalPlayer()
 {
-	_indexLocalPlayer = tfObject.engine->GetLocalPlayer();
-	BaseEntity* pLocalPlayer_ = tfObject.entityList->GetClientEntity(_indexLocalPlayer);
+	_indexLocalPlayer = I::iEngine->GetLocalPlayer();
+	BaseEntity* pLocalPlayer_ = I::IClientEntityList->GetClientEntity(_indexLocalPlayer);
 	if (pLocalPlayer_ == nullptr || pLocalPlayer_->getLifeState() != LIFE_ALIVE)
 	{
 		return false;
@@ -224,7 +228,7 @@ bool EntityManager_t::_processActiveWeapon()
 */
 bool EntityManager_t::_processEntityList()
 {
-    uint32_t entityCount_ = tfObject.entityList->NumberOfEntities(true);
+    uint32_t entityCount_ = I::IClientEntityList->NumberOfEntities(true);
     if (entityCount_ <= 0)
     {
         ERROR("ENTITY MANAGER", "entity list size was <= 0, skipping entity list filtering");
@@ -239,7 +243,7 @@ bool EntityManager_t::_processEntityList()
             continue;
         }
 
-        BaseEntity* entity = tfObject.entityList->GetClientEntity(entIndex_);
+        BaseEntity* entity = I::IClientEntityList->GetClientEntity(entIndex_);
         if (entity == nullptr || entity->IsDormant())
         {
             continue;

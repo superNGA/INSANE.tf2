@@ -36,7 +36,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, void* reserved)
 		auto pThread1 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(runCheat), instance, 0, nullptr);
 
 		LOG("DllMain", "All threads created Successfully");
-		LOG("DllMain", "Loaded @ %p", reserved);
+		//LOG("DllMain", "Loaded @ %p", reserved);
 
 		//closing thread handles
 		if (pThread1) CloseHandle(pThread1);

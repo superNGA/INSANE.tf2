@@ -1,5 +1,6 @@
 #include "offsets.h"
-#include "../TF object manager/TFOjectManager.h"
+//#include "../TF object manager/TFOjectManager.h"
+#include "../class/I_BaseEntityDLL.h"
 
 local_netvars netvar;
 
@@ -34,7 +35,7 @@ bool offsets::initialize()
 
 	/* getting interface */
 	int error_code;
-	auto base_client = tfObject.baseClientDll;
+	auto base_client = I::IBaseClient;
 
 	/* iterating through all client classes */
 	ClientClass* client_class = base_client->GetAllClasses();

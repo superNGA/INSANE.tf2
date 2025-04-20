@@ -1,5 +1,6 @@
 #pragma once
 #include "Basic Structures.h"
+#include "../../Utility/Interface.h"
 
 class IVDebugOverlay
 {
@@ -26,3 +27,5 @@ public:
 
 	virtual void AddLineOverlayAlpha(const vec& origin, const vec& dest, int r, int g, int b, int a, bool noDepthTest, float duration) = 0;
 };
+
+MAKE_INTERFACE_VERSION(IDebugOverlay, "VDebugOverlay003", IVDebugOverlay, ENGINE_DLL)

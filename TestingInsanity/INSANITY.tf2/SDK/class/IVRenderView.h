@@ -1,5 +1,6 @@
 #pragma once
 #include "Basic Structures.h"
+#include "../../Utility/Interface.h"
 
 class IVRenderView
 {
@@ -100,3 +101,5 @@ public:
 
 	// I Yanked the rest, cause no use.
 };
+
+MAKE_INTERFACE_VERSION(iVRenderView, "VEngineRenderView014", IVRenderView, ENGINE_DLL)

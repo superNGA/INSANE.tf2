@@ -31,12 +31,8 @@ GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL)
 GET_EXPORT_FN(RandomFloat, VSTDLIB_DLL)
 
 // weapon porperty related fns
-MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL)
-MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL)
-MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL)
-
-MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL)
-MAKE_SIG(CBaseClientState_SendStringCmd, "48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL)
+MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL, float, void*)
+MAKE_SIG(CBaseClientState_SendStringCmd, "48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL, void, void*, const char*)
 MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57",void, ENGINE_DLL, 0x3)
 //MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? F3 0F 5E 05", void, ENGINE_DLL)
 
@@ -128,7 +124,7 @@ void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
 	/*if (cmd->tick_count - m_iRequestTick < DELTA_UPDATE_FREQUENCY && m_eSyncState == SYNC_DONE)
 		return;*/
 
-	Sig::CBaseClientState_SendStringCmd.Call<void>(I::CBaseClientState, "playerperf\n");
+	Sig::CBaseClientState_SendStringCmd(I::CBaseClientState, "playerperf\n");
 	m_flRequestTime		= static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
 	m_iRequestTick		= cmd->tick_count;
 	m_flRequestLatency	= I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
@@ -167,7 +163,7 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 		return false;
 
 	vec vAverageSpread(0.0f, 0.0f, 0.0f);
-	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread.Call<float>((void*)pActiveWeapon);
+	float flBaseSpread = Sig::BaseWeapon_GetWeaponSpread((void*)pActiveWeapon);
 
 	std::vector<vec> vecBulletCorrections;
 

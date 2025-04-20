@@ -1,8 +1,6 @@
 #include "BulletTarcers_t.h"
 #include "../../Utility/signatures.h"
 
-MAKE_SIG(BaseWeapon_GetTracers, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 4C 8D 0D", "client.dll")
-
 const char* BulletTarcers_t::Run(void* pWeapon, const char* szOriginalOutput)
 {
     // if don't wanna then ain't gonna :)

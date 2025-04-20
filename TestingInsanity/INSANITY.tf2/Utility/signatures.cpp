@@ -4,7 +4,7 @@
 
 extern Utility util;
 
-Signature_t::Signature_t(const char* signature, const char* szDllName, const char* szSigName)
+ISignature_t::ISignature_t(const char* signature, const char* szDllName, const char* szSigName)
 {
     m_szSignature = signature;
     m_szDllName = szDllName;
@@ -14,7 +14,7 @@ Signature_t::Signature_t(const char* signature, const char* szDllName, const cha
 }
 
 
-bool Signature_t::Initialize()
+bool ISignature_t::Initialize()
 {
     m_ullAdrs = util.FindPattern(m_szSignature, m_szDllName);
     if (m_ullAdrs == NULL)
@@ -26,7 +26,7 @@ bool Signature_t::Initialize()
 
 bool AllSignatures_t::Initialize()
 {
-    for (Signature_t* sig : m_vecSignatures)
+    for (ISignature_t* sig : m_vecSignatures)
     {
         if (sig->Initialize() == false)
         {

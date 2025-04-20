@@ -32,6 +32,8 @@
 #define BONE_RIGHT_KNEE 16		// right knee
 #define BONE_FACE 33
 
+#define M_PI 3.14159265358979323846
+
 /* METH */
 #define DEG2RAD (M_PI / 180.0f)
 #define DEG2RAD(x) (static_cast<float>(x) * (M_PI / 180.0f))

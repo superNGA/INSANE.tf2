@@ -3,6 +3,8 @@
 #include <iostream>
 #include "Source Entity.h"
 
+#include "../../Utility/Interface.h"
+
 struct ray_t
 {
 	//default contructor
@@ -101,3 +103,5 @@ public:
 	virtual ICollideable* GetCollideable(void** pEntity) = 0;
 	virtual int		GetStatByIndex(int index, bool bClear) = 0;
 };
+
+MAKE_INTERFACE_VERSION(EngineTrace, "EngineTraceClient003", IEngineTrace, ENGINE_DLL)

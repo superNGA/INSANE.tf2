@@ -19,21 +19,8 @@
 #include "../GlobalVars.h"
 
 //======================= GAME HOOKS =======================
-#include "../Hooks/Createmove/CreateMove.h"
 #include "../Hooks/FrameStageNotify/FrameStageNotify.h"
-#include "../Hooks/RenderGlowEffect/renderGlowEffect.h"
 #include "../Hooks/TraceRay/TraceRay.h"
-#include "../Hooks/OverrideView/overrideView.h"
-#include "../Hooks/PaintTraverse/PaintTraverse.h"
-#include "../Hooks/ShouldDrawViewModel/ShouldDrawViewModel.h"
-#include "../Hooks/ProcessMovement/ProcessMovement.h"
-#include "../Hooks/DrawModelExecute/DrawModelExecute.h"
-#include "../Hooks/CheckForPureServerWhitelist/sv_pure.h"
-#include "../Hooks/RandomFloat/RandomFloat.h"
-#include "../Hooks/FX_FireBullet/FX_FireBullets.h"
-#include "../Hooks/DispatchUserMessage/DispatchUserMessage.h"
-#include "../Hooks/SendStringCommand/SendStringCommand.h"
-//#include "../Hooks/GetBulletTracers/"
 
 //======================= UI / RENDERING HOOKS =======================
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init

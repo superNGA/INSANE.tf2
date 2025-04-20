@@ -50,5 +50,5 @@ namespace Hook {\
         returnType callConvention H_##name(__VA_ARGS__); \
     }\
 }\
-namespace HOOK_TEMP{HookInfo_t temp_##name(signature, dll, reinterpret_cast<void*>(Hook::name::H_##name), reinterpret_cast<void**>(&Hook::name::O_##name), #name); }\
-returnType callConvention Hook::name::H_##name(__VA_ARGS__)
+namespace HOOK_TEMP{inline HookInfo_t temp_##name(signature, dll, reinterpret_cast<void*>(Hook::name::H_##name), reinterpret_cast<void**>(&Hook::name::O_##name), #name); }\
+inline returnType callConvention Hook::name::H_##name(__VA_ARGS__)

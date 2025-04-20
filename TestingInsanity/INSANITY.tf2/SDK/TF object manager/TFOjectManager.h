@@ -10,8 +10,8 @@
 #include <atomic>
 #include <cstdint>
 #include "../../GlobalVars.h"
-#include "../../Hooks/ProcessMovement/ProcessMovement.h"
-#include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
+//#include "../../Hooks/ProcessMovement/ProcessMovement.h"
+//#include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
 //#include "../class/IMaterial.h"
 #include "../class/IVRenderView.h"
 
@@ -68,7 +68,6 @@ public:
     bool initializeFns();
     void update();
 	bool initializeModuleHandles();
-	bool initializeInterfaces();
 
 	std::atomic<bool> bIsInitialized;
 
@@ -76,29 +75,8 @@ public:
 //                     CALL-ABLE FUNCTIONS
 //=========================================================================
 	T_lookUpBone			 lookUpBones				= nullptr;
-	T_getName				 getName					= nullptr;
 	T_addToLeafSystem		 addToLeafSystem			= nullptr;
 	T_MD5_PseudoRandom		 MD5_PseudoRandom			= nullptr;
-	T_findMaterial			 FindMaterial				= nullptr;
-	T_forcedMaterialOverride pForcedMaterialOverride	= nullptr;
-	T_createMaterial		 pCreateMaterial			= nullptr;
-	
-	// Mateiral related fns...
-	T_initKeyValue			 pInitKeyValue				= nullptr;
-	T_KVsetInt				 pKVSetInt					= nullptr;
-	T_KVSetFloat			 pKVSetFloat				= nullptr;
-	T_KVSetString			 pKVSetString				= nullptr;
-	T_KVSetColor			 pKVSetColor				= nullptr;
-
-	// No spread related
-	T_GetWeaponSpread		 pGetWeaponSpread			= nullptr;
-	T_RandomGausianFloat	 pRandomGausianFloat		= nullptr;
-	T_WeaponIDToAlias		 pWeaponIdToAlias			= nullptr;
-	T_LookUpWeaponInfoSlot   pLookUpWeaponInfoSlot		= nullptr;
-	T_GetWeaponFileHandle	 pGetWeaponFileHandle		= nullptr;
-	T_RandomSeed			 pRandomSeed				= nullptr;
-	T_RandomFloat			 pRandomFloat				= nullptr;
-	T_SendStringCommand2	 pSendStringCommand			= nullptr;
 
 	//delete this
 	std::atomic<void*> pCBaseClientState;
@@ -115,23 +93,10 @@ public:
 //=========================================================================
 //                     INTERFACES
 //=========================================================================
-	I_client_entity_list*	entityList		= nullptr;
-	IBaseClientDLL*			baseClientDll	= nullptr;
-	IVEngineClient013*		engine			= nullptr;
-	I_engine_client_replay* engineReplay	= nullptr;
-	IEngineTrace*			engineTrace		= nullptr;
-	IVDebugOverlay*			debugOverlay	= nullptr;
-	void*					iPanel			= nullptr;
-	void*					iGameMovement	= nullptr;
-	void*					IMaterialSystem = nullptr;
-	void*					IVRenderModel	= nullptr;
-	void*					IStudioRender	= nullptr;
-	IVRenderView*			iVRenderView	= nullptr;
-	IVModelInfo*			iVModelInfo		= nullptr;
+
 
 //=========================================================================
 //                     OBJECTS :)
 //=========================================================================
-	std::atomic<CMoveData*> pMove; // <- this is not maintained, nullptr currently
 };
 extern TFObjectManager_t tfObject;

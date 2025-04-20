@@ -1,7 +1,9 @@
-#include "DispatchUserMessage.h"
-#include <iostream>
 #include <Windows.h>
 #include <string>
+
+#include "../../Utility/Hook_t.h"
+#include "../../Utility/ConsoleLogging.h"
+
 #include "../../SDK/class/bf_buf.h"
 #include "../../Features/NoSpread/NoSpread.h"
 
@@ -15,10 +17,10 @@ inline const char* GetMsgName(void* pCUserMsg, int iMsgType)
     return *(const char**)(dictMsg + offset + 16);
 }
 
-hook::DispatchUserMsg::T_DispatchUserMsg hook::DispatchUserMsg::O_DispatchUserMsg = nullptr;
-bool __fastcall hook::DispatchUserMsg::H_DispatchUserMsg(void* pVTable, int iDataType, bf_read* msg)
+
+MAKE_HOOK(DispatchUserMsg, "40 56 48 83 EC ? 49 8B F0", __fastcall, CLIENT_DLL, bool, void* pVTable, int iDataType, bf_read* msg)
 {
-    auto result = O_DispatchUserMsg(pVTable, iDataType, msg);
+    bool result = Hook::DispatchUserMsg::O_DispatchUserMsg(pVTable, iDataType, msg);
 
     if (iDataType == 5)
     {

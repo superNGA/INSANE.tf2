@@ -171,7 +171,7 @@ namespace feature
 			return;
 
 		qangle engineAngles;
-		tfObject.engine->GetViewAngles(engineAngles);
+		I::iEngine->GetViewAngles(engineAngles);
 		float yaw = engineAngles.yaw;
 
 		// Getting angle between Wish Direction and the view Angles, which at this point in the tick, 

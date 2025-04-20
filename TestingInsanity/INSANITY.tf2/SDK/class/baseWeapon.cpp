@@ -6,9 +6,9 @@
 #include "FileWeaponInfo.h"
 
 //----------------------- SIGNATURES -----------------------
-MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL)
-MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL)
-MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL)
+MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL, const char*, int)
+MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL, int16_t, const char*)
+MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL, FileWeaponInfo_t*, int16_t)
 
 slot_t baseWeapon::getSlot() {
     typedef slot_t(__fastcall* O_getSlot)(void*);
@@ -58,12 +58,9 @@ bool baseWeapon::canBackStab()
 CTFWeaponInfo* baseWeapon::GetTFWeaponInfo()
 {
     // make something better to get weapon id
-    auto output = Sig::baseWeapon_GetWeaponFileHandle.Call<FileWeaponInfo_t*>(
-        Sig::baseWeapon_LookUpWeaponInfoSlot.Call<int16_t>(
-            Sig::baseWeapon_WeaponIDToAlias.Call<const char*>(this->GetWeaponID()
-            )
-        )
-    );
+    auto output = Sig::baseWeapon_GetWeaponFileHandle(
+        Sig::baseWeapon_LookUpWeaponInfoSlot(
+            Sig::baseWeapon_WeaponIDToAlias(this->GetWeaponID())));
     return static_cast<CTFWeaponInfo*>(output);
 }
 

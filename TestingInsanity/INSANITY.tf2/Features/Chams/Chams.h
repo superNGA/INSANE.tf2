@@ -11,7 +11,6 @@
 #include <string>
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/IMaterial.h"
-#include "../../Hooks/DrawModelExecute/DrawModelExecute.h"
 
 /*
 * DONE :

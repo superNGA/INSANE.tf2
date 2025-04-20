@@ -1,6 +1,7 @@
 #pragma once
 #include "Basic Structures.h"
 #include "ClientClass.h"
+#include "../../Utility/Interface.h"
 
 /*
 * MATCH THE INHERITANCE ORDER CAREFULLY ELSE WON'T WORK!
@@ -52,6 +53,8 @@ public:
 	virtual void				SetMaxEntities(int maxents) = 0;
 	virtual int					GetMaxEntities() = 0;
 };
+
+MAKE_INTERFACE_VERSION(IClientEntityList, "VClientEntityList003", I_client_entity_list, "client.dll")
 
 class I_handle_entity
 {

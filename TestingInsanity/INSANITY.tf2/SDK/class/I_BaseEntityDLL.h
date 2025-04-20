@@ -1,5 +1,6 @@
 #pragma once
 #include "ClientClass.h"
+#include "../../Utility/Interface.h"
 
 class IBaseClientDLL
 {
@@ -26,3 +27,5 @@ public:
 	// Request a pointer to the list of client datatable classes
 	virtual ClientClass* GetAllClasses(void) = 0; //8th function starting from 0
 };
+
+MAKE_INTERFACE_VERSION(IBaseClient, "VClient017", IBaseClientDLL, "client.dll")

@@ -11,21 +11,38 @@
 #include "Chams.h"
 Chams_t chams;
 
+#include "../../Hooks/DrawModelExecutes.h"
+
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/Class ID Manager/classIDManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/class/IVModelInfo.h"
+#include "../../SDK/class/IVRenderView.h"
+#include "../../SDK/class/IStudioRender.h"
+#include "../../SDK/class/IMaterialSystem.h"
+
 #include "../../Libraries/Utility/Utility.h"
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 #include "../Anti Aim/AntiAim.h"
 
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Libraries/Timer.h"
-
 #include "../../Extra/math.h"
 
+#include "../../Utility/signatures.h"
+#include "../../Utility/ConsoleLogging.h"
+
 #define MIN_TIME 0.0001
+
+MAKE_SIG(CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL, IMaterial*, void*, const char*, KeyValues*)
+MAKE_SIG(ForcedMaterialOverride, "48 89 91 ? ? ? ? 44 89 81",    STUDIORENDER_DLL, void, void*, IMaterial*, OverrideType_t)
+
+MAKE_SIG(InitKeyValue,  "40 53 48 83 EC ? 48 8B D9 C7 01",      MATERIALSYSTEM_DLL, KeyValues*, void*, const char*)
+MAKE_SIG(KVSetInt,      "40 53 48 83 EC ? 41 8B D8 41 B0",      MATERIALSYSTEM_DLL, void, KeyValues*, const char*, int64_t)
+MAKE_SIG(KVSetFloat,    "48 83 EC ? 0F 29 74 24 ? 41 B0",       MATERIALSYSTEM_DLL, void, KeyValues*, const char*, float)
+MAKE_SIG(KVSetString,   "48 89 5C 24 ? 55 48 83 EC ? 49 8B D8", MATERIALSYSTEM_DLL, void, KeyValues*, const char*, const char*)
+MAKE_SIG(KVSetColor,    "44 89 44 24 ? 53 48 83 EC ? 41 8B D8", CLIENT_DLL,         void, KeyValues*, const char*, TFclr_t) // <- this shit in client.dll, not in MaterialSystem.dll
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -33,18 +50,20 @@ Chams_t chams;
 int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
     // Checking if cheat's backEnd is initialized
-    if (tfObject.bIsInitialized.load() == false || tfObject.FindMaterial == nullptr)
+    if(I::iEngine->IsInGame() == false)
+        Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
+    /*if (tfObject.bIsInitialized.load() == false)
     {
         WAIT_MSG("TFObject Manager", "initialize");
-        return hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
-    }
+        return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
+    }*/
 
     int8_t nMaterial        = modelState->m_pStudioHWData->m_pLODs->numMaterials;
     IMaterial** ppMaterial  = modelState->m_pStudioHWData->m_pLODs->ppMaterials;
     
     // Checking if material data is valid
     if (nMaterial == 0 || ppMaterial == nullptr)
-        return hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+        return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
 
     BaseEntity* pEntity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
     IDclass_t entId          = IDManager.getID(pEntity);
@@ -124,14 +143,14 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         }
         else
         {
-            hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+            Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
             
             ShinyMat->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true);
             bIsMaterialOverridden = _ApplyChams(modelState, ShinyMat, config.visualConfig.ChamViewModel);
-            auto result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+            auto result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
             ShinyMat->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, false);
 
-            tfObject.pForcedMaterialOverride(tfObject.IStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
+            Sig::ForcedMaterialOverride(I::iStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
             return result;
         }
         break;    
@@ -167,19 +186,20 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     auto* me = entityManager.getLocalPlayer();
     if(me != nullptr && pEntity == me->GetClientRenderable())
     {
-        hook::DME::O_DME(pVTable, modelState, renderInfo, Features::antiAim.pBone); // <- fake me
-        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
-        result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix); // <- real me
+        Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, Features::antiAim.pBone); // <- fake me
+        Sig::ForcedMaterialOverride(I::iStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
+        result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix); // <- real me
+
         return result;
     }
     else
     {
-        result = hook::DME::O_DME(pVTable, modelState, renderInfo, boneMatrix);
+        result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
     }
 
     if (bIsMaterialOverridden)
     {
-        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
+        Sig::ForcedMaterialOverride(I::iStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
     }
 
     return result;
@@ -238,9 +258,9 @@ bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMateria
         return false;
     case 2 :
     case 3 : 
-        tfObject.pForcedMaterialOverride(tfObject.IStudioRender, pChamMaterial, OverrideType_t::OVERRIDE_NORMAL);
-        tfObject.iVRenderView->SetColorModulation(&pChamConfig.clrChams.r);
-        tfObject.iVRenderView->SetBlend(pChamConfig.clrChams.a);
+        Sig::ForcedMaterialOverride(I::iStudioRender, pChamMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        I::iVRenderView->SetColorModulation(&pChamConfig.clrChams.r);
+        I::iVRenderView->SetBlend(pChamConfig.clrChams.a);
         return true;
 
     default:
@@ -567,7 +587,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     // Creating Material
     Material_t* newMat = new Material_t;
     newMat->pKV        = new KeyValues;
-    KeyValues* pInitializedKV = tfObject.pInitKeyValue(newMat->pKV, vecMaterialVMT[0].szPropName); // 0th index holds the mateiral type
+    KeyValues* pInitializedKV = Sig::InitKeyValue(newMat->pKV, vecMaterialVMT[0].szPropName); // 0th index holds the mateiral type
 
     int nMatPropSize = vecMaterialVMT.size();
     for (int index = 1; index < nMatPropSize; index++)
@@ -576,16 +596,16 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
         switch (matProp.dataType)
         {
         case TYPE_INT:
-            tfObject.pKVSetInt(pInitializedKV, matProp.szPropName, matProp.data.iData);
+            Sig::KVSetInt(pInitializedKV, matProp.szPropName, matProp.data.iData);
             break;
         case TYPE_FLOAT:
-            tfObject.pKVSetFloat(pInitializedKV, matProp.szPropName, matProp.data.flData);
+            Sig::KVSetFloat(pInitializedKV, matProp.szPropName, matProp.data.flData);
             break;
         case TYPE_STRING:
-            tfObject.pKVSetString(pInitializedKV, matProp.szPropName, matProp.data.szData);
+            Sig::KVSetString(pInitializedKV, matProp.szPropName, matProp.data.szData);
             break;
         case TYPE_COLOR:
-            tfObject.pKVSetColor(pInitializedKV, matProp.szPropName, matProp.data.clrData);
+            Sig::KVSetColor(pInitializedKV, matProp.szPropName, matProp.data.clrData);
             break;
         default:
             break;
@@ -593,7 +613,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     }
 
     // filling up material object
-    newMat->pMaterial = tfObject.pCreateMaterial(tfObject.IMaterialSystem, szMatName.c_str(), newMat->pKV);
+    newMat->pMaterial = Sig::CreateMaterial(I::iMaterialSystem, szMatName.c_str(), newMat->pKV);
     strncpy(newMat->szMatName, szMatName.c_str(), MAX_MATERIAL_NAME_SIZE-1);
     newMat->szMatName[MAX_MATERIAL_NAME_SIZE - 1] = '\0';
     UM_materials[szMatName] = newMat;
@@ -625,6 +645,7 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     }
 
     it->second->pMaterial->DecrementReferenceCount();
+    //it->second->pMaterial->DeleteIfUnreferenced();
 
     delete it->second->pKV;
     delete it->second;

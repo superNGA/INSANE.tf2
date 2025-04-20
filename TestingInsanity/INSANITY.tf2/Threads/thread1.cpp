@@ -36,7 +36,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
-	if (tfObject.initializeInterfaces() == false)
+	if (interfaceInitialize.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -52,11 +52,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}
 
 	if (allSignatures.Initialize() == false)
-	{
-		_terminate(instance);
-	}
-
-	if (interfaceInitialize.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -126,43 +121,8 @@ bool thread1_t::_initializeHooks()
 	MH_Initialize();
 	LOG("thread 1", "Minhook started");
 
-	// signature scanning...
-	//uintptr_t pCreateMove_				= util.FindPattern("40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", CLIENT_DLL);
-	uintptr_t pRenderGlowEffect_		= util.FindPattern("48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B E9 41 8B F8 48 8B 0D", CLIENT_DLL);
-	uintptr_t pOverrideView_			= util.FindPattern("48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", CLIENT_DLL);
-	uintptr_t pShouldDrawViewModel_		= util.FindPattern("48 83 EC ? E8 ? ? ? ? 48 85 C0 74 ? 48 8D 88 ? ? ? ? BA ? ? ? ? E8", CLIENT_DLL);
-	uintptr_t pDrawModelExecute_		= util.FindPattern("4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", ENGINE_DLL);
-	//uintptr_t pFrameStageNotify_		= g_FNindexManager.getFnAdrs(FN_FRAME_STAGE_NOTIFY, (void*)tfObject.baseClientDll);
-	uintptr_t pProcessMovement_			= (uintptr_t)(util.GetVirtualTable(tfObject.iGameMovement)[1]); // its the first one nigga
-	uintptr_t pFXFireBullet_			= util.FindPattern("48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", CLIENT_DLL);
-	uintptr_t pDispatchUserMsg_			= util.FindPattern("40 56 48 83 EC ? 49 8B F0", CLIENT_DLL);
-	//uintptr_t pSendStringCommand_		= util.FindPattern("48 81 EC ? ? ? ? 48 8B 49", ENGINE_DLL);
-
-	if (/*pCreateMove_ == 0 || */pRenderGlowEffect_ == 0 || pOverrideView_ == 0 || 
-		pShouldDrawViewModel_ == 0 || pProcessMovement_ == 0 || 
-		pDrawModelExecute_ == 0 /*|| pSvPure_ == 0 */|| pFXFireBullet_ == 0 || pDispatchUserMsg_ == 0 
-		/*pSendStringCommand_ == 0*/)
-	{
-		ERROR("thread 1", "Failed signature scanning");
-		return false;
-	}
-
-	//tfObject.pSendStringCommand = (T_SendStringCommand2)pSendStringCommand_;
-
 	/* hooking FNs */
-	MH_CreateHook((LPVOID*)get_endscene(),		(LPVOID)directX::H_endscene,								(LPVOID*)&directX::O_endscene);
-	//MH_CreateHook((LPVOID)pCreateMove_,			(LPVOID)hook::createmove::hooked_createmove,				(LPVOID*)&hook::createmove::original_createmove);
-	MH_CreateHook((LPVOID)pRenderGlowEffect_,	(LPVOID)hook::renderGlowEffect::H_renderGlowEffect,			(LPVOID*)&hook::renderGlowEffect::O_renderGlowEffect); 
-	MH_CreateHook((LPVOID)pOverrideView_,		(LPVOID)hook::overrideView::H_overrideView,					(LPVOID*)&hook::overrideView::O_overrideView); // override view from IClientMode, game place as Createmove
-	MH_CreateHook((LPVOID)pDrawModelExecute_,	(LPVOID)hook::DME::H_DME,									(LPVOID*)&hook::DME::O_DME);
-	//MH_CreateHook((LPVOID)pSvPure_,				(LPVOID)hook::sv_pure::H_svPure,							(LPVOID*)&hook::sv_pure::O_svPure);
-	MH_CreateHook((LPVOID)pFXFireBullet_,		(LPVOID)hook::FX_FireBullets::H_FireBulets,					(LPVOID*)&hook::FX_FireBullets::O_FireBullets);
-	MH_CreateHook((LPVOID)pDispatchUserMsg_,	(LPVOID)hook::DispatchUserMsg::H_DispatchUserMsg,			(LPVOID*)&hook::DispatchUserMsg::O_DispatchUserMsg);
-	//MH_CreateHook((LPVOID)pSendStringCommand_,	(LPVOID)hook::SendStringCommand::H_SendStringCommand,		(LPVOID*)&hook::SendStringCommand::O_SendStringCommand);
-
-	/* hooking FNs by index */
-	//MH_CreateHook((LPVOID)pFrameStageNotify_,	(LPVOID)hook::frame_stage_notify::hook_frame_stage_notify,	(LPVOID*)&hook::frame_stage_notify::original_frame_stage_notify);
-	MH_CreateHook((LPVOID)g_FNindexManager.getFnAdrs(FN_PAINT_TRAVERSE, tfObject.iPanel), (LPVOID)hook::paintTraverse::H_paintTraverse, (LPVOID*)&hook::paintTraverse::O_paintTraverse);
+	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc();
