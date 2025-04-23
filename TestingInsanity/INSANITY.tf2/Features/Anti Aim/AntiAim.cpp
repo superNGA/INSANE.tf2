@@ -1,13 +1,15 @@
 #include "AntiAim.h"
+//======================= SDK =======================
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CMultAnimState.h"
-
 #include "../../SDK/offsets/offsets.h"
 #include "../../SDK/Entity Manager/entityManager.h"
+
+//======================= Internal stuff =======================
+#include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Utility/Interface.h"
 #include "../../Utility/signatures.h"
-
 #include "../../Extra/math.h"
 
 extern local_netvars netvar;
@@ -19,6 +21,9 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 void AntiAim_t::Run(CUserCmd* cmd, bool& bResult)
 {
+	if (Feature::AA_Switch == false)
+		return;
+
 	auto ent = entityManager.getLocalPlayer();
 	if (ent == nullptr)
 		return;

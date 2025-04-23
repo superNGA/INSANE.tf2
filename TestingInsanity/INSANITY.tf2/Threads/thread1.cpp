@@ -13,6 +13,7 @@
 #include "../Utility/Interface.h"
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
+#include "../Features/features.h"
 Utility util;
 
 //=========================================================================
@@ -67,6 +68,11 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}
 
 	if (tfObject.initializeFns() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (allFeatures.Initialize() == false)
 	{
 		_terminate(instance);
 	}

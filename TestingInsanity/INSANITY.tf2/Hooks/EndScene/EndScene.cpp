@@ -347,6 +347,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         case AIMBOT_WINDOW:
             cheat_window::draw_aimbot_window();
             break;
+        case ANTIAIM_WINDOW:
+            cheat_window::drawAntiAimWindow();
+            break;
         case VIEW_VISUALS_WINDOW:
             cheat_window::draw_view_visual_window();
             break;

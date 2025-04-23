@@ -1,13 +1,20 @@
-//#include "CreateMove.h"
+//======================= Internal stuff =======================
 #include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/FN index Manager/FN index manager.h"
 #include "../Extra/math.h"
-#include "../Features/NoSpread/NoSpread.h"
-#include "../Features/Anti Aim/AntiAim.h"
 #include "../Utility/signatures.h"
 #include "../Utility/Hook_t.h"
 
-//hook::createmove::template_createmove hook::createmove::original_createmove = nullptr;
+//======================= Features =======================
+#include "../Features/Movement/Movement.h"
+#include "../Features/NoSpread/NoSpread.h"
+#include "../Features/Anti Aim/AntiAim.h"
+
+//======================= SDK =======================
+#include "../SDK/class/CUserCmd.h"
+#include "../SDK/class/BaseWeapon.h"
+
+
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
 	int64_t a1, int64_t a2, CUserCmd* cmd)
 {
@@ -25,20 +32,10 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	static uint8_t bit_flags = 0;
 	
-	/* MISCELLANEOUS */
+	Features::movement.Run(cmd, result);
+
 	Features::antiAim.Run(cmd, result);
 
-	feature::bhop(cmd, bit_flags);
-	feature::rocket_jump(cmd, result);
-	feature::third_person();
-	feature::autoBackStab(cmd, pLocalPlayer, pActiveWeapon);
-
-	feature::airMove(cmd, result, pLocalPlayer); // <-- this one is not done
-
-	/* AIMBOT */
-	feature::aimbot(cmd, result);
-
-	/* No spread */
 	Features::noSpread.Run(cmd, result); // incomplete, not working
 
 	return result;

@@ -32,3 +32,11 @@ private:
 };
 
 ADD_FEATURE(antiAim, AntiAim_t);
+
+MAKE_FEATURE_BOOL(AA_Switch,        "antiaim->global_antiaim",              1)
+MAKE_FEATURE_BOOL(AA_chams,         "antiaim->global_antiaim->cham",        2)
+MAKE_FEATURE_COLOR(AA_chams_color,  "antiaim->global_antiaim->cham->color", 2)
+MAKE_FEATURE_FLOAT(AA_fakePitch,    "antiaim->global_antiaim->fake_pitch",  1, -89.0f, 89.0f)
+MAKE_FEATURE_FLOAT(AA_fakeYaw,      "antiaim->global_antiaim->fake_yaw",    1, -180.0f, 180.0f)
+MAKE_FEATURE_FLOAT(AA_realYaw,      "antiaim->global_antiaim->real_yaw",    1, -180.0f, 180.0f)
+MAKE_FEATURE_FLOAT(AA_realPitch,    "antiaim->global_antiaim->real_pitch",  1, -89.0f, 89.0f)

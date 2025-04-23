@@ -14,17 +14,20 @@
 #include <numeric>
 #include <bit>
 
+//======================= SDK =======================
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/FileWeaponInfo.h"
+#include "../../SDK/class/I_EngineClientReplay.h"
+
+//======================= Internal stuff =======================
 #include "../../Extra/math.h"
 #include "../../Utility/signatures.h"
-#include "../../SDK/class/I_EngineClientReplay.h"
-#include "../ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Utility/ExportFnHelper.h"
+#include "../ImGui/InfoWindow/InfoWindow_t.h"
 
 GET_EXPORT_FN(Plat_FloatTime, "tier0.dll")
 GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL)

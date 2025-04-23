@@ -1,6 +1,7 @@
 #include "../Utility/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
 
+#include "../Features/config.h"
 #include "../Features/NoSpread/NoSpread.h"
 
 MAKE_HOOK(FX_FireBullet, "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", __fastcall, CLIENT_DLL, int64_t, float* a1,

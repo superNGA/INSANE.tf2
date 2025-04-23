@@ -1,4 +1,5 @@
 #include "BulletTarcers_t.h"
+#include "../../SDK/Entity Manager/entityManager.h"
 #include "../../Utility/signatures.h"
 
 const char* BulletTarcers_t::Run(void* pWeapon, const char* szOriginalOutput)

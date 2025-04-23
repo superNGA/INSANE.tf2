@@ -11,8 +11,11 @@
 #include <string>
 #include <atomic>
 #include <deque>
+#include <cstdint>
 #include "../features.h"
+
 class CUserCmd;
+class baseWeapon;
 
 /* Conclusions : 
 * -> weaponFileInfo_t seems to be something of very constant nature and looping through bullets
