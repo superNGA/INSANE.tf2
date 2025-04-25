@@ -359,6 +359,8 @@ public:
 	int32_t			getPlayerCond();
 
 	bool			isOnGround();
+
+	uint32_t		GetTickBase();
 };
 
 class c_base_entity : public I_client_entity

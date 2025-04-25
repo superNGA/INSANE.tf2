@@ -19,7 +19,7 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void AntiAim_t::Run(CUserCmd* cmd, bool& bResult)
+void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket)
 {
 	if (Feature::AA_Switch == false)
 		return;
@@ -33,9 +33,11 @@ void AntiAim_t::Run(CUserCmd* cmd, bool& bResult)
 	m_qAAAngles.pitch = -89.0f;
 	m_qAAAngles.yaw	  = 180.0f;
 
-	//Maths::ClampQAngle(m_qAAAngles);
+	Maths::ClampQAngle(m_qAAAngles);
 
-	cmd->viewangles = m_qAAAngles;
+	if (*bSendPacket == true)
+		cmd->viewangles = m_qAAAngles;
+
 	StoreAABones();
 
 	_FixMovement(cmd);

@@ -102,6 +102,8 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_BaseAnimating")			&& map["m_flPoseParameter"])		netvar.m_flPoseParameter		= map["m_flPoseParameter"];
 	if (!strcmp(table_name, "DT_BaseAnimating")			&& map["m_nSequence"])				netvar.m_nSequence				= map["m_nSequence"];
 	if (!strcmp(table_name, "DT_ServerAnimationData")	&& map["m_flCycle"])				netvar.m_flCycle				= map["m_flCycle"];
+	
+	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_nTickBase"])				netvar.m_nTickBase				= map["m_nTickBase"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

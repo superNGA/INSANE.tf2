@@ -6,6 +6,8 @@
 #include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/class/viewSetup.h"
 
+#include "../Features/Anti Aim/AntiAim.h"
+
 //int64_t __fastcall hook::overrideView::H_overrideView(void* VT_IClientMode, CViewSetup* pViewSetup) 
 MAKE_HOOK(OverrideView, "48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, int64_t, 
 	void* pVTable, CViewSetup* pViewSetup)

@@ -116,7 +116,7 @@ namespace Feature{\
 // INT SLIDER
 #define MAKE_FEATURE_INTEGER(name, path, renderID, min, max)\
 namespace RenderFeature{\
-    inline Feature_t<IN_IntegerSlider> UI_##name(path, renderID, FeatureType_t::FEATURE_INT, IN_IntegerSlider{0.0f, min, max});\
+    inline Feature_t<IN_IntegerSlider> UI_##name(path, renderID, FeatureType_t::FEATURE_INT, IN_IntegerSlider{0, min, max});\
 }\
 namespace Feature{\
     inline int& name = RenderFeature::UI_##name.m_data.m_data;\

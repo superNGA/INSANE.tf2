@@ -129,3 +129,8 @@ bool I_client_entity::isOnGround()
 {
 	return (*(int32_t*)((uintptr_t)this + netvar.m_fFlags) & (1 << 0));
 }
+
+uint32_t I_client_entity::GetTickBase()
+{
+	return *reinterpret_cast<uint32_t*>((uintptr_t)this + netvar.m_nTickBase);
+}

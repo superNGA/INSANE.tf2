@@ -20,14 +20,14 @@ class CMultiPlayerAnimState;
 class AntiAim_t
 {
 public:
-    void Run(CUserCmd* cmd, bool& bResult);
+    void Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket);
     void StoreAABones();
 
     matrix3x4_t pBone[MAX_STUDIO_BONES] = {};
+    qangle m_qAAAngles;
 
 private:
     void _FixMovement(CUserCmd* pCmd);
-    qangle m_qAAAngles;
 
 };
 
