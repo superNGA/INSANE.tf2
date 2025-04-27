@@ -134,3 +134,8 @@ uint32_t I_client_entity::GetTickBase()
 {
 	return *reinterpret_cast<uint32_t*>((uintptr_t)this + netvar.m_nTickBase);
 }
+
+int I_client_entity::GetCritMult()
+{
+	return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
+}

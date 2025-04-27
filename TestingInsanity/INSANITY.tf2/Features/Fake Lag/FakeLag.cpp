@@ -21,7 +21,7 @@ void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
         m_nTicksChoked++;
     }
 
-    if (pCmd->buttons & IN_ATTACK && Feature::autoRelease == true)
+    if (Feature::autoRelease == true && pCmd->buttons & IN_ATTACK)
     {
         *bSendPacket = true;
         m_nTicksChoked = 0;

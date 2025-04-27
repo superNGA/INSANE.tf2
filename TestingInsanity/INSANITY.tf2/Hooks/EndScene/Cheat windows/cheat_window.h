@@ -194,7 +194,11 @@ namespace cheat_window
 	{
 		auto& vecAntiAimFeatures = allFeatures.m_umBaseFeatures["antiaim"]->m_vecChildFeature;
 		RenderFeaturesInVec(vecAntiAimFeatures);
+		
 		auto& vecFakeLagFeatures= allFeatures.m_umBaseFeatures["FakeLag"]->m_vecChildFeature;
 		RenderFeaturesInVec(vecFakeLagFeatures);
+		
+		auto& vecCritHackFeatures = allFeatures.m_umBaseFeatures["CritHack"]->m_vecChildFeature;
+		RenderFeaturesInVec(vecCritHackFeatures);
 	}
 };

@@ -29,9 +29,9 @@
 #include "../../Utility/ExportFnHelper.h"
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 
-GET_EXPORT_FN(Plat_FloatTime, "tier0.dll")
-GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL)
-GET_EXPORT_FN(RandomFloat, VSTDLIB_DLL)
+GET_EXPORT_FN_NO_ARGS(Plat_FloatTime, "tier0.dll", double)
+GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL, void, int)
+GET_EXPORT_FN(RandomFloat, VSTDLIB_DLL, float, float, float)
 
 // weapon porperty related fns
 MAKE_SIG(BaseWeapon_GetWeaponSpread, "48 89 5C 24 ? 57 48 83 EC ? 4C 63 91", CLIENT_DLL, float, void*)
@@ -100,7 +100,7 @@ bool NoSpread_t::_ParsePlayerPerf(std::string sMsg)
 		return true;
 	m_flServerTime = flScrappedTime;
 
-	float flRecieveTime = ExportFn::Plat_FloatTime.Call<double>();
+	float flRecieveTime = ExportFn::Plat_FloatTime();
 	float flResponseTime = flRecieveTime - m_flRequestTime;
 
 	m_qServerTimes.push_back(m_flServerTime - flRecieveTime + flResponseTime);
@@ -128,7 +128,7 @@ void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
 		return;*/
 
 	Sig::CBaseClientState_SendStringCmd(I::CBaseClientState, "playerperf\n");
-	m_flRequestTime		= static_cast<float>(ExportFn::Plat_FloatTime.Call<double>());
+	m_flRequestTime		= static_cast<float>(ExportFn::Plat_FloatTime());
 	m_iRequestTick		= cmd->tick_count;
 	m_flRequestLatency	= I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
 	m_bWaitingForPlayerPerf = true;
@@ -138,7 +138,7 @@ void NoSpread_t::_RequestPlayerPerf(CUserCmd* cmd)
 uint32_t NoSpread_t::GetSeed()
 {
 	// compensating for lantecy.
-	double flflTime = ExportFn::Plat_FloatTime.Call<double>() + m_flDelta;// +m_flOffset + I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
+	double flflTime = ExportFn::Plat_FloatTime() + m_flDelta;// +m_flOffset + I::iEngineClientReplay->GetNetChannel()->GetLatency(FLOW_OUTGOING);
 	float  flTime	= float(flflTime * 1000.0f);
 	return std::bit_cast<int32_t>(flTime) & 255;
 }
@@ -172,11 +172,11 @@ bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWea
 
 	for (int bullet = 0; bullet < iBullets; bullet++)
 	{
-		ExportFn::RandomSeed.Call<void>(seed + bullet);
+		ExportFn::RandomSeed(seed + bullet);
 		
 		// random X & Y
-		float flRandomX = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
-		float flRandomY = ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f) + ExportFn::RandomFloat.Call<float>(-0.5f, 0.5f);
+		float flRandomX = ExportFn::RandomFloat(-0.5f, 0.5f) + ExportFn::RandomFloat(-0.5f, 0.5f);
+		float flRandomY = ExportFn::RandomFloat(-0.5f, 0.5f) + ExportFn::RandomFloat(-0.5f, 0.5f);
 
 		vec vecDirShooting, vecRight, vecUp;
 		Maths::AngleVectors(cmd->viewangles, &vecDirShooting, &vecRight, &vecUp);

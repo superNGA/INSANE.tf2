@@ -6,25 +6,43 @@
 #include "../Extra/math.h"
 #include "../Utility/signatures.h"
 #include "../Utility/Hook_t.h"
+#include "../Utility/ConsoleLogging.h"
 
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
 #include "../Features/NoSpread/NoSpread.h"
 #include "../Features/Anti Aim/AntiAim.h"
 #include "../Features/Fake Lag/FakeLag.h"
+#include "../Features/CritHack/CritHack.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
 #include "../SDK/class/BaseWeapon.h"
+#include "../SDK/class/Source Entity.h"
 
+/*
+"What would have INSANE done in this situation?" -> Thats what I am gonna do!
+*/
 
-// Althoght inlining this function shouldn't cause any problems and since this functoin also dones't have any variables
-// it should work fine
-//__forceinline bool* GetbSendPacket(uint32_t iOffset)
-//{
-//	return reinterpret_cast<bool*>((uintptr_t)_AddressOfReturnAddress + iOffset);
-//}
+/*
+I am confused. very confused. I don't know what to do! Some part says make new feature, some part says, 
+Fix current bugs and faults. Some part says make loader, some says improve UI. I don't understand what to do.
+Maybe if I make a fixed plan, then I will see a clear way.
+Lets try that out.
+-> first I shall make difficult features, get them half working!
+-> then go back and work on UI.
+-> then complete each feature completly & add them to the UI along side.
+-> when cheat is done, then we can make the loader.
 
+How does that sound? nice? well it is quite actually. But it requires some grit to stick to a plan.
+and grit is often flushed down the toilet by weak people like me ( yes, I am talking about nofap ).
+I lack grit, I get attracted towards shinny things too much, I see new shit, I go for new shit leaving
+old one in dirt. But that won't cut it. I must stick to this plan and I think I won't bother giving
+myself deadlines, cause this is the experimental phase, and then the real cheat dev, mannual labor phase
+comes.
+
+- INSANE
+*/
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
 	int64_t a1, int64_t a2, CUserCmd* cmd)
@@ -42,7 +60,10 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 		return result;
 
 	// --> bSendPacket <--
-	// Trying to get bSendPacket the proper way :) // 0x128 bytes moved
+	/*
+	We moved 0x128 bytes down in the stack frame to find the bSendPacket 
+	that was pushed onto the stack by IBaseClientDLL Createmove
+	*/
 	uintptr_t pStackFrameStart_ClientModeShared_Createmove = (uintptr_t)_AddressOfReturnAddress();
 	pStackFrameStart_ClientModeShared_Createmove += 0x8; // compensating for the adrs of start adrs
 	
@@ -69,6 +90,8 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	Features::antiAim.Run(cmd, result, bSendPacket);
 
 	Features::noSpread.Run(cmd, result); // incomplete, not working
+
+	Features::critHack.Run(cmd, pActiveWeapon, pLocalPlayer);
 
 	return result;
 }

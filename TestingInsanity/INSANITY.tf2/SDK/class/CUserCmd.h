@@ -42,12 +42,12 @@ public:
     float	upmove;
     int		buttons;            // Correct till here
     BYTE    impulse;
-    char    padding1[3];
+    //char    padding1[3];
     int		weaponselect;       // Changes only when I add change weapon and stays at 0 for the rest of the ticks
     int		weaponsubtype;      // Always 0, maybe cause I don't have skins ?
-    char    Padding[3];         // 3 Bytes worth of padding to align Random seed and rest of the data.
+    //char    Padding[3];         // 3 Bytes worth of padding to align Random seed and rest of the data.
     int		random_seed;
-    int16_t mousedx;            // Mouse movement in X | This is 0.0f at all times, doesn't change if I shoot or move mouse
-    int16_t mousedy;            // Mouse movement in Y | This is 0.0f at all times, doesn't change if I shoot or move mouse
+    short	mousedx;            // Mouse movement in X | This is 0.0f at all times, doesn't change if I shoot or move mouse
+    short	mousedy;            // Mouse movement in Y | This is 0.0f at all times, doesn't change if I shoot or move mouse
     bool    hasbeenpredicted;   // Predicted at least once (client-side only)
 };

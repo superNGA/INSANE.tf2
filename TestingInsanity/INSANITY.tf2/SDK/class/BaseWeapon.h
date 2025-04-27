@@ -32,6 +32,11 @@ public:
 	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();
 	int			GetWeaponID();
+	bool		CanCrit();
+	
+	float		GetCritBucket();
+	int GetTotalCritsOccured();
+	int GetTotalCritChecks();
 
 private:
 	bool TracerHook = false;

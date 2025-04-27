@@ -14,6 +14,9 @@
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
 #include "../Features/features.h"
+
+#include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
+
 Utility util;
 
 //=========================================================================
@@ -84,6 +87,9 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		thread_termination_status::thread1_primed = true;
 		tfObject.update();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+		Render::InfoWindow.AddToInfoWindow("connection status", std::format("{}", I::iEngine->IsConnected() ?
+			(I::iEngine->IsInGame() ? "Connected and in-game" : "Connected but not in-game") : "Not Connected"));
 	}
 
 	_terminate(instance);

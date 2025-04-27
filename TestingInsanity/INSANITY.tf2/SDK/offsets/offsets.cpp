@@ -104,6 +104,8 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_ServerAnimationData")	&& map["m_flCycle"])				netvar.m_flCycle				= map["m_flCycle"];
 	
 	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_nTickBase"])				netvar.m_nTickBase				= map["m_nTickBase"];
+	
+	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_iCritMult"])				netvar.m_iCritMult				= map["m_iCritMult"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

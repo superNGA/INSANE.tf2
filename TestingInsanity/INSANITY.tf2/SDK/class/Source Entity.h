@@ -361,6 +361,8 @@ public:
 	bool			isOnGround();
 
 	uint32_t		GetTickBase();
+
+	int				GetCritMult();
 };
 
 class c_base_entity : public I_client_entity

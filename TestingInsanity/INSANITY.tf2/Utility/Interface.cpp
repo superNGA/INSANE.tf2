@@ -52,7 +52,7 @@ bool InterfaceInitialize_t::Initialize()
     {
         if (I->Initialize() == false)
         {
-            FAIL_LOG("FAILED TO GET INTERFACE : %s FROM %s" , I->m_szInterfaceName, I->m_szDll);
+            FAIL_LOG("FAILED TO GET INTERFACE : %s FROM %s" , I->m_szIdentifier, I->m_szDll);
             return false;
         }
         I->m_bToBeScanned ?

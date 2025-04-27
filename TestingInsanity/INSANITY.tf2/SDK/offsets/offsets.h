@@ -60,6 +60,7 @@ struct local_netvars
 	uintptr_t m_flPoseParameter			= 0;
 
 	uintptr_t m_nTickBase = 0;
+	uintptr_t m_iCritMult = 0;
 };
 
 extern local_netvars netvar;

@@ -1,6 +1,6 @@
 #include "ExportFnHelper.h"
 
-ExportFnHelper_t::ExportFnHelper_t(const char* szDll, const char* szFunctionName)
+IExportFnHelper_t::IExportFnHelper_t(const char* szDll, const char* szFunctionName)
 {
     m_szDll = szDll;
     m_szFunctionName = szFunctionName;   
@@ -8,7 +8,7 @@ ExportFnHelper_t::ExportFnHelper_t(const char* szDll, const char* szFunctionName
     allExportFns.AddExportFn(this);
 }
 
-bool ExportFnHelper_t::Initialize()
+bool IExportFnHelper_t::Initialize()
 {
     auto pModule = GetModuleHandle(m_szDll);
     if (pModule == NULL)
