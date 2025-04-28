@@ -200,4 +200,14 @@ namespace Maths
         MatrixSetColumn(position, 3, matrix);
     }
 
+
+    inline float RemapValClamped(float val, float A, float B, float C, float D)
+    {
+        if (A == B)
+            return val >= B ? D : C;
+        float cVal = (val - A) / (B - A);
+        cVal = std::clamp(cVal, 0.0f, 1.0f);
+
+        return C + (D - C) * cVal;
+    }
 }

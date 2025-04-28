@@ -2,6 +2,7 @@
 #include "../offsets/offsets.h"
 #include "../TF object manager/TFOjectManager.h"
 #include "../Entity Manager/entityManager.h"
+#include "../../Extra/math.h"
 
 extern local_netvars netvar;
 
@@ -137,5 +138,6 @@ uint32_t I_client_entity::GetTickBase()
 
 int I_client_entity::GetCritMult()
 {
-	return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
+	float flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
+	return Maths::RemapValClamped(flCritMult, 0, 255, 1.0, 4.0);
 }

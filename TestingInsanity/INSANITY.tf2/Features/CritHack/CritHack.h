@@ -13,7 +13,7 @@ class baseWeapon;
 * -> optimize in the end
 */
 
-#define MAX_CRIT_COMMANDS 10
+#define MAX_CRIT_COMMANDS 32
 
 class CritHack_t
 {
@@ -27,7 +27,7 @@ private:
     int _GetBestCritCommand(CUserCmd* pCmd);
 
     void _MeleeCritHack(int iCritCommand, CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
-    bool _isSeedCritMelee(int iSeed, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
+    bool _isSeedCritMelee(int iSeed, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer, bool debug = false);
 
 
     bool  m_bCVarsInitialized   = false;

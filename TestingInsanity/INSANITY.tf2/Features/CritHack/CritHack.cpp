@@ -34,7 +34,7 @@ MAKE_SIG(ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 
 
 //======================= Debug Macros =======================
 //#define DEBUG_CRITHACK_CVAR
-#define DEBUG_CRIT_COMMAND
+//#define DEBUG_CRIT_COMMAND
 
 
 //=========================================================================
@@ -57,18 +57,27 @@ void CritHack_t::Run(CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLoc
     }
 
     Render::InfoWindow.AddToInfoWindow("bucket", std::format("Bucket : {:.2f}", pActiveWeapon->GetCritBucket()));
-    Render::InfoWindow.AddToInfoWindow("player crit chance", std::format("player crit chance : {}", pLocalPlayer->GetCritMult()));
+    Render::InfoWindow.AddToInfoWindow("player crit chance", std::format("player crit chance : {}", static_cast<float>(pLocalPlayer->GetCritMult()) * TF_DAMAGE_CRIT_CHANCE_MELEE));
+    
+    Render::InfoWindow.AddToInfoWindow("local player", std::format("local player : {}", pLocalPlayer->entindex()));
+    Render::InfoWindow.AddToInfoWindow("active weapon", std::format("active weapon : {}", pActiveWeapon->entindex()));
 
     // setup
     _InitializeCVars();
     _ScanForCritCommands(pCmd, pActiveWeapon, pLocalPlayer);
     int iBestCritCommand = _GetBestCritCommand(pCmd);
 
+    static int hitTick = 0;
+
     if (!(pCmd->buttons & IN_ATTACK))
+    {
+        hitTick = 0;
         return;
+    }
+    ++hitTick;
 
     // crit hacks
-    if (pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
+    if (pActiveWeapon->getSlot() == WPN_SLOT_MELLE && hitTick == 1)
         _MeleeCritHack(iBestCritCommand, pCmd, pActiveWeapon, pLocalPlayer);
     
 }
@@ -114,9 +123,10 @@ void CritHack_t::_ScanForCritCommands(CUserCmd* pCmd, baseWeapon* pActiveWeapon,
         if (m_qCritCommands.size() >= MAX_CRIT_COMMANDS)
             break;
 
-        int nFutureSeed = Sig::MD5_PseudoRandom(pCmd->command_number + i) & 0xFF;
+        //int nFutureSeed = Sig::MD5_PseudoRandom(pCmd->command_number + i) & 0xFF;
+        int nFutureSeed = Sig::MD5_PseudoRandom(pCmd->command_number + i) & 0x7FFFFFFF;
         
-        if (_isSeedCritMelee(nFutureSeed, pActiveWeapon, pLocalPlayer) == true)
+        if (_isSeedCritMelee(nFutureSeed, pActiveWeapon, pLocalPlayer, false) == true)
         {
             m_qCritCommands.push_back(pCmd->command_number + i);
 
@@ -153,11 +163,14 @@ void CritHack_t::_MeleeCritHack(int iCritCommand, CUserCmd* pCmd, baseWeapon* pA
         pCmd->command_number, pCmd->random_seed);
 #endif
     pCmd->command_number = iCritCommand;
-    pCmd->random_seed = Sig::MD5_PseudoRandom(iCritCommand) & 0xFF;
+    //pCmd->random_seed = Sig::MD5_PseudoRandom(iCritCommand) & 0xFF;
+    pCmd->random_seed = Sig::MD5_PseudoRandom(iCritCommand) & 0x7FFFFFFF;
+    Sig::CBaseEntity_SetPredictionRandomSeed(pCmd);
+    WIN_LOG("rebuild check : %s", _isSeedCritMelee(pCmd->random_seed, pActiveWeapon, pLocalPlayer, true) ? "TRUE" : "FALSE");
 }
 
 
-bool CritHack_t::_isSeedCritMelee(int iSeed, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer)
+bool CritHack_t::_isSeedCritMelee(int iSeed, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer, bool debug)
 {
     // Damage calculation
     //const WeaponData_t& pWeaponData = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0);
@@ -170,12 +183,19 @@ bool CritHack_t::_isSeedCritMelee(int iSeed, baseWeapon* pActiveWeapon, BaseEnti
     float flCritChance = static_cast<float>(pLocalPlayer->GetCritMult()) * TF_DAMAGE_CRIT_CHANCE_MELEE;
     flCritChance = Sig::ATRIB_HOOK_FLOAT(flCritChance, "mult_crit_chance", static_cast<BaseEntity*>(pActiveWeapon), 0, true);
 
+    if (debug)
+        printf("flCritChance : %.6f\n", flCritChance);
+
     // Setting seed
     int iMask = (pActiveWeapon->entindex() << 16) | (pLocalPlayer->entindex() << 8);
     iSeed = iSeed ^ iMask;
     ExportFn::RandomSeed(iSeed);
 
-    bool bCrit = ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1) < (flCritChance * WEAPON_RANDOM_RANGE);
+    int randomInt = ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1);
+    bool bCrit = randomInt < static_cast<int>(flCritChance * static_cast<float>(WEAPON_RANDOM_RANGE));
+
+    if(debug)
+        printf("randomint : %d & our chance : %d\n", randomInt, static_cast<int>(flCritChance * static_cast<float>(WEAPON_RANDOM_RANGE)));
 
     return bCrit;
 }
