@@ -60,7 +60,8 @@ int32_t I_client_entity::getWeaponIndex() {
 	return 0;
 }
 
-int16_t I_client_entity::getEntHealth() {
+
+uint32_t I_client_entity::getEntHealth() {
 	return *(int16_t*)((uintptr_t)this + netvar.m_iHealth);
 }
 
@@ -136,8 +137,13 @@ uint32_t I_client_entity::GetTickBase()
 	return *reinterpret_cast<uint32_t*>((uintptr_t)this + netvar.m_nTickBase);
 }
 
-int I_client_entity::GetCritMult()
+float I_client_entity::GetCritMult()
 {
-	float flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
-	return Maths::RemapValClamped(flCritMult, 0, 255, 1.0, 4.0);
+	int flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
+	return Maths::RemapValClamped(static_cast<float>(flCritMult), 0.0f, 255.0f, 1.0, 4.0);
+}
+
+RoundStats_t* I_client_entity::GetPlayerRoundData()
+{
+	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_RoundScoreData);
 }

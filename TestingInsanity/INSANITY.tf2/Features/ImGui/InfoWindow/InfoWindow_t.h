@@ -11,31 +11,35 @@ enum DataTypeInfoWindow_t
     DT_INFOWINDOW_STRING
 };
 
-#define MAX_INFOWINDOW_TEXT_LENGTH 40
-union Data // 40 bytes
+enum TextMsgClr_t
 {
-    int64_t iData;
-    double flData;
-    char szData[MAX_INFOWINDOW_TEXT_LENGTH];
+    DEFAULT = -1,
+    RED, BLUE, YELLOW, GREEN
 };
 
-struct DataInfoWindow_t
+struct TextMsg_t
 {
-    Data m_uData;
-    DataTypeInfoWindow_t dataType = DT_INFO_WINDOW_NOT_DEFINED;
+    TextMsgClr_t m_clr = DEFAULT;
+    std::string m_sTextMsg;
 };
+
+struct ImVec4;
 
 class InfoWindow_t
 {
 public:
     void Draw();
     void AddToInfoWindow(std::string caller, std::string msg);
+    void AddToCenterConsole(std::string caller, std::string msg, TextMsgClr_t clr = DEFAULT);
     
 private:
     void _DrawInfoWindow();
+    void _DrawCenterWindow();
+    const ImVec4& _GetTextClr(TextMsgClr_t clr);
     //void _DrawInfoBar(); // <- add this too.
 
     std::unordered_map <uint32_t, std::string> m_mapAllDataInfoWindow; // stores all the data for info window.
+    std::unordered_map <uint32_t, TextMsg_t> m_mapAllDataCenterWindow; // stores all the data for info window.
 };
 
 ADD_FEATURE_CUSTOM(InfoWindow, InfoWindow_t, Render);

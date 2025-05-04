@@ -106,6 +106,10 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_nTickBase"])				netvar.m_nTickBase				= map["m_nTickBase"];
 	
 	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_iCritMult"])				netvar.m_iCritMult				= map["m_iCritMult"];
+	if (!strcmp(table_name, "DT_LocalTFWeaponData")		&& map["m_flObservedCritChance"])	netvar.m_flObservedCritChance	= map["m_flObservedCritChance"];
+	
+	if (!strcmp(table_name, "DT_TFPlayerSharedLocal")	&& map["m_RoundScoreData"])			netvar.m_RoundScoreData			= map["m_RoundScoreData"];
+	if (!strcmp(table_name, "DT_LocalActiveWeaponData")	&& map["m_flNextPrimaryAttack"])	netvar.m_flNextPrimaryAttack	= map["m_flNextPrimaryAttack"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

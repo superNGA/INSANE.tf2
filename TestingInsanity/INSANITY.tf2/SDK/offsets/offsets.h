@@ -61,6 +61,11 @@ struct local_netvars
 
 	uintptr_t m_nTickBase = 0;
 	uintptr_t m_iCritMult = 0;
+
+	uintptr_t m_flObservedCritChance = 0;
+	uintptr_t m_RoundScoreData = 0;
+
+	uintptr_t m_flNextPrimaryAttack = 0;
 };
 
 extern local_netvars netvar;

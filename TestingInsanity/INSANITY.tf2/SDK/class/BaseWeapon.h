@@ -11,6 +11,7 @@ class I_client_entity;
 class CTFWeaponInfo;
 
 enum slot_t {
+	WPN_SLOT_INVALID = -1,
 	WPN_SLOT_PRIMARY=0,
 	WPN_SLOT_SECONDARY,
 	WPN_SLOT_MELLE
@@ -35,8 +36,18 @@ public:
 	bool		CanCrit();
 	
 	float		GetCritBucket();
-	int GetTotalCritsOccured();
-	int GetTotalCritChecks();
+	void		SetCritBucket(float flCritBucket);
+	int			GetTotalCritsOccured();
+	void		SetTotalCritsOccured(int iCritsOccured);
+	int			GetTotalCritChecks();
+	void		SetTotalCritChecks(int iCritChecks);
+
+	float GetObservedCritChance();
+	float GetDamagePerShot();
+	void SetWeaponSeed(int iSeed);
+
+	float GetNextPrimaryAttackTime();
+	float GetLastRapidFireCritCheckTime();
 
 private:
 	bool TracerHook = false;

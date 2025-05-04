@@ -60,7 +60,7 @@ void EntityManager_t::processEntities()
 	}
 
 	_processActiveWeapon();
-    _processEntityList();
+    //_processEntityList();
 
     initialized.store(true);
 }

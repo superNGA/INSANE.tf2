@@ -13,6 +13,8 @@
 * MATCH THE INHERITANCE ORDER CAREFULLY ELSE WON'T WORK!
 */
 
+struct RoundStats_t;
+
 
 // forward declaring classes
 class I_client_networkable;
@@ -345,7 +347,7 @@ public:
 	int32_t			getWeaponIndex();
 
 	// gets entities health niggaaaaaaa ;)
-	int16_t			getEntHealth();
+	uint32_t getEntHealth();
 
 	// is this entity a disguised spy or not?
 	bool			isDisguised();
@@ -362,7 +364,9 @@ public:
 
 	uint32_t		GetTickBase();
 
-	int				GetCritMult();
+	float			GetCritMult();
+
+	RoundStats_t*	GetPlayerRoundData();
 };
 
 class c_base_entity : public I_client_entity

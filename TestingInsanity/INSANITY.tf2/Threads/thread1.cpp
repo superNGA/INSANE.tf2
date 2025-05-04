@@ -16,6 +16,7 @@
 #include "../Features/features.h"
 
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
+#include "../SDK/class/IGameEventManager.h"
 
 Utility util;
 
@@ -80,6 +81,12 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
+	if (iEventListener.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+	
+
 	//=======================MAIN CHEAT LOOP=======================
 	LOG("thread 1", "initialized thread 1");
 	while (!directX::UI::UI_has_been_shutdown)
@@ -88,8 +95,16 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		tfObject.update();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		bool bInGame = I::iEngine->IsInGame();
+		
+		// Resetting features if not in game
+		if(bInGame == false)
+		{
+			Features::critHack.Reset();
+		}
+
 		Render::InfoWindow.AddToInfoWindow("connection status", std::format("{}", I::iEngine->IsConnected() ?
-			(I::iEngine->IsInGame() ? "Connected and in-game" : "Connected but not in-game") : "Not Connected"));
+			( bInGame ? "Connected and in-game" : "Connected but not in-game") : "Not Connected"));
 	}
 
 	_terminate(instance);

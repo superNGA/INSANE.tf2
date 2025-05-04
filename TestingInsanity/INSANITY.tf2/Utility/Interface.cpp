@@ -11,7 +11,7 @@ Interface_t::Interface_t(const char* szVersion, const char* szDll, void** pDesti
     interfaceInitialize.AddInterface(this);
 }
 
-Interface_t::Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t iOffset, const char* name)
+Interface_t::Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t iOffset, uint32_t iCurInstructionSize, const char* name)
 {
     m_szInterfaceName = name;
     m_szDll = szDll;
@@ -19,6 +19,7 @@ Interface_t::Interface_t(const char* signature, const char* szDll, void** ppDest
     m_iOffset = iOffset;
     m_szIdentifier = signature;
     m_bToBeScanned = true;
+    m_iCurInstrutionSize = iCurInstructionSize;
 
     interfaceInitialize.AddInterface(this);
 }
@@ -42,7 +43,7 @@ bool Interface_t::Initialize()
         return false;
 
     // this is custom made for extracting adresses form lea instruction ( load effective adrs ), if required we shall expand it much more.
-    *m_pDestination = reinterpret_cast<void*>((pInterface + 7) + (*reinterpret_cast<int32_t*>(pInterface + m_iOffset)));
+    *m_pDestination = reinterpret_cast<void*>((pInterface + m_iCurInstrutionSize) + (*reinterpret_cast<int32_t*>(pInterface + m_iOffset)));
     return true;
 }
 

@@ -14,7 +14,7 @@ class Interface_t
 {
 public:
     Interface_t(const char* szVersion, const char* szDll, void** pDestination);
-    Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t offset, const char* name);
+    Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t offset, uint32_t iCurInstructionSize, const char* name);
     bool Initialize();
 
     uintptr_t m_pInterface    = NULL;
@@ -24,13 +24,14 @@ public:
     bool m_bToBeScanned       = false;
     const char* m_szInterfaceName = "NULL";
     uint32_t m_iOffset = 0;
+    uint32_t m_iCurInstrutionSize = 0;
 };
 
 #define MAKE_INTERFACE_VERSION(name, version, type, dll) namespace I{inline type* name = nullptr;} \
 namespace INTERFACE_TEMP_SCOPE{inline Interface_t temp_##name(version, dll, reinterpret_cast<void**>(&I::name));}
 
-#define MAKE_INTERFACE_SIGNATURE(name, signature, type, dll, offset) namespace I{inline type* name = nullptr;}\
-namespace INTERFACE_TEMP_SCOPE{inline Interface_t temp_##name(signature, dll, reinterpret_cast<void**>(&I::name), offset, #name);}
+#define MAKE_INTERFACE_SIGNATURE(name, signature, type, dll, offset, curInstructionSize) namespace I{inline type* name = nullptr;}\
+namespace INTERFACE_TEMP_SCOPE{inline Interface_t temp_##name(signature, dll, reinterpret_cast<void**>(&I::name), offset, curInstructionSize, #name);}
 
 class InterfaceInitialize_t
 {
