@@ -12,7 +12,6 @@ IGameEventListener2 iEventListener;
 bool IGameEventListener2::Initialize()
 {
     I::iGameEventManager->AddListener(this, "player_hurt", false);
-    //Sig::AddListener(I::iGameEventManager, this, "damageamount", true);
     bool result = I::iGameEventManager->FindListener(this, "player_hurt");
 
     if (result == false)

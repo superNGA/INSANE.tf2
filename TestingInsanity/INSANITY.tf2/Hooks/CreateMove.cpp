@@ -59,6 +59,10 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
 		return result;
 
+	// are we alive ?
+	if (pLocalPlayer->getLifeState() != lifeState_t::LIFE_ALIVE)
+		return result;
+
 	// --> bSendPacket <--
 	/*
 	We moved 0x128 bytes down in the stack frame to find the bSendPacket 
@@ -79,9 +83,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	pStackFrameStart_ClientModeShared_Createmove += 0x8;  // adrs of return adrs
 	pStackFrameStart_ClientModeShared_Createmove += 0x40; // 0x40 bytes for local variables allocated on stack
 
-	//bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
-	bool dummy = true;
-	bool* bSendPacket = &dummy;
+	bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
 
 	static uint8_t bit_flags = 0;
 	

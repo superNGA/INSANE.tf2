@@ -367,6 +367,8 @@ public:
 	float			GetCritMult();
 
 	RoundStats_t*	GetPlayerRoundData();
+
+	bool			IsCritBoosted();
 };
 
 class c_base_entity : public I_client_entity

@@ -3,6 +3,9 @@
 #include "../TF object manager/TFOjectManager.h"
 #include "../Entity Manager/entityManager.h"
 #include "../../Extra/math.h"
+#include "../../Utility/signatures.h"
+
+MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
 
 extern local_netvars netvar;
 
@@ -146,4 +149,9 @@ float I_client_entity::GetCritMult()
 RoundStats_t* I_client_entity::GetPlayerRoundData()
 {
 	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_RoundScoreData);
+}
+
+bool I_client_entity::IsCritBoosted()
+{
+	return Sig::mShared_IsCritBoosted(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared);
 }

@@ -52,12 +52,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     // Checking if cheat's backEnd is initialized
     if(I::iEngine->IsInGame() == false)
         Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
-    /*if (tfObject.bIsInitialized.load() == false)
-    {
-        WAIT_MSG("TFObject Manager", "initialize");
-        return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
-    }*/
-
+    
     int8_t nMaterial        = modelState->m_pStudioHWData->m_pLODs->numMaterials;
     IMaterial** ppMaterial  = modelState->m_pStudioHWData->m_pLODs->ppMaterials;
     
@@ -78,6 +73,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         if (_CreateMaterial("FlatMat", szMat01))
         {
             FlatMat = UM_materials["FlatMat"]->pMaterial;
+            FlatMat->IncrementReferenceCount();
+            FlatMat->IncrementReferenceCount();
         }
         else
         {
@@ -89,6 +86,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         if (_CreateMaterial("ShinyMat", szMat02))
         {
             ShinyMat = UM_materials["ShinyMat"]->pMaterial;
+            ShinyMat->IncrementReferenceCount();
+            ShinyMat->IncrementReferenceCount();
         }
         else
         {
@@ -650,7 +649,7 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     it->second->pMaterial->DecrementReferenceCount();
     //it->second->pMaterial->DeleteIfUnreferenced();
 
-    delete it->second->pKV;
+    //delete it->second->pKV;
     delete it->second;
     #ifdef _DEBUG
     cons.Log(FG_GREEN, "DME", "successfully free'ed material [ %s ]", szMatName);

@@ -11,8 +11,5 @@ MAKE_HOOK(FX_FireBullet, "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", __fastc
     if(config.aimbotConfig.bNoSpread == true)
         iSeed = Features::noSpread.m_iSeed.load();
 
-    if (bIsCrit)
-        WIN_LOG("CRIT DETECTED!!");
-
     return Hook::FX_FireBullet::O_FX_FireBullet(a1, a2, a3, a4, a5, a6, iSeed, flBaseSpread, a9, bIsCrit);
 }
