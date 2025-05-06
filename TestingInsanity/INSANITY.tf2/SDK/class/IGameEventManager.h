@@ -33,18 +33,7 @@ public:
 
 	bool Initialize();
 
-	virtual void FireGameEvent(IGameEvent* event)
-	{
-		uint32_t iHash = FNV1A32(event->GetName());
-
-		switch (iHash)
-		{
-		case FNV1A32("player_hurt"):
-			Features::critHack.HandleEvent(event);
-			break;
-		default: break;
-		}
-	}
+	virtual void FireGameEvent(IGameEvent* event);
 };
 extern IGameEventListener2 iEventListener;
 

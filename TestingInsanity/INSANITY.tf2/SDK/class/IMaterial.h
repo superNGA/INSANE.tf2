@@ -220,6 +220,12 @@ public:
 	virtual void			IncrementReferenceCount(void) = 0;
 	virtual void			DecrementReferenceCount(void) = 0;
 
+	const int GetRefrenceCount()
+	{
+		// Look up string "Mod_LoadTexinfo: texdata < 0 (index==%i/%i)\n" in [ engine.dll ].
+		return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + 0x20); // 0x20
+	}
+
 	inline void AddRef() { IncrementReferenceCount(); }
 	inline void Release() { DecrementReferenceCount(); }
 

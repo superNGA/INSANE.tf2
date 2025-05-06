@@ -13,13 +13,18 @@ class IGameEvent;
 * OBSERVATIONS : 
 * -> the game does seem to manage the crit bucket when we "force" crits, all it does it mantain
 *   the crit Checks, So I need to detect cirts and mantain the crit bucket myself.
+* 
+* -> non-rapid fire weapon's bucket goes out of sync if we crit, i.e. subtracting is flawed.
+*       maybe its related to cirt multiplier or some shit like that. 
+* 
+* -> when Critting with rapid fire weapons, it immediately 0 out the bucket as soon as the 
+*       first crit bullet is fired.
+* 
+* ( sometimes I feel like a monkey, messing around with stones and sticks to make a sketchy ass 
+* solution to something, LMAO )
 */
 
-// TODO : Fix the Crit Cost for rapid fire
-// TODO : Check if amalgum is messing with crit multiplier n shit
-// TODO : This iCritMult thing seems to be pretty important, I don't think I should be altering any of these shared offsets.
-//          So, check out where amalgun is getting that shit,
-// TODO : Also Check how much it changes from weapon-to-weapon.
+// TODO : Find active weapon in server.dll & Gets its bucket.
 
 #define MAX_CRIT_COMMANDS 128
 
@@ -34,9 +39,11 @@ public:
 
     // Weapon stats
     baseWeapon* m_pWeapon       = nullptr;
-    float       m_flDamage      = 0.0f;
+    float       m_flDamagePerShot      = 0.0f;
+    float       m_flCritCostBase = 0.0f;
     int         m_iWeaponID     = 0;
     bool        m_bIsRapidFire  = false;
+    float       m_flBulletsShotDuringCrit = 0.0f;
     slot_t      m_iSlot         = WPN_SLOT_INVALID;
     
     // Bucket stats
@@ -52,7 +59,8 @@ public:
     void AddToWeaponsBucket(baseWeapon* pActiveWeapon);
     WeaponCritData_t* GetWeaponCritData(baseWeapon* pActiveWeapon);
     
-    void HandleEvent(IGameEvent* pEvent);
+    void RecordDamageEvent(IGameEvent* pEvent);
+    void ResetDamageRecords();
 
     void Reset();
 
@@ -64,12 +72,12 @@ public:
 private:
     float m_flLastCritHackTime  = 0.0f;
     int   m_iLastCheckSeed      = 0;
-    static constexpr int DEFAULT_OLD_CRIT_COUNT = -1;
-    int   m_nOldCritCount       = -1;
+    int   m_nOldCritCount       = DEFAULT_OLD_CRIT_COUNT;
     int   m_iLastUsedCritSeed   = 0;
-    uint32_t    m_iLastWeaponID = 0;
-    WeaponCritData_t* m_pLastCritWeapon = nullptr;
-    BaseEntity* m_pLocalPlayer  = nullptr;
+    static constexpr int DEFAULT_OLD_CRIT_COUNT = -1;
+    uint32_t             m_iLastWeaponID        = 0;
+    WeaponCritData_t*    m_pLastCritWeapon      = nullptr;
+    BaseEntity*          m_pLocalPlayer         = nullptr;
 
     void _InitializeCVars();
     bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);

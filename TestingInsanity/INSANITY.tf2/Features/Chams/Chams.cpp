@@ -73,8 +73,11 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         if (_CreateMaterial("FlatMat", szMat01))
         {
             FlatMat = UM_materials["FlatMat"]->pMaterial;
+            printf("ref count : %d\n", FlatMat->GetRefrenceCount());
             FlatMat->IncrementReferenceCount();
+            printf("ref count : %d\n", FlatMat->GetRefrenceCount());
             FlatMat->IncrementReferenceCount();
+            printf("ref count : %d @ %p\n", FlatMat->GetRefrenceCount(), FlatMat);
         }
         else
         {
@@ -173,7 +176,8 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     if(nTick >= 64)
     {
         float flAvgTime = nTotalTime / 64.0f;
-        Render::InfoWindow.AddToInfoWindow("Chams", std::format("DME exec. time : {:.6f} ms", flAvgTime < MIN_TIME ? 0.0f : flAvgTime));
+        Render::InfoWindow.AddToInfoWindow("Chams",     std::format("DME exec. time : {:.6f} ms", flAvgTime < MIN_TIME ? 0.0f : flAvgTime));
+        Render::InfoWindow.AddToInfoWindow("refCount",  std::format("Refrence count [ FlatMat ] : {}", FlatMat->GetRefrenceCount()));
         nTotalTime = 0.0f;
         nTick = 0;
     }

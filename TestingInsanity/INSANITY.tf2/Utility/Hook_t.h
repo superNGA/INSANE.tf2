@@ -9,6 +9,7 @@
 #define MATERIALSYSTEM_DLL		"materialsystem.dll"
 #define STUDIORENDER_DLL		"studiorender.dll"
 #define VSTDLIB_DLL				"vstdlib.dll"
+#define SERVER_DLL				"server.dll"
 
 class HookInfo_t
 {

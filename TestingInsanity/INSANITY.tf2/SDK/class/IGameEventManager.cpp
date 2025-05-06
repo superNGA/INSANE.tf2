@@ -1,5 +1,6 @@
 #include "IGameEventManager.h"
 #include <iostream>
+#include <vector>
 
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/signatures.h"
@@ -11,17 +12,54 @@ IGameEventListener2 iEventListener;
 
 bool IGameEventListener2::Initialize()
 {
-    I::iGameEventManager->AddListener(this, "player_hurt", false);
-    bool result = I::iGameEventManager->FindListener(this, "player_hurt");
+    // All the listeners that will be added by our "software"
+    std::vector<const char*> vEventNames = {
+        "player_hurt",
+        "round_end", "round_start", "stats_resetround"
+    };
 
-    if (result == false)
+    // looping through all of the listerners
+    bool bSuccess = true;
+    for (const char* szEventName : vEventNames)
     {
-        FAIL_LOG("Failed to initialize event listener damageammount");
-    }
-    else
-    {
-        WIN_LOG("created listener with adrs : [ %p ]", Sig::AddListener.m_ullAdrs);
+        // trying to create this listener
+        // NOTE : This will always return false. To check if the listener was created we must
+        //        try to find it.
+        I::iGameEventManager->AddListener(this, szEventName, false);
+        
+        // checking if we found that listener
+        if (I::iGameEventManager->FindListener(this, szEventName) == false)
+        {
+            FAIL_LOG("Failed to find listener [ %s ]", szEventName);
+            bSuccess = false;
+        }
+        else
+        {
+            WIN_LOG("Successfully initialized listener [ %s ]", szEventName);
+        }
+
     }
 
-    return result;
+    return bSuccess;
+}
+
+void IGameEventListener2::FireGameEvent(IGameEvent* event)
+{
+    // Hashing event name, so we can easily campare it with others
+    uint32_t iHash = FNV1A32(event->GetName());
+
+    switch (iHash)
+    {
+    case FNV1A32("player_hurt"):
+        Features::critHack.RecordDamageEvent(event);
+        break;
+
+    //case FNV1A32("round_end"):
+    //case FNV1A32("round_start"):
+    case FNV1A32("stats_resetround"):
+        Features::critHack.ResetDamageRecords();
+        break;
+
+    default: break;
+    }
 }
