@@ -27,7 +27,7 @@ MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, voi
 		if (frameCounter == 2) 
 		{
 			uint64_t startTime = __rdtsc();
-			entityManager.processEntities();
+			entityManager.UpdateLocalPlayer();
 			uint64_t endTime = __rdtsc();
 
 			//======================= performance tracking =======================

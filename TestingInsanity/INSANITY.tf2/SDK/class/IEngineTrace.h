@@ -77,7 +77,7 @@ struct trace_t {
 	csurface_t			m_surface;
 	int					m_hitgroup;
 	short				m_physics_bone;
-	I_client_entity*	m_entity;
+	BaseEntity*	m_entity;
 	int					m_hitbox;
 
 	bool did_hit() const { return m_fraction < 1.f || m_allsolid || m_start_solid; }

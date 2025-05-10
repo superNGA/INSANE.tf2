@@ -25,7 +25,7 @@ extern Console_System cons;
 *
 * @param ent : pointer to entity
 */
-IDclass_t IDManager_t::getID(I_client_entity* ent)
+IDclass_t IDManager_t::getID(BaseEntity* ent)
 {
 
 	// entity clas name

@@ -17,6 +17,7 @@
 
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../SDK/class/IGameEventManager.h"
+#include "../SDK/Entity Manager/entityManager.h"
 
 Utility util;
 
@@ -101,6 +102,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		if(bInGame == false)
 		{
 			Features::critHack.Reset();
+			entityManager.Reset();
 		}
 
 		Render::InfoWindow.AddToInfoWindow("connection status", std::format("{}", I::iEngine->IsConnected() ?

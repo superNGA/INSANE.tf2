@@ -12,12 +12,12 @@
 #include "../entInfo_t.h"
 
 //=======================FORWARD DECLERATIONS=======================
-class I_client_entity;
+class BaseEntity;
 
 class IDManager_t {
 
 public:
-	IDclass_t getID(I_client_entity* ent);
+	IDclass_t getID(BaseEntity* ent);
 
 private:
 	std::unordered_map<std::string, IDclass_t> CHE_mapID;

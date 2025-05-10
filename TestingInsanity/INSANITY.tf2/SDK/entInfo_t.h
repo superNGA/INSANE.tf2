@@ -78,7 +78,7 @@ struct boneScreenPos_t
 struct entInfo_t
 {
 	std::string entUserName = "NotPlayer";
-	I_client_entity* p_ent;
+	BaseEntity* p_ent;
 	baseWeapon* pActiveWeapon;
 	int16_t entIndex = 0;
 
@@ -145,7 +145,7 @@ struct entInfo_t
 
 struct glowObject_t
 {
-	I_client_entity* pEnt	= nullptr;
+	BaseEntity* pEnt	= nullptr;
 	int16_t entIndex		= 0;
 	bool isFrendly			= false;
 	IDclass_t classID		= NOT_DEFINED;

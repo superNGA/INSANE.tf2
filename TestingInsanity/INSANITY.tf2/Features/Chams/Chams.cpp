@@ -13,6 +13,7 @@ Chams_t chams;
 
 #include "../../Hooks/DrawModelExecutes.h"
 
+// SDK
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/Class ID Manager/classIDManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
@@ -49,9 +50,9 @@ MAKE_SIG(KVSetColor,    "44 89 44 24 ? 53 48 83 EC ? 41 8B D8", CLIENT_DLL,     
 //=========================================================================
 int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
-    // Checking if cheat's backEnd is initialized
-    if(I::iEngine->IsInGame() == false)
-        Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
+    // we in-game?
+    if (I::iEngine->IsInGame() == false)
+        return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
     
     int8_t nMaterial        = modelState->m_pStudioHWData->m_pLODs->numMaterials;
     IMaterial** ppMaterial  = modelState->m_pStudioHWData->m_pLODs->ppMaterials;
@@ -186,7 +187,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     int64_t result = 0;
 
     // anti aim cham rendering logic, sketchy one, will make proper one, once I see that it is working.
-    auto* me = entityManager.getLocalPlayer();
+    auto* me = entityManager.GetLocalPlayer();
     if(me != nullptr && pEntity == me->GetClientRenderable())
     {
         if (Feature::AA_chams == true)

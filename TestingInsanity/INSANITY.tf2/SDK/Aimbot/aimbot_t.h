@@ -12,8 +12,8 @@
 
 //=======================FORWARD DECLERATIONS=======================
 class matrix3x4_t;
-class I_client_entity;
-typedef I_client_entity BaseEntity;
+class BaseEntity;
+typedef BaseEntity BaseEntity;
 
 class Aimbot_t
 {

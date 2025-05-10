@@ -7,7 +7,7 @@
 extern Utility util;
 extern local_netvars netvar;
 
-class I_client_entity;
+class BaseEntity;
 class CTFWeaponInfo;
 
 enum slot_t {
@@ -25,11 +25,10 @@ enum reload_t
 	WPN_RELOAD_FINISH
 };
 
-class baseWeapon : public I_client_entity {
+class baseWeapon : public BaseEntity {
 public:
 	slot_t		getSlot();
 	reload_t	getReloadMode();
-	void		setCustomTracer(const char* tracerName);
 	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();
 	int			GetWeaponID();

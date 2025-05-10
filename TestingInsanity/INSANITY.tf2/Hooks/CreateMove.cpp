@@ -20,43 +20,23 @@
 #include "../SDK/class/BaseWeapon.h"
 #include "../SDK/class/Source Entity.h"
 
-/*
-"What would have INSANE done in this situation?" -> Thats what I am gonna do!
-*/
-
-/*
-I am confused. very confused. I don't know what to do! Some part says make new feature, some part says, 
-Fix current bugs and faults. Some part says make loader, some says improve UI. I don't understand what to do.
-Maybe if I make a fixed plan, then I will see a clear way.
-Lets try that out.
--> first I shall make difficult features, get them half working!
--> then go back and work on UI.
--> then complete each feature completly & add them to the UI along side.
--> when cheat is done, then we can make the loader.
-
-How does that sound? nice? well it is quite actually. But it requires some grit to stick to a plan.
-and grit is often flushed down the toilet by weak people like me ( yes, I am talking about nofap ).
-I lack grit, I get attracted towards shinny things too much, I see new shit, I go for new shit leaving
-old one in dirt. But that won't cut it. I must stick to this plan and I think I won't bother giving
-myself deadlines, cause this is the experimental phase, and then the real cheat dev, mannual labor phase
-comes.
-
-- INSANE
-*/
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
 	int64_t a1, int64_t a2, CUserCmd* cmd)
 {
 	bool result = Hook::CreateMove::O_CreateMove(a1, a2, cmd);
 
-	if (!cmd || !cmd->command_number || entityManager.initialized.load() == false) {
+	if ( cmd == nullptr || cmd->command_number == 0)
 		return result;
-	}
 
-	BaseEntity* pLocalPlayer = entityManager.getLocalPlayer();
+	// Getting Local Player
+	BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
+	if (pLocalPlayer == nullptr)
+		return result;
+
+	// Getting Active Weapon
 	baseWeapon* pActiveWeapon = pLocalPlayer->getActiveWeapon();
-
-	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
+	if (pActiveWeapon == nullptr)
 		return result;
 
 	// are we alive ?
@@ -87,11 +67,11 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	static uint8_t bit_flags = 0;
 	
-	Features::movement.Run(cmd, result);
+	Features::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
 
 	Features::fakeLag.Run(bSendPacket, cmd);
 
-	Features::antiAim.Run(cmd, result, bSendPacket);
+	Features::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
 
 	Features::noSpread.Run(cmd, result); // incomplete, not working
 

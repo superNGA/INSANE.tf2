@@ -17,10 +17,7 @@ const char* BulletTarcers_t::Run(void* pWeapon, const char* szOriginalOutput)
 
 bool BulletTarcers_t::_ShouldRun(void* pWeapon)
 {
-    // can't take some more scalable code here...
-    auto pActiveWeapon = entityManager.getActiveWeapon();
-    if (pActiveWeapon == nullptr || pWeapon != pActiveWeapon)
-        return false;
-
-    return true;
+    // Gonna make a gem of a bullet tracer feature, but 
+    // only once the main features are done. :)
+    return false;
 }

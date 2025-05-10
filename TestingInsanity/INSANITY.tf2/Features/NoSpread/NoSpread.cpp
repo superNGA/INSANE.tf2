@@ -62,8 +62,8 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	if (_ShouldRun(cmd) == false)
 		return;
 
-	BaseEntity* pLocalPlayer = entityManager.getLocalPlayer();
-	baseWeapon* pActiveWeapon = entityManager.getActiveWeapon();
+	BaseEntity* pLocalPlayer = entityManager.GetLocalPlayer();
+	baseWeapon* pActiveWeapon = pLocalPlayer->getActiveWeapon();
 	if (pLocalPlayer == nullptr || pActiveWeapon == nullptr)
 		return;
 

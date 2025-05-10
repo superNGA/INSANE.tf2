@@ -124,7 +124,7 @@ namespace entities
 	/* imfo about local player */
 	namespace local
 	{
-		inline std::atomic<I_client_entity*>	pLocalPlayer(nullptr);
+		inline std::atomic<BaseEntity*>	pLocalPlayer(nullptr);
 		inline std::atomic<player_class>		localplayer_class;
 		inline std::atomic<baseWeapon*>			active_weapon(nullptr);
 		inline int32_t				ID_active_weapon;

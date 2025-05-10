@@ -12,10 +12,12 @@
 MAKE_HOOK(OverrideView, "48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, int64_t, 
 	void* pVTable, CViewSetup* pViewSetup)
 {
-	if (entityManager.initialized.load() == false)
+	BaseEntity* pLocalPlayer = entityManager.GetLocalPlayer();
+
+	if(pLocalPlayer == nullptr)
 		return Hook::OverrideView::O_OverrideView(pVTable, pViewSetup);
 
-	if ((entityManager.getLocalPlayer()->getPlayerCond() & TF_COND_ZOOMED) == false)
+	if ((pLocalPlayer->getPlayerCond() & TF_COND_ZOOMED) == false)
 	{
 		pViewSetup->fov = config.viewConfig.FOV;
 	}

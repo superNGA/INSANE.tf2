@@ -16,54 +16,27 @@
 
 //=======================FORWARD DECLERATIONS=======================
 class baseWeapon;
-class I_client_entity;
-typedef I_client_entity BaseEntity;
+class BaseEntity;
+typedef BaseEntity BaseEntity;
 
 //=======================STRUCTS=======================
-struct ESPData_t
-{
-	std::string entityName;
-
-	// bone coordinates
-};
-
-typedef std::vector<ESPData_t> vecEspData;
 
 class EntityManager_t
 {
 public:
-	EntityManager_t();
-	void		processEntities();
-	bool		isActiveWeaponProjectile();
-	vecEspData	getEspData();
-	BaseEntity* getLocalPlayer();
-	baseWeapon* getActiveWeapon();
+	EntityManager_t()
+	{
+		m_pLocalPlayer.store(nullptr);
+	};
 
-	std::atomic<bool> initialized;
-private:
-	bool _processLocalPlayer();
-	bool _processActiveWeapon();
-	bool _processEntityList();
-	bool _processEntityPlayer(BaseEntity* entity);
-	void _processEspPlayer(const matrix3x4_t* playerBoneMatrix);
-	void _swapEspBuffer();
-	
-//=========================================================================
-//                     LOCAL PLAYER DATA
-//=========================================================================
-	std::atomic<BaseEntity*>	_pLocalPlayer;
-	uint32_t					_indexLocalPlayer  = 0;
-	std::atomic<player_class>	_class;
-	std::atomic<uint16_t>		_teamNum;
-	
-	std::atomic<baseWeapon*>	_pActiveWeapon;
-	std::atomic<int32_t>		_activeWeaponId;
+	void Reset()
+	{
+		m_pLocalPlayer.store(nullptr);
+	}
 
-//=========================================================================
-//                     ESP DATA
-//=========================================================================
-	vecEspData					_externalEspData; // read buffer
-	vecEspData					_internalEspdata; // write buffer
-	std::mutex					_mtxEspData;
+	void		UpdateLocalPlayer();
+	BaseEntity* GetLocalPlayer();
+
+	std::atomic<BaseEntity*> m_pLocalPlayer;
 };
-extern EntityManager_t entityManager;
+inline EntityManager_t entityManager;

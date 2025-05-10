@@ -4,57 +4,58 @@
 #include "../Entity Manager/entityManager.h"
 #include "../../Extra/math.h"
 #include "../../Utility/signatures.h"
+#include "../../SDK/class/IVEngineClient.h"
 
 MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
 
 extern local_netvars netvar;
 
 // 0x11D8 
-baseWeapon* I_client_entity::getActiveWeapon()
+baseWeapon* BaseEntity::getActiveWeapon()
 {
 	return reinterpret_cast<baseWeapon*>(I::IClientEntityList->GetClientEntity((*(int32_t*)((uintptr_t)this + netvar.m_hActiveWeapon)) & 0xFFF)); // 0xFFF -> 1111 1111 1111 gets 12 least significant bits, which are the active weapon entity index.
 }
 
 // NOTE : this FN has hardcoded offsets, may break with an update. be careful :)
-vec I_client_entity::getEntVelocity() {
+vec BaseEntity::getEntVelocity() {
 	return *(vec*)((uintptr_t)this + 0x1D8);
 }
 
 // E1
 // Returns life state, anything other than 0 means dead
-lifeState_t I_client_entity::getLifeState() {
+lifeState_t BaseEntity::getLifeState() {
 	return (lifeState_t)(*(int16_t*)((uintptr_t)this + netvar.m_lifeState));
 }
 
 // 0x1BA8 + 0x8
 // What character is this player playing?
-player_class I_client_entity::getCharacterChoice() {
+player_class BaseEntity::getCharacterChoice() {
 	return (player_class)(*(int32_t*)((uintptr_t)this + netvar.m_PlayerClass + netvar.m_iClass));
 }
 
 // 0xEC
 // returns the team num for this entity
-int16_t I_client_entity::getTeamNum() {
+int16_t BaseEntity::getTeamNum() {
 	return *(int16_t*)((uintptr_t)this + netvar.m_iTeamNum);
 }
 
-bool I_client_entity::isEnemy()
+bool BaseEntity::isEnemy()
 {
-	if (entityManager.getLocalPlayer() == nullptr)
+	if (entityManager.GetLocalPlayer() == nullptr)
 		return false;
 
-	return entityManager.getLocalPlayer()->getTeamNum() != this->getTeamNum();
+	return entityManager.GetLocalPlayer()->getTeamNum() != this->getTeamNum();
 }
 
 // 0x11DD
 // setting glow
-void I_client_entity::setGlow(bool b_glowStatus) {
+void BaseEntity::setGlow(bool b_glowStatus) {
 	*(bool*)((uintptr_t)this + netvar.m_bGlowEnabled) = b_glowStatus;
 }
 
 // 0xC38 + 0x90 + 0x48 = 0xD10
 // return the weapon index
-int32_t I_client_entity::getWeaponIndex() {
+int32_t BaseEntity::getWeaponIndex() {
 	
 	// causing crashes so had to put this check
 	if (this != nullptr) {
@@ -64,12 +65,12 @@ int32_t I_client_entity::getWeaponIndex() {
 }
 
 
-uint32_t I_client_entity::getEntHealth() {
+uint32_t BaseEntity::getEntHealth() {
 	return *(int16_t*)((uintptr_t)this + netvar.m_iHealth);
 }
 
 
-bool I_client_entity::isDisguised() {
+bool BaseEntity::isDisguised() {
 	
 	// is player a spy ?
 	if (getCharacterChoice() != TF_SPY)
@@ -77,7 +78,6 @@ bool I_client_entity::isDisguised() {
 
 	// checking if disguised or not
 	int32_t playerCond = *(int32_t*)((uintptr_t)this + netvar.m_Shared + netvar.m_nPlayerCond);
-	
 	if(playerCond & (1 << TF_COND_DISGUISED))
 		return true;
 
@@ -85,7 +85,7 @@ bool I_client_entity::isDisguised() {
 }
 
 
-bool I_client_entity::isCloaked() {
+bool BaseEntity::isCloaked() {
 	
 	// is player a spy ?
 	if (getCharacterChoice() != TF_SPY)
@@ -101,7 +101,7 @@ bool I_client_entity::isCloaked() {
 }
 
 
-void I_client_entity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
+void BaseEntity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 
 	// skip if not in thirdpeson
 	if (!config.miscConfig.third_person) {
@@ -117,41 +117,47 @@ void I_client_entity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 }
 
 
-vec I_client_entity::getLocalEyePos() {
+vec BaseEntity::getLocalEyePos() {
 
 	// adding eye offset in abs origin for local player
 	return (this->GetAbsOrigin() + vec(0.0f, 0.0f, *(float*)((uintptr_t)this + netvar.m_vecViewOffset)));
 }
 
 
-int32_t I_client_entity::getPlayerCond() {
+int32_t BaseEntity::getPlayerCond() {
 
 	return *(int32_t*)((uintptr_t)this + netvar.m_Shared + netvar.m_nPlayerCond);
 }
 
 
-bool I_client_entity::isOnGround()
+bool BaseEntity::isOnGround()
 {
 	return (*(int32_t*)((uintptr_t)this + netvar.m_fFlags) & (1 << 0));
 }
 
-uint32_t I_client_entity::GetTickBase()
+uint32_t BaseEntity::GetTickBase()
 {
 	return *reinterpret_cast<uint32_t*>((uintptr_t)this + netvar.m_nTickBase);
 }
 
-float I_client_entity::GetCritMult()
+float BaseEntity::GetCritMult()
 {
 	int flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_iCritMult);
 	return Maths::RemapValClamped(static_cast<float>(flCritMult), 0.0f, 255.0f, 1.0, 4.0);
 }
 
-RoundStats_t* I_client_entity::GetPlayerRoundData()
+RoundStats_t* BaseEntity::GetPlayerRoundData()
 {
 	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_RoundScoreData);
 }
 
-bool I_client_entity::IsCritBoosted()
+bool BaseEntity::IsCritBoosted()
 {
 	return Sig::mShared_IsCritBoosted(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared);
+}
+
+BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)
+{
+	int iEntIndex = I::iEngine->GetPlayerForUserID(userID);
+	return GetClientEntity(iEntIndex);
 }

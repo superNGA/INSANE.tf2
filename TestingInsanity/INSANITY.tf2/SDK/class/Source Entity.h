@@ -20,7 +20,7 @@ struct RoundStats_t;
 class I_client_networkable;
 class I_client_renderable;
 class I_client_unknown;
-class I_client_entity;
+class BaseEntity;
 class I_client_thinkable;
 class c_base_entity;
 class c_base_animating;
@@ -29,8 +29,6 @@ class baseWeapon;
 
 // forward declaring structs
 struct ray_t;
-
-typedef I_client_entity BaseEntity;
 
 class I_client_entity_list
 {
@@ -42,8 +40,8 @@ public:
 
 	// NOTE: This function is only a convenience wrapper.
 	// It returns GetClientNetworkable( entnum )->GetIClientEntity().
-	virtual I_client_entity* GetClientEntity(int entnum) = 0;
-	virtual I_client_entity* GetClientEntityFromHandle(CBaseHandle hEnt) = 0;
+	virtual BaseEntity* GetClientEntity(int entnum) = 0;
+	virtual BaseEntity* GetClientEntityFromHandle(CBaseHandle hEnt) = 0;
 
 	// Returns number of entities currently in use
 	virtual int					NumberOfEntities(bool bIncludeNonNetworkable) = 0;
@@ -54,6 +52,8 @@ public:
 	// Sizes entity list to specified size
 	virtual void				SetMaxEntities(int maxents) = 0;
 	virtual int					GetMaxEntities() = 0;
+
+	BaseEntity* GetClientEntityFromUserID(int userID);
 };
 
 MAKE_INTERFACE_VERSION(IClientEntityList, "VClientEntityList003", I_client_entity_list, "client.dll")
@@ -129,7 +129,7 @@ public:
 	virtual ICollideable_t* GetCollideable() = 0;
 	virtual I_client_networkable* GetClientNetworkable() = 0;
 	virtual I_client_renderable* GetClientRenderable() = 0;
-	virtual I_client_entity* GetI_client_entity() = 0;
+	virtual BaseEntity* GetI_client_entity() = 0;
 	//virtual c_base_entity* GetBaseEntity() = 0;
 	virtual c_base_entity* GetBaseEntity() = 0;
 	virtual I_client_thinkable* GetClientThinkable() = 0;
@@ -306,7 +306,7 @@ public:
 	virtual void				Release() = 0;
 };
 
-class I_client_entity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
+class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
 public:
 	// Delete yourself.
@@ -347,7 +347,7 @@ public:
 	int32_t			getWeaponIndex();
 
 	// gets entities health niggaaaaaaa ;)
-	uint32_t getEntHealth();
+	uint32_t		getEntHealth();
 
 	// is this entity a disguised spy or not?
 	bool			isDisguised();
@@ -371,7 +371,7 @@ public:
 	bool			IsCritBoosted();
 };
 
-class c_base_entity : public I_client_entity
+class c_base_entity : public BaseEntity
 {
 public:
 	/* no need to include all those bullshit virtual functions, just make whatever you need locally and call function via index if needed*/

@@ -38,14 +38,14 @@ public:
     void Reset();
 
     // Weapon stats
-    baseWeapon* m_pWeapon       = nullptr;
-    float       m_flDamagePerShot      = 0.0f;
-    float       m_flCritCostBase = 0.0f;
-    int         m_iWeaponID     = 0;
-    bool        m_bIsRapidFire  = false;
+    baseWeapon* m_pWeapon         = nullptr;
+    float       m_flDamagePerShot = 0.0f;
+    float       m_flCritCostBase  = 0.0f;
+    int         m_iWeaponID       = 0;
+    bool        m_bIsRapidFire    = false;
+    slot_t      m_iSlot           = WPN_SLOT_INVALID;
     float       m_flBulletsShotDuringCrit = 0.0f;
-    slot_t      m_iSlot         = WPN_SLOT_INVALID;
-    
+
     // Bucket stats
     float       m_flCritBucket  = 0.0f;
     uint32_t    m_nCritRequests = 0;
@@ -74,10 +74,12 @@ private:
     int   m_iLastCheckSeed      = 0;
     int   m_nOldCritCount       = DEFAULT_OLD_CRIT_COUNT;
     int   m_iLastUsedCritSeed   = 0;
+    int   m_nLastCritRequests   = 0;
     static constexpr int DEFAULT_OLD_CRIT_COUNT = -1;
     uint32_t             m_iLastWeaponID        = 0;
     WeaponCritData_t*    m_pLastCritWeapon      = nullptr;
     BaseEntity*          m_pLocalPlayer         = nullptr;
+    slot_t               m_iActiveWeaponSlot    = slot_t::WPN_SLOT_INVALID;
 
     void _InitializeCVars();
     bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
@@ -92,10 +94,14 @@ private:
     void _ForceCrit(int iCritCommand, CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
 
     // Crit ban ?
-    bool _IsCritShotPossible(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, WeaponCritData_t* pWeaponCritData);
     bool _CanFireCriticalShot(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    bool _CanWithdrawlCrit(baseWeapon* pActiveWeapon, WeaponCritData_t* pWeaponCritData) const;
-    bool _CanWithdrawlCritV2(WeaponCritData_t* pWeaponCritData);
+    int  _CanWithdrawlCritV2(WeaponCritData_t* pWeaponCritData);
+
+    // Mainting Health Records for all Entities
+    void Store();
+    void RecordHealth(BaseEntity* pEnt);
+    struct HealthRecord_t { int iOldHealth = -1, iHealth = -1; };
+    std::unordered_map<BaseEntity*, HealthRecord_t> m_mapHealthRecords = {};
 
     // Crit bucket parameters
     bool     m_bCVarsInitialized    = false;

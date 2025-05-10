@@ -3,6 +3,7 @@
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CMultAnimState.h"
+#include "../../SDK/class/Source Entity.h"
 #include "../../SDK/offsets/offsets.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 
@@ -19,12 +20,12 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket)
+void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer)
 {
 	if (Feature::AA_Switch == false)
 		return;
 
-	auto ent = entityManager.getLocalPlayer();
+	auto ent = pLocalPlayer;
 	if (ent == nullptr)
 		return;
 
@@ -38,7 +39,7 @@ void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket)
 	if (*bSendPacket == true)
 		cmd->viewangles = m_qAAAngles;
 
-	StoreAABones();
+	StoreAABones(pLocalPlayer);
 
 	_FixMovement(cmd);
 	bResult = false;
@@ -48,9 +49,8 @@ void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket)
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-void AntiAim_t::StoreAABones()
+void AntiAim_t::StoreAABones(BaseEntity* pLocalPlayer)
 {
-	auto* pLocalPlayer = entityManager.getLocalPlayer();
 	if (pLocalPlayer == nullptr)
 		return;
 	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + netvar.m_hItem - 88);
@@ -79,7 +79,7 @@ void AntiAim_t::StoreAABones()
 	
 	const qangle qOriRenderAngles = pLocalPlayer->GetRenderAngles();
 	pLocalPlayer->GetRenderAngles().yaw = m_qAAAngles.yaw;
-	entityManager.getLocalPlayer()->SetupBones(pBone, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, tfObject.pGlobalVar->curtime);
+	pLocalPlayer->SetupBones(pBone, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, tfObject.pGlobalVar->curtime);
 	pLocalPlayer->GetRenderAngles() = qOriRenderAngles;
 
 	// resetting back to original
