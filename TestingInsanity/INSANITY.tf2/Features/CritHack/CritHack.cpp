@@ -220,7 +220,8 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
     _AdjustWeaponsBucket(pWeaponCritData, pLocalPlayer);
 
     // Getting Crit Ban status
-    CritBanStatus_t iCritBanStatus = _GetCritBanStatus(pLocalPlayer, pWeaponCritData);
+    int iPendingDamage = 0;
+    CritBanStatus_t iCritBanStatus = _GetCritBanStatus(pLocalPlayer, pWeaponCritData, &iPendingDamage);
 
     // Getting Crit Seed if applicable
     int iWishSeed = NULL;
@@ -258,10 +259,10 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
         m_flLastFireTime  = flNextFireTime;
     }
 
-    _Draw(iCritBanStatus, iCritHackStatus, pWeaponCritData);
+    _Draw(iCritBanStatus, iCritHackStatus, pWeaponCritData, iPendingDamage);
 }
 
-void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, WeaponCritData_t* pWeaponCritData)
+void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, WeaponCritData_t* pWeaponCritData, int iPendingDamage)
 {
     switch (iBanStatus)
     {
@@ -272,7 +273,7 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         Render::InfoWindow.AddToCenterConsole("Ban Status", "CRIT-BANNED", RED);
         break;
     case CritHack_t::CRIT_TOO_EXPENSIVE:
-        Render::InfoWindow.AddToCenterConsole("Ban Status", "CRIT-TOO_EXPENSIVE", YELLOW);
+        Render::InfoWindow.AddToCenterConsole("Ban Status", std::format("CRIT-TOO_EXPENSIVE, {}dmg left", iPendingDamage), YELLOW);
         break;
     default:
         break;
@@ -296,7 +297,7 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         break;
     }
 
-    Render::InfoWindow.AddToInfoWindow("bucket",       std::format("Weapon Bucket : {}", pWeaponCritData->m_flCritBucket));
+    Render::InfoWindow.AddToInfoWindow("bucket", std::format("Weapon Bucket : {}", pWeaponCritData->m_flCritBucket));
     Render::InfoWindow.AddToInfoWindow("critRequests", std::format("Crit Requests : {}", pWeaponCritData->m_nCritRequests));
     Render::InfoWindow.AddToInfoWindow("BaseCritCost", std::format("Base CritCost : {}", pWeaponCritData->m_flCritCostBase));
     Render::InfoWindow.AddToInfoWindow("dmgPerBullet", std::format("DMG. per bullet : {}", pWeaponCritData->m_flDamagePerShot));
@@ -336,6 +337,9 @@ void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData,
 
             if (iOffset > 0)
                 WIN_LOG("This seed was a crit, but we ditched it, cause you didn't wanted to");
+
+            // I absolutely didn't forgot about this :)
+            return;
         }
     }
 }
@@ -442,16 +446,14 @@ bool CritHack_t::_IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pW
     return flCritChance * WEAPON_RANDOM_RANGE > ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1);
 }
 
-CritHack_t::CritBanStatus_t CritHack_t::_GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData)
+CritHack_t::CritBanStatus_t CritHack_t::_GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData, int* p_iDamagePending)
 {
-    int iPendingDamage = 0;
-
     // Crit Ban check
-    if (_AreWeCritBanned(pLocalPlayer, pActiveWeaponData, &iPendingDamage) == true)
+    if (_AreWeCritBanned(pLocalPlayer, pActiveWeaponData, p_iDamagePending) == true)
         return CritBanStatus_t::CRIT_BANNED;
 
     // Can we afford this Crit
-    if (_CanWithdrawlCritV3(pLocalPlayer, pActiveWeaponData, &iPendingDamage) == false)
+    if (_CanWithdrawlCritV3(pLocalPlayer, pActiveWeaponData, p_iDamagePending) == false)
         return CritBanStatus_t::CRIT_TOO_EXPENSIVE;
 
     // We are free to Crit

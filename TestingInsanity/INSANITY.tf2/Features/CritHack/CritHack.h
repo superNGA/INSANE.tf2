@@ -108,7 +108,8 @@ private:
         CRIT_BANNED,      // We CAN'T do crit, and crit request count won't change
         CRIT_TOO_EXPENSIVE// We CAN   do crit, and crit request cound WILL  change.
     };
-    CritBanStatus_t _GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData);
+    CritBanStatus_t _GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData,
+        int* p_iDamagePending = nullptr);
 
     enum CritHackStatus_t
     {
@@ -123,7 +124,7 @@ private:
     void _AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity* pLocalPlayer);
 
     void _Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, 
-        WeaponCritData_t* pWeaponCritData);
+        WeaponCritData_t* pWeaponCritData, int iPendingDamage);
 
     void _InitializeCVars();
     bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
