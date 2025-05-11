@@ -75,7 +75,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	Features::noSpread.Run(cmd, result); // incomplete, not working
 
-	Features::critHack.Run(cmd, pActiveWeapon, pLocalPlayer);
+	Features::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 
 	return result;
 }

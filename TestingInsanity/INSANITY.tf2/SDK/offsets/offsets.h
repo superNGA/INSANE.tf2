@@ -66,6 +66,7 @@ struct local_netvars
 	uintptr_t m_RoundScoreData = 0;
 
 	uintptr_t m_flNextPrimaryAttack = 0;
+	uintptr_t m_flLastCritCheckTime = 0;
 };
 
 extern local_netvars netvar;

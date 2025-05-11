@@ -123,5 +123,5 @@ float baseWeapon::GetNextPrimaryAttackTime()
 
 float baseWeapon::GetLastRapidFireCritCheckTime()
 {
-    return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + 0xFC4);
+    return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + netvar.m_flLastCritCheckTime);
 }

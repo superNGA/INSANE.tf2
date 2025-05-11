@@ -24,7 +24,20 @@ class IGameEvent;
 * solution to something, LMAO )
 */
 
-// TODO : Find active weapon in server.dll & Gets its bucket.
+// TODO : Get rapid fire crit cost
+// TODO : Properly deduct rapid fire crit cost
+
+/*
+CritHack for rapid fire weapons :
+    -> First check if noPred is on?
+
+    -> If no-pred is on :
+        -> Spam in crit seed until crit, and store each time we put in crit seed
+        -> at the instance we get a crit, "last-recorded-time" will act as anchor
+        -> now when we want to crit, wait until fractoin part of cur tiem - last tiem is 
+        greather than 1
+        -> Now we can crit, knowing that server will process at this exact tick.
+*/
 
 #define MAX_CRIT_COMMANDS 128
 
@@ -42,9 +55,11 @@ public:
     float       m_flDamagePerShot = 0.0f;
     float       m_flCritCostBase  = 0.0f;
     int         m_iWeaponID       = 0;
+    int         m_iWeaponEntIdx   = 0;
     bool        m_bIsRapidFire    = false;
     slot_t      m_iSlot           = WPN_SLOT_INVALID;
     float       m_flBulletsShotDuringCrit = 0.0f;
+    float       m_flLastWithdrawlTime = 0.0f;
 
     // Bucket stats
     float       m_flCritBucket  = 0.0f;
@@ -55,13 +70,16 @@ class CritHack_t
 {
 public:
     void Run(CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
-    
+    void RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+
     void AddToWeaponsBucket(baseWeapon* pActiveWeapon);
     WeaponCritData_t* GetWeaponCritData(baseWeapon* pActiveWeapon);
     
     void RecordDamageEvent(IGameEvent* pEvent);
     void ResetDamageRecords();
-
+    
+    BaseEntity* m_pLocalPlayer = nullptr;
+    
     void Reset();
 
     // Crit Bucket parameters ( depends on server configuration )
@@ -71,34 +89,66 @@ public:
 
 private:
     float m_flLastCritHackTime  = 0.0f;
+    float m_flLastFireTime      = 0.0f;
     int   m_iLastCheckSeed      = 0;
     int   m_nOldCritCount       = DEFAULT_OLD_CRIT_COUNT;
     int   m_iLastUsedCritSeed   = 0;
     int   m_nLastCritRequests   = 0;
+    float m_flLastCritMult      = 0.0f;
+    float m_flCritChance        = 0.0f;
+    float m_flLastRapidFireCritTime = -10.0f; // When did we detect the last rapid fire crit.
     static constexpr int DEFAULT_OLD_CRIT_COUNT = -1;
     uint32_t             m_iLastWeaponID        = 0;
-    WeaponCritData_t*    m_pLastCritWeapon      = nullptr;
-    BaseEntity*          m_pLocalPlayer         = nullptr;
+    WeaponCritData_t*    m_pLastShotWeapon      = nullptr;
     slot_t               m_iActiveWeaponSlot    = slot_t::WPN_SLOT_INVALID;
+
+    enum CritBanStatus_t
+    {
+        CRIT_ALLOWED = 0, // We can do crit whenever we want
+        CRIT_BANNED,      // We CAN'T do crit, and crit request count won't change
+        CRIT_TOO_EXPENSIVE// We CAN   do crit, and crit request cound WILL  change.
+    };
+    CritBanStatus_t _GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData);
+
+    enum CritHackStatus_t
+    {
+        CRITHACK_WPN_NOT_ELLIGIBLE = -1, // This weapon's not elligible for CritHack
+        CRITHACK_DISABLED = 0, // Turned off
+        CRITHACK_INACTIVE,     // Turned on, but user DOESN'T want to crit
+        CRITHACK_ACTIVE        // Turned on, and user WANTS to crit
+    };
+    CritHackStatus_t _GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey);
+    int _GetCritSeed(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, BaseEntity* pLocalPlayer);
+    bool _CanThisTickPotentiallyCrit(CUserCmd* pCmd, float flCritChance, WeaponCritData_t* pWeaponCritData);
+    void _AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity* pLocalPlayer);
+
+    void _Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, 
+        WeaponCritData_t* pWeaponCritData);
 
     void _InitializeCVars();
     bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
 
+    float _GetCritChance(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
+
     // Crit seed search & confirmation
     void _ScanForCritCommandsV2(CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
     int  _GetBestCritCommand(CUserCmd* pCmd);
+    bool _IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData) const;
     bool _IsCommandCritRapidFire(int iSeed, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
     
     // CUserCmd altering
     void _AvoidCrit(CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
     void _ForceCrit(int iCritCommand, CUserCmd* pCmd, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
+    void _ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData);
+    void _AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, float flCritChance);
 
     // Crit ban ?
-    bool _CanFireCriticalShot(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    bool _AreWeCritBanned(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon, int* iPendingDamage = nullptr);
+    bool _CanWithdrawlCritV3(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon, int* iPendingDamage = nullptr);
     int  _CanWithdrawlCritV2(WeaponCritData_t* pWeaponCritData);
 
     // Mainting Health Records for all Entities
-    void Store();
+    void _StoreHealthChanges();
     void RecordHealth(BaseEntity* pEnt);
     struct HealthRecord_t { int iOldHealth = -1, iHealth = -1; };
     std::unordered_map<BaseEntity*, HealthRecord_t> m_mapHealthRecords = {};
