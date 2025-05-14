@@ -33,6 +33,25 @@ player_class BaseEntity::getCharacterChoice() {
 	return (player_class)(*(int32_t*)((uintptr_t)this + netvar.m_PlayerClass + netvar.m_iClass));
 }
 
+const char* BaseEntity::GetPlayerClassName()
+{
+	switch (getCharacterChoice())
+	{
+	case TF_SCOUT:   return "Scout";
+	case TF_SNIPER:  return "Sniper";
+	case TF_SOLDIER: return "Soldier";
+	case TF_DEMOMAN: return "Demoman";
+	case TF_MEDIC:	 return "Medic";
+	case TF_HEAVY:	 return "Heavy";
+	case TF_PYRO:	 return "Pyro";
+	case TF_SPY:	 return "Spy";
+	case TF_ENGINEER:return "Engineer";
+	default:		 return "BullShit";
+	}
+
+	return "UnicornShit";
+}
+
 // 0xEC
 // returns the team num for this entity
 int16_t BaseEntity::getTeamNum() {
@@ -154,6 +173,11 @@ RoundStats_t* BaseEntity::GetPlayerRoundData()
 bool BaseEntity::IsCritBoosted()
 {
 	return Sig::mShared_IsCritBoosted(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared);
+}
+
+bool BaseEntity::IsFeignDeathReady()
+{
+	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_bFeignDeathReady);
 }
 
 BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)

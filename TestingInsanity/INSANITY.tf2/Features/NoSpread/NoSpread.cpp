@@ -161,7 +161,7 @@ bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
 bool NoSpread_t::_FixSpread(CUserCmd* cmd, uint32_t seed, baseWeapon* pActiveWeapon)
 {
 	auto wpnInfo = pActiveWeapon->GetTFWeaponInfo();
-	int32_t iBullets = wpnInfo->GetWeaponData(0).m_nBulletsPerShot;
+	int32_t iBullets = wpnInfo->GetWeaponData(0)->m_nBulletsPerShot;
 	if (iBullets <= 0)
 		return false;
 

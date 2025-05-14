@@ -71,7 +71,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     static IMaterial* ShinyMat = nullptr;
     if (FlatMat == nullptr)
     {
-        if (_CreateMaterial("FlatMat", szMat01))
+        if (_CreateMaterial("FlatMat", szMat03))
         {
             FlatMat = UM_materials["FlatMat"]->pMaterial;
             printf("ref count : %d\n", FlatMat->GetRefrenceCount());

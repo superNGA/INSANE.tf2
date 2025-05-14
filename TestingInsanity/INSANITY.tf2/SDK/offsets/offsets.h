@@ -67,6 +67,7 @@ struct local_netvars
 
 	uintptr_t m_flNextPrimaryAttack = 0;
 	uintptr_t m_flLastCritCheckTime = 0;
+	uintptr_t m_bFeignDeathReady    = 0;
 };
 
 extern local_netvars netvar;

@@ -90,7 +90,7 @@ struct WeaponData_t
 class CTFWeaponInfo : public FileWeaponInfo_t
 {
 public:
-	WeaponData_t const& GetWeaponData(int iWeapon) const { return m_WeaponData[iWeapon]; }
+	WeaponData_t* GetWeaponData(int iWeapon = 0) { return &m_WeaponData[iWeapon]; }
 
 	WeaponData_t	m_WeaponData[2];
 

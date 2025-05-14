@@ -334,6 +334,7 @@ public:
 
 	// What character is this player playing?
 	player_class	getCharacterChoice();
+	const char*		GetPlayerClassName();
 
 	// returns the team num for this entity
 	int16_t			getTeamNum();
@@ -369,6 +370,8 @@ public:
 	RoundStats_t*	GetPlayerRoundData();
 
 	bool			IsCritBoosted();
+
+	bool			IsFeignDeathReady();
 };
 
 class c_base_entity : public BaseEntity

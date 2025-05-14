@@ -13,6 +13,7 @@
 #include "../Utility/Interface.h"
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
+#include "../Utility/PullFromAssembly.h"
 #include "../Features/features.h"
 
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
@@ -38,6 +39,11 @@ Utility util;
 void thread1_t::execute_thread1(HINSTANCE instance)
 {
 	if (tfObject.initializeModuleHandles() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (allASMData.Initialize() == false)
 	{
 		_terminate(instance);
 	}

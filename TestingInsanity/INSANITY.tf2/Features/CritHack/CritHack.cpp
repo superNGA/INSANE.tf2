@@ -6,6 +6,7 @@
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Interface.h"
 #include "../../Utility/Hook_t.h"
+#include "../../Utility/PullFromAssembly.h"
 #include "../../Extra/math.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 
@@ -18,6 +19,7 @@
 #include "../../SDK/class/LocalPlayerScoring.h"
 #include "../../SDK/class/IGameEventManager.h"
 #include "../../SDK/Class ID Manager/classIDManager.h"
+#include "../../SDK/class/CPrediction.h"
 
 // DEUBG related
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
@@ -28,6 +30,7 @@
 #define TF_DAMAGE_CRIT_CHANCE_RAPID	    0.02f
 #define TF_DAMAGE_CRIT_DURATION_RAPID   2.0f
 #define WEAPON_RANDOM_RANGE             10000
+#define WEAPON_RANDOM_RANGE_FLOAT       10000.0f
 
 #define TF_BONUSEFFECT_NONE             4
 #define TF_BONUSEFFECT_MINICRIT         1
@@ -49,13 +52,18 @@ MAKE_SIG(CTFWeaponBase_CanFireRandomCrit, "F3 0F 58 0D ? ? ? ? 0F 2F 89", CLIENT
 MAKE_SIG(ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35",
     CLIENT_DLL, float, float , const char* , void* , void* , bool );
 
+// DELETE THIS
+MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL, FileWeaponInfo_t*, int16_t);
+MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL, const char*, int)
+MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL, int16_t, const char*)
+
 MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 8B 02", int, CLIENT_DLL, 0x2, 0x6);
 
 //======================= Debug Macros =======================
 //#define DEBUG_CRITHACK_CVAR
 //#define DEBUG_CRIT_COMMAND
 #define DEGUB_CRITHACK
-//#define TEST_CRITHACK_FROM_SERVER
+#define TEST_CRITHACK_FROM_SERVER
 
 
 #define GET_CRIT_SEED(command_number) (Sig::MD5_PseudoRandom(command_number) & MASK_SIGNED)
@@ -116,11 +124,14 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
     CritHackStatus_t iCritHackStatus = _GetCritHackStatus(pLocalPlayer, pWeaponCritData, VK_LSHIFT);
     if(bShotFired == true)
     {
+        // Will this bullet be considered for Rapid-Fire crit check on the server.
+        bool bTickConsideredForRapidFireCheck = flNextFireTime > m_flLastRapidFireCritCheckTime + 1.0f;
+
         // Deciding what to do. Crit yes ? Crit no ? don't bother ?
         switch (iCritHackStatus)
         {
         case CRITHACK_ACTIVE:
-            _ForceCritV2(iWishSeed, pCmd, iCritBanStatus, pWeaponCritData);
+            _ForceCritV2(iWishSeed, pCmd, iCritBanStatus, pWeaponCritData, bTickConsideredForRapidFireCheck);
             break;
         case CRITHACK_INACTIVE:
             _AvoidCritV2(pCmd, pWeaponCritData, m_flCritChance);
@@ -202,6 +213,25 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
     Render::InfoWindow.AddToInfoWindow("dmgPerBullet", std::format("DMG. per bullet : {}", pWeaponCritData->m_flDamagePerShot));
     Render::InfoWindow.AddToInfoWindow("WeaponID",     std::format("Cur Weapon ID : {}",   pWeaponCritData->m_iWeaponID));
     Render::InfoWindow.AddToInfoWindow("CritChecks",   std::format("Crit Checks   : {}",   pWeaponCritData->m_pWeapon->GetTotalCritChecks()));
+    Render::InfoWindow.AddToInfoWindow("CritOccuered", std::format("Crit Occured accoding to game : {}", pWeaponCritData->m_pWeapon->GetTotalCritsOccured()));
+    Render::InfoWindow.AddToInfoWindow("GamesBucket ", std::format("Weapon Bucket ( game's ): {}",       pWeaponCritData->m_pWeapon->GetCritBucket()));
+    Render::InfoWindow.AddToInfoWindow("WeaponID",     std::format("{} <- Weapon ID",      static_cast<int>(pWeaponCritData->m_iSlot)));
+}
+
+void CritHack_t::CalcIsAttackCriticalHandler()
+{
+    if (I::cPrediction->m_bFirstTimePredicted == false)
+        return;
+
+    if(m_iWishSeed != 0)
+    {
+        ExportFn::RandomSeed(m_iWishSeed);
+        *I::p_iPredictionSeed = m_iWishSeed;
+        m_iWishSeed = 0;
+
+        // delete this
+        printf("---> Spoofed seed <---\n");
+    }
 }
 
 void CritHack_t::_AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity* pLocalPlayer)
@@ -212,14 +242,14 @@ void CritHack_t::_AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity*
 
     if (pRoundStats->m_iCrits > m_nOldCritCount && m_nOldCritCount != DEFAULT_OLD_CRIT_COUNT)
     {
-        m_pLastShotWeapon->WithDrawlFromCritBucket();
-        
         // if this crit was accidental
         if (m_bLastShotDeemedCrit == false)
         {
             m_pLastShotWeapon->IncrementCritRequestCount();
             FAIL_LOG("Detected & Accounted for an accidental Crit");
         }
+
+        m_pLastShotWeapon->WithDrawlFromCritBucket();
     }
 
     m_nOldCritCount = pRoundStats->m_iCrits;
@@ -228,17 +258,17 @@ void CritHack_t::_AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity*
 bool CritHack_t::_CanThisTickPotentiallyCrit(CUserCmd* pCmd, float flCritChance, WeaponCritData_t* pWeaponCritData)
 {
     int iFutureSeed = GET_CRIT_SEED(pCmd->command_number);
-    return _IsSeedCrit(iFutureSeed, flCritChance, pWeaponCritData);
+    return _IsSeedCrit(iFutureSeed, flCritChance, pWeaponCritData, false);
 }
 
-void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, float flCritChance)
+void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, float flCritChance) const
 {
     constexpr int CRIT_SEED_SEARCH_RANGE = 10;
     for (uint32_t iOffset = 0; iOffset < CRIT_SEED_SEARCH_RANGE; iOffset++)
     {
         int iFutureSeed = GET_CRIT_SEED(pCmd->command_number + iOffset);
         
-        if (_IsSeedCrit(iFutureSeed, m_flCritChance, pWeaponCritData) == false)
+        if (_IsSeedNOTcrit(iFutureSeed, m_flCritChance, pWeaponCritData, true) == true)
         {
             // Avoiding this crit seed
             pCmd->command_number  += iOffset;
@@ -254,7 +284,7 @@ void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData,
     }
 }
 
-void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData)
+void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData, bool bTickConsideredForRapidFireCheck)
 {
     switch (iCritBanStatus)
     {
@@ -271,9 +301,19 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
 
     // If no seed then return
     if (iWishSeed == NULL)
+    {
+        FAIL_LOG("No Seed to crit MF, WHO TF WROTE THIS BULLSHIT >:(");
+        return;
+    }
+
+    // Will this tick even be considered for rapid fire check?
+    if (pWeaponCritData->m_bIsRapidFire == true && bTickConsideredForRapidFireCheck == false)
         return;
 
-    // Setting stuff in
+    WIN_LOG("---> ATTEMPTING CRIT WITH [ %d ] <---", iWishSeed);
+
+    // Setting Crit seed in
+    m_iWishSeed           = iWishSeed;
     pCmd->command_number  = iWishSeed;
     pCmd->random_seed     = Sig::MD5_PseudoRandom(iWishSeed) & MASK_SIGNED;
     *I::p_iPredictionSeed = pCmd->random_seed;
@@ -289,7 +329,7 @@ CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPl
         return CritHackStatus_t::CRITHACK_DISABLED;
 
     // Does this weapon support Crit-Hack
-    if (_IsWeaponEligibleForCritHack(pLocalPlayer, pWeaponCritData->m_pWeapon) == false)
+    if (_IsWeaponEligibleForCritHack(pLocalPlayer, pWeaponCritData) == false)
         return CritHackStatus_t::CRITHACK_WPN_NOT_ELLIGIBLE;
 
     // Is the "Magic" key down?
@@ -328,14 +368,14 @@ int CritHack_t::_GetCritSeed(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, 
 
 
     // else We will search for crit seeds to put in reserve...
-    constexpr uint32_t MAX_CRIT_SEED_SEARCH_RANGE = 246;
+    constexpr uint32_t MAX_CRIT_SEED_SEARCH_RANGE = 512;
     for (uint32_t iOffset = 0; iOffset < MAX_CRIT_SEED_SEARCH_RANGE && m_qCritCommands.size() < MAX_CRIT_SEED_COUNT; iOffset++)
     {
         // Calculating future seed
         int iFutureSeed = Sig::MD5_PseudoRandom(pCmd->command_number + iOffset) & MASK_SIGNED;
         
         // Checking & Adding future seed if it crits
-        if (_IsSeedCrit(iFutureSeed, m_flCritChance, pWeaponCritData) == true)
+        if (_IsSeedCrit(iFutureSeed, m_flCritChance, pWeaponCritData, true) == true)
             m_qCritCommands.push_front(pCmd->command_number + iOffset);
     }
 
@@ -348,15 +388,52 @@ int CritHack_t::_GetCritSeed(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, 
     return iWishSeed; // This can still be NULL if didn't find a seed in the search. Be aware
 }
 
-bool CritHack_t::_IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData) const
+
+// CREDITS to Amalgum for this safe search logic.
+bool CritHack_t::_IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData, bool bSafeCheck) const
 {
     // Decypting seed, just a little bit of bit shifting
     int iBitShiftOffset = pWeaponCritData->m_iSlot == WPN_SLOT_MELLE ? 8 : 0;
-    int iDecyptedSeed   = iSeed ^ ((pWeaponCritData->m_iWeaponEntIdx << (8 + iBitShiftOffset)) | m_iLocalPlayerEntIndex << iBitShiftOffset);
+    int iEncryptedSeed  = iSeed ^ ((pWeaponCritData->m_iWeaponEntIdx << (8 + iBitShiftOffset)) | m_iLocalPlayerEntIndex << iBitShiftOffset);
     
-    // Comparing our Crit Chance against random int
-    ExportFn::RandomSeed(iDecyptedSeed);
-    return flCritChance * WEAPON_RANDOM_RANGE > ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1);
+    // Setting seed & Getting random int
+    ExportFn::RandomSeed(iEncryptedSeed);
+    float iRandom = static_cast<float>(ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1));
+
+    // might give wrong result, as player's Crit-Multipier updates with a delay on official servers
+    if(bSafeCheck == false)
+        return flCritChance * WEAPON_RANDOM_RANGE_FLOAT > iRandom;
+
+    // iRandom must be smaller then these, for a reliable output
+    constexpr float RANDOM_INT_SAFE_UPPER_LIMIT       = 150.0f; // [ 200 , 800 ] <- Origial range
+    constexpr float RANDOM_INT_SAFE_UPPER_LIMIT_MELEE = 1000.0f;// [ 1500, 6000] <- Origial range
+
+    float iUpperLimit = pWeaponCritData->m_iSlot == WPN_SLOT_MELLE ? RANDOM_INT_SAFE_UPPER_LIMIT_MELEE : RANDOM_INT_SAFE_UPPER_LIMIT;
+
+    return iRandom < iUpperLimit && iRandom < flCritChance * WEAPON_RANDOM_RANGE_FLOAT;
+}
+
+bool CritHack_t::_IsSeedNOTcrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData, bool bSafeCheck) const
+{
+    // Decypting seed, just a little bit of bit shifting
+    int iBitShiftOffset = pWeaponCritData->m_iSlot == WPN_SLOT_MELLE ? 8 : 0;
+    int iEncryptedSeed  = iSeed ^ ((pWeaponCritData->m_iWeaponEntIdx << (8 + iBitShiftOffset)) | m_iLocalPlayerEntIndex << iBitShiftOffset);
+
+    // Setting seed & Getting random int
+    ExportFn::RandomSeed(iEncryptedSeed);
+    float iRandom = static_cast<float>(ExportFn::RandomInt(0, WEAPON_RANDOM_RANGE - 1));
+
+    // might give wrong result, as player's Crit-Multipier updates with a delay on official servers
+    if (bSafeCheck == false)
+        return flCritChance * WEAPON_RANDOM_RANGE_FLOAT < iRandom;
+
+    // iRandom must be smaller then these, for a reliable output
+    constexpr float RANDOM_INT_SAFE_UPPER_LIMIT       = 1000.0f; // [ 200 , 800 ] <- Origial range
+    constexpr float RANDOM_INT_SAFE_UPPER_LIMIT_MELEE = 7000.0f;// [ 1500, 6000] <- Origial range
+
+    float iLowerLimit = pWeaponCritData->m_iSlot == WPN_SLOT_MELLE ? RANDOM_INT_SAFE_UPPER_LIMIT_MELEE : RANDOM_INT_SAFE_UPPER_LIMIT;
+
+    return iRandom > iLowerLimit && iRandom > flCritChance * WEAPON_RANDOM_RANGE_FLOAT;
 }
 
 CritHack_t::CritBanStatus_t CritHack_t::_GetCritBanStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeaponData, int* p_iDamagePending)
@@ -421,6 +498,8 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
     int         iHealth = pEvent->GetInt("health");
     bool        bCrit   = pEvent->GetBool("crit");
     BaseEntity* pVictim = I::IClientEntityList->GetClientEntityFromUserID(pEvent->GetInt("userid"));
+    if (pVictim == nullptr)
+        return;
 
     // Do we have damage records for this victim
     auto it = m_mapHealthRecords.find(pVictim);
@@ -430,8 +509,13 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
     // How much damage did he actually take ( can't give more damage then health left )
     int iDamageTaken = 0;
     
-    // did we kill him?
-    if (iHealth <= 0)
+    // is Death-Ringer spy faking his death
+    bool bFakeDeath = pVictim->getCharacterChoice() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->getPlayerCond() & TF_COND_FEIGN_DEATH);
+    if (bFakeDeath == true) // Delete this
+        WIN_LOG("This nigga is faking his death!!!!");
+
+    // If we "kill-da-victim" or if he faked his death ( using Death-Ringer ) then use our records for calculating damage dealt.
+    if (iHealth <= 0 || bFakeDeath)
         iDamageTaken = it->second.iHealth;
     else
         iDamageTaken = iDamage;
@@ -502,8 +586,10 @@ void CritHack_t::Reset()
     m_flCritBucketBottom      = 0.0f;
     m_flCritBucketCap         = 0.0f;
     m_flCritBucketDefault     = 0.0f;
+
                               
     // Resetting...           
+    m_iWishSeed               = 0;
     m_flLastCritHackTime      = 0.0f;
     m_iLastCheckSeed          = 0;
     m_nOldCritCount           = DEFAULT_OLD_CRIT_COUNT;
@@ -520,6 +606,7 @@ void CritHack_t::Reset()
     m_flLastRapidFireCritTime = -10.0f;
     m_flCritChance            = 0.0f;
     m_flLastFireTime          = 0.0f;
+    m_flLastRapidFireCritCheckTime = 0.0f;
     m_bIsCritBoosted          = false;
     m_pLastWeapon             = nullptr;
     m_bLastShotDeemedCrit     = false;
@@ -580,18 +667,6 @@ MAKE_HOOK(Server_IsAllowedToWithdrawlFromCritBucket, "40 53 48 83 EC ? FF 81 ? ?
     return result;
 }
 
-
-//#include <xmmintrin.h>
-MAKE_HOOK(Server_GetCritMult, "0F 57 C9 C7 44 24 ? ? ? ? ? F3 0F 2A 89", __fastcall, SERVER_DLL,
-        float, void* idk1)
-{
-    auto result = Hook::Server_GetCritMult::O_Server_GetCritMult(idk1);
-    printf("Server using cirt mult : %.4f\n", result);
-    printf("Client using cirt mult : %.4f\n", Features::critHack.m_pLocalPlayer->GetCritMult());
-    return result;
-}
-
-
 MAKE_HOOK(Server_TFBaseWeapon_CalcIsAttackCriticalHelper, "48 89 5C 24 ? 55 56 57 41 56 41 57 48 81 EC ? ? ? ? 0F 29 74 24", __fastcall, SERVER_DLL,
     bool, baseWeapon* pActiveWeapon)
 {
@@ -648,22 +723,24 @@ void CritHack_t::_InitializeCVars()
 #endif
 }
 
-bool CritHack_t::_IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+bool CritHack_t::_IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon)
 {
     player_class iCharChoice = pLocalPlayer->getCharacterChoice();
-    slot_t       iWeaponSlot = pActiveWeapon->getSlot();
 
     // Skipping Sniper's primary
-    if (iCharChoice == TF_SNIPER && iWeaponSlot == WPN_SLOT_PRIMARY)
+    if (iCharChoice == TF_SNIPER && pActiveWeapon->m_iSlot == WPN_SLOT_PRIMARY)
         return false;
 
     // Skipping Spy's every weapon, except primary ( revolver )
-    if (iCharChoice == TF_SPY && iWeaponSlot != WPN_SLOT_PRIMARY)
+    if (iCharChoice == TF_SPY && pActiveWeapon->m_iSlot != WPN_SLOT_PRIMARY)
         return false;
 
     // Skipping any "Buff-based" secondaries, like Batalion-backup etc...
-    if (pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0).m_nBulletsPerShot <= 0 && iWeaponSlot != WPN_SLOT_MELLE)
+    if (pActiveWeapon->m_pWeaponInfo->m_nBulletsPerShot <= 0 && pActiveWeapon->m_iSlot != WPN_SLOT_MELLE)
         return false;
+
+    // Delete this
+    Render::InfoWindow.AddToInfoWindow("Character choice", std::format("Character choice : {}", pLocalPlayer->GetPlayerClassName()));
 
     return true;
 }
@@ -811,7 +888,7 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
         return;
 
     // calculating cost
-    float flCritMult = m_pWeapon->getSlot() == WPN_SLOT_MELLE ? 0.5f : 
+    float flCritMult = m_pWeapon->getSlot() == WPN_SLOT_MELLE ? 0.5f :
         Maths::RemapValClamped(static_cast<float>(m_nCritRequests) / static_cast<float>(m_pWeapon->GetTotalCritChecks()),
             0.1f, 1.f, 1.f, 3.f);
     float flCritCost = (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER) * flCritMult;
@@ -841,24 +918,24 @@ bool WeaponCritData_t::UpdateStats(baseWeapon* pWeapon)
         m_flCritBucket = Features::critHack.m_flCritBucketDefault;
     
     // if weapon same as last tick then no worry
-    if (pWeapon == m_pWeapon && pWeapon->GetWeaponID() == m_iWeaponID)
+    if (pWeapon == m_pWeapon && pWeapon->GetWeaponDefinitionID() == m_iWeaponID)
         return false;
 
     // reset stats
+    m_pWeaponInfo     = pWeapon->GetTFWeaponInfo()->GetWeaponData(0);
     m_pWeapon         = pWeapon;
-    m_iWeaponID       = pWeapon->GetWeaponID();
+    m_iWeaponID       = pWeapon->GetWeaponDefinitionID();
     m_flDamagePerShot = pWeapon->GetDamagePerShot();
     m_flCritCostBase  = m_flDamagePerShot;
     m_iSlot           = pWeapon->getSlot();
     m_iWeaponEntIdx   = pWeapon->entindex();
 
     // is Weapon Rapid fire ?
-    const WeaponData_t& pWeaponInfo = pWeapon->GetTFWeaponInfo()->GetWeaponData(0);
-    m_bIsRapidFire                  = pWeaponInfo.m_bUseRapidFireCrits && (m_iSlot != WPN_SLOT_MELLE);
+    m_bIsRapidFire = m_pWeaponInfo->m_bUseRapidFireCrits && (m_iSlot != WPN_SLOT_MELLE);
     if(m_bIsRapidFire)
     {
         // Get number of bullets "to-be" fired in "rapid-fire crit" duration of 2 seconds
-        m_flBulletsShotDuringCrit = TF_DAMAGE_CRIT_DURATION_RAPID / pWeaponInfo.m_flTimeFireDelay;
+        m_flBulletsShotDuringCrit = TF_DAMAGE_CRIT_DURATION_RAPID / m_pWeaponInfo->m_flTimeFireDelay;
         
         // Base crit damage ( for rapid fire weapons, its (Number-of-bullets * Damage-for-each-bullet) )
         m_flCritCostBase = m_flDamagePerShot * m_flBulletsShotDuringCrit;
@@ -905,6 +982,7 @@ void WeaponCritData_t::Reset()
     m_bIsRapidFire    = false;
     m_iSlot           = WPN_SLOT_INVALID;
     m_flCritCostBase  = 0.0f;
+    m_pWeaponInfo     = nullptr;
     m_flBulletsShotDuringCrit  = 0.0f;
     m_flLastWithdrawlTime      = 0.0f;
     m_flLastCritRequestIncTime = 0.0f;

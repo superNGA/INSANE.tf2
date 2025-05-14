@@ -119,12 +119,12 @@ private:
         "$phongboost" "2"
     })";
 
-    const char* szMat03 = R"(VertexLitGeneric
+    const char* szMat03 = R"(UnlitGeneric
     {
         "$basetexture" "vgui/white"
         "$ignorez" "0"
         "$envmap" "env_cubemap"
-        "$alpha" "0.5" // 0.0 = fully invisible, 1.0 = fully solid
+        "$alpha" "0.5"
         "$phong" "1"
         "$phongexponent" "10"
         "$phongboost" "2"

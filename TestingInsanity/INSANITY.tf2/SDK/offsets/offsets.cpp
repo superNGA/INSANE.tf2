@@ -112,6 +112,7 @@ void offsets::fill_local_netvars(T_map& map, const char* table_name)
 	if (!strcmp(table_name, "DT_LocalActiveWeaponData")	&& map["m_flNextPrimaryAttack"])	netvar.m_flNextPrimaryAttack	= map["m_flNextPrimaryAttack"];
 	
 	if (!strcmp(table_name, "DT_LocalTFWeaponData")		&& map["m_flLastCritCheckTime"])	netvar.m_flLastCritCheckTime	= map["m_flLastCritCheckTime"];
+	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_bFeignDeathReady"])		netvar.m_bFeignDeathReady		= map["m_bFeignDeathReady"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

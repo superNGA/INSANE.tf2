@@ -8,6 +8,7 @@
 class CUserCmd;
 class baseWeapon;
 class IGameEvent;
+struct WeaponData_t;
 
 /*
 DONE :
@@ -27,16 +28,17 @@ public:
     void IncrementCritRequestCount();
 
     // Weapon stats
-    baseWeapon* m_pWeapon         = nullptr;
-    float       m_flDamagePerShot = 0.0f;
-    float       m_flCritCostBase  = 0.0f;
-    int         m_iWeaponID       = 0;
-    int         m_iWeaponEntIdx   = 0;
-    bool        m_bIsRapidFire    = false;
-    slot_t      m_iSlot           = WPN_SLOT_INVALID;
-    float       m_flBulletsShotDuringCrit  = 0.0f;
-    float       m_flLastWithdrawlTime      = 0.0f;
-    float       m_flLastCritRequestIncTime = 0.0f;
+    baseWeapon*   m_pWeapon         = nullptr;
+    float         m_flDamagePerShot = 0.0f;
+    float         m_flCritCostBase  = 0.0f;
+    int           m_iWeaponID       = 0;
+    int           m_iWeaponEntIdx   = 0;
+    bool          m_bIsRapidFire    = false;
+    int           m_iSlot           = WPN_SLOT_INVALID;
+    float         m_flBulletsShotDuringCrit  = 0.0f;
+    float         m_flLastWithdrawlTime      = 0.0f;
+    float         m_flLastCritRequestIncTime = 0.0f;
+    WeaponData_t* m_pWeaponInfo     = nullptr;
 
     // Bucket stats
     float       m_flCritBucket  = 0.0f;
@@ -55,6 +57,9 @@ public:
     // Recording all damage dealt by us.
     void RecordDamageEvent(IGameEvent* pEvent);
     void ResetDamageRecords();
+
+    // Setups crit seed for game to use in "calcIsAttackCriticalHelper()"
+    void CalcIsAttackCriticalHandler();
     
     BaseEntity* m_pLocalPlayer = nullptr;
     
@@ -66,10 +71,12 @@ public:
     float m_flCritBucketDefault = 0;
 
 private:
+    int   m_iWishSeed           = 0;
     bool  m_bLastShotDeemedCrit = false; // <-- This helps crithack to not break in case of accidental crits.
     bool  m_bIsCritBoosted      = false;
     float m_flLastCritHackTime  = 0.0f;
     float m_flLastFireTime      = 0.0f;
+    float m_flLastRapidFireCritCheckTime = 0.0f;
     int   m_iLastCheckSeed      = 0;
     int   m_nOldCritCount       = DEFAULT_OLD_CRIT_COUNT;
     int   m_iLastUsedCritSeed   = 0;
@@ -81,7 +88,7 @@ private:
     uint32_t             m_iLastWeaponID        = 0;
     WeaponCritData_t*    m_pLastShotWeapon      = nullptr;
     WeaponCritData_t*    m_pLastWeapon          = nullptr;
-    slot_t               m_iActiveWeaponSlot    = slot_t::WPN_SLOT_INVALID;
+    int                  m_iActiveWeaponSlot    = slot_t::WPN_SLOT_INVALID;
 
     // Determines (current) Crit restriction...
     enum CritBanStatus_t
@@ -105,7 +112,8 @@ private:
     
     // Crit seed search & confirmation...
     int  _GetCritSeed(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, BaseEntity* pLocalPlayer);
-    bool _IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData) const;
+    bool _IsSeedCrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData, bool bSafeCheck = false) const;
+    bool _IsSeedNOTcrit(int iSeed, float flCritChance, WeaponCritData_t* pWeaponCritData, bool bSafeCheck = false) const;
     bool _CanThisTickPotentiallyCrit(CUserCmd* pCmd, float flCritChance, WeaponCritData_t* pWeaponCritData);
     void _AdjustWeaponsBucket(WeaponCritData_t* pWeaponData, BaseEntity* pLocalPlayer);
 
@@ -114,12 +122,12 @@ private:
 
     void _InitializeCVars();
 
-    bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon);
     float _GetCritChance(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
     
     // Forcing & Avoiding Crit...
-    void _ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData);
-    void _AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, float flCritChance);
+    void _ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData, bool bTickConsideredForRapidFireCheck);
+    void _AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, float flCritChance)const;
 
     // Crit restrictions realated...
     bool _AreWeCritBanned(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon, int* iPendingDamage = nullptr);

@@ -27,18 +27,25 @@ enum reload_t
 
 class baseWeapon : public BaseEntity {
 public:
-	slot_t		getSlot();
+	int getSlot();
 	reload_t	getReloadMode();
 	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();
-	int			GetWeaponID();
-	bool		CanCrit();
 	
+	// Weapon IDs
+	int			GetWeaponTypeID(); // <- ETFWeaponInfo ID ( i.e. same for all bats for scout )
+	int			GetWeaponDefinitionID(); // <- Item specific ID ( i.e. different for each bat type for scout )
+
+	bool		CanCrit(); // <- Just a wrapper for CalcIsAttackHelper()
+	
+	// Getters for Crit Bucket's stats
 	float		GetCritBucket();
-	void		SetCritBucket(float flCritBucket);
 	int			GetTotalCritsOccured();
-	void		SetTotalCritsOccured(int iCritsOccured);
 	int			GetTotalCritChecks();
+	
+	// Setter for Crit Bucket's stats
+	void		SetCritBucket(float flCritBucket);
+	void		SetTotalCritsOccured(int iCritsOccured);
 	void		SetTotalCritChecks(int iCritChecks);
 
 	float GetObservedCritChance();
