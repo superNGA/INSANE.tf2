@@ -52,19 +52,13 @@ MAKE_SIG(CTFWeaponBase_CanFireRandomCrit, "F3 0F 58 0D ? ? ? ? 0F 2F 89", CLIENT
 MAKE_SIG(ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35",
     CLIENT_DLL, float, float , const char* , void* , void* , bool );
 
-// DELETE THIS
-MAKE_SIG(baseWeapon_GetWeaponFileHandle, "66 3B 0D", CLIENT_DLL, FileWeaponInfo_t*, int16_t);
-MAKE_SIG(baseWeapon_WeaponIDToAlias, "48 63 C1 48 83 F8 ? 73 ? 85 C9 78 ? 48 8D 0D ? ? ? ? 48 8B 04 C1 C3 33 C0 C3 48 83 E9", CLIENT_DLL, const char*, int)
-MAKE_SIG(baseWeapon_LookUpWeaponInfoSlot, "48 8B D1 48 8D 0D ? ? ? ? E9 ? ? ? ? CC 48 89 5C 24 ? 48 89 6C 24", CLIENT_DLL, int16_t, const char*)
-
 MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 8B 02", int, CLIENT_DLL, 0x2, 0x6);
 
 //======================= Debug Macros =======================
 //#define DEBUG_CRITHACK_CVAR
 //#define DEBUG_CRIT_COMMAND
 #define DEGUB_CRITHACK
-#define TEST_CRITHACK_FROM_SERVER
-
+//#define TEST_CRITHACK_FROM_SERVER
 
 #define GET_CRIT_SEED(command_number) (Sig::MD5_PseudoRandom(command_number) & MASK_SIGNED)
 
@@ -101,17 +95,17 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
     // Account for Crits from our bucket.
     _AdjustWeaponsBucket(m_pLastShotWeapon, pLocalPlayer);
 
-    // Getting Crit Ban status
-    int iPendingDamage = 0;
-    CritBanStatus_t iCritBanStatus = _GetCritBanStatus(pLocalPlayer, pWeaponCritData, &iPendingDamage);
-
-    // Should Drop Crit Bucket
+    // Is CritBucket still valid?
     if (bDidWeaponChange == true || pWeaponCritData != m_pLastWeapon)
     {
         FAIL_LOG("Weapon Changed, we droped the bucket :(");
         m_qCritCommands.clear();
     }
-
+    
+    // Getting Crit Ban status
+    int iPendingDamage = 0;
+    CritBanStatus_t iCritBanStatus = _GetCritBanStatus(pLocalPlayer, pWeaponCritData, &iPendingDamage);
+    
     // Getting Crit Seed if applicable
     int iWishSeed = NULL;
     if (iCritBanStatus == CritBanStatus_t::CRIT_ALLOWED)
@@ -119,7 +113,8 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
     
     // Are we shooting on this crit ?
     float flNextFireTime = pWeaponCritData->m_pWeapon->GetNextPrimaryAttackTime();
-    bool  bShotFired     = (pCmd->buttons & IN_ATTACK) && tfObject.pGlobalVar->curtime >= flNextFireTime && flNextFireTime > m_flLastFireTime;
+    float flCurTime      = static_cast<float>(pLocalPlayer->GetTickBase()) * tfObject.pGlobalVar->interval_per_tick;
+    bool  bShotFired     = (pCmd->buttons & IN_ATTACK) == true && flCurTime >= flNextFireTime/* && flNextFireTime > m_flLastFireTime*/;
 
     CritHackStatus_t iCritHackStatus = _GetCritHackStatus(pLocalPlayer, pWeaponCritData, VK_LSHIFT);
     if(bShotFired == true)
@@ -286,12 +281,15 @@ void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData,
 
 void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData, bool bTickConsideredForRapidFireCheck)
 {
+    // Delete this ( prints )
     switch (iCritBanStatus)
     {
     case CritHack_t::CRIT_BANNED: // Just let it go, if we are Crit Banned
+        FAIL_LOG("CritBanned!");
         return;
     // Avoid any potential Crits if we can't afford them, this can mess with the CritRequest count
     case CritHack_t::CRIT_TOO_EXPENSIVE: 
+        FAIL_LOG("Too_Expensive");
         _AvoidCritV2(pCmd, pWeaponCritData, m_flCritChance);
         return;
     case CritHack_t::CRIT_ALLOWED:
@@ -317,9 +315,6 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
     pCmd->command_number  = iWishSeed;
     pCmd->random_seed     = Sig::MD5_PseudoRandom(iWishSeed) & MASK_SIGNED;
     *I::p_iPredictionSeed = pCmd->random_seed;
-
-    if (pWeaponCritData->m_bIsRapidFire == true)
-        printf(">>>>> %d <<<<<\n", pCmd->random_seed);
 }
 
 CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey)

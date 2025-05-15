@@ -35,10 +35,10 @@ public:
     int           m_iWeaponEntIdx   = 0;
     bool          m_bIsRapidFire    = false;
     int           m_iSlot           = WPN_SLOT_INVALID;
+    WeaponData_t* m_pWeaponInfo     = nullptr;
     float         m_flBulletsShotDuringCrit  = 0.0f;
     float         m_flLastWithdrawlTime      = 0.0f;
     float         m_flLastCritRequestIncTime = 0.0f;
-    WeaponData_t* m_pWeaponInfo     = nullptr;
 
     // Bucket stats
     float       m_flCritBucket  = 0.0f;

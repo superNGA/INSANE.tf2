@@ -51,7 +51,7 @@ bool baseWeapon::canBackStab()
 
 CTFWeaponInfo* baseWeapon::GetTFWeaponInfo()
 {
-    // make something better to get weapon id
+    // TODO : Make it proper with some segfault checks
     auto output = Sig::baseWeapon_GetWeaponFileHandle(
         Sig::baseWeapon_LookUpWeaponInfoSlot(
             Sig::baseWeapon_WeaponIDToAlias(this->GetWeaponTypeID())));
