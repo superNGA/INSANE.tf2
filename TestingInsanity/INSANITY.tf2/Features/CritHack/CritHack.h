@@ -10,11 +10,13 @@ class baseWeapon;
 class IGameEvent;
 struct WeaponData_t;
 
-/*
-DONE :
--> Stop recoding damage when crit boosted.
--> Properly dropped crit bucket upon weapon change.
-*/
+// Pending stuff
+// TODO : Implement proper RAPID-FIRE support
+// TODO : This is not working with STICKY-BOMBS for some reason, fix that too.
+// TODO : Properly remove weapons who just can't crit, like DIAMONDBACK, etc..
+// TODO : When sniper does a headshot, does it gets added to the total crit damage?
+//        EDIT : ( YES IT DOES, the headshot damage gets added to the total crit damage. )
+// TODO : Handle other edge cases & remove bullshit weapons like Wrangler and shit like that.
 
 class WeaponCritData_t
 {
@@ -71,19 +73,13 @@ public:
     float m_flCritBucketDefault = 0;
 
 private:
-    int   m_iWishSeed           = 0;
-    bool  m_bLastShotDeemedCrit = false; // <-- This helps crithack to not break in case of accidental crits.
-    bool  m_bIsCritBoosted      = false;
-    float m_flLastCritHackTime  = 0.0f;
-    float m_flLastFireTime      = 0.0f;
+    int   m_iWishSeed                    = 0;
+    bool  m_bLastShotDeemedCrit          = false; // <-- This helps crithack to not break in case of accidental crits.
+    bool  m_bIsCritBoosted               = false;
+    float m_flLastFireTime               = 0.0f;
     float m_flLastRapidFireCritCheckTime = 0.0f;
-    int   m_iLastCheckSeed      = 0;
-    int   m_nOldCritCount       = DEFAULT_OLD_CRIT_COUNT;
-    int   m_iLastUsedCritSeed   = 0;
-    int   m_nLastCritRequests   = 0;
-    float m_flLastCritMult      = 0.0f;
-    float m_flCritChance        = 0.0f;
-    float m_flLastRapidFireCritTime             = -10.0f; // When did we detect the last rapid fire crit.
+    int   m_nOldCritCount                = DEFAULT_OLD_CRIT_COUNT;
+    float m_flCritChance                 = 0.0f;
     static constexpr int DEFAULT_OLD_CRIT_COUNT = -1;
     uint32_t             m_iLastWeaponID        = 0;
     WeaponCritData_t*    m_pLastShotWeapon      = nullptr;
@@ -151,35 +147,9 @@ private:
     WeaponCritData_t m_MeleeCritData;
 
     // Crit cmd records
-    inline void _ClearCritCmdRecord() { m_qCritCommands.clear(); m_iLastCheckSeed = 0; }
+    inline void _ClearCritCmdRecord() { m_qCritCommands.clear(); }
     std::deque<int> m_qCritCommands = {};
-
 };
 ADD_FEATURE(critHack, CritHack_t);
 
 MAKE_FEATURE_BOOL(CritHack, "CritHack->toggleCritHack", 1);
-
-
-/*
--> If Enabled
-
--> Should Crit 
-    -> not in demo
-    -> not crit boosted
-
--> can Crit
-    -> Player's observed crit chances is good
-    -> Crit bucket has enough damage in it.
-
--> Scan for crit ticks
-    -> just remake that shit, it ain't that hard.
-    -> maintain the games bucket and crit checks too.
-*/
-
-/*
-When to do crits ? :
-    -> if no IN_ATTACK, return
-    -> if curTime > NextFireTime, fire
-        -> don't do shit for next 0.5 seconds
-    -> 
-*/

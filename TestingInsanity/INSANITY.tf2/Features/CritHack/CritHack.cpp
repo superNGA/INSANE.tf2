@@ -40,15 +40,14 @@
 GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL, void, int)
 GET_EXPORT_FN(RandomInt, VSTDLIB_DLL, int, int, int)
 
-MAKE_SIG(CBaseEntity_SetPredictionRandomSeed, "48 85 C9 75 ? C7 05 ? ? ? ? ? ? ? ? C3", "client.dll", int64_t, CUserCmd*);
-MAKE_SIG(MD5_PseudoRandom, "89 4C 24 ? 55 48 8B EC 48 81 EC", "client.dll", int64_t, int);
-MAKE_SIG(CTFWeaponBase_CalcIsAttackCritHelper, "48 89 5C 24 ? 55 56 57 48 81 EC ? ? ? ? 0F 29 74 24", "client.dll", bool, baseWeapon*);
-MAKE_SIG(CTFWeaponBaseMelee_CalcIsAttackCritHelper, "40 57 48 83 EC ? 48 8B 05 ? ? ? ? 48 8B F9 83 78 ? ? 75", "client.dll", bool, baseWeapon*);
-MAKE_SIG(IsAllowedToWithdrawFromCritBucket, "40 53 48 83 EC ? FF 81", "client.dll", bool, baseWeapon*, float);
-MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
-MAKE_SIG(CTFWeaponBase_CanFireRandomCrit, "F3 0F 58 0D ? ? ? ? 0F 2F 89", CLIENT_DLL, bool, BaseEntity*, float);
+MAKE_SIG(CBaseEntity_SetPredictionRandomSeed,       "48 85 C9 75 ? C7 05 ? ? ? ? ? ? ? ? C3", CLIENT_DLL, int64_t, CUserCmd*);
+MAKE_SIG(MD5_PseudoRandom,                          "89 4C 24 ? 55 48 8B EC 48 81 EC", CLIENT_DLL, int64_t, int);
+MAKE_SIG(CTFWeaponBase_CalcIsAttackCritHelper,      "48 89 5C 24 ? 55 56 57 48 81 EC ? ? ? ? 0F 29 74 24", CLIENT_DLL, bool, baseWeapon*);
+MAKE_SIG(CTFWeaponBaseMelee_CalcIsAttackCritHelper, "40 57 48 83 EC ? 48 8B 05 ? ? ? ? 48 8B F9 83 78 ? ? 75", CLIENT_DLL, bool, baseWeapon*);
+MAKE_SIG(IsAllowedToWithdrawFromCritBucket,         "40 53 48 83 EC ? FF 81", CLIENT_DLL, bool, baseWeapon*, float);
+MAKE_SIG(mShared_IsCritBoosted,                     "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
+MAKE_SIG(CTFWeaponBase_CanFireRandomCrit,           "F3 0F 58 0D ? ? ? ? 0F 2F 89", CLIENT_DLL, bool, BaseEntity*, float);
 
-// delete this
 MAKE_SIG(ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35",
     CLIENT_DLL, float, float , const char* , void* , void* , bool );
 
@@ -58,7 +57,7 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //#define DEBUG_CRITHACK_CVAR
 //#define DEBUG_CRIT_COMMAND
 #define DEGUB_CRITHACK
-//#define TEST_CRITHACK_FROM_SERVER
+#define TEST_CRITHACK_FROM_SERVER
 
 #define GET_CRIT_SEED(command_number) (Sig::MD5_PseudoRandom(command_number) & MASK_SIGNED)
 
@@ -223,9 +222,6 @@ void CritHack_t::CalcIsAttackCriticalHandler()
         ExportFn::RandomSeed(m_iWishSeed);
         *I::p_iPredictionSeed = m_iWishSeed;
         m_iWishSeed = 0;
-
-        // delete this
-        printf("---> Spoofed seed <---\n");
     }
 }
 
@@ -585,20 +581,14 @@ void CritHack_t::Reset()
                               
     // Resetting...           
     m_iWishSeed               = 0;
-    m_flLastCritHackTime      = 0.0f;
-    m_iLastCheckSeed          = 0;
     m_nOldCritCount           = DEFAULT_OLD_CRIT_COUNT;
-    m_iLastUsedCritSeed       = 0;
     m_iLastWeaponID           = 0;
-    m_nLastCritRequests       = 0;
     m_pLastShotWeapon         = nullptr;
     m_pLocalPlayer            = nullptr;
     m_iActiveWeaponSlot       = slot_t::WPN_SLOT_INVALID;
     m_iLocalPlayerEntIndex    = 0;
     m_iTotalDamage            = 0;
     m_iRangedCritDamage       = 0;
-    m_flLastCritMult          = 0.0f;
-    m_flLastRapidFireCritTime = -10.0f;
     m_flCritChance            = 0.0f;
     m_flLastFireTime          = 0.0f;
     m_flLastRapidFireCritCheckTime = 0.0f;
@@ -733,9 +723,6 @@ bool CritHack_t::_IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCr
     // Skipping any "Buff-based" secondaries, like Batalion-backup etc...
     if (pActiveWeapon->m_pWeaponInfo->m_nBulletsPerShot <= 0 && pActiveWeapon->m_iSlot != WPN_SLOT_MELLE)
         return false;
-
-    // Delete this
-    Render::InfoWindow.AddToInfoWindow("Character choice", std::format("Character choice : {}", pLocalPlayer->GetPlayerClassName()));
 
     return true;
 }
