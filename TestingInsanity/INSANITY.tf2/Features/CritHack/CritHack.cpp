@@ -277,15 +277,12 @@ void CritHack_t::_AvoidCritV2(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData,
 
 void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCritBanStatus, WeaponCritData_t* pWeaponCritData, bool bTickConsideredForRapidFireCheck)
 {
-    // Delete this ( prints )
     switch (iCritBanStatus)
     {
     case CritHack_t::CRIT_BANNED: // Just let it go, if we are Crit Banned
-        FAIL_LOG("CritBanned!");
         return;
     // Avoid any potential Crits if we can't afford them, this can mess with the CritRequest count
     case CritHack_t::CRIT_TOO_EXPENSIVE: 
-        FAIL_LOG("Too_Expensive");
         _AvoidCritV2(pCmd, pWeaponCritData, m_flCritChance);
         return;
     case CritHack_t::CRIT_ALLOWED:
@@ -502,8 +499,6 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
     
     // is Death-Ringer spy faking his death
     bool bFakeDeath = pVictim->getCharacterChoice() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->getPlayerCond() & TF_COND_FEIGN_DEATH);
-    if (bFakeDeath == true) // Delete this
-        WIN_LOG("This nigga is faking his death!!!!");
 
     // If we "kill-da-victim" or if he faked his death ( using Death-Ringer ) then use our records for calculating damage dealt.
     if (iHealth <= 0 || bFakeDeath)
