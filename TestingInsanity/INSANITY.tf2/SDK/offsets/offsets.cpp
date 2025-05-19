@@ -1,6 +1,10 @@
 #include "offsets.h"
-//#include "../TF object manager/TFOjectManager.h"
+
+// SDK
 #include "../class/I_BaseEntityDLL.h"
+
+// UTILITY
+#include "../../Utility/ConsoleLogging.h"
 
 local_netvars netvar;
 
@@ -13,7 +17,7 @@ namespace offsets
 
 void recurse_maxxxing(RecvTable* table)
 {
-	T_map temp_map;
+	std::unordered_map<std::string, int32_t> temp_map;
 	for (int i = 0; i < table->m_nProps; i++)
 	{
 		RecvProp* prop = &table->m_pProps[i];//getting each prop
@@ -30,23 +34,17 @@ bool offsets::initialize()
 {
 	if (offsets::netvar_initialized) return true;
 
-	/* create map */
-	T_map netvar_map;
-
-	/* getting interface */
-	int error_code;
-	auto base_client = I::IBaseClient;
+	std::unordered_map<std::string, int32_t> mapNetvars;
 
 	/* iterating through all client classes */
-	ClientClass* client_class = base_client->GetAllClasses();
-	while (client_class) // <- this iterated throught the base classes
+	ClientClass* pClientClass = I::IBaseClient->GetAllClasses();
+	while (pClientClass) // <- this iterated throught the base classes
 	{
 		/* get the base tables and iterate through them */
-		RecvTable* base_table = client_class->m_pRecvTable;
-		if (!base_table) {
-			#ifdef _DEBUG
-			cons.Log("Bad base table", FG_RED);
-			#endif	
+		RecvTable* base_table = pClientClass->m_pRecvTable;
+		if (!base_table) 
+		{
+			FAIL_LOG("Bad Base Table!");
 			continue;
 		}
 
@@ -55,33 +53,27 @@ bool offsets::initialize()
 		{
 			RecvProp* prop = &base_table->m_pProps[i];	//getting each prop
 			if (!prop) continue;					//only skips the current prop, but if you return it skips rest of the props
-			netvar_map[prop->m_pVarName] = prop->m_Offset;
+			mapNetvars[prop->m_pVarName] = prop->m_Offset;
 			if (prop->child_table) recurse_maxxxing(prop->child_table);
 		}
 
-		offsets::fill_local_netvars(netvar_map, base_table->m_pNetTableName);
+		offsets::fill_local_netvars(mapNetvars, base_table->m_pNetTableName);
 
 		/* getting next table */
-		client_class = client_class->m_pNext;
+		pClientClass = pClientClass->m_pNext;
 	}
 
-	#ifdef _DEBUG
-	cons.Log("Finished processing NetVars", FG_GREEN);
-	#endif
+	WIN_LOG("Processed Netvars Successfully");
 
-	/* loading desired netvars in local varibles and freeing map */
-	offsets::fill_local_netvars(netvar_map, "BASE_TABLE");
-
-	#ifdef _DEBUG
-	cons.Log("Loaded NetVars", FG_GREEN);
-	#endif
+	offsets::fill_local_netvars(mapNetvars, "BASE_TABLE");
+	WIN_LOG("Pulled desiered Netvars Successfully");
 
 	offsets::netvar_initialized = true;
 	return true;
 }
 
 
-void offsets::fill_local_netvars(T_map& map, const char* table_name)
+void offsets::fill_local_netvars(std::unordered_map<std::string, int32_t>& map, const char* table_name)
 {
 	/* matching table and var name*/
 	if (!strcmp(table_name, "DT_TFPlayerClassShared")	&& map["m_iClass"])					netvar.m_iClass					= map["m_iClass"];

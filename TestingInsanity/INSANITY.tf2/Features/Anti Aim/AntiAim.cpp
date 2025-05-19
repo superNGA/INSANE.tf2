@@ -22,7 +22,7 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer)
 {
-	if (Feature::AA_Switch == false)
+	if (Features::Global == false)
 		return;
 
 	auto ent = pLocalPlayer;

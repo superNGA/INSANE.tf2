@@ -337,7 +337,7 @@ public:
 	const char*		GetPlayerClassName();
 
 	// returns the team num for this entity
-	int16_t			getTeamNum();
+	int32_t getTeamNum();
 
 	bool			isEnemy();
 

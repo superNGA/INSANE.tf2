@@ -26,20 +26,7 @@ MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, voi
 	case FRAME_NET_UPDATE_END:
 		if (frameCounter == 2) 
 		{
-			uint64_t startTime = __rdtsc();
 			entityManager.UpdateLocalPlayer();
-			uint64_t endTime = __rdtsc();
-
-			//======================= performance tracking =======================
-			//float deltaTimeinMs		= (endTime - startTime) * (1e6 / 2.9e9);
-			//float timePerFrameinMs	= deltaTimeinMs / 3.0f;
-			//float timePerFrameinSec	= timePerFrameinMs / 1e6;
-			//uint16_t fps			= 1.0f / tfObject.pGlobalVar->absoluteframetime;
-			//uint16_t estFps			= 1.0f / (tfObject.pGlobalVar->absoluteframetime - timePerFrameinSec);
-			
-			//std::cout << "entityManager.processEntities() time : " << deltaTimeinMs;
-			//std::cout << " | FPS : " << fps << " , EST. FPS : " << estFps << " | frame drop : " << estFps - fps <<'\n';
-
 			frameCounter = 0; // reseting frame counter
 		}
 		frameCounter++;

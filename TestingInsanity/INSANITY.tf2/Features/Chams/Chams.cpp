@@ -190,9 +190,9 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     auto* me = entityManager.GetLocalPlayer();
     if(me != nullptr && pEntity == me->GetClientRenderable())
     {
-        if (Feature::AA_chams == true)
+        if (Features::Chams == true)
         {
-            Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, Features::antiAim.pBone); // <- fake me
+            Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, FeatureObj::antiAim.pBone); // <- fake me
         }
         Sig::ForcedMaterialOverride(I::iStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
         result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix); // <- real me

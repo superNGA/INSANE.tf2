@@ -14,7 +14,7 @@
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
-#include "../Features/features.h"
+#include "../Features/FeatureHandler.h"
 
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../SDK/class/IGameEventManager.h"
@@ -38,11 +38,6 @@ Utility util;
 //-------------------------------------------------------------------------
 void thread1_t::execute_thread1(HINSTANCE instance)
 {
-	if (tfObject.initializeModuleHandles() == false)
-	{
-		_terminate(instance);
-	}
-
 	if (allASMData.Initialize() == false)
 	{
 		_terminate(instance);
@@ -83,7 +78,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
-	if (allFeatures.Initialize() == false)
+	if (featureHandler.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -107,7 +102,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		// Resetting features if not in game
 		if(bInGame == false)
 		{
-			Features::critHack.Reset();
+			FeatureObj::critHack.Reset();
 			entityManager.Reset();
 		}
 
@@ -195,7 +190,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 		directX::UI::shutdown_UI = true;
 		while (!directX::UI::UI_has_been_shutdown)
 		{
-			WAIT_MSG("DIRECTX / UI", "exit");
+			LOG("Waiting for UI to shutdown");
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 		

@@ -67,15 +67,15 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	static uint8_t bit_flags = 0;
 	
-	Features::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
+	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
 
-	Features::fakeLag.Run(bSendPacket, cmd);
+	FeatureObj::fakeLag.Run(bSendPacket, cmd);
 
-	Features::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
+	FeatureObj::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
 
-	Features::noSpread.Run(cmd, result); // incomplete, not working
+	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
 
-	Features::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 
 	return result;
 }

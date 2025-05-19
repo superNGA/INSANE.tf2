@@ -9,7 +9,7 @@ MAKE_HOOK(FX_FireBullet, "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", __fastc
     uint32_t a5, int32_t a6, uint32_t iSeed, float flBaseSpread, float a9, bool bIsCrit)
 {
     if(config.aimbotConfig.bNoSpread == true)
-        iSeed = Features::noSpread.m_iSeed.load();
+        iSeed = FeatureObj::noSpread.m_iSeed.load();
 
     return Hook::FX_FireBullet::O_FX_FireBullet(a1, a2, a3, a4, a5, a6, iSeed, flBaseSpread, a9, bIsCrit);
 }

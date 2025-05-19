@@ -19,7 +19,6 @@
 #include "../GlobalVars.h"
 
 //======================= GAME HOOKS =======================
-#include "../Hooks/FrameStageNotify/FrameStageNotify.h"
 #include "../Hooks/TraceRay/TraceRay.h"
 
 //======================= UI / RENDERING HOOKS =======================

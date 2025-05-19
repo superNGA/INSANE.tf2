@@ -54,8 +54,9 @@ const char* BaseEntity::GetPlayerClassName()
 
 // 0xEC
 // returns the team num for this entity
-int16_t BaseEntity::getTeamNum() {
-	return *(int16_t*)((uintptr_t)this + netvar.m_iTeamNum);
+int32_t BaseEntity::getTeamNum()
+{
+	return *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iTeamNum);
 }
 
 bool BaseEntity::isEnemy()

@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Utility/ConsoleLogging.h"
+
 #define M_PI 3.14159265358979323846
 
 /* game module names */
@@ -57,28 +59,8 @@
 extern Console_System cons;
 #endif // _DEBUG
 
-#ifdef _DEBUG
-#define ERROR(caller, message) cons.Log(FG_RED, caller, message)
-#define LOG(caller, message) cons.Log(FG_GREEN, caller, message)
-//#define WAIT_MSG(waitingFor, toDoWhat) cons.Log(FG_YELLOW, "waiting", "waiting for %s to %s", waitingFor, toDoWhat)
-#define WAIT_MSG(waitingFor, toDoWhat) (void)0
-#else
-#define ERROR(caller, message) (void)0
-#define LOG(caller, message) (void)0
-#define WAIT_MSG(waitingFor, toDoWhat) (void)0
-#endif 
-
-// delete this
-namespace Timer
-{
-	inline std::atomic<float> flDMETimeInMs(0.0f);
-};
-
 // Forward Declares
 class baseWeapon;
-
-/* just a little typedef, cause typing out map type is very annoying*/
-typedef std::unordered_map < std::string , int32_t> T_map;
 
 /* this holds necesarry information about the byte array of a resource.
 all resources must initialize this.*/
@@ -105,214 +87,6 @@ namespace thread_termination_status
 	inline bool thread1_primed = false;
 }
 
-/* this will be popullated and maintained by thread 2,
-it shall hold important information about possible targets & me */
-namespace entities
-{
-	inline std::atomic<view_matrix> M_worldToScreen;
-	inline std::atomic<view_matrix> M_worldToView;
-
-	/* this struct holds screen corrdinated of each of the extreme body parts location of the entity.
-	essentially storing the height and width of the entity */
-	struct entity_dimensions
-	{
-		vec2 head, left_foot, right_foot, left_shoulder, right_shoulder;
-	};
-
-	inline global_var_base* pGlobalVars = nullptr;
-	
-	/* imfo about local player */
-	namespace local
-	{
-		inline std::atomic<BaseEntity*>	pLocalPlayer(nullptr);
-		inline std::atomic<player_class>		localplayer_class;
-		inline std::atomic<baseWeapon*>			active_weapon(nullptr);
-		inline int32_t				ID_active_weapon;
-		inline int16_t				team_num;
-		inline vec					pos;
-		inline std::atomic<vec>		eye_pos;
-		inline bool					b_hasProjectileWeapon = false;
-		inline std::atomic<qangle>	viewAngles;
-	}
-
-	inline int32_t* ARR_maxHealth = nullptr;
-
-	/* AIMBOT TARGET's vars */
-	inline std::atomic<qangle> aimbotTargetAngles;
-	inline std::atomic<bool> shouldDoAimbot(false);
-
-	/* info about all possible / alive targets */
-	class C_targets
-	{
-	private:
-		/* holds all valid entities, which are to be processed inside FrameStageNotify */
-		std::vector<entInfo_t> vecEntities;
-		std::vector<entInfo_t> RENDER_vecEntities;
-		std::mutex MTX_vecEntities;
-
-		int8_t flag = 0;
-	public:
-		//==============HANDLING VECTOR============================
-		void clear_vecEntities() {
-			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			vecEntities.clear();
-		}
-
-		void insert_vecEntities(const entInfo_t entInfo) {
-			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			vecEntities.push_back(entInfo);
-		}
-
-		/* made to return a copy intentionaly, so it can altered according to needs */
-		std::vector<entInfo_t> get_vecEntities(bool renderable = false) {
-			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			if (!renderable) return vecEntities;
-			return RENDER_vecEntities;
-		}
-		
-		/* taking it simply instead of refrence might not be optimal? IDK nigga */
-		void update_vecEntities(const std::vector<entInfo_t> new_vecEntInfo, bool renderable = false) {
-			std::lock_guard<std::mutex> lock(MTX_vecEntities);
-			if (!renderable) {
-				vecEntities.clear();
-				vecEntities = new_vecEntInfo;
-			}
-			else {
-				RENDER_vecEntities.clear();
-				RENDER_vecEntities = new_vecEntInfo;
-			}
-		}
-
-		/* enum holding information about flag bits */
-		enum BIT_cTarget {
-			DOING_FIRST_HALF = 0, // is vecEntities popullated ?
-			DOING_SECOND_HALF // is RENDER_vecEntities popullated ?
-		};
-
-		/* Gets the flag bit */
-		bool getFlagBit(BIT_cTarget bitIndex) {
-			return flag & (1 << bitIndex);
-		}
-
-		/* sets desired flag bit*/
-		void setFlagBit(BIT_cTarget bitIndex) {
-			flag |= (1 << bitIndex);
-		}
-
-		/* Clears desired flag bit */
-		void clearFlagBit(BIT_cTarget bitIndex) {
-			flag &= ~(1 << bitIndex);
-		}
-	};
-	inline C_targets entManager;
-
-	// this is a anti-race condition mechanism for maps, but I cannot garantte returning 
-	// the latest buffer each call.
-	class allEntManager_t {
-	public:
-		typedef std::unordered_map<int16_t, glowObject_t> allEntMap;
-
-		// give pointer to current read buffer
-		allEntMap* getReadBuffer() {
-
-			b_isReadBufferActive.store(true);
-			return readBuffer.load();
-		}
-
-		// gives pointer to current write buffer
-		allEntMap* getWriteBuffer() {
-
-			b_isWriteBufferActive.store(true);
-
-			allEntMap* CHE_writeBuffer = writeBuffer.load();
-			if (CHE_writeBuffer->size() > 100) {
-				#ifdef _DEBUG
-				cons.Log(FG_YELLOW, "Ent Map Manager", "Map size too big, clearing it now");
-				#endif 
-				CHE_writeBuffer->clear();
-			}
-
-			// clear write buffer here, if size if above some limit
-			return writeBuffer.load();
-		}
-
-		// must call this once you are done reading or writting buffer
-		// @param set isRead to true if you sending back read buffer, else set it to false
-		void sendBack(bool isRead) {
-
-			// Managing flags
-			if (isRead) {
-				b_isReadBufferActive.store(false);
-			}
-			else {
-				b_isWriteBufferActive.store(false);
-			}
-
-			// if non of the buffer is active, then swap em'
-			if (!b_isReadBufferActive.load() && !b_isWriteBufferActive.load()) {
-				
-				// swapping buffer
-				if (readBuffer.load() == &allEntMap_01) {
-					readBuffer.store(&allEntMap_02);
-					writeBuffer.store(&allEntMap_01);
-				}
-				else {
-					readBuffer.store(&allEntMap_01);
-					writeBuffer.store(&allEntMap_02);
-				}
-			}
-		}
-
-	private:
-		allEntMap allEntMap_01; // default read buffer
-		allEntMap allEntMap_02; // default write buffer
-
-		// read and write buffer pointers
-		std::atomic<allEntMap*> readBuffer	= &allEntMap_01;
-		std::atomic<allEntMap*> writeBuffer	= &allEntMap_02;
-
-		// flags indicating state of read and write buffer to prevent race conditions
-		std::atomic<bool> b_isReadBufferActive = false;
-		std::atomic<bool> b_isWriteBufferActive = false;
-	};
-	inline allEntManager_t allEntManager;
-
-	
-
-	/* converts world cordinates to screen cordinates, useful for ESP and other rendering stuff 
-	if returns FALSE, screen cordinates are not on the screen,
-	if returns TRUE, screen cordinated are valid and on the screen. */
-	int world_to_screen(const vec& worldPos, vec2& screenPos, const view_matrix* viewMatrix);
-
-	float getFOV(qangle& viewAngles, qangle& targetAngles);
-	float FOVToRadius(float fovDegrees, float gameFOV, int screenWidth);
-
-	/* returns view angles for the target world coordinates */
-	qangle worldToViewangles(const vec& localPosition, const vec& targetPosition);
-
-	vec projAimbotCalculations(vec& projectileStartPos, vec& targetPosition, vec& entVel, bool onGround);
-
-	/* Finds the distance from localplayer crosshair to the target angles */
-	inline float disFromCrosshair(const qangle& local_angles, const qangle& target_angles)
-	{
-		return (sqrt(pow(local_angles.pitch - target_angles.pitch, 2) + pow(local_angles.yaw - target_angles.yaw, 2)));
-	}
-
-	/* return distanance of a vec2 from the center of the screen. */
-	float vec_dis_from_screen_center(const vec2& target_pos);
-
-	/* keeps view angles in bound to prevent unneccesary bullshit */
-	inline void verify_angles(qangle& angles)
-	{
-		/* fixing pitch */
-		if (angles.pitch > 89.0f) angles.pitch = 89.0f;
-		else if (angles.pitch < -89.0f) angles.pitch = -89.0f;
-
-		/* fixing roll */
-		if (angles.roll != 0.0f) angles.roll = 0.0f;
-	}
-}
-
 enum cur_window
 {
 	QUOTE_WINDOW = 0,
@@ -330,13 +104,16 @@ enum cur_window
 /*this holds imformation about the target process*/
 namespace global
 {
-	extern vec2 window_size;
+	extern vec2		   window_size;
 
 	extern const char* target_window_name;
 	extern const char* target_proc_name;
-	extern HWND target_hwnd;
+	extern HWND		   target_hwnd;
 };
 
+// TODO : Who the fuck wrote this dog shit. Fix this!!! a 5 year old can write 
+//			something better than this. This is international crime my nigga!
+//			Worse than terrorism!
 /*This holds information about the textures and images used in 
 the software*/
 namespace resource

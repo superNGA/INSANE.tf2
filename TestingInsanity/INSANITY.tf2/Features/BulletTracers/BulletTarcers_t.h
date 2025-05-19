@@ -1,5 +1,5 @@
 #pragma once
-#include "../features.h"
+#include "../FeatureHandler.h"
 
 // this is a fucking half working make shift bullet tracer. 
 // I shall make a fucking gem of a bullet tracer logic, but once the no spread
@@ -15,4 +15,4 @@ private:
 
 };
 
-ADD_FEATURE(bulletTracers, BulletTarcers_t);
+DECLARE_FEATURE_OBJECT(bulletTracers, BulletTarcers_t);

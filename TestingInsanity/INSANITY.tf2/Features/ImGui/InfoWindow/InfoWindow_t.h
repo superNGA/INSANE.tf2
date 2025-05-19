@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include "../../features.h"
+#include "../../FeatureHandler.h"
 
 enum DataTypeInfoWindow_t
 {
@@ -42,4 +42,4 @@ private:
     std::unordered_map <uint32_t, TextMsg_t> m_mapAllDataCenterWindow; // stores all the data for info window.
 };
 
-ADD_FEATURE_CUSTOM(InfoWindow, InfoWindow_t, Render);
+DECLARE_CUSTOM_OBJECT(InfoWindow, InfoWindow_t, Render);

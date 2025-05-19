@@ -1,5 +1,5 @@
 #pragma once
-#include "../features.h"
+#include "../FeatureHandler.h"
 //#include "../../SDK/class/Source Entity.h"
 
 class CUserCmd;
@@ -18,4 +18,4 @@ private:
 
 };
 
-ADD_FEATURE(movement, Movement_t)
+DECLARE_FEATURE_OBJECT(movement, Movement_t)

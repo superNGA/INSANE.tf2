@@ -1,6 +1,6 @@
 #pragma once
 #include <deque>
-#include "../features.h"
+#include "../FeatureHandler.h"
 
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/class/BaseWeapon.h"
@@ -14,6 +14,7 @@ struct WeaponData_t;
 // TODO : Implement proper RAPID-FIRE support
 // TODO : This is not working with STICKY-BOMBS for some reason, fix that too.
 // TODO : Properly remove weapons who just can't crit, like DIAMONDBACK, etc..
+// TODO : Add CritBucket Decay support.
 // TODO : When sniper does a headshot, does it gets added to the total crit damage?
 //        EDIT : ( YES IT DOES, the headshot damage gets added to the total crit damage. )
 // TODO : Handle other edge cases & remove bullshit weapons like Wrangler and shit like that.
@@ -150,6 +151,14 @@ private:
     inline void _ClearCritCmdRecord() { m_qCritCommands.clear(); }
     std::deque<int> m_qCritCommands = {};
 };
-ADD_FEATURE(critHack, CritHack_t);
 
-MAKE_FEATURE_BOOL(CritHack, "CritHack->toggleCritHack", 1);
+DECLARE_FEATURE_OBJECT(critHack, CritHack_t)
+
+DEFINE_TAB(CritHack, 2)
+DEFINE_SECTION(CritHack, "CritHack", 1)
+
+//             Name             type           Section     Tab        order    default value
+DEFINE_FEATURE(CritHack,        bool,          "CritHack", "CritHack", 1,      false,                               FeatureFlags::FeatureFlag_SupportKeyBind)
+DEFINE_FEATURE(intslidershit,   IntSlider_t,   "CritHack", "CritHack", 2,      IntSlider_t(0, 0, 10),               FeatureFlag_None)
+DEFINE_FEATURE(floatslidershit, FloatSlider_t, "CritHack", "CritHack", 3,      FloatSlider_t(0.0f, -10.0f, 10.0f),  FeatureFlag_None)
+DEFINE_FEATURE(ColorShit,       ColorData_t,   "CritHack", "CritHack", 4,      ColorData_t(0.0f, 0.0f, 0.0f, 1.0f), FeatureFlag_None)

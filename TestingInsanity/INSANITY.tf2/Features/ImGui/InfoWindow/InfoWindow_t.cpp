@@ -1,8 +1,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "InfoWindow_t.h"
+
+// UI
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/EndScene/EndScene.h"
 
+// SDK
+#include "../../../SDK/class/IVEngineClient.h"
 
 const ImVec4 CLR_RED(1.0f, 0.0f, 0.0f, 1.0f);
 const ImVec4 CLR_BLUE(0.0f, 0.0f, 1.0f, 1.0f);
@@ -49,8 +53,7 @@ void InfoWindow_t::_DrawInfoWindow()
 {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
     ImGui::Begin("Performance", nullptr,
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
-        ImGuiWindowFlags_NoCollapse);
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::PushFont(directX::fonts::roboto); // <- gonna change it to something like JetBrains mono semi-bold.
 
     for (auto& data : m_mapAllDataInfoWindow)
@@ -65,6 +68,10 @@ void InfoWindow_t::_DrawInfoWindow()
 
 void InfoWindow_t::_DrawCenterWindow()
 {
+    // Don't render it, if not in-game
+    if (I::iEngine->IsInGame() == false)
+        return;
+
     auto vGameWindowSize = ImGui::GetMainViewport()->Size;
     ImGui::SetNextWindowPos(ImVec2(vGameWindowSize.x/2.0f, vGameWindowSize.y/2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.1f);

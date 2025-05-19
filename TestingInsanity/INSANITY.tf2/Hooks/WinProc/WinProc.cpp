@@ -1,4 +1,5 @@
 #include "WinProc.h"
+#include "../../Features/ImGui/Menu/Menu.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -75,6 +76,16 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             cons.FastLog("Toggled UI");
             #endif
             directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
+        }
+    }
+
+    // Recording key for Key-Bind
+    if (Render::uiMenu.m_bRecordingKey == true)
+    {
+        if (uMsg == WM_KEYDOWN)
+        {
+            Render::uiMenu.m_iRecordedKey  = wParam;
+            Render::uiMenu.m_bRecordingKey = false;
         }
     }
 

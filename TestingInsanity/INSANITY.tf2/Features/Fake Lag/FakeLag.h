@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "../features.h"
+#include "../FeatureHandler.h"
 
 class CUserCmd;
 
@@ -16,8 +16,11 @@ private:
 
 };
 
-MAKE_FEATURE_BOOL(fakeLag, "FakeLag->global_FakeLag", 1);
-MAKE_FEATURE_BOOL(autoRelease, "FakeLag->global_FakeLag->auto_release_on_shoot", 1);
-MAKE_FEATURE_INTEGER(nTicksChocked, "FakeLag->global_FakeLag->nTicksChoked", 1, 0, 30);
+DECLARE_FEATURE_OBJECT(fakeLag, FakeLag_t)
 
-ADD_FEATURE(fakeLag, FakeLag_t);
+DEFINE_TAB(Misc, 3)
+DEFINE_SECTION(FakeLag, "Misc", 1)
+
+DEFINE_FEATURE(fakeLag,    bool, "FakeLag", "Misc", 1, false,                          FeatureFlag_None)
+DEFINE_FEATURE(AutoRelease,    bool, "FakeLag", "Misc", 2, false,                      FeatureFlag_None)
+DEFINE_FEATURE(choked_ticks, IntSlider_t, "FakeLag", "Misc", 3, IntSlider_t(0, 0, 30), FeatureFlag_None)

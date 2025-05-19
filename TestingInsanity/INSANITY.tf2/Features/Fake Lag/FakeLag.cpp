@@ -6,10 +6,10 @@ void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
     if (bSendPacket == nullptr || pCmd == nullptr)
         return;
 
-    if (Feature::fakeLag == false)
+    if (Features::fakeLag == false)
         return;
 
-    if (m_nTicksChoked >= Feature::nTicksChocked)
+    if (m_nTicksChoked >= Features::choked_ticks.m_iVal)
     {
         *bSendPacket = true;
         m_nTicksChoked = 0;
@@ -21,7 +21,7 @@ void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
         m_nTicksChoked++;
     }
 
-    if (Feature::autoRelease == true && pCmd->buttons & IN_ATTACK)
+    if (Features::AutoRelease == true && pCmd->buttons & IN_ATTACK)
     {
         *bSendPacket = true;
         m_nTicksChoked = 0;

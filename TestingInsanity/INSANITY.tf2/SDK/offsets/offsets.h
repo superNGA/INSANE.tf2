@@ -9,25 +9,12 @@ extern Utility util;
 /* game classes */
 #include "../class/I_BaseEntityDLL.h"
 
-#ifdef _DEBUG
-#include "../../Libraries/Console System/Console_System.h"
-extern Console_System cons;
-#endif
 
-/* m_fFlag bit defines */
-#define MF_ONGROUND (1<<0)
-
-/* this holds offsets */
 namespace offsets
 {
-	/* initialize netvars */
 	bool initialize();
-
-	/* whether netvars initialized or not */
 	extern bool netvar_initialized;
-
-	/* Fills in the only local netvar object */
-	void fill_local_netvars(T_map& map, const char* table_name);
+	void fill_local_netvars(std::unordered_map<std::string, int32_t>& map, const char* table_name);
 };
 
 /* after initializing the netvar map, I am storing them in this struct.

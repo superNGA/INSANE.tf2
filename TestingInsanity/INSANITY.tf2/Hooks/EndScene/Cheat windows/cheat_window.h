@@ -1,55 +1,55 @@
 #pragma once
 #include "../EndScene.h" // <- this file also includes the global.h which include config.h
-#include "../../../Features/features.h"
+#include "../../../Features/FeatureHandler.h"
 
-inline void RenderFeaturesInVec(const std::vector<IFeature_t*>& vecAntiAimFeatures)
-{
-	uint32_t iLastWidgetId = 0;
-	for (auto* pFeature : vecAntiAimFeatures)
-	{
-		// SPACING
-		ImGui::Dummy(ImVec2(0.0f, 5.0f));
-		if (pFeature->m_iRenderID != iLastWidgetId)
-			ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
-		// RENDRING WIDGET
-		switch (pFeature->m_eFeatureType)
-		{
-		case FeatureType_t::FEATURE_BOOL:
-		{
-			auto feature = static_cast<Feature_t<bool>*>(pFeature);
-			ImGui::Checkbox(feature->m_szPath.c_str(), &feature->m_data);
-		}
-		break;
-
-		case FeatureType_t::FEATURE_INT:
-		{
-			auto feature = static_cast<Feature_t<IN_IntegerSlider>*>(pFeature);
-			ImGui::SliderInt(feature->m_szPath.c_str(), &feature->m_data.m_data, feature->m_data.m_min, feature->m_data.m_max);
-		}
-		break;
-
-		case FeatureType_t::FEATURE_FLOAT:
-		{
-			auto feature = static_cast<Feature_t<IN_FloatSlider>*>(pFeature);
-			ImGui::SliderFloat(feature->m_szPath.c_str(), &feature->m_data.m_data, feature->m_data.m_min, feature->m_data.m_max);
-		}
-		break;
-
-		case FeatureType_t::FEATURE_COLOR:
-		{
-			auto feature = static_cast<Feature_t<IN_Color>*>(pFeature);
-			ImGui::ColorEdit4(feature->m_szPath.c_str(), &feature->m_data.r, ImGuiColorEditFlags_AlphaBar);
-		}
-		break;
-
-		default:
-			break;
-		}
-
-		iLastWidgetId = pFeature->m_iRenderID;
-	}
-}
+//inline void RenderFeaturesInVec(const std::vector<IFeature_t*>& vecAntiAimFeatures)
+//{
+//	uint32_t iLastWidgetId = 0;
+//	for (auto* pFeature : vecAntiAimFeatures)
+//	{
+//		// SPACING
+//		ImGui::Dummy(ImVec2(0.0f, 5.0f));
+//		if (pFeature->m_iRenderID != iLastWidgetId)
+//			ImGui::Dummy(ImVec2(0.0f, 15.0f));
+//
+//		// RENDRING WIDGET
+//		switch (pFeature->m_eFeatureType)
+//		{
+//		case FeatureType_t::FEATURE_BOOL:
+//		{
+//			auto feature = static_cast<Feature_t<bool>*>(pFeature);
+//			ImGui::Checkbox(feature->m_szPath.c_str(), &feature->m_data);
+//		}
+//		break;
+//
+//		case FeatureType_t::FEATURE_INT:
+//		{
+//			auto feature = static_cast<Feature_t<IN_IntegerSlider>*>(pFeature);
+//			ImGui::SliderInt(feature->m_szPath.c_str(), &feature->m_data.m_data, feature->m_data.m_min, feature->m_data.m_max);
+//		}
+//		break;
+//
+//		case FeatureType_t::FEATURE_FLOAT:
+//		{
+//			auto feature = static_cast<Feature_t<IN_FloatSlider>*>(pFeature);
+//			ImGui::SliderFloat(feature->m_szPath.c_str(), &feature->m_data.m_data, feature->m_data.m_min, feature->m_data.m_max);
+//		}
+//		break;
+//
+//		case FeatureType_t::FEATURE_COLOR:
+//		{
+//			auto feature = static_cast<Feature_t<IN_Color>*>(pFeature);
+//			ImGui::ColorEdit4(feature->m_szPath.c_str(), &feature->m_data.r, ImGuiColorEditFlags_AlphaBar);
+//		}
+//		break;
+//
+//		default:
+//			break;
+//		}
+//
+//		iLastWidgetId = pFeature->m_iRenderID;
+//	}
+//}
 
 namespace cheat_window
 {
@@ -192,13 +192,13 @@ namespace cheat_window
 
 	inline void drawAntiAimWindow()
 	{
-		auto& vecAntiAimFeatures = allFeatures.m_umBaseFeatures["antiaim"]->m_vecChildFeature;
+		/*auto& vecAntiAimFeatures = allFeatures.m_umBaseFeatures["antiaim"]->m_vecChildFeature;
 		RenderFeaturesInVec(vecAntiAimFeatures);
 		
 		auto& vecFakeLagFeatures= allFeatures.m_umBaseFeatures["FakeLag"]->m_vecChildFeature;
 		RenderFeaturesInVec(vecFakeLagFeatures);
 		
 		auto& vecCritHackFeatures = allFeatures.m_umBaseFeatures["CritHack"]->m_vecChildFeature;
-		RenderFeaturesInVec(vecCritHackFeatures);
+		RenderFeaturesInVec(vecCritHackFeatures);*/
 	}
 };

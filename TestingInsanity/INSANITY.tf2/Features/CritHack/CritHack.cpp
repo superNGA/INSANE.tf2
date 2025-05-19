@@ -313,7 +313,7 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
 CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey)
 {
     // If not turned ON
-    if (Feature::CritHack == false)
+    if (Features::CritHack == false)
         return CritHackStatus_t::CRITHACK_DISABLED;
 
     // Does this weapon support Crit-Hack
@@ -853,8 +853,8 @@ void WeaponCritData_t::AddToCritBucket()
 
     // adding to crit bucket, and capping it.
     m_flCritBucket += m_flDamagePerShot;
-    if (m_flCritBucket >= Features::critHack.m_flCritBucketCap)
-        m_flCritBucket = Features::critHack.m_flCritBucketCap;
+    if (m_flCritBucket >= FeatureObj::critHack.m_flCritBucketCap)
+        m_flCritBucket = FeatureObj::critHack.m_flCritBucketCap;
 }
 
 
@@ -881,8 +881,8 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
 
     // deducting crit cost & capping bucket
     m_flCritBucket -= flCritCost;
-    if (m_flCritBucket < Features::critHack.m_flCritBucketBottom)
-        m_flCritBucket = Features::critHack.m_flCritBucketBottom;
+    if (m_flCritBucket < FeatureObj::critHack.m_flCritBucketBottom)
+        m_flCritBucket = FeatureObj::critHack.m_flCritBucketBottom;
 
     // Storing last withdrawl time
     m_flLastWithdrawlTime = tfObject.pGlobalVar->curtime;
@@ -892,7 +892,7 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
 bool WeaponCritData_t::UpdateStats(baseWeapon* pWeapon)
 {
     if (m_pWeapon == nullptr)
-        m_flCritBucket = Features::critHack.m_flCritBucketDefault;
+        m_flCritBucket = FeatureObj::critHack.m_flCritBucketDefault;
     
     // if weapon same as last tick then no worry
     if (pWeapon == m_pWeapon && pWeapon->GetWeaponDefinitionID() == m_iWeaponID)
@@ -918,12 +918,12 @@ bool WeaponCritData_t::UpdateStats(baseWeapon* pWeapon)
         m_flCritCostBase = m_flDamagePerShot * m_flBulletsShotDuringCrit;
 
         // Cap CRIT damage to bucket cap
-        if (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER > Features::critHack.m_flCritBucketCap)
-            m_flCritCostBase = Features::critHack.m_flCritBucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
+        if (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER > FeatureObj::critHack.m_flCritBucketCap)
+            m_flCritCostBase = FeatureObj::critHack.m_flCritBucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
     }
 
     // reset bucket
-    m_flCritBucket  = Features::critHack.m_flCritBucketDefault;
+    m_flCritBucket  = FeatureObj::critHack.m_flCritBucketDefault;
     m_nCritRequests = 0;
 
     FAIL_LOG("Resetted weapon stats");

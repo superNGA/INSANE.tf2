@@ -12,7 +12,7 @@
 #include <atomic>
 #include <deque>
 #include <cstdint>
-#include "../features.h"
+#include "../FeatureHandler.h"
 
 class CUserCmd;
 class baseWeapon;
@@ -116,4 +116,4 @@ private:
     std::deque<float> m_qServerTimes;
 };
 
-ADD_FEATURE(noSpread, NoSpread_t);
+DECLARE_FEATURE_OBJECT(noSpread, NoSpread_t);
