@@ -313,7 +313,7 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
 CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey)
 {
     // If not turned ON
-    if (Features::CritHack == false)
+    if (TempFeatureHelper::CritHack.IsDisabled() == true)
         return CritHackStatus_t::CRITHACK_DISABLED;
 
     // Does this weapon support Crit-Hack
@@ -321,7 +321,7 @@ CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPl
         return CritHackStatus_t::CRITHACK_WPN_NOT_ELLIGIBLE;
 
     // Is the "Magic" key down?
-    if (GetAsyncKeyState(static_cast<int>(iKey)) == false)
+    if (TempFeatureHelper::CritHack.IsActive() == false)
         return CritHackStatus_t::CRITHACK_INACTIVE;
 
     // Just do it!

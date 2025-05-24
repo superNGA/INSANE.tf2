@@ -1,4 +1,5 @@
 #include "Hook_t.h"
+#include <assert.h>
 #include "ConsoleLogging.h"
 #include "../Libraries/Utility/Utility.h"
 extern Utility util;
@@ -10,6 +11,34 @@ HookInfo_t::HookInfo_t(const char* szSignature, const char* szDll, void* pHookFn
     m_szFnName   = szFnName;
     m_pTarget    = util.FindPattern(szSignature, szDll);
     m_szDll      = szDll;
+
+    hook_t.AddHook(this);
+}
+
+HookInfo_t::HookInfo_t(uintptr_t pTarget, const char* szDll, void* pHookFn, void** ppOriginalFn, const char* szFnName)
+{
+    m_pHook      = pHookFn;
+    m_ppOriginal = ppOriginalFn;
+    m_szFnName   = szFnName;
+    m_pTarget    = pTarget;
+    m_szDll      = szDll;
+
+    hook_t.AddHook(this);
+}
+
+HookInfo_t::HookInfo_t(const char* szInterfaceVersion, int iIndex, const char* szDll, void* pHookFn, void** ppOriginalFn, const char* szFnName)
+{
+    // Getting the interface
+    int   iReturnCode = 0;
+    void* pInterface  = reinterpret_cast<void*>(util.GetInterface(szInterfaceVersion, szDll, &iReturnCode));
+    if (iReturnCode != 0 || pInterface == nullptr)
+        return;
+    m_pTarget    = reinterpret_cast<uintptr_t>(util.GetVirtualTable(pInterface)[iIndex]);
+
+    m_szDll      = szDll;
+    m_pHook      = pHookFn;
+    m_ppOriginal = ppOriginalFn;
+    m_szFnName   = szFnName;
 
     hook_t.AddHook(this);
 }

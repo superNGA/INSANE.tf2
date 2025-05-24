@@ -15,7 +15,6 @@ public:
     int64_t m_iRecordedKey  = 0;
 
 private:
-    //void _DrawTab(Tab_t* pTab);
     void _DrawSection(Tab_t* pTab);
     void _DrawFeature(IFeature* pFeature);
 
@@ -25,10 +24,12 @@ private:
     void _DrawColorSelectorFeature(IFeature* pFeature)const;
 
     void _DrawFeatureOptionWindow(IFeature* pFeature);
-
+    
+    void _DrawConfigView();
+    
     enum class UIViewState : int8_t
     {
-        TAB_VIEW, FEATURE_VIEW
+        TAB_VIEW, FEATURE_VIEW, CONFIG_VIEW
     };
     UIViewState m_iViewState      = UIViewState::TAB_VIEW;
     int         m_iActiveTabIndex = 0;

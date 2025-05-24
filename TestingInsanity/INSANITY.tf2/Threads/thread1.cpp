@@ -9,15 +9,19 @@
 //-------------------------------------------------------------------------
 
 #include "thread1.h"
+
+// UTILITY
 #include "../Utility/signatures.h"
 #include "../Utility/Interface.h"
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
 #include "../Features/FeatureHandler.h"
-
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
+
+// SDK
 #include "../SDK/class/IGameEventManager.h"
+#include "../SDK/class/ISurface.h"
 #include "../SDK/Entity Manager/entityManager.h"
 
 Utility util;
@@ -193,10 +197,19 @@ void thread1_t::_terminate(HINSTANCE instance)
 			LOG("Waiting for UI to shutdown");
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
-		
+	
 		// unhooking...
 		MH_DisableHook(MH_ALL_HOOKS);
 		MH_Uninitialize();
+
+		// Resetting mouse, if in game else it 
+		// completely breaks the mouse & won't 
+		// let the user use the mouse at all
+		if(I::iEngine->IsInGame() == true)
+		{
+			I::iSurface->SetCursorAlwaysVisible(false);
+			I::iSurface->ApplyChanges();
+		}
 
 		chams.FreeAllMaterial();
 

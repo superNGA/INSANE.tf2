@@ -1,6 +1,16 @@
 #include "WinProc.h"
 #include "../../Features/ImGui/Menu/Menu.h"
 
+// Utility
+#include "../../Utility/Hook_t.h"
+#include "../../Utility/signatures.h"
+#include "../../Libraries/Utility/Utility.h"
+
+// SDK
+#include "../../SDK/class/ISurface.h"
+#include "../../SDK/class/IInputSystem.h"
+#include "../../SDK/class/IInput.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 bool winproc::hook_winproc() {
@@ -53,55 +63,73 @@ void winproc::unhook_winproc()
 
 }
 
-LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (!directX::UI::UI_has_been_shutdown)
-    {
-        if (directX::UI::UI_visble && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
-            return true; // Let ImGui handle the input
-        }
-    }
-    #ifdef _DEBUG
-    else
-    {
-        cons.Log(FG_YELLOW, "WARNING", "Stoped WinProc from using ImGui after shutdown");
-    }
-    #endif
-
+// NOTE : gets called once for each input, not in batch.
+LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
+{
     // Handle custom input
-    if (uMsg == WM_KEYDOWN)
+    if (uMsg == WM_KEYDOWN && wParam == VK_INSERT)
     {
-        if (wParam == VK_INSERT) 
-        {
-            #ifdef _DEBUG
-            cons.FastLog("Toggled UI");
-            #endif
-            directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
-        }
+        LOG("Toggled UI");
+        directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
     }
 
     // Recording key for Key-Bind
     if (Render::uiMenu.m_bRecordingKey == true)
     {
-        if (uMsg == WM_KEYDOWN)
+        if (uMsg == WM_XBUTTONDOWN)
+        {
+            WORD xButton = GET_XBUTTON_WPARAM(wParam);
+            if(xButton == XBUTTON1 || xButton == XBUTTON2)
+            {
+                // we will be using the unofficial offset ( 0x05 & 0x06 ) for xbuttons.
+                Render::uiMenu.m_iRecordedKey  = xButton + 0x04; 
+                Render::uiMenu.m_bRecordingKey = false;
+            }
+        }
+        else if (uMsg == WM_KEYDOWN || (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST && uMsg != WM_MOUSEMOVE))
         {
             Render::uiMenu.m_iRecordedKey  = wParam;
             Render::uiMenu.m_bRecordingKey = false;
         }
     }
 
-    // Blocking mouse input
-    if (directX::UI::UI_visble) {
-        switch (uMsg) {
-        case WM_MOUSEMOVE:
-        case WM_LBUTTONDOWN:
-        case WM_RBUTTONDOWN:
-        case WM_LBUTTONUP:
-        case WM_RBUTTONUP:
-        case WM_MOUSEWHEEL:
-            return false;
+    // Checking if menu has been toggled
+    static bool bLastMenuVisibility    = true;
+    bool        bToggleMouseVisibility = (bLastMenuVisibility != directX::UI::UI_visble);
+    bLastMenuVisibility                = directX::UI::UI_visble;
+    
+    // if toggled, then change mouse's visibility
+    if (bToggleMouseVisibility == true)
+    {
+        I::iSurface->SetCursorAlwaysVisible(directX::UI::UI_visble);
+        I::iSurface->ApplyChanges();
+
+        // Drawing Cursor using ImGui, 
+        // cause TF2 functions will do literally anything except what they are supposed to do!
+        ImGui::GetIO().MouseDrawCursor = directX::UI::UI_visble;
+
+        //LOG("Toggled mouse visibility to [ %s ]", directX::UI::UI_visble ? "VISIBLE" : "NOT_VISIBLE");
+    }
+
+    // No inputs to game if menu OPEN
+    if (directX::UI::UI_visble == true) 
+    {
+        ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+
+        // Ditching keyBoard inputs
+        if (WM_KEYFIRST <= uMsg && uMsg <= WM_KEYLAST)
+        {
+            I::iInputSystem->ResetInputState();
+            return TRUE;
         }
+
+        // Ditching mouse inputs
+        if (WM_MOUSEFIRST <= uMsg && uMsg <= WM_MOUSELAST)
+            return TRUE;
     }
 
     // Call the original WndProc
     return CallWindowProc(O_winproc, hWnd, uMsg, wParam, lParam);
 }
+
+// LockCursor @ 62th in ISurface interface.

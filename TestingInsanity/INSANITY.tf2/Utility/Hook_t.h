@@ -6,6 +6,8 @@
 #define CLIENT_DLL				"client.dll"
 #define ENGINE_DLL				"engine.dll"
 #define VGUI2_DLL				"vgui2.dll"
+#define VGUIMATSURFACE_DLL		"vguimatsurface.dll"
+#define INPUTSYSTEM_DLL 		"inputsystem.dll"
 #define MATERIALSYSTEM_DLL		"materialsystem.dll"
 #define STUDIORENDER_DLL		"studiorender.dll"
 #define VSTDLIB_DLL				"vstdlib.dll"
@@ -14,7 +16,14 @@
 class HookInfo_t
 {
 public:
+    // Simple Signature Hook
     HookInfo_t(const char* szSignature, const char* szDll, void* pHookFn, void** ppOriginalFn, const char* szFnName);
+    
+    // Hook via adrs.
+    HookInfo_t(uintptr_t pTarget, const char* szDll, void* pHookFn, void** ppOriginalFn, const char* szFnName);
+
+    // VTable hooks
+    HookInfo_t(const char * szInterfaceVersion, int iIndex, const char* szDll, void* pHookFn, void** ppOriginalFn, const char* szFnName);
 
     uintptr_t   m_pTarget    = NULL;
     void**      m_ppOriginal = nullptr;
@@ -37,12 +46,9 @@ private:
 };
 inline Hook_t hook_t;
 
-/* 
-* I had 3 options for this macro. Either I can make it take a pointer to where the adrs will be store after processing
-* or I can make it wait for signature scanning to complete
-* or I can pass in the signature to it is independent of all other bullshit.
-*/
 
+
+//======================= WORKS WITH SIGNATURES =======================
 #define MAKE_HOOK(name, signature, callConvention, dll, returnType, ...) \
 namespace Hook {\
     namespace name{\
@@ -52,4 +58,32 @@ namespace Hook {\
     }\
 }\
 namespace HOOK_TEMP{inline HookInfo_t temp_##name(signature, dll, reinterpret_cast<void*>(Hook::name::H_##name), reinterpret_cast<void**>(&Hook::name::O_##name), #name); }\
+inline returnType callConvention Hook::name::H_##name(__VA_ARGS__)
+
+
+
+//======================= WORKS WILL ACTUAL ADRS =======================
+#define MAKE_HOOK_ADRS(name, pTargetFn, callConvention, dll, returnType, ...) \
+namespace Hook {\
+    namespace name{\
+        typedef returnType(callConvention* T_##name)(__VA_ARGS__);\
+        inline T_##name O_##name = nullptr;\
+        returnType callConvention H_##name(__VA_ARGS__); \
+    }\
+}\
+namespace HOOK_TEMP{inline HookInfo_t temp_##name(pTargetFn, dll, reinterpret_cast<void*>(Hook::name::H_##name), reinterpret_cast<void**>(&Hook::name::O_##name), #name); }\
+inline returnType callConvention Hook::name::H_##name(__VA_ARGS__)
+
+
+
+//======================= WORKS WITH VTABLES =======================
+#define MAKE_HOOK_VTABLE(name, szInterfaceVersion, iIndex, callConvention, dll, returnType, ...) \
+namespace Hook {\
+    namespace name{\
+        typedef returnType(callConvention* T_##name)(__VA_ARGS__);\
+        inline T_##name O_##name = nullptr;\
+        returnType callConvention H_##name(__VA_ARGS__); \
+    }\
+}\
+namespace HOOK_TEMP{inline HookInfo_t temp_##name(szInterfaceVersion, iIndex, dll, reinterpret_cast<void*>(Hook::name::H_##name), reinterpret_cast<void**>(&Hook::name::O_##name), #name); }\
 inline returnType callConvention Hook::name::H_##name(__VA_ARGS__)

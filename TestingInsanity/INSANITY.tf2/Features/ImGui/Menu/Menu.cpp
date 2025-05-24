@@ -6,6 +6,7 @@
 
 // Feature map
 #include "../../FeatureHandler.h"
+#include "../../Config/ConfigHandler.h"
 
 // GUI library
 #include "../../../External Libraries/ImGui/imgui.h"
@@ -29,9 +30,9 @@ void UIMenu::Draw()
     // Drawing Tabs
     if (m_iViewState == UIViewState::TAB_VIEW)
     {
+        constexpr ImVec2 TAB_BUTTON_DIMENSIONS(280.0f, 30.0f);
         for (const auto* tab : vecFeatureMap)
-        {
-            constexpr ImVec2 TAB_BUTTON_DIMENSIONS(280.0f, 30.0f);
+        {    
             if (ImGui::Button((tab->m_szTabDisplayName + "##Tab").c_str(), TAB_BUTTON_DIMENSIONS) == true)
             {
                 m_iViewState      = UIViewState::FEATURE_VIEW;
@@ -41,6 +42,13 @@ void UIMenu::Draw()
                 m_iActiveTabIndex = std::clamp(m_iActiveTabIndex, 0, static_cast<int>(vecFeatureMap.size() - 1));
             }
         }
+
+        if (ImGui::Button("Config", TAB_BUTTON_DIMENSIONS))
+            m_iViewState = UIViewState::CONFIG_VIEW;
+    }
+    else if (m_iViewState == UIViewState::CONFIG_VIEW)
+    {
+        _DrawConfigView();
     }
     else
     {
@@ -111,7 +119,9 @@ void UIMenu::_DrawCheckBoxFeature(IFeature* pFeature)
 
     // Rendering CheckBox
     ImGui::Checkbox((pBoolFeature->m_szFeatureDisplayName + "##Feature").c_str(), &pBoolFeature->m_Data);
-    
+    if(ImGui::IsItemHovered() == true)
+        ImGui::SetTooltip(pFeature->m_szToolTip.c_str());
+
     _DrawFeatureOptionWindow(pFeature);
 }
 
@@ -139,7 +149,8 @@ void UIMenu::_DrawColorSelectorFeature(IFeature* pFeature) const
     Feature<ColorData_t>* pColorFeature = static_cast<Feature<ColorData_t>*>(pFeature);
 
     // Rendring Color Selector
-    ImGui::ColorEdit4((pColorFeature->m_szFeatureDisplayName + "##Feature").c_str(), &pColorFeature->m_Data.r, ImGuiColorEditFlags_AlphaBar);
+    ImGui::ColorEdit4((pColorFeature->m_szFeatureDisplayName + "##Feature").c_str(),
+        pColorFeature->m_bIsOverrideActive == true ? &pColorFeature->m_OverrideData.r : &pColorFeature->m_Data.r, ImGuiColorEditFlags_AlphaBar);
 }
 
 void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
@@ -166,10 +177,16 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
         
         ImGui::SameLine();
 
+        // Change key bind button
         if (ImGui::Button("Change?") == true && m_bRecordingKey == false)
         {
             m_bRecordingKey = true;
+        } ImGui::SameLine();
+        if (ImGui::Button("Clear") == true)
+        {
+            pFeature->m_iKey = NULL;
         }
+
 
         // Did we recorded a key?
         if (m_iRecordedKey != 0 && m_bRecordingKey == false)
@@ -178,11 +195,111 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
             ResetKeyRecorder();
         }
 
-        ImGui::Checkbox("Overide type", reinterpret_cast<bool*>(&pFeature->m_iOverrideType));
+        ImGui::Checkbox("Overide type", reinterpret_cast<bool*>(&pFeature->m_iOverrideType)); ImGui::SameLine();
         pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ?
             ImGui::Text("[ HOLD ]") :
             ImGui::Text("[ TOGGLE ]");
          
         ImGui::EndPopup();
+    }
+}
+
+void UIMenu::_DrawConfigView()
+{
+    //----------------------- Drop Down list for avilable files -----------------------
+    // Getting all configs avialable
+    const auto& vecConfigFiles = configHandler.GetAllConfigFile();
+
+    std::vector<const char*> vecConfigNames = {};
+    for (auto& configName : vecConfigFiles)
+        vecConfigNames.push_back(configName.c_str());
+
+    // Drop down menu
+    static int iSelectedIndex = 0;
+    static std::string szSelectedConfig = "";
+    static bool bDeletedSelectedFile = false;
+    static bool bCreatedFileRecently = false;
+    if (ImGui::Combo("Select Item", &iSelectedIndex, vecConfigNames.data(), static_cast<int>(vecConfigNames.size())) || 
+        bDeletedSelectedFile == true || bCreatedFileRecently == true || (szSelectedConfig == "" && vecConfigFiles.size() != NULL))
+    {
+        if (vecConfigFiles.size() != NULL)
+            szSelectedConfig = vecConfigFiles[iSelectedIndex];
+        else
+            szSelectedConfig = "NO CONFIG FILE FOUND";
+
+        bDeletedSelectedFile = false;
+        bCreatedFileRecently = false;
+    }
+
+    //----------------------- Create new file button -----------------------
+    static char szTextInput[126];
+    ImGui::InputText("config name", szTextInput, sizeof(szTextInput));
+    if (ImGui::Button("Create New file"))
+    {
+        if (configHandler.IsFileNameAvialable(std::string(szTextInput)) == true)
+        {
+            configHandler.CreateConfigFile(std::string(szTextInput));
+            bCreatedFileRecently = true;
+            szTextInput[0] = '\0';
+        }
+        else
+            ImGui::OpenPopup("Override Warning");
+    }
+
+    if (ImGui::BeginPopupModal("Override Warning"))
+    {
+        ImGui::Text("file [ %s ] already exists. you sure you wanna override", szTextInput);
+
+        if (ImGui::Button("over-write"))
+        {
+            configHandler.CreateConfigFile(std::string(szTextInput));
+            bCreatedFileRecently = true;
+            szTextInput[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("No"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    //----------------------- Delete button -----------------------
+    if (ImGui::Button("Delete"))
+        ImGui::OpenPopup("Delete Warning");
+
+    if (ImGui::BeginPopupModal("Delete Warning"))
+    {
+        if (ImGui::Button("YES"))
+        {
+            configHandler.DeleteConfigFile(szSelectedConfig);
+            bDeletedSelectedFile = true;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        if (ImGui::Button("NO"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
+
+    //----------------------- Save to File -----------------------
+    if (ImGui::Button("Save"))
+    {
+        if (configHandler.WriteToConfigFile(szSelectedConfig) == false)
+            FAIL_LOG("Failed to write to file");
+        else
+            WIN_LOG("Successfully wrote config to file!");
+    }
+
+    //----------------------- Load from file -----------------------
+    if (ImGui::Button("Load"))
+    {
+        if (configHandler.ReadConfigFile(szSelectedConfig) == true)
+            WIN_LOG("Successfully loaded config");
+        else
+            FAIL_LOG("Failed to load config");
     }
 }

@@ -158,7 +158,7 @@ DEFINE_TAB(CritHack, 2)
 DEFINE_SECTION(CritHack, "CritHack", 1)
 
 //             Name             type           Section     Tab        order    default value
-DEFINE_FEATURE(CritHack,        bool,          "CritHack", "CritHack", 1,      false,                               FeatureFlags::FeatureFlag_SupportKeyBind)
+DEFINE_FEATURE(CritHack,        bool,          "CritHack", "CritHack", 1,      false,                               FeatureFlags::FeatureFlag_SupportKeyBind, "Forces crit seeds when shooting")
 DEFINE_FEATURE(intslidershit,   IntSlider_t,   "CritHack", "CritHack", 2,      IntSlider_t(0, 0, 10),               FeatureFlag_None)
 DEFINE_FEATURE(floatslidershit, FloatSlider_t, "CritHack", "CritHack", 3,      FloatSlider_t(0.0f, -10.0f, 10.0f),  FeatureFlag_None)
-DEFINE_FEATURE(ColorShit,       ColorData_t,   "CritHack", "CritHack", 4,      ColorData_t(0.0f, 0.0f, 0.0f, 1.0f), FeatureFlag_None)
+DEFINE_FEATURE(ColorShit,       ColorData_t,   "CritHack", "CritHack", 4,      ColorData_t(0, 0, 0, 255),           FeatureFlag_None)

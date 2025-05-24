@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <algorithm>
 #include "../Utility/ConsoleLogging.h"
+#include "../Libraries/Utility/Utility.h"
 
 #define DEBUG_FEATURE_HANDLER
 
@@ -60,7 +61,7 @@ void Section_t::DumpNSort()
 //=========================================================================
 //                     IFeature methods
 //=========================================================================
-IFeature::IFeature(std::string szFeatureDisplayName, std::string szSectionName, std::string szTabName, int iIndex, int64_t iKey, int iFlags)
+IFeature::IFeature(std::string szFeatureDisplayName, std::string szSectionName, std::string szTabName, int iIndex, int32_t iKey, int iFlags, std::string szToolTip)
 {
     m_szFeatureDisplayName = szFeatureDisplayName;
     m_szSectionName        = szSectionName;
@@ -68,6 +69,7 @@ IFeature::IFeature(std::string szFeatureDisplayName, std::string szSectionName, 
     m_iIndex               = iIndex;
     m_iFlags               = iFlags;
     m_iKey                 = iKey;
+    m_szToolTip            = szToolTip;
 
     featureHandler.RegisterFeature(this);
 }
@@ -96,6 +98,7 @@ bool FeatureHandler_t::Initialize()
         m_mapFeatureMap.insert({ tab->m_szTabDisplayName, tab });
     }
 
+    // Popullating Section's map
     for (auto* section : m_vecRegisteredSections)
     {
         // get tab for this section.
@@ -112,6 +115,7 @@ bool FeatureHandler_t::Initialize()
         it->second->m_mapSections.insert({ section->m_szSectionDisplayName, section });
     }
 
+    // Popullating Feature's map
     for (auto* feature : m_vecRegisteredFeatures)
     {
         // Getting tab for this Feature.
@@ -145,6 +149,13 @@ bool FeatureHandler_t::Initialize()
         tab->DumpNSort();
     }
 
+    // Constructing Feature-to-Config linker map
+    if (_ConstructFeatureToConfigLinkerMap() == false)
+    {
+        FAIL_LOG("Failed to construct linker map for config");
+        return false;
+    }
+    
     return true;
 }
 
@@ -231,4 +242,29 @@ void FeatureHandler_t::DumpNSort()
     for (const auto* tab : m_vecFeatureMap)
         LOG("tab detected [ %s ] @ %d", tab->m_szTabDisplayName.c_str(), tab->m_iIndex);
 #endif //  DEBUG_FEATURE_HANDLER
+}
+
+bool FeatureHandler_t::_ConstructFeatureToConfigLinkerMap()
+{
+    m_mapFeatureToConfigLinkerMap.clear();
+
+    for (auto* tab : m_vecFeatureMap)
+    {
+        for (auto* section : tab->m_vecSections)
+        {
+            for (auto* feature : section->m_vecFeatures)
+            {
+                // Hash-ing Tab, Section & feature names
+                FeaturePathHash_t iPathHash;
+                iPathHash.m_iTabNameHash     = FNV1A32(feature->m_szTabName.c_str())     & 0xFFff;
+                iPathHash.m_iSectionNameHash = FNV1A32(feature->m_szSectionName.c_str()) & 0xFFff;
+                iPathHash.m_iFeatureNameHash = FNV1A32(feature->m_szFeatureDisplayName.c_str());
+
+                // Insering into table.
+                m_mapFeatureToConfigLinkerMap.insert({ std::bit_cast<int64_t>(iPathHash), feature});
+            }
+        }
+    }
+
+    return true;
 }
