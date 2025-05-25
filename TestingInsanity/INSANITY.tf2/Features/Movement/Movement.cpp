@@ -18,7 +18,7 @@ extern local_netvars netvar;
 void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
 	_Bhop(pCmd, result, pLocalPlayer);
-	_RocketJump(pCmd, result, pActiveWeapon);
+	_RocketJump(pCmd, result, pActiveWeapon, pLocalPlayer);
 	_ThirdPerson(pCmd, result, pLocalPlayer);
 }
 
@@ -60,14 +60,23 @@ void Movement_t::_Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 }
 
 
-void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon)
+void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer)
 {
 	if (TempFeatureHelper::AutoRocketJump.IsActive() == false)
 		return;
 
+	// Can Rocket jump?
+	if (pLocalPlayer->getCharacterChoice() != TF_SOLDIER || pActiveWeapon->getSlot() != WPN_SLOT_PRIMARY)
+		return;
+
+	// If Got no ammo, then return
+	if (pActiveWeapon->GetClip1() <= 0)
+		return;
+
 	static bool isRocketJumping = false;
 	static int rocketJumpStage = 0;
-	if (TempFeatureHelper::AutoRocketJump.IsActive() == true) { // Hotkey for rocket jump
+	if (TempFeatureHelper::AutoRocketJump.IsActive() == true) 
+	{
 		if (pActiveWeapon->getReloadMode() != reload_t::WPN_RELOAD_START) pCmd->buttons |= IN_ATTACK;
 		if (!isRocketJumping) {
 			isRocketJumping = true;
@@ -77,17 +86,20 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 	if (isRocketJumping) {
 		switch (rocketJumpStage) {
 		case 0: // Adjust view angles
+			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->buttons |= IN_JUMP;      // Jump
 			rocketJumpStage++;
 			break;
 
 		case 1: // Duck after jumping
+			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->buttons |= IN_DUCK;
 			rocketJumpStage++;
 			break;
 
 		case 3: // Fire the rocket
-			//cmd->viewangles.pitch = 40.0f; // Aim straight down
+			// Cancel reload
+			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->viewangles.yaw += 180.0f;  // Keep yaw unchanged
 			pCmd->buttons |= IN_ATTACK;
 			isRocketJumping = false; // Reset state after firing

@@ -29,6 +29,11 @@ class baseWeapon : public BaseEntity {
 public:
 	int getSlot();
 	reload_t	getReloadMode();
+	void		SetReloadMode(reload_t iReloadMode);
+
+	int			GetClip1();
+	int			GetClip2();
+
 	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();
 	
@@ -48,12 +53,12 @@ public:
 	void		SetTotalCritsOccured(int iCritsOccured);
 	void		SetTotalCritChecks(int iCritChecks);
 
-	float GetObservedCritChance();
-	float GetDamagePerShot();
-	void SetWeaponSeed(int iSeed);
+	float		GetObservedCritChance();
+	float		GetDamagePerShot();
+	void		SetWeaponSeed(int iSeed);
 
-	float GetNextPrimaryAttackTime();
-	float GetLastRapidFireCritCheckTime();
+	float		GetNextPrimaryAttackTime();
+	float		GetLastRapidFireCritCheckTime();
 
 private:
 	bool TracerHook = false;

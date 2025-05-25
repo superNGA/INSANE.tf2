@@ -37,7 +37,22 @@ int baseWeapon::getSlot()
 
 reload_t baseWeapon::getReloadMode()
 {
-    return *(reload_t*)((uintptr_t)this + netvar.m_iReloadMode);
+    return *reinterpret_cast<reload_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iReloadMode);
+}
+
+void baseWeapon::SetReloadMode(reload_t iReloadMode)
+{
+    *reinterpret_cast<reload_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iReloadMode) = iReloadMode;
+}
+
+int baseWeapon::GetClip1()
+{
+    return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iClip1);
+}
+
+int baseWeapon::GetClip2()
+{
+    return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iClip2);
 }
 
 

@@ -105,6 +105,9 @@ void offsets::fill_local_netvars(std::unordered_map<std::string, int32_t>& map, 
 	
 	if (!strcmp(table_name, "DT_LocalTFWeaponData")		&& map["m_flLastCritCheckTime"])	netvar.m_flLastCritCheckTime	= map["m_flLastCritCheckTime"];
 	if (!strcmp(table_name, "DT_TFPlayerShared")		&& map["m_bFeignDeathReady"])		netvar.m_bFeignDeathReady		= map["m_bFeignDeathReady"];
+	
+	if (!strcmp(table_name, "DT_LocalWeaponData")		&& map["m_iClip1"])					netvar.m_iClip1					= map["m_iClip1"];
+	if (!strcmp(table_name, "DT_LocalWeaponData")		&& map["m_iClip2"])					netvar.m_iClip2					= map["m_iClip2"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

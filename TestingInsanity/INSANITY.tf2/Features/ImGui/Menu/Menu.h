@@ -1,4 +1,5 @@
 #pragma once
+#include "../../../Hooks/EndScene/EndScene.h"
 #include "../../FeatureHandler.h"
 
 class Tab_t;

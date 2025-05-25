@@ -13,7 +13,7 @@ public:
 
 private:
     void _Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
-    void _RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon);
+    void _RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
     void _ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
 
 };
@@ -24,5 +24,5 @@ DEFINE_TAB(Movement, 4);
 DEFINE_SECTION(Movement, "Movement", 1)
 
 DEFINE_FEATURE(Bhop,           bool, "Movement", "Movement", 1, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
-DEFINE_FEATURE(AutoRocketJump, bool, "Movement", "Movement", 2, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(AutoRocketJump, bool, "Movement", "Movement", 2, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind | FeatureFlag_DisableWhileMenuOpen)
 DEFINE_FEATURE(ThirdPerson,    bool, "Movement", "Movement", 3, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)

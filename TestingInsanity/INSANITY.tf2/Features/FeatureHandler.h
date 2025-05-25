@@ -5,8 +5,7 @@
 #include <vector>
 #include <unordered_map>
 
-// delete this
-#include <iostream>
+#include "../Hooks/EndScene/EndScene.h"
 
 // DATA TYPES
 struct IntSlider_t 
@@ -32,11 +31,12 @@ struct ColorData_t
 
 enum FeatureFlags
 {
-    FeatureFlag_None               = 0,
-    FeatureFlag_SupportKeyBind     = (1 << 0),
-    FeatureFlag_OverrideCompatible = (1 << 1),
-    FeatureFlag_HoldOnlyKeyBind    = (1 << 2),
-    FeatureFlag_ToggleOnlyKeyBind  = (1 << 3)
+    FeatureFlag_None                 = 0,
+    FeatureFlag_SupportKeyBind       = (1 << 0),
+    FeatureFlag_OverrideCompatible   = (1 << 1),
+    FeatureFlag_HoldOnlyKeyBind      = (1 << 2),
+    FeatureFlag_ToggleOnlyKeyBind    = (1 << 3),
+    FeatureFlag_DisableWhileMenuOpen = (1 << 4)
 };
 
 // Feature class
@@ -232,6 +232,13 @@ public:
         }
 
         m_Data = m_bIsOverrideActive;
+        
+        // Some feature like Rocket jumping shouldn't run while the menu is open. 
+        // So this flag will return false when menu is open for such features. 
+        // NOTE : PLACED IN THE END SO THAT m_Data GETS UPDATED cause IT WILL REFELCTED IN THE MENU!
+        if (IsMenuOpen() == true && (m_iFlags & FeatureFlags::FeatureFlag_DisableWhileMenuOpen) == true)
+            return false;
+        
         return m_Data;
     }
 };

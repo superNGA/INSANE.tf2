@@ -167,3 +167,5 @@ namespace directX
 	/* drawing background window sperately do reduce clutter*/
 	inline void draw_background();
 };
+
+inline bool IsMenuOpen() { return directX::UI::UI_visble; }

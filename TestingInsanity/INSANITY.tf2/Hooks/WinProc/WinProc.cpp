@@ -84,12 +84,14 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                 // we will be using the unofficial offset ( 0x05 & 0x06 ) for xbuttons.
                 Render::uiMenu.m_iRecordedKey  = xButton + 0x04; 
                 Render::uiMenu.m_bRecordingKey = false;
+                return TRUE;
             }
         }
         else if (uMsg == WM_KEYDOWN || (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST && uMsg != WM_MOUSEMOVE))
         {
             Render::uiMenu.m_iRecordedKey  = wParam;
             Render::uiMenu.m_bRecordingKey = false;
+            return TRUE;
         }
     }
 
