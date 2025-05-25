@@ -19,3 +19,10 @@ private:
 };
 
 DECLARE_FEATURE_OBJECT(movement, Movement_t)
+
+DEFINE_TAB(Movement, 4);
+DEFINE_SECTION(Movement, "Movement", 1)
+
+DEFINE_FEATURE(Bhop,           bool, "Movement", "Movement", 1, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(AutoRocketJump, bool, "Movement", "Movement", 2, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(ThirdPerson,    bool, "Movement", "Movement", 3, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)

@@ -123,23 +123,39 @@ public:
 
     inline const T& GetData()
     {
+        // if this feature doesn't support key binds OR key not set, then return whatever the user has set it to!
+        if (m_iKey == NULL || (m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind) == false)
+            return m_Data;
+
         short iKeyStatus = GetAsyncKeyState(m_iKey);
         
         constexpr int KEY_HELD_DOWN     = (1 << 15);
         constexpr int KEY_PRESSED_SINCE = (1 << 0);
 
-        switch (m_iOverrideType)
+        if (m_iFlags & FeatureFlags::FeatureFlag_HoldOnlyKeyBind)
         {
-        case OverrideType::OVERRIDE_TOGGLE:
+            m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
+        }
+        else if (m_iFlags & FeatureFlags::FeatureFlag_ToggleOnlyKeyBind)
         {
             if ((iKeyStatus & KEY_PRESSED_SINCE) == true)
                 m_bIsOverrideActive = !m_bIsOverrideActive;
-            break;
         }
-        case OverrideType::OVERRIDE_HOLD:
-        default:
-            m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
-            break;
+        else
+        {
+            switch (m_iOverrideType)
+            {
+            case OverrideType::OVERRIDE_TOGGLE:
+            {
+                if ((iKeyStatus & KEY_PRESSED_SINCE) == true)
+                    m_bIsOverrideActive = !m_bIsOverrideActive;
+                break;
+            }
+            case OverrideType::OVERRIDE_HOLD:
+            default:
+                m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
+                break;
+            }
         }
 
         if (m_bIsOverrideActive == true)
@@ -180,7 +196,7 @@ public:
     inline bool IsActive()
     {
         // if No key is set, then either run always, or don't run
-        if (m_iKey == NULL)
+        if (m_iKey == NULL || (m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind) == false)
             return m_Data;
 
         // Get key state
@@ -189,19 +205,30 @@ public:
         constexpr int KEY_HELD_DOWN     = (1 << 15);
         constexpr int KEY_PRESSED_SINCE = (1 << 0);
 
-        // Check if pressed or not.
-        switch (m_iOverrideType)
+        if (m_iFlags & FeatureFlags::FeatureFlag_HoldOnlyKeyBind)
         {
-        case OverrideType::OVERRIDE_TOGGLE:
+            m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
+        }
+        else if (m_iFlags & FeatureFlags::FeatureFlag_ToggleOnlyKeyBind)
         {
             if ((iKeyStatus & KEY_PRESSED_SINCE) == true)
                 m_bIsOverrideActive = !m_bIsOverrideActive;
-            break;
         }
-        case OverrideType::OVERRIDE_HOLD:
-        default:
-            m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
-            break;
+        else
+        {
+            switch (m_iOverrideType)
+            {
+            case OverrideType::OVERRIDE_TOGGLE:
+            {
+                if ((iKeyStatus & KEY_PRESSED_SINCE) == true)
+                    m_bIsOverrideActive = !m_bIsOverrideActive;
+                break;
+            }
+            case OverrideType::OVERRIDE_HOLD:
+            default:
+                m_bIsOverrideActive = iKeyStatus & KEY_HELD_DOWN;
+                break;
+            }
         }
 
         m_Data = m_bIsOverrideActive;
@@ -277,6 +304,7 @@ namespace Features{\
 
 #define EXPAND(x) x
 // A Macro won't expand if its the result / output of another macro unless its being passed in as argument into a Macro ?!
+// (DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)
 #define DEFINE_FEATURE(...)\
         EXPAND(GET_9TH_ARGUMENT(__VA_ARGS__, DEFINE_FEATURE_TOOLTIP, DEFINE_FEATURE_FLAG, DEFINE_FEATURE_NOFLAG)(__VA_ARGS__))
 

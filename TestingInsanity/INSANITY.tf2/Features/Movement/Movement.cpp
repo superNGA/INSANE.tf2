@@ -30,7 +30,8 @@ void Movement_t::_Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 {
 	static uint8_t bits = 0;
 
-	if (!config.miscConfig.bhop) return;
+	if (TempFeatureHelper::Bhop.IsActive() == false) 
+		return;
 
 	int32_t flag = *(int32_t*)((uintptr_t)pLocalPlayer + netvar.m_fFlags);
 
@@ -61,11 +62,12 @@ void Movement_t::_Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 
 void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon)
 {
-	if (!config.miscConfig.rocket_jump) return;
+	if (TempFeatureHelper::AutoRocketJump.IsActive() == false)
+		return;
 
 	static bool isRocketJumping = false;
 	static int rocketJumpStage = 0;
-	if (GetAsyncKeyState(VK_XBUTTON2)) { // Hotkey for rocket jump
+	if (TempFeatureHelper::AutoRocketJump.IsActive() == true) { // Hotkey for rocket jump
 		if (pActiveWeapon->getReloadMode() != reload_t::WPN_RELOAD_START) pCmd->buttons |= IN_ATTACK;
 		if (!isRocketJumping) {
 			isRocketJumping = true;
@@ -101,16 +103,5 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 
 void Movement_t::_ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 {
-	if (config.miscConfig.third_person == false)
-	{
-		return;
-	}
-
-	uintptr_t forceTauntCamState = (uintptr_t)pLocalPlayer + netvar.m_nForceTauntCam;
-	bool thirdperson_state = *(bool*)(forceTauntCamState);
-
-	if (thirdperson_state != input_util::key_detect(VK_XBUTTON1, true))
-	{
-		*(bool*)(forceTauntCamState) = !thirdperson_state;
-	}
+	*reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(pLocalPlayer) + netvar.m_nForceTauntCam) = TempFeatureHelper::ThirdPerson.IsActive();
 }

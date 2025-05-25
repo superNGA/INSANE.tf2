@@ -71,6 +71,24 @@ IFeature::IFeature(std::string szFeatureDisplayName, std::string szSectionName, 
     m_iKey                 = iKey;
     m_szToolTip            = szToolTip;
 
+    // Managing Hold only & Toggle only features
+    
+    // WARN if both HoldOnly and ToggleOnly flag is enabled
+    if ((m_iFlags & FeatureFlag_HoldOnlyKeyBind) == true && (m_iFlags & FeatureFlag_ToggleOnlyKeyBind) == true)
+    {
+        FAIL_LOG("DUMB ASS NIGGA!, FEATURE [ %s ] HAS BOTH HOLD ONLY AND TOGGLE ONLY FLAG!!!!", m_szFeatureDisplayName.c_str());
+    }
+    // if Toggle only, then set the flag ahead of time! ( cause the flag won't be changing )
+    else if (m_iFlags & FeatureFlag_ToggleOnlyKeyBind)
+    {
+        m_iOverrideType = OverrideType::OVERRIDE_TOGGLE;
+    }
+    // if Hold only, then set the flag ahead of time! ( cause the flag won't be changing )
+    else
+    {
+        m_iOverrideType = OverrideType::OVERRIDE_HOLD;
+    }
+
     featureHandler.RegisterFeature(this);
 }
 

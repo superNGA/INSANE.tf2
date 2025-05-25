@@ -11,6 +11,7 @@
 #include <string>
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/IMaterial.h"
+#include "../FeatureHandler.h"
 
 /*
 * DONE :
@@ -83,7 +84,7 @@ public:
     bool        FreeAllMaterial();
 
 private:
-    bool        _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, ChamSetting_t& pChamConfig);
+    bool        _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, bool bIgnoreZ, bool bChams, const float* pChamClrs, const float flAlpha);
     bool        _IsAmmoPack(uint32_t iHash);
     bool        _IsMedKit(uint32_t iHash);
 
@@ -132,3 +133,79 @@ private:
 )";
 };
 extern Chams_t chams;
+
+DEFINE_TAB(Chams, 5)
+DEFINE_SECTION(Player, "Chams", 1)
+
+DEFINE_FEATURE(Enemy_IgnoreZ,                   bool,           "Player",   "Chams", 1, false)
+DEFINE_FEATURE(Enemy_Chams,                     bool,           "Player",   "Chams", 2, false,                    FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(EnemyChams_Color,                ColorData_t,    "Player",   "Chams", 3, ColorData_t(),            FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                                                                  
+DEFINE_FEATURE(Friendly_IgnoreZ,                bool,           "Player",   "Chams", 4, false)                    
+DEFINE_FEATURE(Friendly_Chams,                  bool,           "Player",   "Chams", 5, false,                    FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(FriendlyChams_Color,             ColorData_t,    "Player",   "Chams", 6, ColorData_t(),            FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+
+DEFINE_SECTION(Building, "Chams", 2)
+
+// SENTRY
+DEFINE_FEATURE(EnemySentry_IgnoreZ,             bool,           "Building",     "Chams", 1, false)
+DEFINE_FEATURE(EnemySentry_Chams,               bool,           "Building",     "Chams", 2, false,                FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(EnemySentryChams_Color,          ColorData_t,    "Building",     "Chams", 3, ColorData_t(),        FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(FriendlySentry_IgnoreZ,          bool,           "Building",     "Chams", 4, false)
+DEFINE_FEATURE(FriendlySentry_Chams,            bool,           "Building",     "Chams", 5, false,                FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(FriendlySentryChams_Color,       ColorData_t,    "Building",     "Chams", 6, ColorData_t(),        FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+// DISPENSER                                                     
+DEFINE_FEATURE(EnemyDispenser_IgnoreZ,          bool,           "Building",     "Chams", 7, false)
+DEFINE_FEATURE(EnemyDispenser_Chams,            bool,           "Building",     "Chams", 8, false,                FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(EnemyDispenserChams_Color,       ColorData_t,    "Building",     "Chams", 9, ColorData_t(),        FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(FriendlyDispenser_IgnoreZ,       bool,           "Building",     "Chams", 10, false)
+DEFINE_FEATURE(FriendlyDispenser_Chams,         bool,           "Building",     "Chams", 11, false,               FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(FriendlyDispenserChams_Color,    ColorData_t,    "Building",     "Chams", 12, ColorData_t(),       FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                             
+// TELEPORTER                                                
+DEFINE_FEATURE(EnemyTeleporter_IgnoreZ,         bool,           "Building",     "Chams", 13, false)
+DEFINE_FEATURE(EnemyTeleporter_Chams,           bool,           "Building",     "Chams", 14, false,               FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(EnemyTeleporterChams_Color,      ColorData_t,    "Building",     "Chams", 15, ColorData_t(),       FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(FriendlyTeleporter_IgnoreZ,      bool,           "Building",     "Chams", 16, false)
+DEFINE_FEATURE(FriendlyTeleporter_Chams,        bool,           "Building",     "Chams", 17, false,               FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(FriendlyTeleporterChams_Color,   ColorData_t,    "Building",     "Chams", 18, ColorData_t(),       FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+
+DEFINE_SECTION(Projectile, "Chams", 3)
+
+DEFINE_FEATURE(EnemyProjectile_IgnoreZ,         bool,           "Projectile",   "Chams", 1, false)
+DEFINE_FEATURE(EnemyProjectile_Chams,           bool,           "Projectile",   "Chams", 2, false,                  FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(EnemyProjectileChams_Color,      ColorData_t,    "Projectile",   "Chams", 3, ColorData_t(),          FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(FriendlyProjectile_IgnoreZ,      bool,           "Projectile",   "Chams", 4, false)
+DEFINE_FEATURE(FriendlyProjectile_Chams,        bool,           "Projectile",   "Chams", 5, false,                  FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(FriendlyProjectileChams_Color,   ColorData_t,    "Projectile",   "Chams", 6, ColorData_t(),          FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+
+DEFINE_SECTION(Misc, "Chams", 4)
+
+DEFINE_FEATURE(DroppedAmmoPack_IgnoreZ,         bool,           "Misc",         "Chams", 1, false)
+DEFINE_FEATURE(DroppedAmmoPack_Chams,           bool,           "Misc",         "Chams", 2, false,                     FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(DroppedAmmoPackChams_Color,      ColorData_t,    "Misc",         "Chams", 3, ColorData_t(),             FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(AmmoPack_IgnoreZ,                bool,           "Misc",         "Chams", 4, false)
+DEFINE_FEATURE(AmmoPack_Chams,                  bool,           "Misc",         "Chams", 5, false,                     FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(AmmoPackChams_Color,             ColorData_t,    "Misc",         "Chams", 6, ColorData_t(),             FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(Medkit_IgnoreZ,                  bool,           "Misc",         "Chams", 7, false)
+DEFINE_FEATURE(Medkit_Chams,                    bool,           "Misc",         "Chams", 8, false,                     FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(MedkitChams_Color,               ColorData_t,    "Misc",         "Chams", 9, ColorData_t(),             FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(TFItem_IgnoreZ,                  bool,           "Misc",         "Chams", 10, false)
+DEFINE_FEATURE(TFItem_Chams,                    bool,           "Misc",         "Chams", 11, false,                    FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(TFItemChams_Color,               ColorData_t,    "Misc",         "Chams", 12, ColorData_t(),            FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(ViewModel_IgnoreZ,               bool,           "Misc",         "Chams", 13, false)
+DEFINE_FEATURE(ViewModel_Chams,                 bool,           "Misc",         "Chams", 14, false,                    FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(ViewModelChams_Color,            ColorData_t,    "Misc",         "Chams", 15, ColorData_t(),            FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+                                                                 
+DEFINE_FEATURE(DroppedWeapon_IgnoreZ,           bool,           "Misc",         "Chams", 16, false)
+DEFINE_FEATURE(DroppedWeapon_Chams,             bool,           "Misc",         "Chams", 17, false,                    FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
+DEFINE_FEATURE(DroppedWeaponChams_Color,        ColorData_t,    "Misc",         "Chams", 18, ColorData_t(),            FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)

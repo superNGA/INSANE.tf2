@@ -105,29 +105,33 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     {
     case PLAYER:
         pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemyPlayer) :
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlyPlayer);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::Enemy_IgnoreZ.IsActive(), TempFeatureHelper::Enemy_Chams.IsActive(), &TempFeatureHelper::EnemyChams_Color.GetData().r, TempFeatureHelper::EnemyChams_Color.GetData().a) :
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::Friendly_IgnoreZ.IsActive(), TempFeatureHelper::Friendly_Chams.IsActive(), &TempFeatureHelper::FriendlyChams_Color.GetData().r, TempFeatureHelper::FriendlyChams_Color.GetData().a);
         break;
     case AMMO_PACK:
-        bIsMaterialOverridden     = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamDroppedAmmoPack);
+        bIsMaterialOverridden     = _ApplyChams(modelState, FlatMat, TempFeatureHelper::DroppedAmmoPack_IgnoreZ.IsActive(), TempFeatureHelper::DroppedAmmoPack_Chams.IsActive(), &TempFeatureHelper::DroppedAmmoPackChams_Color.GetData().r, TempFeatureHelper::DroppedAmmoPackChams_Color.GetData().a);
         break;
     case DISPENSER:
         pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemyDispenser) :
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlyDispenser);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::EnemyDispenser_IgnoreZ.IsActive(), TempFeatureHelper::EnemyDispenser_Chams.IsActive(), &TempFeatureHelper::EnemyDispenserChams_Color.GetData().r, TempFeatureHelper::EnemyDispenserChams_Color.GetData().a) :
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::FriendlyDispenser_IgnoreZ.IsActive(), TempFeatureHelper::FriendlyDispenser_Chams.IsActive(), &TempFeatureHelper::FriendlyDispenserChams_Color.GetData().r, TempFeatureHelper::FriendlyDispenserChams_Color.GetData().a);
         break;
     case SENTRY_GUN:
         pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemySentry) :
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlySentry);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::EnemySentry_IgnoreZ.IsActive(), TempFeatureHelper::EnemySentry_Chams.IsActive(), &TempFeatureHelper::EnemySentryChams_Color.GetData().r, TempFeatureHelper::EnemySentryChams_Color.GetData().a) :
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::FriendlySentry_IgnoreZ.IsActive(), TempFeatureHelper::FriendlySentry_Chams.IsActive(), &TempFeatureHelper::FriendlySentryChams_Color.GetData().r, TempFeatureHelper::FriendlySentryChams_Color.GetData().a);
         break;
     case TELEPORTER:
         pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemyTeleporter) :
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamFriendlyTeleporter);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::EnemyTeleporter_IgnoreZ.IsActive(), TempFeatureHelper::EnemyTeleporter_Chams.IsActive(), &TempFeatureHelper::EnemyTeleporterChams_Color.GetData().r, TempFeatureHelper::EnemyTeleporterChams_Color.GetData().a) :
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, TempFeatureHelper::FriendlyTeleporter_IgnoreZ.IsActive(), TempFeatureHelper::FriendlyTeleporter_Chams.IsActive(), &TempFeatureHelper::FriendlyTeleporterChams_Color.GetData().r, TempFeatureHelper::FriendlyTeleporterChams_Color.GetData().a);
         break;
     case TF_ITEM:
-        bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamTFItem);
+        bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, 
+            TempFeatureHelper:: TFItem_IgnoreZ.IsActive(), 
+            TempFeatureHelper:: TFItem_Chams.IsActive(), 
+            &TempFeatureHelper::TFItemChams_Color.GetData().r, 
+            TempFeatureHelper:: TFItemChams_Color.GetData().a);
         break;
     case CAPTURE_POINT:
         break;
@@ -138,18 +142,30 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     case CBASEANIMATING:
         if(_IsAmmoPack(FNV1A32(renderInfo->pModel->strName)))
         {
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamAnimAmmoPack);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, 
+                TempFeatureHelper::AmmoPack_IgnoreZ.IsActive(), 
+                TempFeatureHelper::AmmoPack_Chams.IsActive(), 
+                &TempFeatureHelper::AmmoPackChams_Color.GetData().r, 
+                TempFeatureHelper::AmmoPackChams_Color.GetData().a);
         }
         else if (_IsMedKit(FNV1A32(renderInfo->pModel->strName)))
         {
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamMedkit);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, 
+                TempFeatureHelper::Medkit_IgnoreZ.IsActive(), 
+                TempFeatureHelper::Medkit_Chams.IsActive(), 
+                &TempFeatureHelper::MedkitChams_Color.GetData().r, 
+                TempFeatureHelper::MedkitChams_Color.GetData().a);
         }
         else
         {
             Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
             
             ShinyMat->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true);
-            bIsMaterialOverridden = _ApplyChams(modelState, ShinyMat, config.visualConfig.ChamViewModel);
+            bIsMaterialOverridden = _ApplyChams(modelState, ShinyMat, 
+                TempFeatureHelper:: ViewModel_IgnoreZ.IsActive(), 
+                TempFeatureHelper:: ViewModel_Chams.IsActive(), 
+                &TempFeatureHelper::ViewModelChams_Color.GetData().r, 
+                TempFeatureHelper:: ViewModelChams_Color.GetData().a);
             auto result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
             ShinyMat->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, false);
 
@@ -160,12 +176,24 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     case ROCKET:
     case DEMO_PROJECTILES:
         pEntity->isEnemy() ?
-            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamEnemyProjectile) :
-            bIsMaterialOverridden = _ApplyChams(modelState, ShinyMat, config.visualConfig.ChamFriendlyProjectile);
+            bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, 
+                TempFeatureHelper:: EnemyProjectile_IgnoreZ.IsActive(),
+                TempFeatureHelper:: EnemyProjectile_Chams.IsActive(),
+                &TempFeatureHelper::EnemyProjectileChams_Color.GetData().r,
+                TempFeatureHelper:: EnemyProjectileChams_Color.GetData().a) :
+            bIsMaterialOverridden = _ApplyChams(modelState, ShinyMat, 
+                TempFeatureHelper:: FriendlyProjectile_IgnoreZ.IsActive(),
+                TempFeatureHelper:: FriendlyProjectile_Chams.IsActive(),
+                &TempFeatureHelper::FriendlyProjectileChams_Color.GetData().r,
+                TempFeatureHelper:: FriendlyProjectileChams_Color.GetData().a);
         break;
     
     case ID_DROPPED_WEAPON:
-        bIsMaterialOverridden = _ApplyChams(modelState, FlatMat, config.visualConfig.ChamDroppedWeapon);
+        bIsMaterialOverridden = _ApplyChams(modelState, FlatMat,
+            TempFeatureHelper:: DroppedWeapon_IgnoreZ.IsActive(),
+            TempFeatureHelper:: DroppedWeapon_Chams.IsActive(),
+            &TempFeatureHelper::DroppedWeaponChams_Color.GetData().r,
+            TempFeatureHelper:: DroppedWeaponChams_Color.GetData().a);
         break;
     default:
         break;
@@ -190,7 +218,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     auto* me = entityManager.GetLocalPlayer();
     if(me != nullptr && pEntity == me->GetClientRenderable())
     {
-        if (Features::Chams == true)
+        if (TempFeatureHelper::Cham.IsActive() == true)
         {
             Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, FeatureObj::antiAim.pBone); // <- fake me
         }
@@ -248,12 +276,12 @@ bool Chams_t::FreeAllMaterial()
 * @param pChamMaterial : pointer to a properly initialized IMateral.
 * @param pChamConfig : reference to cham settings
 **************************************************************************/
-bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, ChamSetting_t& pChamConfig)
+bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, bool bIgnoreZ, bool bChams, const float* pChamClrs, const float flAlpha)
 {
     int32_t nMaterials = pModelState->m_pStudioHWData->m_pLODs->numMaterials;
     IMaterial** ppMaterial = pModelState->m_pStudioHWData->m_pLODs->ppMaterials;
 
-    switch (pChamConfig.bIgnorez + pChamConfig.bChams * 2)
+    switch (bIgnoreZ + bChams * 2)
     {
     case 0:
         return false;
@@ -266,8 +294,8 @@ bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMateria
     case 2 :
     case 3 : 
         Sig::ForcedMaterialOverride(I::iStudioRender, pChamMaterial, OverrideType_t::OVERRIDE_NORMAL);
-        I::iVRenderView->SetColorModulation(&pChamConfig.clrChams.r);
-        I::iVRenderView->SetBlend(pChamConfig.clrChams.a);
+        I::iVRenderView->SetColorModulation(pChamClrs);
+        I::iVRenderView->SetBlend(flAlpha);
         return true;
 
     default:

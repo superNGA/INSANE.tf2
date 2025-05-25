@@ -11,7 +11,7 @@
 // GUI library
 #include "../../../External Libraries/ImGui/imgui.h"
 
-constexpr ImVec2 MENU_DIMENSIONS(300.0f, 500.0f);
+constexpr ImVec2 MENU_DIMENSIONS(400.0f, 500.0f);
 constexpr ImVec2 BACK_BUTTON_DIMENSIONS(100.0f, 35.0f);
 
 void UIMenu::Draw()
@@ -85,77 +85,123 @@ void UIMenu::_DrawSection(Tab_t* pTab)
         {
             for (auto* pFeature : pSection->m_vecFeatures)
             {
-                _DrawFeature(pFeature);
+                _DrawFeature(pFeature, false);
             }
         }
     }
 }
 
-void UIMenu::_DrawFeature(IFeature* pFeature)
+void UIMenu::_DrawFeature(IFeature* pFeature, bool bOverride)
 {
     switch (pFeature->m_iDataType)
     {
     case IFeature::DataType::DT_BOOLEAN:
-        _DrawCheckBoxFeature(pFeature);
+        _DrawCheckBoxFeature(pFeature, bOverride);
         return;
     case IFeature::DataType::DT_INTSLIDER:
-        _DrawIntSliderFeature(pFeature);
+        _DrawIntSliderFeature(pFeature, bOverride);
         return;
     case IFeature::DataType::DT_FLOATSLIDER:
-        _DrawFloatSlidereature(pFeature);
+        _DrawFloatSlidereature(pFeature, bOverride);
         return;
     case IFeature::DataType::DT_COLORDATA:
-        _DrawColorSelectorFeature(pFeature);
+        _DrawColorSelectorFeature(pFeature, bOverride);
         return;
     default:
         return;
     }
 }
 
-void UIMenu::_DrawCheckBoxFeature(IFeature* pFeature)
+void UIMenu::_DrawCheckBoxFeature(IFeature* pFeature, bool bOverride)
 {
+    // CheckBoxes don't support override
+    if (bOverride == true)
+        return;
+
     // Casting into correct type
     Feature<bool>* pBoolFeature = static_cast<Feature<bool>*>(pFeature);
 
     // Rendering CheckBox
     ImGui::Checkbox((pBoolFeature->m_szFeatureDisplayName + "##Feature").c_str(), &pBoolFeature->m_Data);
-    if(ImGui::IsItemHovered() == true)
+    if (ImGui::IsItemHovered() == true && pFeature->m_szToolTip[0] != '\0')
         ImGui::SetTooltip(pFeature->m_szToolTip.c_str());
 
     _DrawFeatureOptionWindow(pFeature);
 }
 
-void UIMenu::_DrawIntSliderFeature(IFeature* pFeature) const
+void UIMenu::_DrawIntSliderFeature(IFeature* pFeature, bool bOverride)
 {
     // Casting into correct type
     Feature<IntSlider_t>* pIntFeature = static_cast<Feature<IntSlider_t>*>(pFeature);
 
+    if (bOverride == true)
+    {
+        ImGui::SliderInt(
+            (pIntFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
+            &pIntFeature->m_OverrideData.m_iVal, 
+            pIntFeature->m_OverrideData.m_iMin, 
+            pIntFeature->m_OverrideData.m_iMax);
+        return;
+    }
+
     // Rendering Int Slider
-    ImGui::SliderInt((pIntFeature->m_szFeatureDisplayName + "##Feature").c_str(), &pIntFeature->m_Data.m_iVal, pIntFeature->m_Data.m_iMin, pIntFeature->m_Data.m_iMax);
+    ImGui::SliderInt(
+        (pIntFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
+        pIntFeature->m_bIsOverrideActive == true ? &pIntFeature->m_OverrideData.m_iVal : &pIntFeature->m_Data.m_iVal,
+        pIntFeature->m_Data.m_iMin, 
+        pIntFeature->m_Data.m_iMax);
+
+    _DrawFeatureOptionWindow(pFeature);
 }
 
-void UIMenu::_DrawFloatSlidereature(IFeature* pFeature) const
+void UIMenu::_DrawFloatSlidereature(IFeature* pFeature, bool bOverride) 
 {
     // Casting into correct type
     Feature<FloatSlider_t>* pFloatFeature = static_cast<Feature<FloatSlider_t>*>(pFeature);
 
+    if (bOverride == true)
+    {
+        ImGui::SliderFloat((pFloatFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
+            &pFloatFeature->m_OverrideData.m_flVal, 
+            pFloatFeature->m_OverrideData.m_flMin,
+            pFloatFeature->m_OverrideData.m_flMax, "%.2f");
+        return;
+    }
+
     // Rendering Float Slider
-    ImGui::SliderFloat((pFloatFeature->m_szFeatureDisplayName + "##Feature").c_str(), &pFloatFeature->m_Data.m_flVal, pFloatFeature->m_Data.m_flMin, pFloatFeature->m_Data.m_flMax, "%.2f");
+    ImGui::SliderFloat((pFloatFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
+        pFloatFeature->m_bIsOverrideActive == true ? &pFloatFeature->m_OverrideData.m_flVal : &pFloatFeature->m_Data.m_flVal, 
+        pFloatFeature->m_Data.m_flMin, 
+        pFloatFeature->m_Data.m_flMax, "%.2f");
+
+    _DrawFeatureOptionWindow(pFeature);
 }
 
-void UIMenu::_DrawColorSelectorFeature(IFeature* pFeature) const
+void UIMenu::_DrawColorSelectorFeature(IFeature* pFeature, bool bOverride) 
 {
     // Casting into correct type
     Feature<ColorData_t>* pColorFeature = static_cast<Feature<ColorData_t>*>(pFeature);
 
-    // Rendring Color Selector
-    ImGui::ColorEdit4((pColorFeature->m_szFeatureDisplayName + "##Feature").c_str(),
-        pColorFeature->m_bIsOverrideActive == true ? &pColorFeature->m_OverrideData.r : &pColorFeature->m_Data.r, ImGuiColorEditFlags_AlphaBar);
+    if (bOverride == true)
+    {
+        ImGui::ColorEdit4(
+            (pColorFeature->m_szFeatureDisplayName + "##Feature").c_str(),
+            &pColorFeature->m_OverrideData.r, 
+            ImGuiColorEditFlags_AlphaBar);
+        return;
+    }
+
+    ImGui::ColorEdit4(
+        (pColorFeature->m_szFeatureDisplayName + "##Feature").c_str(),
+        pColorFeature->m_bIsOverrideActive == true ? &pColorFeature->m_OverrideData.r : &pColorFeature->m_Data.r, 
+        ImGuiColorEditFlags_AlphaBar);
+
+    _DrawFeatureOptionWindow(pFeature);
 }
 
 void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
 {
-    if (pFeature->m_iFlags == FeatureFlags::FeatureFlag_None)
+    if ((pFeature->m_iFlags & FeatureFlag_SupportKeyBind) == false)
         return;
 
     // Must be on same line as feature.
@@ -165,11 +211,11 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
     constexpr ImVec2 OPTION_BUTTON_DIMENSIONS(20.0f, 20.0f);
     if (ImGui::Button((std::string("?") + "##" + pFeature->m_szFeatureDisplayName).c_str(), OPTION_BUTTON_DIMENSIONS) == true)
     {
-        ImGui::OpenPopup("Feature-Options");
+        ImGui::OpenPopup(std::string("Feature-Options##" + pFeature->m_szFeatureDisplayName).c_str());
     }
 
     // Designing Popup menu
-    if (ImGui::BeginPopup("Feature-Options") == true)
+    if (ImGui::BeginPopup(std::string("Feature-Options##" + pFeature->m_szFeatureDisplayName).c_str()) == true)
     {
         m_bRecordingKey == true ?
             ImGui::Text("Key : [ Recording... ]") :
@@ -187,7 +233,6 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
             pFeature->m_iKey = NULL;
         }
 
-
         // Did we recorded a key?
         if (m_iRecordedKey != 0 && m_bRecordingKey == false)
         {
@@ -195,11 +240,19 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
             ResetKeyRecorder();
         }
 
-        ImGui::Checkbox("Overide type", reinterpret_cast<bool*>(&pFeature->m_iOverrideType)); ImGui::SameLine();
+        // Does this feature has any specific Override option?
+        if ((pFeature->m_iFlags & (FeatureFlag_HoldOnlyKeyBind | FeatureFlag_ToggleOnlyKeyBind)) == false)
+        {
+            ImGui::Checkbox("Overide type", reinterpret_cast<bool*>(&pFeature->m_iOverrideType));
+        }
+        
+        // Print current override option
         pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ?
             ImGui::Text("[ HOLD ]") :
             ImGui::Text("[ TOGGLE ]");
-         
+
+        _DrawFeature(pFeature, true);
+
         ImGui::EndPopup();
     }
 }

@@ -16,12 +16,12 @@ public:
 
 private:
     void _DrawSection(Tab_t* pTab);
-    void _DrawFeature(IFeature* pFeature);
+    void _DrawFeature(IFeature* pFeature, bool bOverride);
 
-    void _DrawCheckBoxFeature(IFeature* pFeature);
-    void _DrawIntSliderFeature(IFeature* pFeature)const;
-    void _DrawFloatSlidereature(IFeature* pFeature)const;
-    void _DrawColorSelectorFeature(IFeature* pFeature)const;
+    void _DrawCheckBoxFeature(IFeature* pFeature, bool bOverride);
+    void _DrawIntSliderFeature(IFeature* pFeature, bool bOverride);
+    void _DrawFloatSlidereature(IFeature* pFeature, bool bOverride);
+    void _DrawColorSelectorFeature(IFeature* pFeature, bool bOverride);
 
     void _DrawFeatureOptionWindow(IFeature* pFeature);
     
