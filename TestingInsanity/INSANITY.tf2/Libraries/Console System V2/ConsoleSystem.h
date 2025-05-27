@@ -55,24 +55,24 @@ enum consTextFormat_t
 //======================= FN MACROS =======================
 #if ENABLE_CONSOLE == 1
 
-#define CONS_INITIALIZE(introClr)   CONS.inititalize(introClr)
 #define CONS_INITIALIZE()   CONS.inititalize()
 #define CONS_UNINITIALIZE() CONS.uninitialize()
 #define DRAW_DEVIDER()      CONS.drawDevider()
 
 // error & sucess logs
-#define CONS_LOG_ERROR(errorMessage) CONS.Log(consTextClr_t::FG_RED, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, false, errorMessage)
-#define CONS_LOG_SUCCESS(Message) CONS.Log(consTextClr_t::FG_GREEN, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, false, Message)
+#define CONS_LOG_ERROR(errorMessage) CONS.Log(FG_RED, BG_BLACK, BOLD, __FUNCTION__, false, errorMessage)
+#define CONS_LOG_SUCCESS(Message) CONS.Log(FG_GREEN, BG_BLACK, BOLD, __FUNCTION__, false, Message)
 
 // text logs
-#define CONS_FASTLOG(textColor, logMessage, ...) CONS.Log(textColor, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, false, logMessage, ##__VA_ARGS__)
-#define CONS_FASTLOGWT(textColor, logMessage, ...) CONS.Log(textColor, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, true, logMessage, ##__VA_ARGS__)
+#define CONS_FASTLOG(textColor, logMessage, ...) CONS.Log(textColor, BG_BLACK, BOLD, __FUNCTION__, false, logMessage, ##__VA_ARGS__)
+#define CONS_FASTLOGWT(textColor, logMessage, ...) CONS.Log(textColor, BG_BLACK, BOLD, __FUNCTION__, true, logMessage, ##__VA_ARGS__)
 #define CONS_LOG(textColor, BGColor, textFormat, logmessage, ...) CONS.Log(textColor, BGColor, textFormat, __FUNCTION__, false, logmessage, ##__VA_ARGS__)
 #define CONS_LOGWT(textColor, BGColor, textFormat, logmessage, ...) CONS.Log(textColor, BGColor, textFormat, __FUNCTION__, true, logmessage, ##__VA_ARGS__)
 
 // float arrays / struct logs
-#define CONS_FASTLOG_FLOAT_ARR(pFloatArr) CONS.LogFloatArr(consTextClr_t::FG_CYAN, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, false, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
-#define CONS_FASTLOG_FLOAT_ARRWT(pFloatArr) CONS.LogFloatArr(consTextClr_t::FG_CYAN, consBgClr_t::BG_BLACK, consTextFormat_t::BOLD, __FUNCTION__, true, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
+#define CONS_FASTLOG_FLOAT_ARR_CUSTOM(pFloatArr, iSize) CONS.LogFloatArr(FG_CYAN, BG_BLACK, BOLD, __FUNCTION__, false, #pFloatArr, (void*)&pFloatArr, iSize)
+#define CONS_FASTLOG_FLOAT_ARR(pFloatArr) CONS.LogFloatArr(FG_CYAN, BG_BLACK, BOLD, __FUNCTION__, false, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
+#define CONS_FASTLOG_FLOAT_ARRWT(pFloatArr) CONS.LogFloatArr(FG_CYAN, BG_BLACK, BOLD, __FUNCTION__, true, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
 #define CONS_LOG_FLOAT_ARR(textColor, BGColor, textFormat, pFloatArr) CONS.LogFloatArr(textColor, BGColor, textFormat, __FUNCTION__, false, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
 #define CONS_LOG_FLOAT_ARRWT(textColor, BGColor, textFormat, pFloatArr) CONS.LogFloatArr(textColor, BGColor, textFormat, __FUNCTION__, true, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
 

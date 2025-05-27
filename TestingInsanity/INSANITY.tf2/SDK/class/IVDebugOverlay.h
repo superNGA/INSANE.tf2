@@ -26,6 +26,8 @@ public:
 	virtual void AddTextOverlayRGB(const vec& origin, int line_offset, float duration, int r, int g, int b, int a,   const char* format, ...) = 0;
 
 	virtual void AddLineOverlayAlpha(const vec& origin, const vec& dest, int r, int g, int b, int a, bool noDepthTest, float duration) = 0;
+
+	void AddCircleOverlay(const vec& origin, const vec& normal, const float	flRadius, const int nSegments, int r, int g, int b, int a, bool noDepthTest, float duration, float flInitialAngleInRad);
 };
 
 MAKE_INTERFACE_VERSION(IDebugOverlay, "VDebugOverlay003", IVDebugOverlay, ENGINE_DLL)

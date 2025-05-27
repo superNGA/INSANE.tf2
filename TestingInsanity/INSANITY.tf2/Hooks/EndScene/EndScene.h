@@ -15,11 +15,6 @@
 /*extra*/
 #include "../../Extra/spacing.h"
 
-// console system
-#ifdef _DEBUG
-#include "../../Libraries/Console System/Console_System.h"
-extern Console_System cons;
-#endif // _DEBUG
 
 //stb image
 #include "../../External Libraries/stb image/stb_image.h"

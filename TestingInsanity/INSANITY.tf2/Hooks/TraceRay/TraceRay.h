@@ -2,12 +2,6 @@
 #include"../../GlobalVars.h"
 #include "../../SDK/class/IEngineTrace.h"
 
-#ifdef _DEBUG
-#include "../../Libraries/Console System/Console_System.h"
-extern Console_System cons;
-#endif // _DEBUG
-
-
 namespace hook
 {
 	namespace traceRay

@@ -53,12 +53,6 @@
 /* entity information template struct */
 #include "SDK/entInfo_t.h"
 
-/* console system for debug mode */
-#ifdef _DEBUG
-#include "Libraries/Console System/Console_System.h"
-extern Console_System cons;
-#endif // _DEBUG
-
 // Forward Declares
 class baseWeapon;
 

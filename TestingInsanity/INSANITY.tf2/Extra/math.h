@@ -85,6 +85,7 @@ namespace Maths
         anglesIn.roll = 0.0f;
     }
 
+    // Converts angle from [ 0 , 360 ] TO [ -180 , 180 ]
     inline float NormalizeAngle(float flAngle, float flRange = 360.f)
     {
         return std::isfinite(flAngle) ? std::remainder(flAngle, flRange) : 0.f;
@@ -199,7 +200,6 @@ namespace Maths
         AngleMatrix(angles, matrix);
         MatrixSetColumn(position, 3, matrix);
     }
-
 
     inline float RemapValClamped(float val, float A, float B, float C, float D)
     {

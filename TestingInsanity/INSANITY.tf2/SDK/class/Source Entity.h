@@ -313,7 +313,7 @@ public:
 	virtual void			Release(void) = 0;
 
 	// Network origin + angles
-	virtual vec& GetAbsOrigin(void) = 0;
+	virtual const vec& GetAbsOrigin(void) const = 0;
 	virtual const qangle& GetAbsAngles(void) const = 0;
 
 	virtual CMouthInfo* GetMouth(void) = 0;
@@ -323,7 +323,7 @@ public:
 	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
 	// gets the eye pos, only works for local player, don't call for other entities
-	vec				getLocalEyePos();
+	vec				getLocalEyePos() const;
 	
 	baseWeapon*		getActiveWeapon();
 
@@ -360,6 +360,7 @@ public:
 	void			changeThirdPersonVisibility(renderGroup_t renderGroup);
 
 	int32_t			getPlayerCond();
+	bool			InCond(FLAG_playerCond eCond);
 
 	bool			isOnGround();
 
@@ -372,6 +373,12 @@ public:
 	bool			IsCritBoosted();
 
 	bool			IsFeignDeathReady();
+
+	float			GetModelScale();
+
+	// CALL_ATRIB_HOOK's
+	void CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute);
+	void CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute);
 };
 
 class c_base_entity : public BaseEntity

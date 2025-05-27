@@ -84,7 +84,7 @@ void offsets::fill_local_netvars(std::unordered_map<std::string, int32_t>& map, 
 	if (!strcmp(table_name, "DT_BasePlayer")			&& map["m_iHealth"])				netvar.m_iHealth				= map["m_iHealth"];
 	if (!strcmp(table_name, "DT_BasePlayer")			&& map["m_lifeState"])				netvar.m_lifeState				= map["m_lifeState"];
 	if (!strcmp(table_name, "DT_BaseEntity")			&& map["m_iTeamNum"])				netvar.m_iTeamNum				= map["m_iTeamNum"];
-	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_vecViewOffset[2]"])		netvar.m_vecViewOffset			= map["m_vecViewOffset[2]"];
+	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_vecViewOffset[0]"])		netvar.m_vecViewOffset			= map["m_vecViewOffset[0]"];
 	if (!strcmp(table_name, "DT_LocalPlayerExclusive")	&& map["m_vecVelocity[0]"])			netvar.m_velocity				= map["m_vecVelocity[0]"];
 	if (!strcmp(table_name, "DT_TFPlayerResource")		&& map["m_iMaxHealth"])				netvar.m_iMaxHealth				= map["m_iMaxHealth"];
 	if (!strcmp(table_name, "DT_TFPlayer")				&& map["m_Shared"])					netvar.m_Shared					= map["m_Shared"];
@@ -108,6 +108,9 @@ void offsets::fill_local_netvars(std::unordered_map<std::string, int32_t>& map, 
 	
 	if (!strcmp(table_name, "DT_LocalWeaponData")		&& map["m_iClip1"])					netvar.m_iClip1					= map["m_iClip1"];
 	if (!strcmp(table_name, "DT_LocalWeaponData")		&& map["m_iClip2"])					netvar.m_iClip2					= map["m_iClip2"];
+	
+	if (!strcmp(table_name, "DT_TFProjectile_Arrow")	&& map["m_iProjectileType"])		netvar.m_iProjectileType		= map["m_iProjectileType"];
+	if (!strcmp(table_name, "DT_BaseAnimating")			&& map["m_flModelScale"])			netvar.m_flModelScale			= map["m_flModelScale"];
 
 	/* matching var name */
 	if (map["m_fFlags"])			netvar.m_fFlags			= map["m_fFlags"];

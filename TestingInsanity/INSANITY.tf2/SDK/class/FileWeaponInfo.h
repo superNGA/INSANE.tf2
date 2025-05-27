@@ -70,7 +70,7 @@ struct WeaponData_t
 {
 	int		m_nDamage;
 	int		m_nBulletsPerShot;
-	float	m_flRange;
+	float	m_flRange;			// <-- NOTE : This is not the melee range!! just some constant that's stuck at 8192.0f.
 	float	m_flSpread;
 	float	m_flPunchAngle;
 	float	m_flTimeFireDelay;				// Time to delay between firing

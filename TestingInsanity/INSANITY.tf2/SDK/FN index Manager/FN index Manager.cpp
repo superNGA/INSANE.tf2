@@ -8,6 +8,7 @@
 // at runtime, so I don't have to hardcode them.
 
 #include "FN index manager.h"
+#include "../../Utility/ConsoleLogging.h"
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -74,14 +75,10 @@ uint16_t FNindexManager_t::getFnIndex(FN_name_t FnName, void* pObject)
 	}
 
 	if (!index) { // if failed to find signature
-		#ifdef _DEBUG
-		cons.Log(FG_RED, "FN INDEX MANAGER", "FN [%d] doesn't exist for : %p", FnName, pObject);
-		#endif // _DEBUG
+		FAIL_LOG("FN INDEX MANAGER", "FN [%d] doesn't exist for : %p", FnName, pObject);
 		return 0;
 	}
-	#ifdef _DEBUG
-	cons.Log(FG_GREEN, "FN INDEX MANAGER", "succesfully got index for [%d] @ [%d]", FnName, index);
-	#endif
+	WIN_LOG("FN INDEX MANAGER", "succesfully got index for [%d] @ [%d]", FnName, index);
 
 	MAP_FnIndex[FnName] = index;
 	return index;
@@ -99,15 +96,11 @@ uint32_t FNindexManager_t::getFnIndex(const char* signature, void* pObject, SEAR
 	auto index = searchPatter(pObject, signature, iSearchThreshold);
 	if (index == 0)
 	{
-		#ifdef _DEBUG
-		cons.Log(FG_RED, "Fn Index managment", "Failed to find funcition with signature [ %s ]", signature);
-		#endif
+		FAIL_LOG("Failed to find function with signature [ %s ]", signature);
 		return 0;
 	}
 
-	#ifdef _DEBUG
-	cons.Log(FG_GREEN, "Fn Index Managment", "Found signature [ %s ] @ index [ %d ]", signature, index);
-	#endif
+	WIN_LOG("Fn Index Managment", "Found signature [ %s ] @ index [ %d ]", signature, index);
 
 	MAP_FnIndex2[hashSignature] = index;
 	return index;

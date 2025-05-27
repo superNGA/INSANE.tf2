@@ -180,10 +180,8 @@ void thread1_t::_terminate(HINSTANCE instance)
 	// just exit thread and free library
 	if (_hooksEnabled == false) 
 	{
-		ERROR("thread 1", "terminating without hooking (early exit) something went wrong");
-		#ifdef _DEBUG
-		cons.FreeConsoleInstance();
-		#endif
+		FAIL_LOG("thread 1", "terminating without hooking (early exit) something went wrong");
+		UNINITIALIZE_CONSOLE();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}
@@ -215,9 +213,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 
 		// freeing terminal..
 		LOG("thread 1", "uninitiazed everything, teminated software gracefully");
-		#ifdef _DEBUG
-		cons.FreeConsoleInstance();
-		#endif
+		UNINITIALIZE_CONSOLE();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}

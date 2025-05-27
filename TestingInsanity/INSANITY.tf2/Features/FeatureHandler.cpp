@@ -170,7 +170,7 @@ bool FeatureHandler_t::Initialize()
     // Constructing Feature-to-Config linker map
     if (_ConstructFeatureToConfigLinkerMap() == false)
     {
-        FAIL_LOG("Failed to construct linker map for config");
+        CONS.Log(FG_RED, BG_BLACK, BOLD, __FUNCTION__, false, "Failed to construct linker map for config");
         return false;
     }
     

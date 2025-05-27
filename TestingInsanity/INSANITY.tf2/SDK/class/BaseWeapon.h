@@ -3,7 +3,6 @@
 #include "../offsets/offsets.h"
 #include "../../Libraries/Utility/Utility.h"
 
-
 extern Utility util;
 extern local_netvars netvar;
 
@@ -33,6 +32,8 @@ public:
 
 	int			GetClip1();
 	int			GetClip2();
+
+	bool		IsProjectile();
 
 	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();

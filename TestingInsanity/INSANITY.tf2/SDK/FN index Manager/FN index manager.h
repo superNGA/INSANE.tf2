@@ -11,9 +11,7 @@
 #include "unordered_map"
 
 #include "../../Libraries/Utility/Utility.h"
-#include "../../Libraries/Console System/Console_System.h"
 extern Utility util;
-extern Console_System cons;
 
 // FN SIGNATURES
 #define GET_TRACER_TYPE		"48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 4C 8D 0D"

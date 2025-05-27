@@ -13,11 +13,6 @@
 //Minhook
 #include "../../External Libraries/MinHook/MinHook.h"
 
-//colour full console
-#ifdef _DEBUG
-#include "../../Libraries/Console System/Console_System.h"
-#endif
-
 //global variables
 extern int WINDOW_HEIGHT, WINDOW_WIDTH;
 extern HWND WINDOW;

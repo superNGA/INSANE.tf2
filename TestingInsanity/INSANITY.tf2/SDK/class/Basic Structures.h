@@ -115,18 +115,18 @@ struct qangle
 struct vec
 {
 	vec() : x(0.0f), y(0.0f), z(0.0f) {}
-	vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
+	constexpr vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
 	float x, y, z;
 
-	vec operator+(vec other)
+	vec operator+(const vec other) const
 	{
 		return vec(x + other.x, y + other.y, z + other.z);
 	}
-	vec operator+(float other)
+	vec operator+(float other) const
 	{
 		return vec(x + other, y + other, z + other);
 	}
-	vec operator-(vec other) const
+	vec operator-(const vec& other) const
 	{
 		return vec(x - other.x, y - other.y, z - other.z);
 	}
@@ -145,13 +145,23 @@ struct vec
 	{
 		return vec(x + other.x, y + other.y, z + other.z);
 	}
+	vec& operator *=(float other)
+	{
+		x *= other; y *= other; z *= other;
+		return *this;
+	}
+
+	void operator= (vec other)
+	{
+		x = other.x; y = other.y; z = other.z;
+	}
 
 	float length()
 	{
 		return sqrtf(x * x + y * y + z * z);
 	}
 
-	float DistTo(vec& other)
+	float DistTo(const vec& other) const
 	{
 		return (*this - other).length();
 	}
@@ -187,6 +197,21 @@ struct vec
 	{
 		return vec(x * other, y * other, z * other);
 	}
+
+	vec CrossProduct(vec other) const
+	{
+		return vec(
+			y * other.z - z * other.y,
+			z * other.x - x * other.z,
+			x * other.y - y * other.x
+		);
+	}
+
+	void NormalizeInPlace()
+	{
+		float flMagnitude = sqrtf(x * x + y * y + z * z);
+		x /= flMagnitude; y /= flMagnitude; z /= flMagnitude;
+	}
 };
 
 
@@ -197,8 +222,78 @@ __declspec(align(16)) struct vecAligned : public vec {
 	vecAligned(float X, float Y, float Z, float W = 0.0f) : vec(X, Y, Z), w(W){}
 	vecAligned() : vec(0.0f, 0.0f, 0.0f), w(0.0f){}
 
-	vecAligned operator=(const vec& other) {
-		return vecAligned(other.x, other.y, other.z);
+	vecAligned& operator= (const vec& other) 
+	{
+		x = other.x;
+		y = other.x; 
+		z = other.z;
+		return *this;
+	}
+
+	vecAligned& operator= (const vecAligned& other)
+	{
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		w = other.w;
+		return *this;
+	}
+
+	void operator*=(const float other)
+	{
+		x *= other; y *= other; z *= other; w *= other;
+	}
+	void operator-=(const float other)
+	{
+		x -= other; y -= other; z -= other; w -= other;
+	}
+	void operator+=(const float other)
+	{
+		x += other; y += other; z += other; w += other;
+	}
+
+	vecAligned& operator+ (const vecAligned& other)
+	{
+		x += other.x;
+		y += other.y;
+		z += other.z;
+		return *this;
+	}
+	vecAligned& operator+ (vec& other)
+	{
+		x += other.x;
+		y += other.y;
+		z += other.z;
+		return *this;
+	}
+	vecAligned& operator+ (const float other)
+	{
+		x += other;
+		y += other;
+		z += other;
+		return *this;
+	}
+
+	vecAligned& operator- (const vecAligned& other)
+	{
+		x -= other.x;
+		y -= other.y;
+		z -= other.z;
+		return *this;
+	}
+	vecAligned& operator- (const vec& other)
+	{
+		x -= other.x;
+		y -= other.y;
+		z -= other.z;
+		return *this;
+	}
+	vecAligned& operator- (const float other)
+	{
+		x -= other;
+		y -= other;
+		z -= other;
+		return *this;
 	}
 };
 

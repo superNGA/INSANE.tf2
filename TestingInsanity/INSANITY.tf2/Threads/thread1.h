@@ -40,9 +40,6 @@
 
 extern local_netvars netvar; // <- this holds all the netvars
 extern Utility util;
-#ifdef _DEBUG
-extern Console_System cons;
-#endif
 
 class thread1_t
 {

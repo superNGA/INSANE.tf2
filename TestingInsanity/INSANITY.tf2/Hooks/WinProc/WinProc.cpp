@@ -19,19 +19,19 @@ bool winproc::hook_winproc() {
     if (!target_window_handle)
     {
         #ifdef _DEBUG
-        cons.Log("Failed to get window HWND", FG_RED);
+        FAIL_LOG("Failed to get window HWND");
         #endif 
         return false;
     }
 
     global::target_hwnd = target_window_handle;
     #ifdef _DEBUG
-    cons.Log("found target window", FG_GREEN);
+    WIN_LOG("found target window");
     printf("window handle -> 0x%p\n", target_window_handle);
     #endif
 
     #ifdef _DEBUG
-    cons.Log("wating for win32 implimentation to be initialized", FG_YELLOW);
+    LOG("wating for win32 implimentation to be initialized");
     #endif // _DEBUG
 
     while (!directX::UI::WIN32_initialized)
@@ -42,7 +42,7 @@ bool winproc::hook_winproc() {
     O_winproc = (WNDPROC)SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)H_winproc);
 
     #ifdef _DEBUG
-    cons.Log(FG_RED, "initiatlizing", "Hooking WinProc");
+    FAIL_LOG("initiatlizing", "Hooking WinProc");
     #endif
     return true;
 }
@@ -52,13 +52,13 @@ void winproc::unhook_winproc()
     if (target_window_handle && O_winproc) {
         SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)O_winproc);
         #ifdef _DEBUG
-        cons.Log(FG_GREEN, "termination", "Unhooked ImGui");
+        WIN_LOG("termination", "Unhooked ImGui");
         #endif
         return;
     }
 
     #ifdef _DEBUG
-    cons.Log(FG_RED, "ERROR", "Failed UnHooking WinProc");
+    FAIL_LOG("ERROR", "Failed UnHooking WinProc");
     #endif // _DEBUG
 
 }

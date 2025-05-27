@@ -123,7 +123,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         textures::are_textures_initialized = true;
 
         #ifdef _DEBUG
-        cons.Log(" All textures initialized ", FG_GREEN);
+        WIN_LOG(" All textures initialized ");
         #endif
     }
 

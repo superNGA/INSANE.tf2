@@ -6,11 +6,6 @@
 #include "../../GlobalVars.h"
 #include "../EndScene/EndScene.h"
 
-#ifdef _DEBUG
-#include "../../Libraries/Console System/Console_System.h"
-extern Console_System cons;
-#endif // _DEBUG
-
 
 namespace winproc
 {

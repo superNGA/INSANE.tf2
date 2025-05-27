@@ -7,11 +7,6 @@
 // Globals
 #include "GlobalVars.h"
 
-#ifdef _DEBUG
-#include "Libraries/Console System/Console_System.h"
-Console_System cons(FG_CYAN, BOLD, BG_BLACK);
-#endif
-
 //threads
 #include "Threads/thread1.h"
 
@@ -26,11 +21,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD call_reason, void* reserved)
 	{
 		DisableThreadLibraryCalls(instance);
 		
-		#ifdef _DEBUG
-		cons.CreateNewConsole();
-		cons.DoIntroduction();
-		cons.DoDevider();
-		#endif
+		INITIALIZE_CONSOLE();
 
 		//creating threads
 		auto pThread1 = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(runCheat), instance, 0, nullptr);

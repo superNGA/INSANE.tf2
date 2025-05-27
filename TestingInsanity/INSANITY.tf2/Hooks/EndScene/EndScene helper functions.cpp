@@ -40,7 +40,7 @@ void* directX::load_texture_from_image_data(raw_image_data& image_data, texture_
     if (!decoded_data)
     {
         #ifdef _DEBUG
-        cons.Log("E R R O R", FG_RED);
+        LOG("E R R O R");
         printf("Load from memory failed : %s | resolution : %d x %d | size -> %zd\n", texture_object.name, texture_object.image_height, texture_object.image_width, image_data.image_bytearray_size);
         #endif
         return nullptr;
@@ -61,7 +61,7 @@ void* directX::load_texture_from_image_data(raw_image_data& image_data, texture_
 
     if (FAILED(hr)) {
         #ifdef _DEBUG
-        cons.Log("Failed to create DirectX9 texture", FG_RED);
+        LOG("Failed to create DirectX9 texture");
         #endif // _DEBUG
 
         stbi_image_free(decoded_data);
@@ -112,7 +112,7 @@ void directX::initialize_backends()
         UI::UI_initialized_DX9 = true;
 
     #ifdef _DEBUG
-        cons.Log("initialized ImGui DX9", FG_GREEN);
+        LOG("initialized ImGui DX9");
     #endif // _DEBUG
     }
 
@@ -125,13 +125,13 @@ void directX::initialize_backends()
             UI::WIN32_initialized = true;
 
             #ifdef _DEBUG
-            cons.Log("initialized ImGui WIN32", FG_GREEN);
+            LOG("initialized ImGui WIN32");
             #endif // _DEBUG
         }
         #ifdef _DEBUG
         else
         {
-            cons.Log("No window handle yet", FG_YELLOW);
+            LOG("No window handle yet");
         }
         #endif // _DEBUG
     }
@@ -145,7 +145,7 @@ void directX::shutdown_imgui()
     #ifdef _DEBUG
     if (ImGui::GetCurrentContext() != context)
     {
-        cons.Log("[ Error ] current context is null before destroying it", FG_RED);
+        LOG("[ Error ] current context is null before destroying it");
     }
     #endif
 
@@ -160,7 +160,7 @@ void directX::shutdown_imgui()
     UI::shutdown_UI = false;
     UI::UI_has_been_shutdown = true;
     #ifdef _DEBUG
-    cons.Log("ImGui has been shutdown", FG_RED);
+    LOG("ImGui has been shutdown");
     #endif // _DEBUG
 }
 
@@ -188,11 +188,11 @@ void directX::load_all_fonts()
     #ifdef _DEBUG
     if (!fonts::agency_FB || !fonts::roboto || !fonts::adobe_clean_bold || !fonts::kabel || !fonts::adobe_clean_light || !fonts::haas_black)
     {
-        cons.Log("one or all of the font's data is fucked up", FG_RED);
+        LOG("one or all of the font's data is fucked up");
     }
     else
     {
-        cons.Log("All fonts have been verified", FG_GREEN);
+        LOG("All fonts have been verified");
     }
     #endif // _DEBUG
 
@@ -202,7 +202,7 @@ void directX::load_all_fonts()
     ImGui_ImplDX9_CreateDeviceObjects();
 
     #ifdef _DEBUG
-    cons.Log("All fonts loaded", FG_GREEN);
+    LOG("All fonts loaded", FG_GREEN);
     #endif
 }
 
@@ -249,6 +249,6 @@ void directX::make_it_pretty()
     UI::done_styling = true;
 
     #ifdef _DEBUG
-    cons.Log("Done Styling menu", FG_GREEN);
+    LOG("Done Styling menu", FG_GREEN);
     #endif // _DEBUG
 }

@@ -9,8 +9,7 @@
 
 #include "classIDManager.h"
 #include "../class/Source Entity.h"
-#include "../../Libraries/Console System/Console_System.h"
-extern Console_System cons;
+#include "../../Utility/ConsoleLogging.h"
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -44,92 +43,84 @@ IDclass_t IDManager_t::getID(BaseEntity* ent)
 	// any PLAYER
 	if (name == "CTFPlayer") {
 		TEMPclassID = PLAYER;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
+		
 	}
 	// engi -> sentery gun
 	else if (name == "CObjectSentrygun") {
 		TEMPclassID = SENTRY_GUN;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
 	}
 	// engi -> dispenser
 	else if (name == "CObjectDispenser") {
 		TEMPclassID = DISPENSER;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
 	}
 	// engi -> Teleported
 	else if (name == "CObjectTeleporter") {
 		TEMPclassID = TELEPORTER;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
+		
 	}
 	// TODO : CHECK THIS 
 	else if (name == "CTFAmmoPack") {
 		TEMPclassID = AMMO_PACK;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
+		
 	}
 	// Payload cart, if more than one in a match, that means we are not playing PAYLOAD
 	else if (name == "CFuncTrackTrain") {
 		TEMPclassID = PAYLOAD;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
+		
 	}
 	// Flag in capture the Flag
 	else if (name == "CCaptureFlag") {
 		TEMPclassID = TF_ITEM;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
 	}
 	else if (name == "CTFPlayerResource") {
 		TEMPclassID = ENT_RESOURCE_MANAGER;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
 	}
 	// WEAPONS
 	else if (name == "CBaseCombatWeapon") {
 		TEMPclassID = WEAPON;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s", name.c_str());
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s", name.c_str());
+		
 	}
 	// ROTATING AMMO PACKS, MEDKITS & ACTIVE WEAPON
 	else if (name == "CBaseAnimating") {
 		TEMPclassID = CBASEANIMATING;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		
 	}
 	else if (name == "CTFProjectile_Rocket")
 	{
 		TEMPclassID = ROCKET;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		
 	}
 	else if (name == "CTFGrenadePipebombProjectile")
 	{
 		TEMPclassID = DEMO_PROJECTILES;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		
 	}
 	else if (name == "CTFDroppedWeapon")
 	{
 		TEMPclassID = ID_DROPPED_WEAPON;
-		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
-		#endif
+		
+		WIN_LOG("ID Manager", "Cached class ID for : %s @ %d", name.c_str(), TEMPclassID);
+		
 	}
 
 	// storing and returning ID

@@ -517,7 +517,7 @@ bool Chams_t::_GetMaterialPropVector(std::vector<MatProp_t>& vecMatPropOut, cons
     if (szMatType == "")
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Failed to find material type");
+        FAIL_LOG("DME", "Failed to find material type");
         #endif 
         return false;
     }
@@ -588,7 +588,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     if (szMatName == "" || szMaterialVMT == nullptr)
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Bad material name given [ %s ] & [ %s ]", szMatName.c_str());
+        FAIL_LOG("DME", "Bad material name given [ %s ] & [ %s ]", szMatName.c_str());
         #endif 
         return false;
     }
@@ -598,7 +598,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     if (it != UM_materials.end())
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Material with name [ %s ] already exists @ [ %p ]", szMatName.c_str(), it->second->pMaterial);
+        FAIL_LOG("DME", "Material with name [ %s ] already exists @ [ %p ]", szMatName.c_str(), it->second->pMaterial);
         #endif
         return false;
     }
@@ -610,13 +610,13 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     if (vecMaterialVMT.empty() == true || vecMaterialVMT[0].dataType != TYPE_MATERIAL_TYPE)
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Failed to convert material VMT string to vector or Couldn't identify material type");
+        FAIL_LOG("DME", "Failed to convert material VMT string to vector or Couldn't identify material type");
         #endif
         return false;
     }
     #ifdef _DEBUG
     else
-        cons.Log(FG_GREEN, "DME", "Successfully conveted Mateiral string to vector for [ %s ]. Detected mat type [ %s ]", szMatName.c_str(), vecMaterialVMT[0].szPropName);
+        WIN_LOG("DME", "Successfully conveted Mateiral string to vector for [ %s ]. Detected mat type [ %s ]", szMatName.c_str(), vecMaterialVMT[0].szPropName);
     #endif
 
     // Creating Material
@@ -653,7 +653,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     newMat->szMatName[MAX_MATERIAL_NAME_SIZE - 1] = '\0';
     UM_materials[szMatName] = newMat;
     #ifdef _DEBUG
-    cons.Log(FG_GREEN, "DME", "Successfully Created Material [ %s ]", newMat->szMatName);
+    WIN_LOG("DME", "Successfully Created Material [ %s ]", newMat->szMatName);
     #endif 
     return true;
 }
@@ -674,7 +674,7 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     if (it == UM_materials.end())
     {
         #ifdef _DEBUG
-        cons.Log(FG_RED, "DME", "Material [ %s ] doesn't exist", szMatName.c_str());
+        FAIL_LOG("DME", "Material [ %s ] doesn't exist", szMatName.c_str());
         #endif // _DEBUG
         return false;
     }
@@ -685,7 +685,7 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     //delete it->second->pKV;
     delete it->second;
     #ifdef _DEBUG
-    cons.Log(FG_GREEN, "DME", "successfully free'ed material [ %s ]", szMatName);
+    WIN_LOG("DME", "successfully free'ed material [ %s ]", szMatName);
     #endif
     return true;
 }

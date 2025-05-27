@@ -8,6 +8,11 @@
 
 MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
 
+MAKE_SIG(CALL_ATRIB_HOOK_INT, "4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 41 54 41 55 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35", CLIENT_DLL, 
+	int, int, const char*, BaseEntity*, int, bool)
+MAKE_SIG(CALL_ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35", CLIENT_DLL, 
+	float, float, const char*, void*, void*, bool);
+
 extern local_netvars netvar;
 
 // 0x11D8 
@@ -137,10 +142,10 @@ void BaseEntity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 }
 
 
-vec BaseEntity::getLocalEyePos() {
-
+vec BaseEntity::getLocalEyePos() const
+{
 	// adding eye offset in abs origin for local player
-	return (this->GetAbsOrigin() + vec(0.0f, 0.0f, *(float*)((uintptr_t)this + netvar.m_vecViewOffset)));
+	return (GetAbsOrigin() + *reinterpret_cast<vec*>(reinterpret_cast<uintptr_t>(this) + netvar.m_vecViewOffset));
 }
 
 
@@ -149,6 +154,19 @@ int32_t BaseEntity::getPlayerCond() {
 	return *(int32_t*)((uintptr_t)this + netvar.m_Shared + netvar.m_nPlayerCond);
 }
 
+bool BaseEntity::InCond(FLAG_playerCond eCond)
+{
+	// Getting Player Condition array
+	uint32_t* iPlayerCondArray = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_nPlayerCond);
+	
+	// Getting target player condition & bit
+	int iCondIndex		 = eCond / (sizeof(uint32_t) * 8);
+	int iTargetBit		 = eCond % (sizeof(uint32_t) * 8);
+	uint32_t iPlayerCond = iPlayerCondArray[iCondIndex];
+
+	// returning target bit
+	return iPlayerCond & (1 << iTargetBit);
+}
 
 bool BaseEntity::isOnGround()
 {
@@ -179,6 +197,21 @@ bool BaseEntity::IsCritBoosted()
 bool BaseEntity::IsFeignDeathReady()
 {
 	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + netvar.m_Shared + netvar.m_bFeignDeathReady);
+}
+
+float BaseEntity::GetModelScale()
+{
+	return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + netvar.m_flModelScale);
+}
+
+void BaseEntity::CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute)
+{
+	iAtributeOut = Sig::CALL_ATRIB_HOOK_INT(iAtributeOut, szAtribute, this, 0, true);
+}
+
+void BaseEntity::CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute)
+{
+	flAtributeOut = Sig::CALL_ATRIB_HOOK_FLOAT(flAtributeOut, szAtribute, this, 0, true);
 }
 
 BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)

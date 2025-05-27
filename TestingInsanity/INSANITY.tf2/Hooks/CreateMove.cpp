@@ -14,6 +14,7 @@
 #include "../Features/Anti Aim/AntiAim.h"
 #include "../Features/Fake Lag/FakeLag.h"
 #include "../Features/CritHack/CritHack.h"
+#include "../Features/Aimbot/AimbotHelper.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -76,6 +77,8 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
 
 	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+
+	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
 
 	return result;
 }

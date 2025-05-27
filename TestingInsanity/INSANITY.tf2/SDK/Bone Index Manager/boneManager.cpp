@@ -79,13 +79,13 @@ boneInfo_t* boneManager_t::getBone(entInfo_t* ent, player_class characterModel)
 			break;
 		default:
 			#ifdef _DEBUG
-			cons.Log(FG_RED, "BONE MAMANGER", "Failed bone caching");
+			FAIL_LOG("Failed bone caching");
 			#endif
 			break;
 		}
 
 		#ifdef _DEBUG
-		cons.Log(FG_GREEN, "BONE MANAGER", "Cached bone information for model : %d", characterModel);
+		WIN_LOG("Cached bone information for model : %d", characterModel);
 		#endif 
 
 	}
@@ -122,7 +122,7 @@ boneInfo_t* boneManager_t::getBone(entInfo_t* ent, player_class characterModel)
 		break;
 	default:
 		#ifdef _DEBUG
-		cons.Log(FG_RED, "BONE MAMANGER", "Failed to find character model");
+		FAIL_LOG("Failed to find character model");
 		#endif
 		break;
 	}

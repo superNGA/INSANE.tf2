@@ -4,7 +4,10 @@
 #include "../../Utility/signatures.h"
 #include "../../Utility/Interface.h"
 #include "../../Utility/PullFromAssembly.h"
+
+// SDK
 #include "FileWeaponInfo.h"
+#include "ETFWeaponType.h"
 
 #define OFFSET_TO_INDEX(offset) ((offset) / sizeof(void*))
 
@@ -53,6 +56,59 @@ int baseWeapon::GetClip1()
 int baseWeapon::GetClip2()
 {
     return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + netvar.m_iClip2);
+}
+
+bool baseWeapon::IsProjectile()
+{
+    if (getSlot() == WPN_SLOT_MELLE)
+        return false;
+
+    // TODO : ChatGPT told to use Unordered_set cause switch statements can 
+    // sometimes be converted to if-else OR Binary searchs instead of jump tables. 
+    // And using a unordered_set would give O(1) time in average case.
+    switch (GetWeaponDefinitionID())
+    {
+    case TF_WEAPON_ROCKETLAUNCHER:
+    case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
+    case TF_WEAPON_GRENADELAUNCHER:
+    case TF_WEAPON_PIPEBOMBLAUNCHER:
+    case TF_WEAPON_CANNON:
+    case TF_WEAPON_FLAREGUN:
+    case TF_WEAPON_FLAREGUN_REVENGE:
+    case TF_WEAPON_COMPOUND_BOW:
+    case TF_WEAPON_CROSSBOW:
+    case TF_WEAPON_PARTICLE_CANNON:
+    case TF_WEAPON_DRG_POMSON:
+    case TF_WEAPON_CLEAVER:
+    case TF_WEAPON_STICKY_BALL_LAUNCHER:
+    case TF_WEAPON_THROWABLE:
+    case TF_WEAPON_GRENADE_THROWABLE:
+    case TF_WEAPON_GRENADE_JAR:
+    case TF_WEAPON_GRENADE_JAR_MILK:
+    case TF_WEAPON_GRENADE_CLEAVER:
+    case TF_WEAPON_GRENADE_STICKY_BALL:
+    case TF_WEAPON_SPELLBOOK_PROJECTILE:
+    case TF_WEAPON_SENTRY_ROCKET:
+    case TF_WEAPON_FLAMETHROWER_ROCKET:  // rarely used, but included for completeness
+    case TF_WEAPON_GRENADE_WATERBALLOON:
+    case TF_WEAPON_GRENADE_MIRVBOMB:
+    case TF_WEAPON_GRENADE_PIPEBOMB:
+    case TF_WEAPON_GRENADE_NORMAL:
+    case TF_WEAPON_GRENADE_CONCUSSION:
+    case TF_WEAPON_GRENADE_NAPALM:
+    case TF_WEAPON_GRENADE_MIRV:
+    case TF_WEAPON_GRENADE_EMP:
+    case TF_WEAPON_GRENADE_ORNAMENT_BALL:
+    case TF_WEAPON_GRENADE_STUNBALL:
+    case TF_WEAPON_GRENADE_HEAL:
+    case TF_WEAPON_GRENADE_GAS:
+        return true;
+
+    default:
+        return false;
+    }
+
+    return false;
 }
 
 
