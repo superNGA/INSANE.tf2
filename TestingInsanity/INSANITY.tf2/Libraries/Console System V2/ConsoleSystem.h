@@ -104,7 +104,7 @@ class ConsoleSystem_t
 {
 public:
     ConsoleSystem_t();
-    bool inititalize(consTextClr_t introClr = FG_INVALID, bool bDoIntro = false);
+    bool inititalize(consTextClr_t introClr = FG_INVALID, bool bDoIntro = true);
     void uninitialize();
 
     void drawDevider();

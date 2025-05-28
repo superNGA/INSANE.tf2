@@ -252,48 +252,30 @@ __declspec(align(16)) struct vecAligned : public vec {
 		x += other; y += other; z += other; w += other;
 	}
 
-	vecAligned& operator+ (const vecAligned& other)
+	vecAligned operator+ (const vecAligned& other)
 	{
-		x += other.x;
-		y += other.y;
-		z += other.z;
-		return *this;
+		return vecAligned(x + other.x, y + other.y, z + other.z);
 	}
-	vecAligned& operator+ (vec& other)
+	vecAligned operator+ (const vec& other)
 	{
-		x += other.x;
-		y += other.y;
-		z += other.z;
-		return *this;
+		return vecAligned(x + other.x, y + other.y, z + other.z);
 	}
-	vecAligned& operator+ (const float other)
+	vecAligned operator+ (const float other)
 	{
-		x += other;
-		y += other;
-		z += other;
-		return *this;
+		return vecAligned(x + other, y + other, z + other);
 	}
 
-	vecAligned& operator- (const vecAligned& other)
+	vecAligned operator- (const vecAligned& other)
 	{
-		x -= other.x;
-		y -= other.y;
-		z -= other.z;
-		return *this;
+		return vecAligned(x - other.x, y - other.y, z - other.z);
 	}
-	vecAligned& operator- (const vec& other)
+	vecAligned operator- (const vec& other)
 	{
-		x -= other.x;
-		y -= other.y;
-		z -= other.z;
-		return *this;
+		return vecAligned(x - other.x, y - other.y, z - other.z);
 	}
-	vecAligned& operator- (const float other)
+	vecAligned operator- (const float other)
 	{
-		x -= other;
-		y -= other;
-		z -= other;
-		return *this;
+		return vecAligned(x - other, y - other, z - other);
 	}
 };
 

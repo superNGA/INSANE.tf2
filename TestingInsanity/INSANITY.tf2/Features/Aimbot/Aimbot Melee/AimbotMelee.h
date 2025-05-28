@@ -28,6 +28,7 @@ private:
     void _DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     void _DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void _DrawTargetsCollisionHull();
 };
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
@@ -61,3 +62,7 @@ DEFINE_FEATURE(
 DEFINE_FEATURE(
     MeleeRange_HULL, bool, "Melee_Aimbot", "Aimbot", 6, false,
     FeatureFlag_None, "Draw the effective range of you Melee");
+
+DEFINE_FEATURE(
+    MeleeDrawCollisionHull, bool, "Melee_Aimbot", "Aimbot", 7, false,
+    FeatureFlag_None, "The all-mightly collision box");

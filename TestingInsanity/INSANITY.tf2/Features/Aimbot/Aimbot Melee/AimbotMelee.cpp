@@ -48,6 +48,9 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     // Drawing Hull ( Effective Range )
     if (TempFeatureHelper::MeleeRange_HULL.IsActive() == true)
         _DrawMeleeHull(pLocalPlayer, pActiveWeapon, pCmd);
+
+    if(TempFeatureHelper::MeleeDrawCollisionHull.IsActive() == true)
+        _DrawTargetsCollisionHull();
 }
 
 
@@ -185,4 +188,28 @@ void AimbotMelee_t::_DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWea
         BOX_SIZE_EYE_POS * -1.0f,       // Box maxs
         pLocalPlayer->GetAbsAngles(),   // Box's orientation
         255, 255, 255, 50, 10.0f);       // Color, alpha and duration
+}
+
+void AimbotMelee_t::_DrawTargetsCollisionHull()
+{
+    auto& targets = FeatureObj::aimbotHelper.GetAimbotTargetData();
+
+    auto DrawTargetBBox = [&](const std::vector<BaseEntity*>& vecTargets)->void
+        {
+            for (BaseEntity* pEnt : vecTargets)
+            {
+                auto*  pCollidable      = pEnt->GetCollideable();
+                vec    vMins            = pCollidable->OBBMins();
+                vec    vMaxs            = pCollidable->OBBMaxs();
+                vec    vOrigin          = pCollidable->GetCollisionOrigin();
+                qangle qCollisionAngles = pCollidable->GetCollisionAngles();
+
+                I::IDebugOverlay->AddBoxOverlay(vOrigin, vMins, vMaxs, qCollisionAngles, 255, 255, 255, 40, 10.0f);
+            }
+        };
+
+    DrawTargetBBox(targets.m_vecEnemyPlayers);
+    DrawTargetBBox(targets.m_vecEnemyBuildings);
+    DrawTargetBBox(targets.m_vecEnemySentry);
+    DrawTargetBBox(targets.m_vecEnemyProjectiles); // TODO : Projectile hull is not drawing, but I don't think that would be of any use
 }

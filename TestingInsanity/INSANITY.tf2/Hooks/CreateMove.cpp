@@ -78,7 +78,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 
-	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
+	//FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
 
 	return result;
 }

@@ -5,6 +5,8 @@
 
 #include "../../Utility/Interface.h"
 
+#define DEBUG_RAY_INIT false
+
 struct ray_t
 {
 	//default contructor
@@ -60,6 +62,7 @@ struct ray_t
 		m_vStart	   = m_vStartOffset + vStart;
 		m_vStartOffset *= -1.0f;
 
+#if (DEBUG_RAY_INIT == true)
 		printf("<------------------>\n");
 		LOG_VEC3(vStart);
 		LOG_VEC3(vEnd);
@@ -67,6 +70,7 @@ struct ray_t
 		LOG_VEC3(m_vStart);
 		LOG_VEC3(m_vStartOffset);
 		LOG_VEC3(m_vExtends);
+#endif
 	}
 };
 
