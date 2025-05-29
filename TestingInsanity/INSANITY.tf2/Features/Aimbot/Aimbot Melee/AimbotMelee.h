@@ -21,14 +21,27 @@ class AimbotMelee_t
 public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket);
 
+    void Reset();
+
 private:
+    const BaseEntity* _ChooseTarget(BaseEntity* pLocalPlayer) const;
+    const vec _GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const;
+
+    bool _ShouldSwing(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    bool _ShouldSetAngle(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+
     float _GetSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    bool  _ShouldSwing(const BaseEntity * pLocalPlayer, const float flSwingRange);
+    float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+
+    bool _IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEntity* pLocalPlayer);
 
     void _DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     void _DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    void _DrawTargetsCollisionHull();
+    void _DrawEntityCollisionHull(const BaseEntity* pEnt) const;
+
+    float m_flLastAttackTime = 0.0f;
+    bool m_bSwingActive = false;
 };
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 

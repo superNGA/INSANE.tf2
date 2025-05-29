@@ -28,6 +28,19 @@
 -> We will need to do some maths to find out the closest point on the enemy that could take 
 */
 
+/*
+TODO : 
+-> Melee Swing Hull size if perfect, but its not detecting collision sometimes,
+        Make sure that the Melee Collision Hull detects collision with 100% certainty.
+-> Find a way to Either Hull trace for future position of enemy, or Rebuild it so that we 
+        can check for collision of Target's future position and our Melee Swing Hulls future position.
+-> Also Whats up with the flSwingRange? Shouldn't that work almost as good as melee Swing Hull? 
+        Try Drawing it, and see whats up with it.
+*/
+
+#define DEBUG_HULL_SIZE        false
+#define DEBUG_MELEE_SWING_HULL true
+
 constexpr float SWING_RANGE_MULTIPLIER = 1.2f;
 
 //=========================================================================
@@ -35,8 +48,20 @@ constexpr float SWING_RANGE_MULTIPLIER = 1.2f;
 //=========================================================================
 void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
+    /*
+    * Step 1 : Choose target.
+    * Step 2 : Find closest point on that target collision hull.
+    * Step 3 : Check if distance less then Melee swing range.
+    * Step 4 : Cast ray to target and check if can hit.
+    * Step 5 : Swing.
+    */
+
+    if (TempFeatureHelper::MeleeAimbot.IsActive() == false)
+        return;
+
     I::IDebugOverlay->ClearAllOverlays();
 
+#if (DEBUG_MELEE_SWING_HULL == true)
     // Drawing Melee Range Circle
     if (TempFeatureHelper::MeleeRange_Circle.IsActive() == true)
         _DrawMeleeSwingRadius(pLocalPlayer, pActiveWeapon);
@@ -48,15 +73,150 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     // Drawing Hull ( Effective Range )
     if (TempFeatureHelper::MeleeRange_HULL.IsActive() == true)
         _DrawMeleeHull(pLocalPlayer, pActiveWeapon, pCmd);
+#endif
 
-    if(TempFeatureHelper::MeleeDrawCollisionHull.IsActive() == true)
-        _DrawTargetsCollisionHull();
+    const BaseEntity* pTarget = _ChooseTarget(pLocalPlayer);
+    
+    // No target found :(
+    if (pTarget == nullptr)
+        return;
+
+    float flSwingRange        = _GetSwingHullRange(pLocalPlayer, pActiveWeapon);
+    const vec vTargetWorldPos = _GetClosestPointOnEntity(pLocalPlayer, pTarget);
+    const vec vEyePos         = pLocalPlayer->getLocalEyePos();
+
+    // Target is way out of range.
+    if (vEyePos.DistTo(vTargetWorldPos) > flSwingRange)
+        return;
+
+    // Drawing Targets collision hull
+    if (TempFeatureHelper::MeleeDrawCollisionHull.IsActive() == true)
+        _DrawEntityCollisionHull(pTarget);
+
+    // Is the path clear OR we got a fucking wall or shit like that?
+    /*if (_IsPathObstructed(vEyePos, vTargetWorldPos, pLocalPlayer) == true)
+    {
+        FAIL_LOG("Paths is not clear, there is something in between!");
+        return;
+    }*/
+    
+    // Should Swing this tick?
+    if (_ShouldSwing(pLocalPlayer, pActiveWeapon) == true)
+    {
+        pCmd->buttons |= IN_ATTACK;
+        m_bSwingActive = true;
+    }
+
+    // Settign angle only when the hit is registered
+    if(_ShouldSetAngle(pLocalPlayer, pActiveWeapon) == true)
+    {
+        qangle qTargetAngles;
+        Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
+        LOG_VEC3(qTargetAngles);
+        pCmd->viewangles = qTargetAngles;
+        *pSendPacket = false; // <-- This is actually createmove result, for this time. cause I'm lazy.
+        m_bSwingActive = false;
+        WIN_LOG("SHOT!");
+    }
+}
+
+
+void AimbotMelee_t::Reset()
+{
+    m_flLastAttackTime = 0.0f;
+    m_bSwingActive = false;
 }
 
 
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
+const BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pLocalPlayer) const
+{
+    const auto& targetData = FeatureObj::aimbotHelper.GetAimbotTargetData();
+    
+    const vec&  vEyePos        = pLocalPlayer->getLocalEyePos();
+    BaseEntity* pBestTarget    = nullptr;
+    float       flBestDistance = std::numeric_limits<float>::infinity();
+    
+    for (BaseEntity* pTarget : targetData.m_vecEnemyPlayers)
+    {
+        const vec vClosestPoint = _GetClosestPointOnEntity(pLocalPlayer, pTarget);
+        float flDist            = vEyePos.DistTo(vClosestPoint);
+
+        if (flDist < flBestDistance)
+        {
+            flBestDistance = flDist;
+            pBestTarget    = pTarget;
+        }
+    }
+
+    return pBestTarget;
+}
+
+
+const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const
+{
+    auto* pCollidable  = pEnt->GetCollideable();
+
+    // Hull Min & Max in World-Space
+    const vec vHullMin = pCollidable->GetCollisionOrigin() + pCollidable->OBBMins();
+    const vec vHullMax = pCollidable->GetCollisionOrigin() + pCollidable->OBBMaxs();
+
+    // Shooting origin
+    const vec vEyePos  = pLocalPlayer->getLocalEyePos();
+
+    vec vClosestPoint;
+    vClosestPoint.x = std::clamp(vEyePos.x, vHullMin.x, vHullMax.x);
+    vClosestPoint.y = std::clamp(vEyePos.y, vHullMin.y, vHullMax.y);
+    vClosestPoint.z = std::clamp(vEyePos.z, vHullMin.z, vHullMax.z);
+
+    return vClosestPoint;
+}
+
+
+
+bool AimbotMelee_t::_ShouldSwing(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    // Did next attack time got updated?
+    float flNextAttackTime = pActiveWeapon->GetNextPrimaryAttackTime();
+    if (flNextAttackTime <= m_flLastAttackTime)
+        return false;
+
+    // Can we swing now?
+    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->GetTickBase());
+    if (flNextAttackTime > flCurTime)
+        return false;
+
+    m_flLastAttackTime = flNextAttackTime;
+    return true;
+}
+
+
+
+bool AimbotMelee_t::_ShouldSetAngle(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    if (m_flLastAttackTime == 0.0f)
+        return false;
+
+    if (m_bSwingActive == false)
+        return false;
+
+    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->GetTickBase());
+    float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flSmackDelay;
+    
+    if (flCurTime >= m_flLastAttackTime + flSmackDelay)
+    {
+        LOG("SmackDelay : %.2f\n", flSmackDelay);
+        m_flLastAttackTime = 0.0f;
+        return true;
+    }
+
+    return false;
+}
+
+
+
 float AimbotMelee_t::_GetSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     float flSwingRange = 0.0f;
@@ -79,30 +239,41 @@ float AimbotMelee_t::_GetSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiv
     return flSwingRange;
 }
 
-bool AimbotMelee_t::_ShouldSwing(const BaseEntity* pLocalPlayer, const float flSwingRange)
+
+
+float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
-    const auto& aimbotTargets = FeatureObj::aimbotHelper.GetAimbotTargetData();
+    // Compensating for Model Scale
+    float flSwingRange = _GetSwingRange(pLocalPlayer, pActiveWeapon);
+    float flModelScale = pLocalPlayer->GetModelScale();
+    if (flModelScale > 1.0f)
+        flSwingRange *= flModelScale;
 
-    auto ShouldSwingForThisGroup = [&](const std::vector<BaseEntity*>& vecTargets)->bool
-        {
-            for (BaseEntity* pEnt : vecTargets)
-            {
-                auto* pCollidable            = static_cast<CCollisionProperty*>(pEnt->GetCollideable());
-                const vec& vWorldSpaceCenter = *pCollidable->WorldSpaceCenter();   // <- WARNING : CRASHING RIGHT HERE !!!
-
-                if (vWorldSpaceCenter.DistTo(pLocalPlayer->getLocalEyePos()) < flSwingRange)
-                    return true;
-            }
-
-            return false;
-        };
-
-    return
-        ShouldSwingForThisGroup(aimbotTargets.m_vecEnemyPlayers)   ||
-        ShouldSwingForThisGroup(aimbotTargets.m_vecEnemyBuildings) ||
-        ShouldSwingForThisGroup(aimbotTargets.m_vecEnemySentry)    ||
-        ShouldSwingForThisGroup(aimbotTargets.m_vecEnemyProjectiles);
+    // Adding Atribute Melee range
+    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
+    return flSwingRange;
 }
+
+
+
+bool AimbotMelee_t::_IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEntity* pLocalPlayer)
+{
+    float flDistance = (vEnd - vStart).length();
+    
+    // Trace Setup
+    ray_t ray;
+    ray.Init(vStart, vEnd);
+    trace_t trace;
+    i_trace_filter filter(pLocalPlayer->GetCollideable()->GetEntityHandle());
+
+    // Casting Ray from Start to End
+    I::EngineTrace->TraceRay(ray, MASK_SOLID, &filter, &trace);
+
+    // if Traced ray length less than our Original ray length, then Obstructed!
+    return (trace.m_end - trace.m_start).length() < flDistance;
+}
+
+
 
 void AimbotMelee_t::_DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
@@ -129,7 +300,6 @@ void AimbotMelee_t::_DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActive
     // Adding Atribute Melee range
     pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
     
-#define DEBUG_HULL_SIZE false
 #if (DEBUG_HULL_SIZE == true)
     printf("Mins : %.2f %.2f %.2f\n", vMeleeHullMin.x, vMeleeHullMin.y, vMeleeHullMin.z);
     printf("vMeleeHullMaxBase : %.2f %.2f %.2f\n", vMeleeHullMinBase.x, vMeleeHullMinBase.y, vMeleeHullMinBase.z);
@@ -165,6 +335,8 @@ void AimbotMelee_t::_DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActive
         bDidHullHit ? 0 : 255, bDidHullHit ? 255 : 0, 0, 50, 10.0f); // Color, Alpha & duration
 }
 
+
+
 void AimbotMelee_t::_DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     I::IDebugOverlay->AddCircleOverlay(
@@ -190,26 +362,14 @@ void AimbotMelee_t::_DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWea
         255, 255, 255, 50, 10.0f);       // Color, alpha and duration
 }
 
-void AimbotMelee_t::_DrawTargetsCollisionHull()
+
+void AimbotMelee_t::_DrawEntityCollisionHull(const BaseEntity* pEnt) const
 {
-    auto& targets = FeatureObj::aimbotHelper.GetAimbotTargetData();
+    auto* pCollidable = pEnt->GetCollideable();
 
-    auto DrawTargetBBox = [&](const std::vector<BaseEntity*>& vecTargets)->void
-        {
-            for (BaseEntity* pEnt : vecTargets)
-            {
-                auto*  pCollidable      = pEnt->GetCollideable();
-                vec    vMins            = pCollidable->OBBMins();
-                vec    vMaxs            = pCollidable->OBBMaxs();
-                vec    vOrigin          = pCollidable->GetCollisionOrigin();
-                qangle qCollisionAngles = pCollidable->GetCollisionAngles();
-
-                I::IDebugOverlay->AddBoxOverlay(vOrigin, vMins, vMaxs, qCollisionAngles, 255, 255, 255, 40, 10.0f);
-            }
-        };
-
-    DrawTargetBBox(targets.m_vecEnemyPlayers);
-    DrawTargetBBox(targets.m_vecEnemyBuildings);
-    DrawTargetBBox(targets.m_vecEnemySentry);
-    DrawTargetBBox(targets.m_vecEnemyProjectiles); // TODO : Projectile hull is not drawing, but I don't think that would be of any use
+    I::IDebugOverlay->AddBoxOverlay(
+        pCollidable->GetCollisionOrigin(),              // Collision Origin
+        pCollidable->OBBMins(), pCollidable->OBBMaxs(), // Collision Origin Mins & Maxs
+        pCollidable->GetCollisionAngles(),              // Angle of collision Hull
+        255, 255, 255, 40, 3.0f); // Color n shit
 }

@@ -54,6 +54,10 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
         if (pEnt->IsDormant() == true)
             continue;
 
+        // don't want dead entities.
+        if (pEnt->getLifeState() != lifeState_t::LIFE_ALIVE)
+            continue;
+
         IDclass_t iEntID = IDManager.getID(pEnt);
         switch (iEntID)
         {

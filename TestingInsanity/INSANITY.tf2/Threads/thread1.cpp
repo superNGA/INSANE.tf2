@@ -24,6 +24,9 @@
 #include "../SDK/class/ISurface.h"
 #include "../SDK/Entity Manager/entityManager.h"
 
+// FEATURES
+#include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
+
 Utility util;
 
 //=========================================================================
@@ -107,6 +110,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		if(bInGame == false)
 		{
 			FeatureObj::critHack.Reset();
+			FeatureObj::aimbotMelee.Reset();
 			entityManager.Reset();
 		}
 

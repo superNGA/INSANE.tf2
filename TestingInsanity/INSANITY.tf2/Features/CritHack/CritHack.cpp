@@ -56,8 +56,8 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //======================= Debug Macros =======================
 //#define DEBUG_CRITHACK_CVAR
 //#define DEBUG_CRIT_COMMAND
-#define DEGUB_CRITHACK
-#define TEST_CRITHACK_FROM_SERVER
+//#define DEGUB_CRITHACK
+//#define TEST_CRITHACK_FROM_SERVER
 
 #define GET_CRIT_SEED(command_number) (Sig::MD5_PseudoRandom(command_number) & MASK_SIGNED)
 
@@ -319,6 +319,10 @@ CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPl
     // Does this weapon support Crit-Hack
     if (_IsWeaponEligibleForCritHack(pLocalPlayer, pWeaponCritData) == false)
         return CritHackStatus_t::CRITHACK_WPN_NOT_ELLIGIBLE;
+
+    // Always Crit Enabled ?
+    if (pWeaponCritData->m_iSlot == WPN_SLOT_MELLE && TempFeatureHelper::Always_Crit_Melee.IsActive() == true)
+        return CritHackStatus_t::CRITHACK_ACTIVE;
 
     // Is the "Magic" key down?
     if (TempFeatureHelper::CritHack.IsActive() == false)

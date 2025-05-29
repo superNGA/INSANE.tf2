@@ -90,7 +90,8 @@ int32_t BaseEntity::getWeaponIndex() {
 }
 
 
-uint32_t BaseEntity::getEntHealth() {
+uint32_t BaseEntity::getEntHealth() const
+{
 	return *(int16_t*)((uintptr_t)this + netvar.m_iHealth);
 }
 
@@ -175,7 +176,7 @@ bool BaseEntity::isOnGround()
 
 uint32_t BaseEntity::GetTickBase()
 {
-	return *reinterpret_cast<uint32_t*>((uintptr_t)this + netvar.m_nTickBase);
+	return *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + netvar.m_nTickBase);
 }
 
 float BaseEntity::GetCritMult()

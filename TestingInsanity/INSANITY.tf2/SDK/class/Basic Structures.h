@@ -110,6 +110,11 @@ struct qangle
 	qangle operator-(qangle other) {
 		return qangle(pitch - other.pitch, yaw - other.yaw, 0.0f);
 	}
+	qangle& operator=(qangle other)
+	{
+		pitch = other.pitch; yaw = other.yaw; roll = other.roll;
+		return *this;
+	}
 };
 
 struct vec

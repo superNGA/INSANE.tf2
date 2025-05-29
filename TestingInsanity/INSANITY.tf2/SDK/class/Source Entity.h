@@ -126,7 +126,7 @@ public:
 class I_client_unknown : public I_handle_entity
 {
 public:
-	virtual ICollideable_t* GetCollideable() = 0;
+	virtual ICollideable_t* GetCollideable() const = 0;
 	virtual I_client_networkable* GetClientNetworkable() = 0;
 	virtual I_client_renderable* GetClientRenderable() = 0;
 	virtual BaseEntity* GetI_client_entity() = 0;
@@ -348,7 +348,7 @@ public:
 	int32_t			getWeaponIndex();
 
 	// gets entities health niggaaaaaaa ;)
-	uint32_t		getEntHealth();
+	uint32_t		getEntHealth() const;
 
 	// is this entity a disguised spy or not?
 	bool			isDisguised();

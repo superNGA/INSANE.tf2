@@ -121,7 +121,6 @@ public:
 
 	virtual bool ShouldHitEntity(I_handle_entity* pEntToCheck, int iCollisionGroup) 
 	{
-		printf("colliding with %p | skip entity %p | collisionGroup : %d\n", pEntToCheck, skip, iCollisionGroup);
 		return (pEntToCheck != skip); // returning true if ray didn't hit local player
 	}
 
