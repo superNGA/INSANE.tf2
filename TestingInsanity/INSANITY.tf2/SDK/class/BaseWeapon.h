@@ -61,6 +61,8 @@ public:
 	float		GetNextPrimaryAttackTime();
 	float		GetLastRapidFireCritCheckTime();
 
+	float		GetSmackTime();
+
 private:
 	bool TracerHook = false;
 };

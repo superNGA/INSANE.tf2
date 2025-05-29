@@ -14,28 +14,13 @@
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 #include "../../../Extra/math.h"
 
-// NOTES
-/*
--> DoSwingTraceInternal : determines what this swing hit.
--> But what do we AIM at? head? torso? What? 
--> We know that "MELEE USES PROJECTILE HITBOX" so its a big ass box, which doesn't rotate.
--> the HitBox needs to be colliding with the "HULL" for that hit to count. 
-
---> Lets try calculating the hull size, and try to draw it using IVDebugOverlay? How does that sound? Should be that hard.
---> After this, we can try to figure out "What to aim at?"
---> Then at last, the prediction part.
-
--> We will need to do some maths to find out the closest point on the enemy that could take 
-*/
-
 /*
 TODO : 
--> Melee Swing Hull size if perfect, but its not detecting collision sometimes,
-        Make sure that the Melee Collision Hull detects collision with 100% certainty.
--> Find a way to Either Hull trace for future position of enemy, or Rebuild it so that we 
-        can check for collision of Target's future position and our Melee Swing Hulls future position.
--> Also Whats up with the flSwingRange? Shouldn't that work almost as good as melee Swing Hull? 
-        Try Drawing it, and see whats up with it.
+->  FOV Support
+->  Predict target position
+
+->  Debug only feature support
+->  NetvarHandler support for everything
 */
 
 #define DEBUG_HULL_SIZE        false
@@ -75,7 +60,6 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     if(TempFeatureHelper::Melee_Swing_Range_Ray.IsActive() == true)
         _DrawSwingRangeRay(pLocalPlayer, pActiveWeapon);
 #endif
-
 
     const BaseEntity* pTarget = _ChooseTarget(pLocalPlayer);
     
@@ -117,27 +101,25 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     if (bShotFiredThisTick == true)
     {
         LOG("Swing Started...");
-        m_bSwingActive = true;
+        m_bSwingActive     = true;
         m_flLastAttackTime = flNextFireTime;
+        m_iSwingTick       = pCmd->tick_count;
+
+        if (TempFeatureHelper::MeleeAimbot_AutoFire.IsActive() == true)
+            pCmd->buttons |= IN_ATTACK;
     }
 
-    float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(1)->m_flSmackDelay;
-    bool bShouldSetAngle = flCurTime >= m_flLastAttackTime + flSmackDelay && m_bSwingActive == true;
+    float flSmackTime    = pActiveWeapon->GetSmackTime();
+    bool bShouldSetAngle = flCurTime >= flSmackTime && flSmackTime > 0.0f;
     if (bShouldSetAngle == true)
     {
         qangle qTargetAngles;
         Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
         pCmd->viewangles = qTargetAngles;
-        *pSendPacket = false;
+        *pSendPacket   = false;
         m_bSwingActive = false;
-        WIN_LOG("Silent Aimbot Angles set! [ SmackDelay : %.2f ]", flSmackDelay);
     }
 
-    // There must be some attribute or something fucking with smack delay. since its not working
-    // So apparantly I need to pull this from memory, according to amalgum and I can theoratically
-    // do that right now, but I was looking to make a proper a netvar handler that could compensate 
-    // for offset properly. So maybe this is my excuse. Also I got the all mighty aula f75!!!
-    //
 }
 
 
@@ -145,6 +127,7 @@ void AimbotMelee_t::Reset()
 {
     m_flLastAttackTime = 0.0f;
     m_bSwingActive = false;
+    m_iSwingTick = 0;
 }
 
 

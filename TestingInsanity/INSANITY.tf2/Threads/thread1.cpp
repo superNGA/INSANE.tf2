@@ -16,6 +16,7 @@
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
+#include "../SDK/NetVars/NetVarHandler.h"
 #include "../Features/FeatureHandler.h"
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
 
@@ -51,6 +52,11 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}
 
 	if (interfaceInitialize.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (netVarHandler.Initialize() == false)
 	{
 		_terminate(instance);
 	}

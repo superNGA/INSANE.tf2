@@ -39,6 +39,7 @@ private:
 
     float m_flLastAttackTime = 0.0f;
     bool  m_bSwingActive     = false;
+    uint32_t m_iSwingTick = 0;
 };
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 

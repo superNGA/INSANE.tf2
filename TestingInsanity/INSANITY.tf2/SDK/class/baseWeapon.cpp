@@ -4,6 +4,7 @@
 #include "../../Utility/signatures.h"
 #include "../../Utility/Interface.h"
 #include "../../Utility/PullFromAssembly.h"
+#include "../NetVars/NetVarHandler.h"
 
 // SDK
 #include "FileWeaponInfo.h"
@@ -31,6 +32,9 @@ MAKE_SIG(ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 
 // BTW 381 & 383, and it keeps breaking my software. We will be getting the function index from the next function which
 // is CTFWeaponBase::IsWeapon() which calls the prev. mentioned function via index.
 GET_ADRS_FROM_ASSEMBLY(Index_GetWpnID, int, "FF 90 ? ? ? ? 48 98 48 8D 0D ? ? ? ? 8B 04 81 48 83 C4 ? C3", 0x2, 0x4, CLIENT_DLL);
+
+// NETVARS
+NETVAR_OFFSET(m_flSmackTime, m_bReadyToBackstab, DT_TFWeaponKnife, -0x14)
 
 int baseWeapon::getSlot() 
 {
@@ -214,4 +218,9 @@ float baseWeapon::GetNextPrimaryAttackTime()
 float baseWeapon::GetLastRapidFireCritCheckTime()
 {
     return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + netvar.m_flLastCritCheckTime);
+}
+
+float baseWeapon::GetSmackTime()
+{
+    return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFWeaponKnife::m_flSmackTime);
 }
