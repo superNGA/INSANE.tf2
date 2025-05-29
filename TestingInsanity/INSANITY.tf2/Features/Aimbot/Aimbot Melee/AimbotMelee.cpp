@@ -48,18 +48,15 @@ constexpr float SWING_RANGE_MULTIPLIER = 1.2f;
 //=========================================================================
 void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
-    /*
-    * Step 1 : Choose target.
-    * Step 2 : Find closest point on that target collision hull.
-    * Step 3 : Check if distance less then Melee swing range.
-    * Step 4 : Cast ray to target and check if can hit.
-    * Step 5 : Swing.
-    */
-
+    // Is Active ?
     if (TempFeatureHelper::MeleeAimbot.IsActive() == false)
         return;
 
+    // TODO : Move this to CreateMove, and only call this if anything is drawn.
+    //      Also, Gotta move the drawing to ImGui, and ditch this bullshit. 
+    //      Cause for one, this is maybe not optmized and secondly, its updated every tick and not every frame.
     I::IDebugOverlay->ClearAllOverlays();
+
 
 #if (DEBUG_MELEE_SWING_HULL == true)
     // Drawing Melee Range Circle
@@ -73,7 +70,12 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     // Drawing Hull ( Effective Range )
     if (TempFeatureHelper::MeleeRange_HULL.IsActive() == true)
         _DrawMeleeHull(pLocalPlayer, pActiveWeapon, pCmd);
+
+    // Swing range Demostration using Ray ( Not Hull )
+    if(TempFeatureHelper::Melee_Swing_Range_Ray.IsActive() == true)
+        _DrawSwingRangeRay(pLocalPlayer, pActiveWeapon);
 #endif
+
 
     const BaseEntity* pTarget = _ChooseTarget(pLocalPlayer);
     
@@ -84,6 +86,8 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     float flSwingRange        = _GetSwingHullRange(pLocalPlayer, pActiveWeapon);
     const vec vTargetWorldPos = _GetClosestPointOnEntity(pLocalPlayer, pTarget);
     const vec vEyePos         = pLocalPlayer->getLocalEyePos();
+
+    //LOG("Swing Range from fn : %.2f", flSwingRange);
 
     // Target is way out of range.
     if (vEyePos.DistTo(vTargetWorldPos) > flSwingRange)
@@ -100,24 +104,40 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
         return;
     }*/
     
-    // Should Swing this tick?
-    if (_ShouldSwing(pLocalPlayer, pActiveWeapon) == true)
+    /*
+    qangle qTargetAngles;
+    Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
+    */
+
+    float flNextFireTime = pActiveWeapon->GetNextPrimaryAttackTime();
+    float flCurTime      = static_cast<float>(pLocalPlayer->GetTickBase()) * tfObject.pGlobalVar->interval_per_tick;
+
+    bool bShotFiredThisTick = (pCmd->buttons & IN_ATTACK) && flCurTime >= flNextFireTime && flNextFireTime > m_flLastAttackTime;
+
+    if (bShotFiredThisTick == true)
     {
-        pCmd->buttons |= IN_ATTACK;
+        LOG("Swing Started...");
         m_bSwingActive = true;
+        m_flLastAttackTime = flNextFireTime;
     }
 
-    // Settign angle only when the hit is registered
-    if(_ShouldSetAngle(pLocalPlayer, pActiveWeapon) == true)
+    float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(1)->m_flSmackDelay;
+    bool bShouldSetAngle = flCurTime >= m_flLastAttackTime + flSmackDelay && m_bSwingActive == true;
+    if (bShouldSetAngle == true)
     {
         qangle qTargetAngles;
         Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
-        LOG_VEC3(qTargetAngles);
         pCmd->viewangles = qTargetAngles;
-        *pSendPacket = false; // <-- This is actually createmove result, for this time. cause I'm lazy.
+        *pSendPacket = false;
         m_bSwingActive = false;
-        WIN_LOG("SHOT!");
+        WIN_LOG("Silent Aimbot Angles set! [ SmackDelay : %.2f ]", flSmackDelay);
     }
+
+    // There must be some attribute or something fucking with smack delay. since its not working
+    // So apparantly I need to pull this from memory, according to amalgum and I can theoratically
+    // do that right now, but I was looking to make a proper a netvar handler that could compensate 
+    // for offset properly. So maybe this is my excuse. Also I got the all mighty aula f75!!!
+    //
 }
 
 
@@ -271,6 +291,56 @@ bool AimbotMelee_t::_IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEn
 
     // if Traced ray length less than our Original ray length, then Obstructed!
     return (trace.m_end - trace.m_start).length() < flDistance;
+}
+
+
+
+void AimbotMelee_t::_DrawSwingRangeRay(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    static vec vMeleeHullMinBase(-18.0f, -18.0f, -18.0f);
+    static vec vMeleeHullMaxBase(18.0f, 18.0f, 18.0f);
+
+    float flBoundScale = 1.0f;
+    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flBoundScale, "melee_bounds_multiplier");
+
+    // Compensating for Bound Scale
+    vec vMeleeHullMin = vMeleeHullMinBase * flBoundScale;
+    vec vMeleeHullMax = vMeleeHullMaxBase * flBoundScale;
+
+    // Compensating for Model Scale
+    float flSwingRange = _GetSwingRange(pLocalPlayer, pActiveWeapon);
+    float flModelScale = pLocalPlayer->GetModelScale();
+    if (flModelScale > 1.0f)
+    {
+        flSwingRange *= flModelScale;
+        vMeleeHullMin *= flModelScale;
+        vMeleeHullMax *= flModelScale;
+    }
+
+    // Accounting for weapon attributes
+    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
+
+    float flHullLength = vMeleeHullMax.x - vMeleeHullMin.x;
+    float flHullBredth = vMeleeHullMax.y - vMeleeHullMin.y;
+    float flHullHeight = vMeleeHullMax.z - vMeleeHullMin.z;
+
+    //printf("Length : %.2f, Breadth : %.2f, Height : %.2f | SwingRange : %.2f\n", flHullLength, flHullBredth, flHullHeight, flSwingRange);
+
+    // Calculating Start & End point.
+    vec vForward; 
+    Maths::AngleVectors(pLocalPlayer->GetAbsAngles(), &vForward);
+    const qangle qViewAngles = pLocalPlayer->GetAbsAngles();
+    const vec    vEyePos = pLocalPlayer->getLocalEyePos();
+    
+    // Hull End, start and swing range.
+    const vec vInitialialHullEnd = vEyePos - vForward * (flHullLength / 2.0f);
+    const vec vSwingRangeEnd     = vEyePos + vForward * (flSwingRange);
+    const vec vFinalHullEnd      = vEyePos + vForward * (flSwingRange + flHullLength * 0.5f);
+
+    // Drawing
+    I::IDebugOverlay->AddLineOverlay(vEyePos,        vInitialialHullEnd, 255, 0,   0, false, 10.0f);
+    I::IDebugOverlay->AddLineOverlay(vEyePos,        vSwingRangeEnd,     0,   255, 0, false, 10.0f);
+    I::IDebugOverlay->AddLineOverlay(vSwingRangeEnd, vFinalHullEnd,      255, 255, 0, false, 10.0f);
 }
 
 

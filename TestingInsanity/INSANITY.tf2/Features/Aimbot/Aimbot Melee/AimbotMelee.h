@@ -12,10 +12,6 @@ this will result in bad & not very scalable implementations,
 but this will greatly increase the speed of development.
 */
 
-/*
-
-*/
-
 class AimbotMelee_t
 {
 public:
@@ -35,13 +31,14 @@ private:
 
     bool _IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEntity* pLocalPlayer);
 
+    void _DrawSwingRangeRay(BaseEntity * pLocalPlayer, baseWeapon * pActiveWeapon);
     void _DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     void _DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _DrawEntityCollisionHull(const BaseEntity* pEnt) const;
 
     float m_flLastAttackTime = 0.0f;
-    bool m_bSwingActive = false;
+    bool  m_bSwingActive     = false;
 };
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
@@ -49,7 +46,7 @@ DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 DEFINE_SECTION(Melee_Aimbot, "Aimbot", 3)
 
 // TODO : make sure this doesn't run when menu is open.
-// Only run it when autoFire is enabled.
+// Only run it ( While menu is enabled ) when autoFire is enabled.
 DEFINE_FEATURE(
     MeleeAimbot, bool, "Melee_Aimbot", "Aimbot", 1, false,
     FeatureFlag_SupportKeyBind | FeatureFlag_DisableWhileMenuOpen,
@@ -79,3 +76,7 @@ DEFINE_FEATURE(
 DEFINE_FEATURE(
     MeleeDrawCollisionHull, bool, "Melee_Aimbot", "Aimbot", 7, false,
     FeatureFlag_None, "The all-mightly collision box");
+
+DEFINE_FEATURE(
+    Melee_Swing_Range_Ray, bool, "Melee_Aimbot", "Aimbot", 8, false,
+    FeatureFlag_None, "Draws a line showing your melee range");
