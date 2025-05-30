@@ -8,6 +8,9 @@
 #include "../../Libraries/Utility/Utility.h"
 #include "../../Utility/ConsoleLogging.h"
 
+// Delete this
+#include "../class/BaseEntity.h"
+
 inline uint64_t HashPropName(const std::string& szTableName, const std::string& szNetVarName)
 {
     uint64_t iHashFinal = 0;
@@ -31,7 +34,7 @@ NetVar_t::NetVar_t(std::string szTableName, std::string szNetVarName, int32_t iO
     m_szNetVarName = szNetVarName;
     m_pDestination = pDestination;
 
-    netVarHandler.RegisterNetVar(this);
+    netVarHandler.AddNetVar(this);
 }
 
 
@@ -54,25 +57,29 @@ void NetVarHandler_t::RegisterNetVar(NetVar_t* pNetVar)
     if (it == m_mapRegisteredNetvars.end())
     {
         m_mapRegisteredNetvars.insert({ pNetVar->m_iHash, std::vector<NetVar_t*>() });
-    }
-
-    // Check if it got added or not?
-    auto it2 = m_mapRegisteredNetvars.find(pNetVar->m_iHash);
-    if (it2 == m_mapRegisteredNetvars.end())
-    {
-        FAIL_LOG("Failed to add element [ %s->%s ]", pNetVar->m_szTableName, pNetVar->m_szNetVarName);
-        m_bFailedRegisteration = true;
-        return;
+        
+        // Check if it got added or not?
+        auto it2 = m_mapRegisteredNetvars.find(pNetVar->m_iHash);
+        if (it2 == m_mapRegisteredNetvars.end())
+        {
+            FAIL_LOG("Failed to add element [ %s->%s ]", pNetVar->m_szTableName, pNetVar->m_szNetVarName);
+            m_bFailedRegisteration = true;
+            return;
+        }
     }
 
     // Finally, register it!
+    auto it2 = m_mapRegisteredNetvars.find(pNetVar->m_iHash);
     it2->second.push_back(pNetVar);
-    WIN_LOG("Registered NetVar [ %s->%s ]", pNetVar->m_szTableName, pNetVar->m_szNetVarName);
+    LOG("Registered NetVar [ %s->%s ] | iOffset : %d", pNetVar->m_szTableName.c_str(), pNetVar->m_szNetVarName.c_str(), pNetVar->m_iOffset);
 }
 
 
 bool NetVarHandler_t::Initialize()
 {
+    for (auto* pNetVar : m_vecNetvars)
+        RegisterNetVar(pNetVar);
+
     // If some error occured during registerstion, then don't initialize. ( else segfaults )
     if (m_bFailedRegisteration == true)
         return false;
@@ -80,6 +87,13 @@ bool NetVarHandler_t::Initialize()
     ClientClass* pClientClass = I::IBaseClient->GetAllClasses();
     _RecurseClientClass(pClientClass);
 
+    if (m_vecNetvars.size() > m_nFoundNetVars)
+    {
+        FAIL_LOG("Failed to find %d NetVars :(", m_vecNetvars.size() - m_nFoundNetVars);
+        return false;
+    }
+
+    WIN_LOG("Successfully Retireved all NetVars");
     return true;
 }
 
@@ -112,11 +126,10 @@ void NetVarHandler_t::_RecurseTable(RecvTable* pTable)
         if (pProp->child_table != nullptr)
         {
             _RecurseTable(pProp->child_table);
-            continue;
         }
 
         // Finding this hash in the map
-        uint64_t iHash = HashPropName(pTable->m_pNetTableName, pProp->m_pVarName);
+        uint64_t iHash = HashPropName(std::string(pTable->m_pNetTableName), std::string(pProp->m_pVarName));
         auto it = m_mapRegisteredNetvars.find(iHash);
 
         // if not found, then we don't want it
@@ -127,6 +140,10 @@ void NetVarHandler_t::_RecurseTable(RecvTable* pTable)
         for (auto* pNetVar : it->second)
         {
             *pNetVar->m_pDestination = static_cast<int64_t>(pProp->m_Offset + pNetVar->m_iOffset);
+            WIN_LOG("[ 0x%02X ] Registered NetVar [ %s->%s ] iOffset : %d", *pNetVar->m_pDestination, pNetVar->m_szTableName.c_str(), pNetVar->m_szNetVarName.c_str(), pNetVar->m_iOffset);
+            ++m_nFoundNetVars;
         }
+
+        m_mapRegisteredNetvars.erase(it);
     }
 }

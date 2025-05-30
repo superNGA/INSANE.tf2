@@ -60,11 +60,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	{
 		_terminate(instance);
 	}
-
-	if(_initializeNetvars() == false) // requies interfaces to be initialized
-	{
-		_terminate(instance);
-	}	
 	
 	if (_initializeHooks() == false)
 	{
@@ -131,26 +126,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-
-
-//=========================================================================
-// bool thread1_t::_initializeNetvars()
-//=========================================================================
-/**
-* intializes netvars safely
-*/
-//-------------------------------------------------------------------------
-bool thread1_t::_initializeNetvars()
-{
-	/* intializing netvars */
-	if (offsets::netvar_initialized == false && offsets::initialize() == false)
-	{
-		ERROR("NETVAR", "failed to intialize netvars");
-		return false;
-	}
-	LOG("NETVAR", "succesfully initialized netvars");
-	return true;
-}
 
 
 //=========================================================================

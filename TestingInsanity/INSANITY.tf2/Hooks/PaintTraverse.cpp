@@ -4,7 +4,7 @@
 
 //#include "../GlobalVars.h"
 #include "../SDK/Entity Manager/entityManager.h"
-#include "../SDK/class/Source Entity.h"
+#include "../SDK/class/BaseEntity.h"
 #include "../Features/config.h"
 //#include "../SDK/TF object manager/TFOjectManager.h"
 

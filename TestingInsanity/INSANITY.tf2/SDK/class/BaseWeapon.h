@@ -1,12 +1,27 @@
 #pragma once
+
+// SDK 
 #include "Basic Structures.h"
-#include "../offsets/offsets.h"
+#include "BaseEntity.h"
+
+// UTILITY
+#include "../NetVars/NetVarHandler.h"
 #include "../../Libraries/Utility/Utility.h"
 
-extern Utility util;
-extern local_netvars netvar;
+NETVAR_OFFSET(m_flSmackTime, m_bReadyToBackstab, DT_TFWeaponKnife, -0x14)
+NETVAR(m_bReadyToBackstab, DT_TFWeaponKnife)
+NETVAR(m_iReloadMode,	   DT_TFWeaponBase)
 
-class BaseEntity;
+NETVAR(m_iClip1, DT_LocalWeaponData)
+NETVAR(m_iClip2, DT_LocalWeaponData)
+NETVAR(m_flObservedCritChance, DT_LocalTFWeaponData)
+NETVAR(m_flLastCritCheckTime, DT_LocalTFWeaponData)
+NETVAR(m_flNextPrimaryAttack, DT_LocalActiveWeaponData)
+NETVAR_OFFSET(m_nCritSeedRequests, m_nViewModelIndex, DT_LocalWeaponData, -0x4)
+NETVAR_OFFSET(m_nCritChecks,	   m_nViewModelIndex, DT_LocalWeaponData, -0x8)
+NETVAR_OFFSET(m_flCritTokenBucket, m_nViewModelIndex, DT_LocalWeaponData, -0xC)
+
+
 class CTFWeaponInfo;
 
 enum slot_t {
@@ -26,42 +41,40 @@ enum reload_t
 
 class baseWeapon : public BaseEntity {
 public:
-	int getSlot();
-	reload_t	getReloadMode();
-	void		SetReloadMode(reload_t iReloadMode);
+	int			getSlot();
 
-	int			GetClip1();
-	int			GetClip2();
+	// Reload mode
+	NETVAR_GETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
+	NETVAR_SETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
+
+	NETVAR_GETTER(m_iClip1, DT_LocalWeaponData, int)
+	NETVAR_GETTER(m_iClip2, DT_LocalWeaponData, int)
+	
+	// Crit Bucket Getters
+	NETVAR_GETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
+	NETVAR_GETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
+	NETVAR_GETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
+	
+	// Crit Bucket Setter
+	NETVAR_SETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
+	NETVAR_SETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
+	NETVAR_SETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
+
+	NETVAR_GETTER(m_flObservedCritChance, DT_LocalTFWeaponData, float)
+	NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
+
+	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
+	NETVAR_GETTER(m_flSmackTime, DT_TFWeaponKnife, float)
 
 	bool		IsProjectile();
 
-	bool		canBackStab();
 	CTFWeaponInfo* GetTFWeaponInfo();
 	
 	// Weapon IDs
 	int			GetWeaponTypeID(); // <- ETFWeaponInfo ID ( i.e. same for all bats for scout )
 	int			GetWeaponDefinitionID(); // <- Item specific ID ( i.e. different for each bat type for scout )
 
-	bool		CanCrit(); // <- Just a wrapper for CalcIsAttackHelper()
-	
-	// Getters for Crit Bucket's stats
-	float		GetCritBucket();
-	int			GetTotalCritsOccured();
-	int			GetTotalCritChecks();
-	
-	// Setter for Crit Bucket's stats
-	void		SetCritBucket(float flCritBucket);
-	void		SetTotalCritsOccured(int iCritsOccured);
-	void		SetTotalCritChecks(int iCritChecks);
-
-	float		GetObservedCritChance();
 	float		GetDamagePerShot();
-	void		SetWeaponSeed(int iSeed);
-
-	float		GetNextPrimaryAttackTime();
-	float		GetLastRapidFireCritCheckTime();
-
-	float		GetSmackTime();
 
 private:
 	bool TracerHook = false;

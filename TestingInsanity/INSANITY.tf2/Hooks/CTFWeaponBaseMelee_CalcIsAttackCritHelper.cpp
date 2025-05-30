@@ -16,7 +16,7 @@ MAKE_HOOK(CTFWeaponBase_CalcIsAttackCritical, "48 89 74 24 ? 57 48 83 EC ? 48 8B
     bool, baseWeapon* pActiveWeapon, void* pLocalPlayer)
 {
     static float flLastNextAttackTime = -1.0f;
-    float        flNextAttackTime     = pActiveWeapon->GetNextPrimaryAttackTime();
+    float        flNextAttackTime     = pActiveWeapon->m_flNextPrimaryAttack();
     if (tfObject.pGlobalVar->curtime >= flNextAttackTime && (flNextAttackTime != flLastNextAttackTime || flLastNextAttackTime < 0.0f))
     {
         FeatureObj::critHack.CalcIsAttackCriticalHandler();

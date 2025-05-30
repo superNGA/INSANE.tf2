@@ -111,8 +111,8 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
         iWishSeed = _GetCritSeed(pCmd, pWeaponCritData, pLocalPlayer);
     
     // Are we shooting on this crit ?
-    float flNextFireTime = pWeaponCritData->m_pWeapon->GetNextPrimaryAttackTime();
-    float flCurTime      = static_cast<float>(pLocalPlayer->GetTickBase()) * tfObject.pGlobalVar->interval_per_tick;
+    float flNextFireTime = pWeaponCritData->m_pWeapon->m_flNextPrimaryAttack();
+    float flCurTime      = static_cast<float>(pLocalPlayer->m_nTickBase()) * tfObject.pGlobalVar->interval_per_tick;
     bool  bShotFired     = (pCmd->buttons & IN_ATTACK) == true && flCurTime >= flNextFireTime/* && flNextFireTime > m_flLastFireTime*/;
 
     CritHackStatus_t iCritHackStatus = _GetCritHackStatus(pLocalPlayer, pWeaponCritData, VK_LSHIFT);
@@ -206,9 +206,9 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
     Render::InfoWindow.AddToInfoWindow("BaseCritCost", std::format("Base CritCost : {}",   pWeaponCritData->m_flCritCostBase));
     Render::InfoWindow.AddToInfoWindow("dmgPerBullet", std::format("DMG. per bullet : {}", pWeaponCritData->m_flDamagePerShot));
     Render::InfoWindow.AddToInfoWindow("WeaponID",     std::format("Cur Weapon ID : {}",   pWeaponCritData->m_iWeaponID));
-    Render::InfoWindow.AddToInfoWindow("CritChecks",   std::format("Crit Checks   : {}",   pWeaponCritData->m_pWeapon->GetTotalCritChecks()));
-    Render::InfoWindow.AddToInfoWindow("CritOccuered", std::format("Crit Occured accoding to game : {}", pWeaponCritData->m_pWeapon->GetTotalCritsOccured()));
-    Render::InfoWindow.AddToInfoWindow("GamesBucket ", std::format("Weapon Bucket ( game's ): {}",       pWeaponCritData->m_pWeapon->GetCritBucket()));
+    Render::InfoWindow.AddToInfoWindow("CritChecks",   std::format("Crit Checks   : {}",   pWeaponCritData->m_pWeapon->m_nCritChecks()));
+    Render::InfoWindow.AddToInfoWindow("CritOccuered", std::format("Crit Occured accoding to game : {}", pWeaponCritData->m_pWeapon->m_nCritSeedRequests()));
+    Render::InfoWindow.AddToInfoWindow("GamesBucket ", std::format("Weapon Bucket ( game's ): {}",       pWeaponCritData->m_pWeapon->m_flCritTokenBucket()));
     Render::InfoWindow.AddToInfoWindow("WeaponID",     std::format("{} <- Weapon ID",      static_cast<int>(pWeaponCritData->m_iSlot)));
 }
 
@@ -447,7 +447,7 @@ bool CritHack_t::_CanWithdrawlCritV3(BaseEntity* pLocalPlayer, WeaponCritData_t*
 {
     float flMult = (pActiveWeapon->m_iSlot == WPN_SLOT_MELLE) ?
         0.5f :
-        Maths::RemapValClamped(static_cast<float>(pActiveWeapon->m_nCritRequests + 1) / static_cast<float>(pActiveWeapon->m_pWeapon->GetTotalCritChecks() + 1),
+        Maths::RemapValClamped(static_cast<float>(pActiveWeapon->m_nCritRequests + 1) / static_cast<float>(pActiveWeapon->m_pWeapon->m_nCritChecks() + 1),
             0.1f, 1.f, 1.f, 3.f);
 
     float flCritCost = pActiveWeapon->m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER * flMult;
@@ -474,7 +474,7 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
         return;
 
     // if not ALIVE then no damage storing
-    if (m_pLocalPlayer->getLifeState() != lifeState_t::LIFE_ALIVE)
+    if (m_pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
 
     // Melee DMG isn't considered
@@ -502,7 +502,7 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
     int iDamageTaken = 0;
     
     // is Death-Ringer spy faking his death
-    bool bFakeDeath = pVictim->getCharacterChoice() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->getPlayerCond() & TF_COND_FEIGN_DEATH);
+    bool bFakeDeath = pVictim->getCharacterChoice() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->InCond(TF_COND_FEIGN_DEATH));
 
     // If we "kill-da-victim" or if he faked his death ( using Death-Ringer ) then use our records for calculating damage dealt.
     if (iHealth <= 0 || bFakeDeath)
@@ -807,11 +807,11 @@ void CritHack_t::_StoreHealthChanges()
             continue;
 
         // Fuck non-enemy entities
-        if (pEnt->isEnemy() == false)
+        if (pEnt->IsEnemy() == false)
             continue;
 
         // Fuck Dead enimies
-        if (pEnt->getLifeState() != lifeState_t::LIFE_ALIVE)
+        if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
             continue;
         
         // Record any change in health
@@ -822,7 +822,7 @@ void CritHack_t::_StoreHealthChanges()
 
 void CritHack_t::RecordHealth(BaseEntity* pEnt)
 {
-    int iHealth = pEnt->getEntHealth();
+    int iHealth = pEnt->m_iHealth();
 
     // Entity Present
     auto it = m_mapHealthRecords.find(pEnt);
@@ -870,7 +870,7 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
 
     // calculating cost
     float flCritMult = m_pWeapon->getSlot() == WPN_SLOT_MELLE ? 0.5f :
-        Maths::RemapValClamped(static_cast<float>(m_nCritRequests) / static_cast<float>(m_pWeapon->GetTotalCritChecks()),
+        Maths::RemapValClamped(static_cast<float>(m_nCritRequests) / static_cast<float>(m_pWeapon->m_nCritChecks()),
             0.1f, 1.f, 1.f, 3.f);
     float flCritCost = (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER) * flCritMult;
 
@@ -881,7 +881,7 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
         return;
     }
     WIN_LOG("Deducted cost      [ %.2f ] from crit bucket | new bucket [ %.2f ]", flCritCost, m_flCritBucket - flCritCost);
-    WIN_LOG("totalCritOccured : [ %d ] & total crit checks : [ %d ]", m_nCritRequests, m_pWeapon->GetTotalCritChecks());
+    WIN_LOG("totalCritOccured : [ %d ] & total crit checks : [ %d ]", m_nCritRequests, m_pWeapon->m_nCritChecks());
 
     // deducting crit cost & capping bucket
     m_flCritBucket -= flCritCost;

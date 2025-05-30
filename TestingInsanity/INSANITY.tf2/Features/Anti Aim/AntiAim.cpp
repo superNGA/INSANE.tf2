@@ -3,8 +3,7 @@
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CMultAnimState.h"
-#include "../../SDK/class/Source Entity.h"
-#include "../../SDK/offsets/offsets.h"
+#include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 
 //======================= Internal stuff =======================
@@ -12,8 +11,6 @@
 #include "../../Utility/Interface.h"
 #include "../../Utility/signatures.h"
 #include "../../Extra/math.h"
-
-extern local_netvars netvar;
 
 MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*);
 
@@ -29,7 +26,7 @@ void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity*
 	if (ent == nullptr)
 		return;
 
-	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)ent + netvar.m_hItem - 88);
+	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)ent + Netvars::DT_TFPlayer::m_hItem - 88);
 
 	m_qAAAngles.pitch = -89.0f;
 	m_qAAAngles.yaw	  = 180.0f;
@@ -53,7 +50,7 @@ void AntiAim_t::StoreAABones(BaseEntity* pLocalPlayer)
 {
 	if (pLocalPlayer == nullptr)
 		return;
-	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + netvar.m_hItem - 88);
+	auto* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + Netvars::DT_TFPlayer::m_hItem - 88);
 	//
 	//// storing old data
 	//float flOldFrameTime = tfObject.pGlobalVar->frametime;

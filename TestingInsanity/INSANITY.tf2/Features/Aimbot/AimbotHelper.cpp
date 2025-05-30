@@ -17,7 +17,7 @@
 void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPackets)
 {
     // We alive?
-    if (pLocalPlayer->getLifeState() != lifeState_t::LIFE_ALIVE)
+    if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
 
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
@@ -55,7 +55,7 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
             continue;
 
         // don't want dead entities.
-        if (pEnt->getLifeState() != lifeState_t::LIFE_ALIVE)
+        if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
             continue;
 
         IDclass_t iEntID = IDManager.getID(pEnt);
@@ -63,27 +63,27 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
         {
         case PLAYER:     // Store Enemy Players
         {
-            if (pEnt->isEnemy() == true)
+            if (pEnt->IsEnemy() == true)
                 m_AllTargets.m_vecEnemyPlayers.push_back(pEnt);
             break;
         }
         case DISPENSER:  // Store Enemy No-Harm Buildings
         case TELEPORTER:
         {
-            if (pEnt->isEnemy() == true)
+            if (pEnt->IsEnemy() == true)
                 m_AllTargets.m_vecEnemyBuildings.push_back(pEnt);
             break;
         }
         case SENTRY_GUN: // Store sentries
         {
-            if (pEnt->isEnemy() == true)
+            if (pEnt->IsEnemy() == true)
                 m_AllTargets.m_vecEnemySentry.push_back(pEnt);
             break;
         }
         case ROCKET:     // Store projectiles
         case DEMO_PROJECTILES:
         {
-            if (pEnt->isEnemy() == true)
+            if (pEnt->IsEnemy() == true)
                 m_AllTargets.m_vecEnemyProjectiles.push_back(pEnt);
             break;
         }

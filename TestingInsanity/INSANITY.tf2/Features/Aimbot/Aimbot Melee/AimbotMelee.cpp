@@ -69,7 +69,7 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
 
     float flSwingRange        = _GetSwingHullRange(pLocalPlayer, pActiveWeapon);
     const vec vTargetWorldPos = _GetClosestPointOnEntity(pLocalPlayer, pTarget);
-    const vec vEyePos         = pLocalPlayer->getLocalEyePos();
+    const vec vEyePos         = pLocalPlayer->GetEyePos();
 
     //LOG("Swing Range from fn : %.2f", flSwingRange);
 
@@ -93,8 +93,8 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
     */
 
-    float flNextFireTime = pActiveWeapon->GetNextPrimaryAttackTime();
-    float flCurTime      = static_cast<float>(pLocalPlayer->GetTickBase()) * tfObject.pGlobalVar->interval_per_tick;
+    float flNextFireTime = pActiveWeapon->m_flNextPrimaryAttack();
+    float flCurTime      = static_cast<float>(pLocalPlayer->m_nTickBase()) * tfObject.pGlobalVar->interval_per_tick;
 
     bool bShotFiredThisTick = (pCmd->buttons & IN_ATTACK) && flCurTime >= flNextFireTime && flNextFireTime > m_flLastAttackTime;
 
@@ -109,7 +109,7 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
             pCmd->buttons |= IN_ATTACK;
     }
 
-    float flSmackTime    = pActiveWeapon->GetSmackTime();
+    float flSmackTime    = pActiveWeapon->m_flSmackTime();
     bool bShouldSetAngle = flCurTime >= flSmackTime && flSmackTime > 0.0f;
     if (bShouldSetAngle == true)
     {
@@ -138,7 +138,7 @@ const BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pLocalPlayer) const
 {
     const auto& targetData = FeatureObj::aimbotHelper.GetAimbotTargetData();
     
-    const vec&  vEyePos        = pLocalPlayer->getLocalEyePos();
+    const vec&  vEyePos        = pLocalPlayer->GetEyePos();
     BaseEntity* pBestTarget    = nullptr;
     float       flBestDistance = std::numeric_limits<float>::infinity();
     
@@ -167,7 +167,7 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, cons
     const vec vHullMax = pCollidable->GetCollisionOrigin() + pCollidable->OBBMaxs();
 
     // Shooting origin
-    const vec vEyePos  = pLocalPlayer->getLocalEyePos();
+    const vec vEyePos  = pLocalPlayer->GetEyePos();
 
     vec vClosestPoint;
     vClosestPoint.x = std::clamp(vEyePos.x, vHullMin.x, vHullMax.x);
@@ -182,12 +182,12 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, cons
 bool AimbotMelee_t::_ShouldSwing(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     // Did next attack time got updated?
-    float flNextAttackTime = pActiveWeapon->GetNextPrimaryAttackTime();
+    float flNextAttackTime = pActiveWeapon->m_flNextPrimaryAttack();
     if (flNextAttackTime <= m_flLastAttackTime)
         return false;
 
     // Can we swing now?
-    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->GetTickBase());
+    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->m_nTickBase());
     if (flNextAttackTime > flCurTime)
         return false;
 
@@ -205,7 +205,7 @@ bool AimbotMelee_t::_ShouldSetAngle(BaseEntity* pLocalPlayer, baseWeapon* pActiv
     if (m_bSwingActive == false)
         return false;
 
-    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->GetTickBase());
+    float flCurTime = tfObject.pGlobalVar->interval_per_tick * static_cast<float>(pLocalPlayer->m_nTickBase());
     float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flSmackDelay;
     
     if (flCurTime >= m_flLastAttackTime + flSmackDelay)
@@ -313,7 +313,7 @@ void AimbotMelee_t::_DrawSwingRangeRay(BaseEntity* pLocalPlayer, baseWeapon* pAc
     vec vForward; 
     Maths::AngleVectors(pLocalPlayer->GetAbsAngles(), &vForward);
     const qangle qViewAngles = pLocalPlayer->GetAbsAngles();
-    const vec    vEyePos = pLocalPlayer->getLocalEyePos();
+    const vec    vEyePos = pLocalPlayer->GetEyePos();
     
     // Hull End, start and swing range.
     const vec vInitialialHullEnd = vEyePos - vForward * (flHullLength / 2.0f);
@@ -363,7 +363,7 @@ void AimbotMelee_t::_DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActive
 
     vec vForward;
     Maths::AngleVectors(pCmd->viewangles, &vForward);
-    const vec vSwingStart = pLocalPlayer->getLocalEyePos();
+    const vec vSwingStart = pLocalPlayer->GetEyePos();
     const vec vSwingEnd   = vSwingStart + (vForward * flSwingRange);
 
     bool bDidHullHit = [&]()->bool
@@ -408,7 +408,7 @@ void AimbotMelee_t::_DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWea
     vec BOX_SIZE_EYE_POS(5.0f, 5.0f, 5.0f);
 
     I::IDebugOverlay->AddBoxOverlay(
-        pLocalPlayer->getLocalEyePos(), // <- Eye Pos
+        pLocalPlayer->GetEyePos(), // <- Eye Pos
         BOX_SIZE_EYE_POS,               // Box mins
         BOX_SIZE_EYE_POS * -1.0f,       // Box maxs
         pLocalPlayer->GetAbsAngles(),   // Box's orientation

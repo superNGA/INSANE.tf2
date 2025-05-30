@@ -2,7 +2,7 @@
 #include "../Utility/ConsoleLogging.h"
 
 #include "../Features/config.h"
-#include "../SDK/class/Source Entity.h"
+#include "../SDK/class/BaseEntity.h"
 #include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/class/viewSetup.h"
 
@@ -20,7 +20,7 @@ MAKE_HOOK(OverrideView, "48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B D
 	if(pLocalPlayer == nullptr)
 		return Hook::OverrideView::O_OverrideView(pVTable, pViewSetup);
 
-	if ((pLocalPlayer->getPlayerCond() & TF_COND_ZOOMED) == false)
+	if (pLocalPlayer->InCond(TF_COND_ZOOMED) == false)
 	{
 		pViewSetup->fov = TempFeatureHelper::FOV.GetData().m_flVal;
 	}

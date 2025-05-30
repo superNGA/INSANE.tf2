@@ -4,10 +4,6 @@
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/BaseWeapon.h"
-#include "../../SDK/offsets/offsets.h"
-
-extern local_netvars netvar;
-
 
 #define SPACEBAR_STATE (1 << 0)
 
@@ -33,7 +29,7 @@ void Movement_t::_Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 	if (TempFeatureHelper::Bhop.IsActive() == false) 
 		return;
 
-	int32_t flag = *(int32_t*)((uintptr_t)pLocalPlayer + netvar.m_fFlags);
+	int32_t flag = pLocalPlayer->m_fFlags();
 
 	if (!GetAsyncKeyState(VK_SPACE))
 	{
@@ -70,14 +66,14 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 		return;
 
 	// If Got no ammo, then return
-	if (pActiveWeapon->GetClip1() <= 0)
+	if (pActiveWeapon->m_iClip1() <= 0)
 		return;
 
 	static bool isRocketJumping = false;
 	static int rocketJumpStage = 0;
 	if (TempFeatureHelper::AutoRocketJump.IsActive() == true) 
 	{
-		if (pActiveWeapon->getReloadMode() != reload_t::WPN_RELOAD_START) pCmd->buttons |= IN_ATTACK;
+		if (pActiveWeapon->m_iReloadMode() != reload_t::WPN_RELOAD_START) pCmd->buttons |= IN_ATTACK;
 		if (!isRocketJumping) {
 			isRocketJumping = true;
 			rocketJumpStage = 0;
@@ -86,20 +82,20 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 	if (isRocketJumping) {
 		switch (rocketJumpStage) {
 		case 0: // Adjust view angles
-			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
+			pActiveWeapon->m_iReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->buttons |= IN_JUMP;      // Jump
 			rocketJumpStage++;
 			break;
 
 		case 1: // Duck after jumping
-			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
+			pActiveWeapon->m_iReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->buttons |= IN_DUCK;
 			rocketJumpStage++;
 			break;
 
 		case 3: // Fire the rocket
 			// Cancel reload
-			pActiveWeapon->SetReloadMode(reload_t::WPN_RELOAD_START);
+			pActiveWeapon->m_iReloadMode(reload_t::WPN_RELOAD_START);
 			pCmd->viewangles.yaw += 180.0f;  // Keep yaw unchanged
 			pCmd->buttons |= IN_ATTACK;
 			isRocketJumping = false; // Reset state after firing
@@ -115,5 +111,5 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 
 void Movement_t::_ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer)
 {
-	*reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(pLocalPlayer) + netvar.m_nForceTauntCam) = TempFeatureHelper::ThirdPerson.IsActive();
+	pLocalPlayer->m_nForceTauntCam(TempFeatureHelper::ThirdPerson.IsActive());
 }

@@ -331,7 +331,8 @@ enum client_frame_stage
 	FRAME_RENDER_END						// We've finished rendering the scene.
 };
 
-enum lifeState_t {
+enum class lifeState_t : int8_t 
+{
 	LIFE_ALIVE = 0,
 	LIFE_DYING,
 	LIFE_DEAD,

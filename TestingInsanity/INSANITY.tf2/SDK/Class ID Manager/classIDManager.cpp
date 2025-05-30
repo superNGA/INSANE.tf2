@@ -8,7 +8,7 @@
 // they are prone to change with updates.
 
 #include "classIDManager.h"
-#include "../class/Source Entity.h"
+#include "../class/BaseEntity.h"
 #include "../../Utility/ConsoleLogging.h"
 
 //=========================================================================

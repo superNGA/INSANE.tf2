@@ -33,12 +33,10 @@
 //======================= HELPER SYSTEMS =======================
 #include "../SDK/TF object manager/TFOjectManager.h"
 #include "../SDK/FN index Manager/FN index manager.h"
-#include "../SDK/offsets/offsets.h"
 
 //======================= FEATURES =======================
 #include "../Features/Chams/Chams.h"
 
-extern local_netvars netvar; // <- this holds all the netvars
 extern Utility util;
 
 class thread1_t
@@ -47,7 +45,6 @@ public:
 	void execute_thread1(HINSTANCE instance);
 
 private:
-	bool _initializeNetvars();
 	bool _initializeHooks();
 	void _terminate(HINSTANCE instance);
 

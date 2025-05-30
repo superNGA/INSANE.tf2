@@ -1,7 +1,12 @@
 #pragma once
+
+// SDK
 #include "Basic Structures.h"
 #include "ClientClass.h"
+
+// UTILITY
 #include "../../Utility/Interface.h"
+
 
 /*
 * MATCH THE INHERITANCE ORDER CAREFULLY ELSE WON'T WORK!
@@ -13,6 +18,8 @@
 * MATCH THE INHERITANCE ORDER CAREFULLY ELSE WON'T WORK!
 */
 
+//======================= NETVARS =======================
+
 struct RoundStats_t;
 
 
@@ -22,8 +29,6 @@ class I_client_renderable;
 class I_client_unknown;
 class BaseEntity;
 class I_client_thinkable;
-class c_base_entity;
-class c_base_animating;
 class ICollideable_t;
 class baseWeapon;
 
@@ -131,7 +136,7 @@ public:
 	virtual I_client_renderable* GetClientRenderable() = 0;
 	virtual BaseEntity* GetI_client_entity() = 0;
 	//virtual c_base_entity* GetBaseEntity() = 0;
-	virtual c_base_entity* GetBaseEntity() = 0;
+	virtual BaseEntity* GetBaseEntity() = 0;
 	virtual I_client_thinkable* GetClientThinkable() = 0;
 };
 
@@ -304,86 +309,4 @@ public:
 
 	// Called by the client when it deletes the entity.
 	virtual void				Release() = 0;
-};
-
-class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
-{
-public:
-	// Delete yourself.
-	virtual void			Release(void) = 0;
-
-	// Network origin + angles
-	virtual const vec& GetAbsOrigin(void) const = 0;
-	virtual const qangle& GetAbsAngles(void) const = 0;
-
-	virtual CMouthInfo* GetMouth(void) = 0;
-
-	// Retrieve sound spatialization info for the specified sound on this entity
-	// Return false to indicate sound is not audible
-	virtual bool			GetSoundSpatialization(SpatializationInfo_t& info) = 0;
-
-	// gets the eye pos, only works for local player, don't call for other entities
-	vec				getLocalEyePos() const;
-	
-	baseWeapon*		getActiveWeapon();
-
-	vec				getEntVelocity();
-
-	// Returns life state, anything other than 0 means dead
-	lifeState_t		getLifeState();
-
-	// What character is this player playing?
-	player_class	getCharacterChoice();
-	const char*		GetPlayerClassName();
-
-	// returns the team num for this entity
-	int32_t getTeamNum();
-
-	bool			isEnemy();
-
-	// setting glow for this entity
-	void			setGlow(bool b_glowStatus);
-
-	// if this entity is a weapon then gets its weapon index
-	int32_t			getWeaponIndex();
-
-	// gets entities health niggaaaaaaa ;)
-	uint32_t		getEntHealth() const;
-
-	// is this entity a disguised spy or not?
-	bool			isDisguised();
-
-	// is this spy cloaked?
-	bool			isCloaked();
-
-	// make visible using addToLeafSystem()
-	void			changeThirdPersonVisibility(renderGroup_t renderGroup);
-
-	int32_t			getPlayerCond();
-	bool			InCond(FLAG_playerCond eCond);
-
-	bool			isOnGround();
-
-	uint32_t		GetTickBase();
-
-	float			GetCritMult();
-
-	RoundStats_t*	GetPlayerRoundData();
-
-	bool			IsCritBoosted();
-
-	bool			IsFeignDeathReady();
-
-	float			GetModelScale();
-
-	// CALL_ATRIB_HOOK's
-	void CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute);
-	void CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute);
-};
-
-class c_base_entity : public BaseEntity
-{
-public:
-	/* no need to include all those bullshit virtual functions, just make whatever you need locally and call function via index if needed*/
-
 };

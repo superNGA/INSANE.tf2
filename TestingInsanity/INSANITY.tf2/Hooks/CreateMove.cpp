@@ -41,7 +41,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 		return result;
 
 	// are we alive ?
-	if (pLocalPlayer->getLifeState() != lifeState_t::LIFE_ALIVE)
+	if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
 		return result;
 
 	// --> bSendPacket <--
