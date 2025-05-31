@@ -52,8 +52,12 @@ void InfoWindow_t::AddToCenterConsole(std::string caller, std::string msg, TextM
 void InfoWindow_t::_DrawInfoWindow()
 {
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+    
+    // Apparently, ImGui window flags are only evaluated in the first frame, and 
+    // after which ImGui doesn't give a shit.
     ImGui::Begin("Performance", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
+
     ImGui::PushFont(directX::fonts::roboto); // <- gonna change it to something like JetBrains mono semi-bold.
 
     for (auto& data : m_mapAllDataInfoWindow)
@@ -75,6 +79,7 @@ void InfoWindow_t::_DrawCenterWindow()
     auto vGameWindowSize = ImGui::GetMainViewport()->Size;
     ImGui::SetNextWindowPos(ImVec2(vGameWindowSize.x/2.0f, vGameWindowSize.y/2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.1f);
+
     ImGui::Begin("CenterConsole", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);

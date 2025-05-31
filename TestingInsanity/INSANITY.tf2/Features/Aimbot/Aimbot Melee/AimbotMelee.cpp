@@ -18,11 +18,21 @@
 TODO : 
 ->  FOV Support
 ->  Predict target position
-
-->  Debug only feature support
-->  NetvarHandler support for everything
 */
 
+//
+// Now in order to prediction the future position, I need to make a movement simulatoin. 
+// Either its gonna take a full fucking month or its gonna be done in one fucking day.
+// STEPS : 
+//      -> Do something with MoveData.
+//      -> Put that data in TFProcessMovement.
+//      -> Restore to original MoveData.
+//      -> Repeat for each tick until reached desired time.
+// 
+// Extra : Amalgun    did it in 800 lines.
+//         Fedoraware did it in 300 lines.
+//
+ 
 #define DEBUG_HULL_SIZE        false
 #define DEBUG_MELEE_SWING_HULL true
 
@@ -81,32 +91,27 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     if (TempFeatureHelper::MeleeDrawCollisionHull.IsActive() == true)
         _DrawEntityCollisionHull(pTarget);
 
-    // Is the path clear OR we got a fucking wall or shit like that?
-    /*if (_IsPathObstructed(vEyePos, vTargetWorldPos, pLocalPlayer) == true)
-    {
-        FAIL_LOG("Paths is not clear, there is something in between!");
-        return;
-    }*/
-    
-    /*
-    qangle qTargetAngles;
-    Maths::VectorAnglesFromSDK(vTargetWorldPos - vEyePos, qTargetAngles);
-    */
+    // TODO : Ray Trace to target too if needed.
 
     float flNextFireTime = pActiveWeapon->m_flNextPrimaryAttack();
     float flCurTime      = static_cast<float>(pLocalPlayer->m_nTickBase()) * tfObject.pGlobalVar->interval_per_tick;
 
-    bool bShotFiredThisTick = (pCmd->buttons & IN_ATTACK) && flCurTime >= flNextFireTime && flNextFireTime > m_flLastAttackTime;
+    bool bCanFireThisTick = flCurTime >= flNextFireTime && flNextFireTime > m_flLastAttackTime;
 
-    if (bShotFiredThisTick == true)
+    if (bCanFireThisTick == true)
     {
-        LOG("Swing Started...");
-        m_bSwingActive     = true;
-        m_flLastAttackTime = flNextFireTime;
-        m_iSwingTick       = pCmd->tick_count;
-
+        // Fire if "Can Fire" and "Target found"
         if (TempFeatureHelper::MeleeAimbot_AutoFire.IsActive() == true)
             pCmd->buttons |= IN_ATTACK;
+
+        // This is completely redundant, Fix this shit in clean up
+        if ((pCmd->buttons & IN_ATTACK) == true)
+        {
+            LOG("Swing Started...");
+            m_bSwingActive = true;
+            m_flLastAttackTime = flNextFireTime;
+            m_iSwingTick = pCmd->tick_count;
+        }
     }
 
     float flSmackTime    = pActiveWeapon->m_flSmackTime();

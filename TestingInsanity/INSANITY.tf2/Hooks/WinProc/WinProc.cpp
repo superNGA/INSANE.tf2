@@ -67,7 +67,7 @@ void winproc::unhook_winproc()
 LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 {
     // Handle custom input
-    if (uMsg == WM_KEYDOWN && wParam == VK_INSERT)
+    if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) // TODO : Make this changable from menu!!!
     {
         LOG("Toggled UI");
         directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu

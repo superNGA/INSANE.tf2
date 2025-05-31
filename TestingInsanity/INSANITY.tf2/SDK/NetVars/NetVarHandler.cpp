@@ -8,9 +8,6 @@
 #include "../../Libraries/Utility/Utility.h"
 #include "../../Utility/ConsoleLogging.h"
 
-// Delete this
-#include "../class/BaseEntity.h"
-
 inline uint64_t HashPropName(const std::string& szTableName, const std::string& szNetVarName)
 {
     uint64_t iHashFinal = 0;

@@ -159,4 +159,6 @@ DEFINE_SECTION(CritHack, "CritHack", 1)
 
 //             Name               type  Section     Tab        order    default value
 DEFINE_FEATURE(CritHack,          bool, "CritHack", "CritHack", 1,      false,              FeatureFlags::FeatureFlag_SupportKeyBind, "Forces crit seeds when shooting")
-DEFINE_FEATURE(Always_Crit_Melee, bool, "CritHack", "CritHack", 2,      false,              FeatureFlag_SupportKeyBind,  "All Melee Swings will be crit")
+DEFINE_FEATURE(Always_Crit_Melee, bool, "CritHack", "CritHack", 2,      false,              FeatureFlag_SupportKeyBind,               "All Melee Swings will be crit")
+DEFINE_FEATURE(Draw_Info,         bool, "CritHack", "CritHack", 3,      false,              FeatureFlag_None,                         "Draws Crit-Ban status, Crit-Hack Status")
+DEFINE_FEATURE(Draw_Debug_Info,   bool, "CritHack", "CritHack", 4,      false,              FeatureFlag_None,                         "Draws Debug Related Info")

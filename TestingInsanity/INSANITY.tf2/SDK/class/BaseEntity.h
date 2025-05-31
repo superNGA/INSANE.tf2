@@ -40,6 +40,9 @@ NETVAR(m_AttributeManager, DT_EconEntity)
 NETVAR(m_Item, DT_AttributeContainer)
 NETVAR(m_iItemDefinitionIndex, DT_ScriptCreatedItem)
 
+NETVAR_OFFSET(m_vecAbsVelocity, m_Collision, DT_BaseEntity, -120)
+NETVAR_OFFSET(m_vecVelocity, m_Collision, DT_BaseEntity, -120 -80 -12 -4)
+
 class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
 public:
@@ -73,6 +76,9 @@ public:
 
 	NETVAR_GETTER(m_nForceTauntCam, DT_TFPlayer, bool)
 	NETVAR_SETTER(m_nForceTauntCam, DT_TFPlayer, bool)
+
+	NETVAR_GETTER(m_vecAbsVelocity, DT_BaseEntity, vec)
+	NETVAR_GETTER(m_vecVelocity, DT_BaseEntity, vec)
 
 	bool			IsEnemy();
 	int32_t			GetWeaponIndex();

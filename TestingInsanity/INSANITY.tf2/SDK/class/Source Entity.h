@@ -68,7 +68,7 @@ class I_handle_entity
 public:
 	virtual ~I_handle_entity() {}
 	virtual void SetRefEHandle(const CBaseHandle& handle) = 0;
-	virtual const CBaseHandle& GetRefEHandle() const = 0;
+	virtual int GetRefEHandle() const = 0; // Supposed to reutrn CBaseHandle, but 4 bytes is 4 bytes :)
 };
 
 class ICollideable_t

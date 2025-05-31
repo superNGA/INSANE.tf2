@@ -214,13 +214,17 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
         ImGui::OpenPopup(std::string("Feature-Options##" + pFeature->m_szFeatureDisplayName).c_str());
     }
 
-    // Designing Popup menu
+    _DrawFeatureOptionPopup(pFeature);
+}
+
+void UIMenu::_DrawFeatureOptionPopup(IFeature* pFeature)
+{
     if (ImGui::BeginPopup(std::string("Feature-Options##" + pFeature->m_szFeatureDisplayName).c_str()) == true)
     {
         m_bRecordingKey == true ?
             ImGui::Text("Key : [ Recording... ]") :
             ImGui::Text(std::format("Key : 0x{}", pFeature->m_iKey).c_str());
-        
+
         ImGui::SameLine();
 
         // Change key bind button
@@ -245,7 +249,7 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
         {
             ImGui::Checkbox("Overide type", reinterpret_cast<bool*>(&pFeature->m_iOverrideType));
         }
-        
+
         // Print current override option
         pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ?
             ImGui::Text("[ HOLD ]") :

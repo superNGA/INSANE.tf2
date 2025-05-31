@@ -15,6 +15,7 @@
 #include "../Features/Fake Lag/FakeLag.h"
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
+#include "../Features/MovementSimulation/MovementSimulation.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -79,6 +80,18 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 
 	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+
+	// Movement Sim Testing
+	if (TempFeatureHelper::Debug_MovementSim.IsActive() == true)
+	{
+		FeatureObj::movementSimulation.Initialize(pLocalPlayer);
+		WIN_LOG("Initialized Movement Sim");
+		for (int i = 0; i < 10; i++)
+			FeatureObj::movementSimulation.RunTick();
+		WIN_LOG("Ran a tick succesfully");
+		FeatureObj::movementSimulation.Restore();
+		WIN_LOG("Movement Sim complete :)");
+	}
 
 	return result;
 }

@@ -25,6 +25,7 @@ private:
     void _DrawColorSelectorFeature(IFeature* pFeature, bool bOverride);
 
     void _DrawFeatureOptionWindow(IFeature* pFeature);
+    void _DrawFeatureOptionPopup(IFeature* pFeature);
     
     void _DrawConfigView();
     
