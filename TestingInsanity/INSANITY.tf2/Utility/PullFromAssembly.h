@@ -1,18 +1,12 @@
 #pragma once
 #include <vector>
 #include "ConsoleLogging.h"
+#include "ModuleNames.h"
 
 // Signature Scanning
 #include "../Libraries/Utility/Utility.h"
 extern Utility util;
 
-// MODULES
-#define CLIENT_DLL				"client.dll"
-#define ENGINE_DLL				"engine.dll"
-#define VGUI2_DLL				"vgui2.dll"
-#define MATERIALSYSTEM_DLL		"materialsystem.dll"
-#define STUDIORENDER_DLL		"studiorender.dll"
-#define VSTDLIB_DLL				"vstdlib.dll"
 
 class IASMData_t;
 //class ASMData_t;

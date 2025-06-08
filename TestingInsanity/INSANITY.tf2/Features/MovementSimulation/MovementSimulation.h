@@ -36,5 +36,5 @@ private:
 DECLARE_FEATURE_OBJECT(movementSimulation, MovementSimulation_t)
 
 DEFINE_SECTION(MovementSim, "Aimbot", 2);
-DEFINE_FEATURE(Debug_MovementSim, bool, "MovementSim", "Aimbot", 1,
+DEFINE_FEATURE(Debug_MovementSim, bool, MovementSim, Aimbot, 1,
     false)

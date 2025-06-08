@@ -49,35 +49,35 @@ DEFINE_SECTION(Melee_Aimbot, "Aimbot", 3)
 // TODO : make sure this doesn't run when menu is open.
 // Only run it ( While menu is enabled ) when autoFire is enabled.
 DEFINE_FEATURE(
-    MeleeAimbot, bool, "Melee_Aimbot", "Aimbot", 1, false,
+    MeleeAimbot, bool, Melee_Aimbot, Aimbot, 1, false,
     FeatureFlag_SupportKeyBind | FeatureFlag_DisableWhileMenuOpen,
     "Aims for you when smacking someone.");
 
 DEFINE_FEATURE(
-    MeleeAimbot_AutoFire, bool, "Melee_Aimbot", "Aimbot", 2, false,
+    MeleeAimbot_AutoFire, bool, Melee_Aimbot, Aimbot, 2, false,
     FeatureFlag_SupportKeyBind,
     "Hits as soon as a target is found");
 
 DEFINE_FEATURE(
-    MeleeAimbot_FOV, FloatSlider_t, "Melee_Aimbot", "Aimbot", 3,
+    MeleeAimbot_FOV, FloatSlider_t, Melee_Aimbot, Aimbot, 3,
     FloatSlider_t(0.0f, 0.0f, 180.0f), FeatureFlag_SupportKeyBind);
 
 DEFINE_FEATURE(
-    MeleeRange_Circle, bool, "Melee_Aimbot", "Aimbot", 4, false,
+    MeleeRange_Circle, bool, Melee_Aimbot, Aimbot, 4, false,
     FeatureFlag_None, "Draws the melee range for you current weapon");
 
 DEFINE_FEATURE(
-    MeleeEyePos, bool, "Melee_Aimbot", "Aimbot", 5, false,
+    MeleeEyePos, bool, Melee_Aimbot, Aimbot, 5, false,
     FeatureFlag_None, "Draws eye pos (Thats where the bullets are fired from)");
 
 DEFINE_FEATURE(
-    MeleeRange_HULL, bool, "Melee_Aimbot", "Aimbot", 6, false,
+    MeleeRange_HULL, bool, Melee_Aimbot, Aimbot, 6, false,
     FeatureFlag_None, "Draw the effective range of you Melee");
 
 DEFINE_FEATURE(
-    MeleeDrawCollisionHull, bool, "Melee_Aimbot", "Aimbot", 7, false,
+    MeleeDrawCollisionHull, bool, Melee_Aimbot, Aimbot, 7, false,
     FeatureFlag_None, "The all-mightly collision box");
 
 DEFINE_FEATURE(
-    Melee_Swing_Range_Ray, bool, "Melee_Aimbot", "Aimbot", 8, false,
+    Melee_Swing_Range_Ray, bool, Melee_Aimbot, Aimbot, 8, false,
     FeatureFlag_None, "Draws a line showing your melee range");

@@ -6,19 +6,6 @@
 #include "../../Utility/signatures.h"
 #include "../../Utility/Interface.h"
 
-// 
-// LEARNED ANYTHING ?
-// BHOP'S BROKEN BTW.
-// Got exam in couple of days. How the keyboard btw?
-// I wish this finds you in a better headspace then me currently. 
-// You might be down or confused, but that shit shouldn't matter no more.
-// Just start fucking running, and running, and keep fucking running and 
-// get across this shit and before you realize, you will be out this shit victorious.
-// 
-// Muscle through this god dayem shit dawg. INSANE.TF2
-// The Best MF CHEAT IN THE FUCKING MARKET MF. AHHHHHHH!!!!!!!!!!!!!!
-//
-
 /*
 NOTES : 
     CMoveData : We need to fill up some stuff, and the rest will be handled by the Engine.

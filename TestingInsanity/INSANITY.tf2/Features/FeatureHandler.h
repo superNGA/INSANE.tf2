@@ -281,30 +281,33 @@ public:
 #define DEFINE_SECTION(DisplayName, TabName, index) namespace Sections{inline Section_t DisplayName(#DisplayName, TabName, index); }
 
 #define DEFINE_FEATURE_NOFLAG(DisplayName, type, SectionName, TabName, index, defaultData)\
-namespace TempFeatureHelper{\
-    inline Feature<type> DisplayName(defaultData, #DisplayName, \
-                SectionName, TabName, index, 0, FeatureFlags::FeatureFlag_None , "");\
-}\
 namespace Features{\
-    inline type& DisplayName = TempFeatureHelper::DisplayName.m_Data;\
+    namespace TabName{\
+        namespace SectionName{\
+            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+                #SectionName, #TabName, index, 0, FeatureFlags::FeatureFlag_None , "");\
+        }\
+    }\
 }
 
 #define DEFINE_FEATURE_FLAG(DisplayName, type, SectionName, TabName, index, defaultData, Flags)\
-namespace TempFeatureHelper{\
-    inline Feature<type> DisplayName(defaultData, #DisplayName, \
-                SectionName, TabName, index, 0, Flags, "");\
-}\
 namespace Features{\
-    inline type& DisplayName = TempFeatureHelper::DisplayName.m_Data;\
+    namespace TabName{\
+        namespace SectionName{\
+            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+                #SectionName, #TabName, index, 0, Flags, "");\
+        }\
+    }\
 }
 
 #define DEFINE_FEATURE_TOOLTIP(DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)\
-namespace TempFeatureHelper{\
-    inline Feature<type> DisplayName(defaultData, #DisplayName, \
-                SectionName, TabName, index, 0, Flags, szToolTip);\
-}\
 namespace Features{\
-    inline type& DisplayName = TempFeatureHelper::DisplayName.m_Data;\
+    namespace TabName{\
+        namespace SectionName{\
+            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+                #SectionName, #TabName, index, 0, Flags, szToolTip);\
+        }\
+    }\
 }
 
 #define GET_9TH_ARGUMENT(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, ...) arg9

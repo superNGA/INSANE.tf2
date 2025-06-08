@@ -44,7 +44,7 @@ constexpr float SWING_RANGE_MULTIPLIER = 1.2f;
 void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
     // Is Active ?
-    if (TempFeatureHelper::MeleeAimbot.IsActive() == false)
+    if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return;
 
     // TODO : Move this to CreateMove, and only call this if anything is drawn.
@@ -55,19 +55,19 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
 
 #if (DEBUG_MELEE_SWING_HULL == true)
     // Drawing Melee Range Circle
-    if (TempFeatureHelper::MeleeRange_Circle.IsActive() == true)
+    if (Features::Aimbot::Melee_Aimbot::MeleeRange_Circle.IsActive() == true)
         _DrawMeleeSwingRadius(pLocalPlayer, pActiveWeapon);
 
     // Drawing EyePos ( Bullet origin )
-    if (TempFeatureHelper::MeleeEyePos.IsActive() == true)
+    if (Features::Aimbot::Melee_Aimbot::MeleeEyePos.IsActive() == true)
         _DrawEyePos(pLocalPlayer, pActiveWeapon);
 
     // Drawing Hull ( Effective Range )
-    if (TempFeatureHelper::MeleeRange_HULL.IsActive() == true)
+    if (Features::Aimbot::Melee_Aimbot::MeleeRange_HULL.IsActive() == true)
         _DrawMeleeHull(pLocalPlayer, pActiveWeapon, pCmd);
 
     // Swing range Demostration using Ray ( Not Hull )
-    if(TempFeatureHelper::Melee_Swing_Range_Ray.IsActive() == true)
+    if(Features::Aimbot::Melee_Aimbot::Melee_Swing_Range_Ray.IsActive() == true)
         _DrawSwingRangeRay(pLocalPlayer, pActiveWeapon);
 #endif
 
@@ -88,7 +88,7 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
         return;
 
     // Drawing Targets collision hull
-    if (TempFeatureHelper::MeleeDrawCollisionHull.IsActive() == true)
+    if (Features::Aimbot::Melee_Aimbot::MeleeDrawCollisionHull.IsActive() == true)
         _DrawEntityCollisionHull(pTarget);
 
     // TODO : Ray Trace to target too if needed.
@@ -101,7 +101,7 @@ void AimbotMelee_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
     if (bCanFireThisTick == true)
     {
         // Fire if "Can Fire" and "Target found"
-        if (TempFeatureHelper::MeleeAimbot_AutoFire.IsActive() == true)
+        if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true)
             pCmd->buttons |= IN_ATTACK;
 
         // This is completely redundant, Fix this shit in clean up

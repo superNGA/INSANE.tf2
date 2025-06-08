@@ -163,7 +163,7 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
 void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, WeaponCritData_t* pWeaponCritData, int iPendingDamage)
 {
     // Draw Crit-Ban & Crit-Hack status. ( Center Window )
-    if (TempFeatureHelper::Draw_Info.IsActive() == true)
+    if (Features::CritHack::CritHack::Draw_Info.IsActive() == true)
     {
         // CRIT COUNTER
         // This is just a rough cost evaluation, cause for non melee weapons, the cost also depends on your 
@@ -214,7 +214,7 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
     }
 
     // Draw Debuging Info ( Top-left i.e. Info Window )
-    if (TempFeatureHelper::Draw_Debug_Info.IsActive() == true)
+    if (Features::CritHack::CritHack::Draw_Debug_Info.IsActive() == true)
     {
         // Weapon's bucket's stats info...
         Render::InfoWindow.AddToInfoWindow("bucket", std::format("Weapon Bucket : {}", pWeaponCritData->m_flCritBucket));
@@ -330,7 +330,7 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
 CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey)
 {
     // If not turned ON
-    if (TempFeatureHelper::CritHack.IsDisabled() == true)
+    if (Features::CritHack::CritHack::CritHack.IsDisabled() == true)
         return CritHackStatus_t::CRITHACK_DISABLED;
 
     // Does this weapon support Crit-Hack
@@ -338,11 +338,11 @@ CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPl
         return CritHackStatus_t::CRITHACK_WPN_NOT_ELLIGIBLE;
 
     // Always Crit Enabled ?
-    if (pWeaponCritData->m_iSlot == WPN_SLOT_MELLE && TempFeatureHelper::Always_Crit_Melee.IsActive() == true)
+    if (pWeaponCritData->m_iSlot == WPN_SLOT_MELLE && Features::CritHack::CritHack::Always_Crit_Melee.IsActive() == true)
         return CritHackStatus_t::CRITHACK_ACTIVE;
 
     // Is the "Magic" key down?
-    if (TempFeatureHelper::CritHack.IsActive() == false)
+    if (Features::CritHack::CritHack::CritHack.IsActive() == false)
         return CritHackStatus_t::CRITHACK_INACTIVE;
 
     // Just do it!

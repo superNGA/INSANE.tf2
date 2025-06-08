@@ -1,6 +1,10 @@
 #pragma once
 #include "../../Utility/Interface.h"
+#include "../../Utility/signatures.h"
 #include "IAppSystem.h"
+
+MAKE_SIG(Key_NameForBinding, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F1 48 8D 2D", ENGINE_DLL,
+	const char*, const char*);
 
 class IInputSystem : public IAppSystem
 {
@@ -134,6 +138,13 @@ public:
 	// Helper - activate same action set for all controller slots.
 	void ActivateSteamControllerActionSet(int eActionSet) {
 		ActivateSteamControllerActionSetForSlot(0xffffffffffffffff, eActionSet);
+	}
+
+public:
+	int32_t VirtualKeyForInput(const char* szInput)
+	{
+		// Input -> Key Name -> Button Code -> Virtual Key Code
+		return ButtonCodeToVirtualKey(StringToButtonCode(Sig::Key_NameForBinding(szInput)));
 	}
 };
 

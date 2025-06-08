@@ -157,3 +157,8 @@ BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)
 	int iEntIndex = I::iEngine->GetPlayerForUserID(userID);
 	return GetClientEntity(iEntIndex);
 }
+
+int32_t BaseEntity::GetAirDash()
+{
+	return *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_iAirDash);
+}

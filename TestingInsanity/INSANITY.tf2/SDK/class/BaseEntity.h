@@ -30,6 +30,7 @@ NETVAR(m_hItem, DT_TFPlayer)
 NETVAR(m_nPlayerCond,	   DT_TFPlayerShared)
 NETVAR(m_iCritMult,		   DT_TFPlayerShared)
 NETVAR(m_bFeignDeathReady, DT_TFPlayerShared)
+NETVAR(m_iAirDash,		   DT_TFPlayerShared)
 
 NETVAR(m_RoundScoreData, DT_TFPlayerSharedLocal)
 
@@ -93,6 +94,7 @@ public:
 	bool			InCond(FLAG_playerCond eCond);
 
 	bool			isOnGround();
+	int32_t			GetAirDash(); // Number of Air Dashes done.
 
 	float			GetCritMult();
 

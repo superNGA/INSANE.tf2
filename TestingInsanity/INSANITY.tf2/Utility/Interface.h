@@ -1,14 +1,9 @@
 #pragma once
 #include <vector>
+#include "ModuleNames.h"
 #include "../Libraries/Utility/Utility.h"
 extern Utility util;
 
-#define CLIENT_DLL				"client.dll"
-#define ENGINE_DLL				"engine.dll"
-#define VGUI2_DLL				"vgui2.dll"
-#define MATERIALSYSTEM_DLL		"materialsystem.dll"
-#define STUDIORENDER_DLL		"studiorender.dll"
-#define VSTDLIB_DLL				"vstdlib.dll"
 
 class Interface_t
 {
