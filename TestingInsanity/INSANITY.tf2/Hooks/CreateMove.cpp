@@ -66,31 +66,43 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	pStackFrameStart_ClientModeShared_Createmove += 0x40; // 0x40 bytes for local variables allocated on stack
 
 	bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
-
-	static uint8_t bit_flags = 0;
 	
-	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
-
-	FeatureObj::fakeLag.Run(bSendPacket, cmd);
-
-	FeatureObj::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
-
-	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
-
-	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
-
-	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
-
-	// Movement Sim Testing
 	if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
 	{
-		FeatureObj::movementSimulation.Initialize(pLocalPlayer);
-		WIN_LOG("Initialized Movement Sim");
-		for (int i = 0; i < 10; i++)
+		I::IDebugOverlay->ClearAllOverlays();
+	}
+
+	// Running Features
+	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
+	FeatureObj::fakeLag.Run(bSendPacket, cmd);
+	FeatureObj::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
+	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
+	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
+	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+
+
+	//======================= Movement Sim Testing =======================
+	if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
+	{
+		// Drawing Start pos
+		constexpr vec vSize(2.0f, 2.0f, 2.0f);
+		vec vOrigin = pLocalPlayer->GetAbsOrigin();
+		I::IDebugOverlay->AddBoxOverlay(
+			vOrigin,
+			vSize,
+			vSize * -1.0f,
+			qangle(0.0f, 0.0f, 0.0f), 255, 0, 0, 100, 10.0f);
+
+		// Initialize Movement Sim
+		FeatureObj::movementSimulation.Initialize(pLocalPlayer, cmd);
+
+		// Run ticks
+		int32_t nTicksToSim = Features::Aimbot::MovementSim::Ticks_To_Simulate.GetData().m_iVal;
+		for (int i = 0; i < nTicksToSim; i++)
 			FeatureObj::movementSimulation.RunTick();
-		WIN_LOG("Ran a tick succesfully");
+		
+		// Restore to original
 		FeatureObj::movementSimulation.Restore();
-		WIN_LOG("Movement Sim complete :)");
 	}
 
 	return result;

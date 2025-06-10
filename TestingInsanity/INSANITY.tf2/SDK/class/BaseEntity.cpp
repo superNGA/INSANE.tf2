@@ -23,17 +23,9 @@ baseWeapon* BaseEntity::getActiveWeapon()
 	return reinterpret_cast<baseWeapon*>(I::IClientEntityList->GetClientEntity((*(int32_t*)((uintptr_t)this + Netvars::DT_BaseCombatCharacter::m_hActiveWeapon)) & 0xFFF)); // 0xFFF -> 1111 1111 1111 gets 12 least significant bits, which are the active weapon entity index.
 }
 
-
-// 0x1BA8 + 0x8
-// What character is this player playing?
-player_class BaseEntity::getCharacterChoice()
-{
-	return *reinterpret_cast<player_class*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_PlayerClass + Netvars::DT_TFPlayerClassShared::m_iClass);
-}
-
 const char* BaseEntity::GetPlayerClassName()
 {
-	switch (getCharacterChoice())
+	switch (this->m_iClass())
 	{
 	case TF_SCOUT:   return "Scout";
 	case TF_SNIPER:  return "Sniper";
@@ -94,13 +86,13 @@ vec BaseEntity::GetEyePos() const
 
 uint32_t BaseEntity::GetPlayerCond() 
 {
-	return *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_nPlayerCond);
+	return *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_nPlayerCond);
 }
 
 bool BaseEntity::InCond(FLAG_playerCond eCond)
 {
 	// Getting Player Condition array
-	uint32_t* iPlayerCondArray = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_nPlayerCond);
+	uint32_t* iPlayerCondArray = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_nPlayerCond);
 
 	// Getting target player condition & bit
 	int iCondIndex = eCond / (sizeof(uint32_t) * 8);
@@ -118,13 +110,13 @@ bool BaseEntity::isOnGround()
 
 float BaseEntity::GetCritMult()
 {
-	int flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_iCritMult);
+	int flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_iCritMult);
 	return Maths::RemapValClamped(static_cast<float>(flCritMult), 0.0f, 255.0f, 1.0, 4.0);
 }
 
 RoundStats_t* BaseEntity::GetPlayerRoundData()
 {
-	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerSharedLocal::m_RoundScoreData);
+	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerSharedLocal::m_RoundScoreData);
 }
 
 bool BaseEntity::IsCritBoosted()
@@ -134,7 +126,7 @@ bool BaseEntity::IsCritBoosted()
 
 bool BaseEntity::IsFeignDeathReady()
 {
-	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_bFeignDeathReady);
+	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_bFeignDeathReady);
 }
 
 float BaseEntity::GetModelScale()
@@ -160,5 +152,5 @@ BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)
 
 int32_t BaseEntity::GetAirDash()
 {
-	return *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared + Netvars::DT_TFPlayerShared::m_iAirDash);
+	return *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_iAirDash);
 }

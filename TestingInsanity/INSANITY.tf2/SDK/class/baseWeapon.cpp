@@ -116,8 +116,8 @@ int baseWeapon::GetWeaponDefinitionID()
 {
     return *reinterpret_cast<int32_t*>(
         reinterpret_cast<uintptr_t>(this) + 
-        Netvars::DT_EconEntity::m_AttributeManager + 
-        Netvars::DT_AttributeContainer::m_Item + 
+/*        Netvars::DT_EconEntity::m_AttributeManager + 
+        Netvars::DT_AttributeContainer::m_Item +*/ 
         Netvars::DT_ScriptCreatedItem::m_iItemDefinitionIndex);
 }
 

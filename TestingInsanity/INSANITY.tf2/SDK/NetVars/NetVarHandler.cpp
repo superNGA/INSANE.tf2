@@ -104,12 +104,12 @@ void NetVarHandler_t::_RecurseClientClass(ClientClass* pClientClass)
     if (pTable == nullptr)
         return;
 
-    _RecurseTable(pTable);
+    _RecurseTable(pTable, 0);
 
     _RecurseClientClass(pClientClass->m_pNext);
 }
 
-void NetVarHandler_t::_RecurseTable(RecvTable* pTable)
+void NetVarHandler_t::_RecurseTable(RecvTable* pTable, uint64_t iParentOffset)
 {
     // Iterate props for this table
     uint32_t nProps = pTable->m_nProps;
@@ -122,7 +122,7 @@ void NetVarHandler_t::_RecurseTable(RecvTable* pTable)
         // is this prop a child table pointer?
         if (pProp->child_table != nullptr)
         {
-            _RecurseTable(pProp->child_table);
+            _RecurseTable(pProp->child_table, iParentOffset + pProp->m_Offset);
         }
 
         // Finding this hash in the map
@@ -136,7 +136,7 @@ void NetVarHandler_t::_RecurseTable(RecvTable* pTable)
         // Storing this netvar
         for (auto* pNetVar : it->second)
         {
-            *pNetVar->m_pDestination = static_cast<int64_t>(pProp->m_Offset + pNetVar->m_iOffset);
+            *pNetVar->m_pDestination = static_cast<int64_t>(pProp->m_Offset + pNetVar->m_iOffset + iParentOffset);
             WIN_LOG("[ 0x%02X ] Registered NetVar [ %s->%s ] iOffset : %d", *pNetVar->m_pDestination, pNetVar->m_szTableName.c_str(), pNetVar->m_szNetVarName.c_str(), pNetVar->m_iOffset);
             ++m_nFoundNetVars;
         }

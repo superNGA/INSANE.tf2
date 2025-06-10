@@ -14,6 +14,7 @@
 Movement_t::Movement_t()
 {
 	m_bInitializedKeyCodes = false;
+	m_iJumpKeyCode		   = 0;
 
 	Reset();
 }
@@ -33,10 +34,7 @@ void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, bas
 
 void Movement_t::Reset()
 {
-	m_bLastBhopState  = false;
-	m_bFireRocket	  = false;
-	m_iLastRocketCount = -1;
-	m_iJumpKeyCode	  = 0;
+	m_bLastBhopState = false;
 }
 
 
@@ -75,7 +73,7 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
 	}
 
 	// Can Rocket jump?
-	if (pLocalPlayer->getCharacterChoice() != TF_SOLDIER || pActiveWeapon->getSlot() != WPN_SLOT_PRIMARY)
+	if (pLocalPlayer->m_iClass() != TF_SOLDIER || pActiveWeapon->getSlot() != WPN_SLOT_PRIMARY)
 		return;
 
 	// If Got no ammo, then return

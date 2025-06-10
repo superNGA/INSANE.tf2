@@ -29,7 +29,7 @@ public:
 
 private:
     void _RecurseClientClass(ClientClass* pClientClass);
-    void _RecurseTable(RecvTable* pTable);
+    void _RecurseTable(RecvTable* pTable, uint64_t iParentOffset);
 
     uint32_t m_nFoundNetVars = 0;
 
@@ -67,4 +67,3 @@ namespace TempNetvar { inline NetVar_t NetVar_##szName(#szTableName, #szNetVarNa
 inline type name(){return *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(this) + Netvars::table::name);};
 #define NETVAR_SETTER(name, table, type)\
 inline void name(type data){ *reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(this) + Netvars::table::name) = data;};
-

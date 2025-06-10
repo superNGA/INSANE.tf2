@@ -1,6 +1,8 @@
 #pragma once
 #include "Basic Structures.h"
 
+constexpr float MAX_MOVE_USERCMD = 450.0f;
+
 enum CommandButtons : int
 {
     IN_ATTACK         = (1 << 0),
@@ -33,6 +35,25 @@ enum CommandButtons : int
 
 class CUserCmd {
 public:
+    CUserCmd()
+    {
+        VirtualTable     = nullptr;
+        command_number   = 0;
+        tick_count       = 0;
+        viewangles.Init();
+        forwardmove      = 0.0f;
+        sidemove         = 0.0f;
+        upmove           = 0.0f;
+        buttons          = 0;
+        impulse          = 0;
+        weaponselect     = 0;
+        weaponsubtype    = 0;
+        random_seed      = 0;
+        mousedx          = 0;
+        mousedy          = 0;
+        hasbeenpredicted = false;
+    }
+
     void*   VirtualTable;       // This is just padding shit. No real use     
     int     command_number;     // Sequence number of command
     int     tick_count;         // Tick when this command was created

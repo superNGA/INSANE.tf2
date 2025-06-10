@@ -21,12 +21,10 @@ private:
 
     void _InitializeKeyCodes();
 
-    int32_t m_iJumpKeyCode = 0;
-    bool m_bInitializedKeyCodes;
+    int32_t m_iJumpKeyCode          = 0;
+    bool    m_bInitializedKeyCodes  = false;
 
-    bool m_bLastBhopState;
-    bool m_bFireRocket;
-    int32_t m_iLastRocketCount;
+    bool    m_bLastBhopState        = false;
     
 };
 

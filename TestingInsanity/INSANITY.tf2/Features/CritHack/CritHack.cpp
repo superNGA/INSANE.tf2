@@ -519,7 +519,7 @@ void CritHack_t::RecordDamageEvent(IGameEvent* pEvent)
     int iDamageTaken = 0;
     
     // is Death-Ringer spy faking his death
-    bool bFakeDeath = pVictim->getCharacterChoice() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->InCond(TF_COND_FEIGN_DEATH));
+    bool bFakeDeath = pVictim->m_iClass() == TF_SPY && (pVictim->IsFeignDeathReady() == true || pVictim->InCond(TF_COND_FEIGN_DEATH));
 
     // If we "kill-da-victim" or if he faked his death ( using Death-Ringer ) then use our records for calculating damage dealt.
     if (iHealth <= 0 || bFakeDeath)
@@ -726,7 +726,7 @@ void CritHack_t::_InitializeCVars()
 
 bool CritHack_t::_IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon)
 {
-    player_class iCharChoice = pLocalPlayer->getCharacterChoice();
+    player_class iCharChoice = pLocalPlayer->m_iClass();
 
     // Skipping Sniper's primary
     if (iCharChoice == TF_SNIPER && pActiveWeapon->m_iSlot == WPN_SLOT_PRIMARY)

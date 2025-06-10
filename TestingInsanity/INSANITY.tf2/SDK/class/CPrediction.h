@@ -3,6 +3,8 @@
 
 struct vec;
 struct qangle;
+class BaseEntity;
+class CUserCmd;
 
 class CPrediction
 {
@@ -36,6 +38,14 @@ public:
 	virtual void	SetViewAngles(qangle& ang) = 0;
 	virtual void	GetLocalViewAngles(qangle& ang) = 0;
 	virtual void	SetLocalViewAngles(qangle& ang) = 0;
+
+	// CPrediction Fns
+	virtual bool	InPrediction(void) = 0;
+	virtual bool	IsFirstTimePredicted(void) = 0;
+	virtual int		GetIncomingPacketNumber(void) = 0;
+
+	virtual void	RunCommand(BaseEntity* player, CUserCmd* ucmd, void* moveHelper) = 0;
+
 
 	int				m_hLastGround;
 	bool			m_bInPrediction;

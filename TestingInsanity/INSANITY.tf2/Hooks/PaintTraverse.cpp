@@ -40,12 +40,12 @@ MAKE_HOOK(PaintTraverse, "48 89 5C 24 ? 57 48 83 EC ? 48 8B 01 41 0F B6 D9", __s
 	void* pVTable, int64_t PANEL, uint8_t idk1, uint8_t idk2)
 {
 	// REMOVING SCOPE OVERLAY
-	if (config.viewConfig.RemoveSniperScopeOverlay && entityManager.GetLocalPlayer()->getCharacterChoice() == TF_SNIPER) {
+	if (config.viewConfig.RemoveSniperScopeOverlay && entityManager.GetLocalPlayer()->m_iClass() == TF_SNIPER) {
 		PANEL = removePanel(pVTable, PANEL, "HudScope", panelIndex.scopeOverlay);
 	}
 
 	// REMOVING CHARGE OVERLAY
-	if (config.viewConfig.RemoveSniperChargeOverlay && entityManager.GetLocalPlayer()->getCharacterChoice() == TF_SNIPER) {
+	if (config.viewConfig.RemoveSniperChargeOverlay && entityManager.GetLocalPlayer()->m_iClass() == TF_SNIPER) {
 		PANEL = removePanel(pVTable, PANEL, "HudScopeCharge", panelIndex.chargeOverlay);
 	}
 
