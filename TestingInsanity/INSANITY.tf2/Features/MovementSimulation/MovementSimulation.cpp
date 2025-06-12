@@ -10,7 +10,7 @@
 //SDK
 #include "../../SDK/class/CUserCmd.h"
 
-#define DEBUG_MOVEMENT_SIM_HOOKS true
+#define DEBUG_MOVEMENT_SIM_HOOKS false
 
 // Fns
 MAKE_SIG(CTFGameMovement_ProcessMovement, "48 85 D2 0F 84 ? ? ? ? 48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 49 8B F0 48 8B FA 48 8B D9 4D 85 C0", CLIENT_DLL,
@@ -43,6 +43,7 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt, CUserCmd* pCmd)
     m_playerDataBackup.Store(m_pPlayer);
 
     // Adjusting player data temporarily
+    memset(&dummyCmd, 0, sizeof(CUserCmd));
     m_pPlayer->m_pCurrentCommand(&dummyCmd);
     m_pPlayer->m_hGroundEntity(NULL);
 
@@ -52,6 +53,8 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt, CUserCmd* pCmd)
     
     // Handling Ducking ( Glitching )
     _HandleDuck(m_pPlayer);
+
+    printf("CGameMovement::PlayerMove : %p\n", Sig::PlayerMove.m_ullAdrs);
 
     m_bSimulationRunning = true;
     m_bInitialized = true;
@@ -244,7 +247,7 @@ void MovementSimulation_t::_SetupMoveDataLocal(CMoveData& moveData, BaseEntity* 
     moveData.m_bFirstRunOfFunctions = false;
     moveData.m_bGameCodeMovedPlayer = false;
 
-    moveData.m_nPlayerHandle        = pEnt->GetRefEHandle();
+    moveData.m_nPlayerHandle        = pEnt->GetRefEHandle(); // This is fucked up, fix it
     moveData.m_vecAbsOrigin         = pEnt->GetAbsOrigin();
     moveData.m_vecAngles            = pEnt->GetAbsAngles();
     moveData.m_vecVelocity          = pEnt->m_vecVelocity();
@@ -255,8 +258,10 @@ void MovementSimulation_t::_SetupMoveDataLocal(CMoveData& moveData, BaseEntity* 
     moveData.m_flForwardMove        = pCmd->forwardmove;
     moveData.m_flSideMove           = pCmd->sidemove;
 
+    //printf("RefEHandle : %u [ wrong handle : %u ] | ENTITY INDEX : %d | pEnt : %p\n", moveData.m_nPlayerHandle, iWrongHandle, moveData.m_nPlayerHandle.GetEntryIndex(), pEnt);
 }
 
+// 131329
 
 //=========================================================================
 //                     DEBUG HOOKS
@@ -280,6 +285,17 @@ MAKE_HOOK(CGameMovement_Duck, "48 8B C4 48 89 58 ? 48 89 68 ? 48 89 70 ? 48 89 7
     return Hook::CGameMovement_Duck::O_CGameMovement_Duck(pVtable);
 }
 
+MAKE_HOOK(CTraceFilterObject_Constructor, "48 8D 05 ? ? ? ? 48 89 51 ? 48 89 01 48 8B C1 44 89 41", __fastcall, CLIENT_DLL,
+    void*, void* pTraceFilter, int64_t idk1, int idk2, int64_t idk3)
+{
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+    {
+        LOG("Construnting CTraceFilterObject @ [ %p ] %lld , %d , %lld", pTraceFilter, idk1, idk2, idk3);
+    }
+
+    return Hook::CTraceFilterObject_Constructor::O_CTraceFilterObject_Constructor(pTraceFilter, idk1, idk2, idk3);
+}
+
 MAKE_HOOK(CGameMovement_CatagorizeMovement, "40 56 48 81 EC ? ? ? ? 48 8B 41 ? 48 8B F1 C7 80", __fastcall, CLIENT_DLL,
     void*, void* idk1)
 {
@@ -292,10 +308,84 @@ MAKE_HOOK(CGameMovement_CatagorizeMovement, "40 56 48 81 EC ? ? ? ? 48 8B 41 ? 4
 MAKE_HOOK(CGameMovement_ReduceTimers, "48 8B 05 ? ? ? ? 0F 57 C0 33 D2", __fastcall, CLIENT_DLL,
     void*, void* idk1)
 {
+    auto result = Hook::CGameMovement_ReduceTimers::O_CGameMovement_ReduceTimers(idk1);
+    
     if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
-        FAIL_LOG("|---------->CGameMovement::ReduceTimers()");
+        printf("|---------->CGameMovement::ReduceTimers()  DONE\n");
 
-    return Hook::CGameMovement_ReduceTimers::O_CGameMovement_ReduceTimers(idk1);
+    return result;
+}
+
+MAKE_HOOK(CGameMovement_CheckStuck, "40 55 56 57 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B F1", __fastcall, CLIENT_DLL,
+    void*, void* idk1)
+{
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        FAIL_LOG("|---------->CGameMovement::CheckStuck()");
+
+    auto result = Hook::CGameMovement_CheckStuck::O_CGameMovement_CheckStuck(idk1);
+    
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        WIN_LOG("|---------->CGameMovement::CheckStuck()  DONE");
+
+    return result;
+}
+
+int64_t iLastCheckInterval = 0;
+
+// Gets called twice each tick, but will only get called once in failing tick
+MAKE_HOOK(CGameMovement_CheckInterval, "85 D2 74 ? 83 EA ? 74 ? 83 FA ? 74 ? B8", __fastcall, CLIENT_DLL,
+    int64_t, void* idk1, int idk2)
+{
+    auto result = Hook::CGameMovement_CheckInterval::O_CGameMovement_CheckInterval(idk1, idk2);
+    
+    iLastCheckInterval = result;
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        WIN_LOG("|---------->CGameMovement::CheckInterval()  DONE : %d", iLastCheckInterval);
+
+    return result;
+}
+
+MAKE_HOOK(CGameMovement_EntIndex, "8B 41 ? C3 CC CC CC CC CC CC CC CC CC CC CC CC 8B 91 ? ? ? ? 85 D2 7F ? 33 C0", __fastcall, CLIENT_DLL,
+    int, void* idk1)
+{
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        FAIL_LOG("Requesting Ent index");
+
+    int iEntIndex = Hook::CGameMovement_EntIndex::O_CGameMovement_EntIndex(idk1);
+
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        WIN_LOG("Ent Index : %d [ res. : %d ]", iEntIndex, (dummyCmd.command_number + iEntIndex) % iLastCheckInterval);
+
+    return iEntIndex;
+}
+
+// Ain't getting called
+//MAKE_HOOK(CGameMovement_TracePlayerBBox, "48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 81 EC ? ? ? ? 48 8B 05 ? ? ? ? 45 8B F1 49 8B F0", __fastcall, CLIENT_DLL,
+//    void* , void* idk1, int idk2, int idk3, int idk4, int idk5, void* idk6)
+//{
+//    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+//        FAIL_LOG("Trying to trace player Bounding Box");
+//
+//    auto result = Hook::CGameMovement_TracePlayerBBox::O_CGameMovement_TracePlayerBBox(idk1, idk2, idk3, idk4, idk5, idk6);
+//
+//    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+//        WIN_LOG("successFully trace player bbox");
+//
+//    return result;
+//}
+
+MAKE_HOOK(CGameMovement_TryPlayerMove, "4C 8B DC 49 89 5B ? 49 89 53", __fastcall, CLIENT_DLL,
+    void* , void* rax, void* idk1, void* idk2, float idk3)
+{
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        FAIL_LOG("TryPlayerMove");
+
+    auto result = Hook::CGameMovement_TryPlayerMove::O_CGameMovement_TryPlayerMove(rax, idk1, idk2, idk3);
+
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+        WIN_LOG("TryPlayerMove DONE");
+
+    return result;
 }
 
 //======================= PLAYER MOVE =======================
@@ -307,9 +397,15 @@ MAKE_HOOK(CGameMovement_PlayerMove, "48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 4
     if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
     {
         printf("|------>CGameMovement_PlayerMove\n");
+        //printf("Breaking...\n");
+        //__debugbreak();
     }
 
-    return Hook::CGameMovement_PlayerMove::O_CGameMovement_PlayerMove(pVTable);
+    auto result = Hook::CGameMovement_PlayerMove::O_CGameMovement_PlayerMove(pVTable);
+
+    WIN_LOG("!! playermove done !!");
+    
+    return result;
 }
 
 MAKE_HOOK(CTFGameMovement_PlayerMove, "48 89 5C 24 ? 48 89 74 24 ? 57 48 81 EC ? ? ? ? 48 8B D9 BA", __fastcall, CLIENT_DLL,
@@ -322,6 +418,7 @@ MAKE_HOOK(CTFGameMovement_PlayerMove, "48 89 5C 24 ? 48 89 74 24 ? 57 48 81 EC ?
 
     return Hook::CTFGameMovement_PlayerMove::O_CTFGameMovement_PlayerMove(pVTable);
 }
+
 
 //======================= PROCESS MOVES =======================
 // CTFGameMovement -> ProcessMovement
@@ -357,13 +454,28 @@ MAKE_HOOK(ResetGetPointsContentCache, "48 8D 41 ? B9", __fastcall, CLIENT_DLL, v
     return Hook::ResetGetPointsContentCache::O_ResetGetPointsContentCache(idk1);
 }
 
-MAKE_HOOK(CGameMovement_FullWalkMove, "48 8B C4 48 89 58 ? 48 89 68 ? 48 89 70 ? 48 89 78 ? 41 56 48 83 EC ? 0F 29 70 ? 4C 8D 71", __fastcall, CLIENT_DLL, void*, void* idk1)
+MAKE_HOOK(CGameMovement_FullWalkMove, "48 89 5C 24 ? 57 48 83 EC ? 0F 29 74 24 ? 48 8B D9 E8 ? ? ? ? 0F 57 F6 84 C0", __fastcall, CLIENT_DLL, void*, void* idk1)
 {
-    printf("|--------->CGameMovement::FullWalkMove()\n");
-    return Hook::CGameMovement_FullWalkMove::O_CGameMovement_FullWalkMove(idk1);
+    FAIL_LOG("|--------->CGameMovement::FullWalkMove()");
+    auto result = Hook::CGameMovement_FullWalkMove::O_CGameMovement_FullWalkMove(idk1);
+    WIN_LOG("|--------->CGameMovement::FullWalkMove() DONE");
+    return result;
 }
 
+MAKE_HOOK(CGameMovement_AirMove, "48 8B C4 53 48 81 EC ? ? ? ? 0F 29 70 ? 4C 8D 48", __fastcall, CLIENT_DLL, void*, void* idk1)
+{
+    FAIL_LOG("|---------------->CGameMovement::AirMove()");
+    auto result = Hook::CGameMovement_AirMove::O_CGameMovement_AirMove(idk1);
+    WIN_LOG("|---------------->CGameMovement::AirMove() DONE");
+    return result;
+}
 
+MAKE_HOOK(CGameMovement_AirAccelerate, "48 89 5C 24 ? 57 48 83 EC ? 48 8B 41 ? 48 8B FA 0F 29 74 24", __fastcall, CLIENT_DLL, 
+    void, void* rax, void* idk1, float idk2, float idk3)
+{
+    printf("Calling AirAccelerate\n");
+    Hook::CGameMovement_AirAccelerate::O_CGameMovement_AirAccelerate(rax, idk1, idk2, idk3);
+}
 
 #endif
 

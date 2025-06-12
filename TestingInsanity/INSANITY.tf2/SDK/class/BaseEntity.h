@@ -11,10 +11,11 @@ NETVAR(m_lifeState,  DT_BasePlayer)
 NETVAR(m_iHealth,    DT_BasePlayer)
 NETVAR(m_fFlags,     DT_BasePlayer)
 NETVAR(m_flMaxspeed, DT_BasePlayer)
-NETVAR(m_vecOrigin, DT_BaseEntity)
+
 
 // BaseEntity
 NETVAR(m_iTeamNum,     DT_BaseEntity)
+NETVAR(m_vecOrigin,	   DT_BaseEntity)
 
 // Base Animating
 NETVAR(m_flModelScale, DT_BaseAnimating)
@@ -56,7 +57,8 @@ NETVAR(m_iItemDefinitionIndex,   DT_ScriptCreatedItem)
 
 NETVAR_OFFSET(m_vecAbsVelocity,  m_Collision, DT_BaseEntity, -120)
 NETVAR_OFFSET(m_vecVelocity,	 m_Collision, DT_BaseEntity, -120 -80 -12 -4)
-NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed, DT_BasePlayer, -0x60)
+NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed,  DT_BasePlayer, -0x60)
+NETVAR_OFFSET(m_RefEHandle,		 m_angRotation, DT_BaseEntity, 12)
 
 class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
@@ -103,6 +105,8 @@ public:
 
 	NETVAR_GETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 	NETVAR_SETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
+
+	NETVAR_GETTER(m_RefEHandle, DT_BaseEntity, CBaseHandle)
 
 	// CMD
 	NETVAR_GETTER(m_pCurrentCommand, DT_BasePlayer, CUserCmd*)
