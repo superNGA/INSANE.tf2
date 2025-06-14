@@ -9,40 +9,37 @@
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/CPrediction.h"
 #include "../../SDK/class/CMoveData.h"
+#include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/CPlayerLocalData.h"
 
 class CUserCmd;
 
-/*
-Flaws : 
-    -> Gets fucked up in duck transition.
-    -> Crashed in approching spawn gate.
-*/
+// TODO : Ducking is messed up. Glitches while ducking in transition.
 
 struct PlayerDataBackup_t
 {
     PlayerDataBackup_t();
-    
     void Store(BaseEntity* pPlayer);
+    void Restore(BaseEntity* pPlayer);
     void Reset();
 
     CUserCmd*  pOldCmd;
     uint32_t   m_fFlags;
     
-    float m_flDuckTime;
-    float m_flJumpTime;
-    float m_flDuckJumpTime;
-    bool m_bDucking;
-    bool m_bDucked;
-    bool m_bInDuckJump;
+    float      m_flDuckTime;
+    float      m_flJumpTime;
+    float      m_flDuckJumpTime;
+    bool       m_bDucking;
+    bool       m_bDucked;
+    bool       m_bInDuckJump;
 
-    uint32_t m_hGroundEntity;
+    uint32_t   m_hGroundEntity;
 
-    vec m_vOrigin;
-    vec m_vVelocity;
-    vec m_vEyeOffset;
+    vec        m_vOrigin;
+    vec        m_vVelocity;
+    vec        m_vEyeOffset;
 
-    float m_flModelScale;
+    float      m_flModelScale;
 };
 
 class MovementSimulation_t
@@ -57,34 +54,25 @@ public:
 
     bool m_bSimulationRunning = false;
 
-    inline const vec GetSimulationPos() const { return m_moveData.m_vecAbsOrigin; }
-    CMoveData m_moveData;
+    inline const vec& GetSimulationPos() const { return m_moveData.m_vecAbsOrigin; }
+    
 private:
-    bool  m_bOldInPrediction       = false;
-    bool  m_bOldFirstTimePredicted = false;
-    float m_flOldFrameTime         = 0.0f;
+    bool    m_bInitialized           = false;
+    bool    m_bOldInPrediction       = false;
+    bool    m_bOldFirstTimePredicted = false;
+    float   m_flOldFrameTime         = 0.0f;
+    vec     m_vLastSimulatedPos;
 
     BaseEntity* m_pPlayer = nullptr;
     
-    float m_flLastForwardMove = 0.0f;
-    float m_flLastSideMove = 0.0f;
-
-    void _ResetMoveData(CMoveData& moveData);
+    CMoveData          m_moveData;
+    PlayerDataBackup_t m_playerDataBackup;
+    CUserCmd           m_dummyCmd;
 
     void _SetupMove(BaseEntity* pEnt);
-
-    void _SetupMoveData(CMoveData& moveData, BaseEntity* pEnt);
-    void _SetupMoveDataLocal(CMoveData& moveData, BaseEntity* pEnt, CUserCmd* pCmd);
-
     void _HandleDuck(BaseEntity* pEnt);
-
-    vec m_vOldPos;
-    vec m_vLastSimulatedPos;
-
-    bool m_bInitialized = false;
-
-    PlayerDataBackup_t m_playerDataBackup;
 };
+
 DECLARE_FEATURE_OBJECT(movementSimulation, MovementSimulation_t)
 
 DEFINE_SECTION(MovementSim, "Aimbot", 2);

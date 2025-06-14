@@ -1,5 +1,13 @@
-#include "AimbotMelee.h"
+//=========================================================================
+//                      MELEE AIMBOT
+//=========================================================================
+// by      : INSANE
+// created : 14/06/2025
+// 
+// purpose : Hits enemy perfectly with melee weapons ( doesn't contain auto backstab )
+//-------------------------------------------------------------------------
 
+#include "AimbotMelee.h"
 #include "../AimbotHelper.h"
 
 // SDK
@@ -15,15 +23,7 @@
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
 
-/*
-PROBLEM :
--> angle setting timing if fucked up!
-*/
-
-#define DEBUG_HULL_SIZE        false
-#define DEBUG_MELEE_SWING_HULL true
-
-constexpr float SWING_RANGE_MULTIPLIER = 1.2f;
+constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -49,6 +49,9 @@ void AimbotMelee_t::RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     }
     else if(Features::Aimbot::Melee_Aimbot::MeleeAimbot_DebugPrediction.IsActive() == true && m_pBestTarget != nullptr)
     {
+        if (m_vBestTargetPosAtLock.IsEmpty() == true)
+            m_vBestTargetPosAtLock = m_pBestTarget->GetAbsOrigin();
+
         _DrawPredictionDebugInfo(pActiveWeapon, pActiveWeapon, m_pBestTarget);
     }
 
@@ -73,8 +76,8 @@ void AimbotMelee_t::RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         pCmd->viewangles = qTargetBestAngles;
         *pSendPacket = false; // Setting silent aim
 
-        // Release best target once swing is done, Now we are free to get another target.
-        m_pBestTarget  = nullptr;
+        // Reset everything once swing is done.
+        Reset();
     }
 }
 
@@ -83,6 +86,7 @@ void AimbotMelee_t::Reset()
 {
     m_vAttackerFuturePos.Init();
     m_vBestTargetFuturePos.Init();
+    m_vBestTargetPosAtLock.Init();
 
     m_pBestTarget = nullptr;
 }
@@ -91,44 +95,6 @@ void AimbotMelee_t::Reset()
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-const BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pLocalPlayer, float flSwingRange) const
-{
-    const auto& targetData = FeatureObj::aimbotHelper.GetAimbotTargetData();
-    
-    const vec& vEyePos = pLocalPlayer->GetEyePos();
-    BaseEntity* pBestTarget    = nullptr;
-    float       flBestDistance = std::numeric_limits<float>::infinity();
-    
-    for (BaseEntity* pTarget : targetData.m_vecEnemyPlayers)
-    {
-        if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
-        {
-            // Initialize Movement Sim
-            FeatureObj::movementSimulation.Initialize(pTarget);
-
-            // Run ticks
-            int nTicks = 1.0f / tfObject.pGlobalVar->interval_per_tick;
-            printf("SImulating %d ticks\n", nTicks);
-            for (int i = 0; i < nTicks; i++)
-                FeatureObj::movementSimulation.RunTick();
-
-            // Restore to original
-            FeatureObj::movementSimulation.Restore();
-        }
-
-        const vec vClosestPoint = _GetClosestPointOnEntity(pLocalPlayer, pTarget); // TODO : just use one fn nigga!
-        float flDist            = vEyePos.DistTo(vClosestPoint);
-
-        if (flDist < flBestDistance)
-        {
-            flBestDistance = flDist;
-            pBestTarget    = pTarget;
-        }
-    }
-
-    return pBestTarget;
-}
-
 BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, float flSmackDelay, float flSwingRange)
 {
     uint32_t nTicksToSimulate = flSmackDelay / tfObject.pGlobalVar->interval_per_tick;
@@ -138,7 +104,7 @@ BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, float flSmackDel
     for (int i = 0; i < nTicksToSimulate; i++)
         FeatureObj::movementSimulation.RunTick();
 
-    m_vAttackerFuturePos = FeatureObj::movementSimulation.m_moveData.m_vecAbsOrigin + pAttacker->m_vecViewOffset();
+    m_vAttackerFuturePos = FeatureObj::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
     FeatureObj::movementSimulation.Restore();
 
     BaseEntity* pBestTarget     = nullptr;
@@ -195,6 +161,7 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, cons
     return vClosestPoint;
 }
 
+
 const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerOrigin, const BaseEntity* pTarget, const vec& vTargetOrigin) const
 {
     auto* pCollidable = pTarget->GetCollideable();
@@ -214,6 +181,7 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const v
     return vClosestPoint;
 }
 
+
 void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget)
 {
     float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
@@ -222,7 +190,6 @@ void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* 
     vec vClosestPointOnEnemyHull = _GetClosestPointOnEntity(pAttacker, m_vAttackerFuturePos, pTarget, m_vBestTargetFuturePos);
     vec vSwingEndPoint           = m_vAttackerFuturePos + ((vClosestPointOnEnemyHull - m_vAttackerFuturePos).NormalizeInPlace() * flSwingRange);
 
-    constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
     // Visualizing swing range using line
     I::IDebugOverlay->AddLineOverlay(m_vAttackerFuturePos, vSwingEndPoint, 255, 255, 255, false, PREDICTION_DEBUG_DRAWING_LIFE);
     
@@ -233,13 +200,25 @@ void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* 
         qangle(0.0f, 0.0f, 0.0f),
         255, 0, 0, 50.0f, PREDICTION_DEBUG_DRAWING_LIFE);
 
+    // Target's Collision hull mins, maxs, angles
+    auto* pCollidable                  = pTarget->GetCollideable();
+    const vec& vOBBMin                 = pCollidable->OBBMins();
+    const vec& vOBBMax                 = pCollidable->OBBMaxs();
+    const qangle& qCollisionHullAngles = pCollidable->GetCollisionAngles();
+
     // Visualizing Target's future collision hull using box
-    auto* pCollidable = pTarget->GetCollideable();
     I::IDebugOverlay->AddBoxOverlay(
         m_vBestTargetFuturePos,             
-        pCollidable->OBBMins(), pCollidable->OBBMaxs(),
-        pCollidable->GetCollisionAngles(),             
-        255, 255, 255, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE);
+        vOBBMin, vOBBMax,
+        qCollisionHullAngles,
+        134, 173, 153, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT GREEN
+
+    // Visualizing Target's CURRENT collision hull using box
+    I::IDebugOverlay->AddBoxOverlay(
+        m_vBestTargetPosAtLock,
+        vOBBMin, vOBBMax,
+        qCollisionHullAngles,
+        168, 126, 137, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT RED
 }
 
 
@@ -266,7 +245,6 @@ float AimbotMelee_t::_GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* p
 }
 
 
-
 float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     // Compensating for Model Scale
@@ -278,174 +256,4 @@ float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pA
     // Adding Atribute Melee range
     pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
     return flSwingRange;
-}
-
-
-
-bool AimbotMelee_t::_IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEntity* pLocalPlayer)
-{
-    float flDistance = (vEnd - vStart).length();
-    
-    // Trace Setup
-    ray_t ray;
-    ray.Init(vStart, vEnd);
-    trace_t trace;
-    i_trace_filter filter(pLocalPlayer->GetCollideable()->GetEntityHandle());
-
-    // Casting Ray from Start to End
-    I::EngineTrace->TraceRay(ray, MASK_SOLID, &filter, &trace);
-
-    // if Traced ray length less than our Original ray length, then Obstructed!
-    return (trace.m_end - trace.m_start).length() < flDistance;
-}
-
-
-
-void AimbotMelee_t::_DrawSwingRangeRay(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
-{
-    static vec vMeleeHullMinBase(-18.0f, -18.0f, -18.0f);
-    static vec vMeleeHullMaxBase(18.0f, 18.0f, 18.0f);
-
-    float flBoundScale = 1.0f;
-    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flBoundScale, "melee_bounds_multiplier");
-
-    // Compensating for Bound Scale
-    vec vMeleeHullMin = vMeleeHullMinBase * flBoundScale;
-    vec vMeleeHullMax = vMeleeHullMaxBase * flBoundScale;
-
-    // Compensating for Model Scale
-    float flSwingRange = _GetLooseSwingRange(pLocalPlayer, pActiveWeapon);
-    float flModelScale = pLocalPlayer->m_flModelScale();
-    if (flModelScale > 1.0f)
-    {
-        flSwingRange *= flModelScale;
-        vMeleeHullMin *= flModelScale;
-        vMeleeHullMax *= flModelScale;
-    }
-
-    // Accounting for weapon attributes
-    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
-
-    float flHullLength = vMeleeHullMax.x - vMeleeHullMin.x;
-    float flHullBredth = vMeleeHullMax.y - vMeleeHullMin.y;
-    float flHullHeight = vMeleeHullMax.z - vMeleeHullMin.z;
-
-    //printf("Length : %.2f, Breadth : %.2f, Height : %.2f | SwingRange : %.2f\n", flHullLength, flHullBredth, flHullHeight, flSwingRange);
-
-    // Calculating Start & End point.
-    vec vForward; 
-    Maths::AngleVectors(pLocalPlayer->GetAbsAngles(), &vForward);
-    const qangle qViewAngles = pLocalPlayer->GetAbsAngles();
-    const vec    vEyePos = pLocalPlayer->GetEyePos();
-    
-    // Hull End, start and swing range.
-    const vec vInitialialHullEnd = vEyePos - vForward * (flHullLength / 2.0f);
-    const vec vSwingRangeEnd     = vEyePos + vForward * (flSwingRange);
-    const vec vFinalHullEnd      = vEyePos + vForward * (flSwingRange + flHullLength * 0.5f);
-
-    // Drawing
-    I::IDebugOverlay->AddLineOverlay(vEyePos,        vInitialialHullEnd, 255, 0,   0, false, 10.0f);
-    I::IDebugOverlay->AddLineOverlay(vEyePos,        vSwingRangeEnd,     0,   255, 0, false, 10.0f);
-    I::IDebugOverlay->AddLineOverlay(vSwingRangeEnd, vFinalHullEnd,      255, 255, 0, false, 10.0f);
-}
-
-
-
-void AimbotMelee_t::_DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
-{
-    static vec vMeleeHullMinBase(-18.0f, -18.0f, -18.0f);
-    static vec vMeleeHullMaxBase( 18.0f,  18.0f,  18.0f);
-
-    float flBoundScale = 1.0f;
-    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flBoundScale, "melee_bounds_multiplier");
-
-    // Compensating for Bound Scale
-    vec vMeleeHullMin = vMeleeHullMinBase * flBoundScale;
-    vec vMeleeHullMax = vMeleeHullMaxBase * flBoundScale;
-
-    // Compensating for Model Scale
-    float flSwingRange = _GetLooseSwingRange(pLocalPlayer, pActiveWeapon);
-    float flModelScale = pLocalPlayer->m_flModelScale();
-    if (flModelScale > 1.0f)
-    {
-        flSwingRange  *= flModelScale;
-        vMeleeHullMin *= flModelScale;
-        vMeleeHullMax *= flModelScale;
-    }
-
-    // Adding Atribute Melee range
-    pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flSwingRange, "melee_range_multiplier");
-    
-#if (DEBUG_HULL_SIZE == true)
-    printf("Mins : %.2f %.2f %.2f\n", vMeleeHullMin.x, vMeleeHullMin.y, vMeleeHullMin.z);
-    printf("vMeleeHullMaxBase : %.2f %.2f %.2f\n", vMeleeHullMinBase.x, vMeleeHullMinBase.y, vMeleeHullMinBase.z);
-    printf("Maxs : %.2f %.2f %.2f\n", vMeleeHullMax.x, vMeleeHullMax.y, vMeleeHullMax.z);
-    printf("vMeleeHullMaxBase : %.2f %.2f %.2f\n", vMeleeHullMaxBase.x, vMeleeHullMaxBase.y, vMeleeHullMaxBase.z);
-    printf("ModelScale : %.2f | BoundScale : %.2f\n", flModelScale, flBoundScale);
-#endif
-
-    vec vForward;
-    Maths::AngleVectors(pCmd->viewangles, &vForward);
-    const vec vSwingStart = pLocalPlayer->GetEyePos();
-    const vec vSwingEnd   = vSwingStart + (vForward * flSwingRange);
-
-    bool bDidHullHit = [&]()->bool
-        {
-            trace_t trace;
-            i_trace_filter filter(pLocalPlayer->GetCollideable()->GetEntityHandle()); // This is a make shift filter, make a proper one ( or maybe not? IDK )
-
-            I::EngineTrace->UTIL_TraceHull(
-                vSwingStart, vSwingEnd,         // Swing Start & End 
-                vMeleeHullMin, vMeleeHullMax,   // Hull Mins & Max
-                MASK_SOLID, &filter, &trace     // Filters n shit
-            );
-
-            return trace.did_hit();
-        }();
-
-    // Drawing Hull
-    I::IDebugOverlay->AddSweptBoxOverlay(
-        vSwingStart, vSwingEnd,         // Swing Start & End
-        vMeleeHullMin, vMeleeHullMax,   // Hull Mins and Maxes
-        pCmd->viewangles,               // Orientation
-        bDidHullHit ? 0 : 255, bDidHullHit ? 255 : 0, 0, 50, 10.0f); // Color, Alpha & duration
-}
-
-
-
-void AimbotMelee_t::_DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
-{
-    I::IDebugOverlay->AddCircleOverlay(
-        pLocalPlayer->GetAbsOrigin(),                                         // Circles base
-        vec(0.0f, 0.0f, 1.0f),                                                // points straight up!
-        _GetLooseSwingRange(pLocalPlayer, pActiveWeapon) * SWING_RANGE_MULTIPLIER, // This is not the real range.
-        20,                 // Segments / Smoothness
-        255, 255, 0, 255,   // Color
-        false,
-        10.0f,
-        DEG2RAD(pLocalPlayer->GetAbsAngles().yaw));
-}
-
-void AimbotMelee_t::_DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
-{
-    vec BOX_SIZE_EYE_POS(5.0f, 5.0f, 5.0f);
-
-    I::IDebugOverlay->AddBoxOverlay(
-        pLocalPlayer->GetEyePos(), // <- Eye Pos
-        BOX_SIZE_EYE_POS,               // Box mins
-        BOX_SIZE_EYE_POS * -1.0f,       // Box maxs
-        pLocalPlayer->GetAbsAngles(),   // Box's orientation
-        255, 255, 255, 50, 10.0f);       // Color, alpha and duration
-}
-
-
-void AimbotMelee_t::_DrawEntityCollisionHull(const BaseEntity* pEnt, const vec& vOrigin) const
-{
-    auto* pCollidable = pEnt->GetCollideable();
-
-    I::IDebugOverlay->AddBoxOverlay(
-        pCollidable->GetCollisionOrigin(),              // Collision Origin
-        pCollidable->OBBMins(), pCollidable->OBBMaxs(), // Collision Origin Mins & Maxs
-        pCollidable->GetCollisionAngles(),              // Angle of collision Hull
-        255, 255, 255, 40, 3.0f); // Color n shit
 }
