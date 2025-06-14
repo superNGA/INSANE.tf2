@@ -33,11 +33,11 @@ public:
     { 
         _ClearAimbotData();
         _ConstructAimbotTargetData(); 
-        return m_AllTargets; 
+        return m_allTargetList; 
     }
 
 private:
-    AimbotTargetData_t m_AllTargets;
+    AimbotTargetData_t m_allTargetList;
     void _ConstructAimbotTargetData();
     void _ClearAimbotData();
 };

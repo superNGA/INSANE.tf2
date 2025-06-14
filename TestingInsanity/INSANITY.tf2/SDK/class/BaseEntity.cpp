@@ -129,11 +129,6 @@ bool BaseEntity::IsFeignDeathReady()
 	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_bFeignDeathReady);
 }
 
-float BaseEntity::GetModelScale()
-{
-	return *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_BaseAnimating::m_flModelScale);
-}
-
 void BaseEntity::CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute)
 {
 	iAtributeOut = Sig::CALL_ATRIB_HOOK_INT(iAtributeOut, szAtribute, this, 0, true);

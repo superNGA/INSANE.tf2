@@ -20,10 +20,10 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
 
-    if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
+    if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE && pLocalPlayer->m_iClass() != TF_SPY)
     {
         // Smack em niggas!
-        FeatureObj::aimbotMelee.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        FeatureObj::aimbotMelee.RunV2(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
     else if (pActiveWeapon->IsProjectile() == true)
     {
@@ -64,27 +64,27 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
         case PLAYER:     // Store Enemy Players
         {
             if (pEnt->IsEnemy() == true)
-                m_AllTargets.m_vecEnemyPlayers.push_back(pEnt);
+                m_allTargetList.m_vecEnemyPlayers.push_back(pEnt);
             break;
         }
         case DISPENSER:  // Store Enemy No-Harm Buildings
         case TELEPORTER:
         {
             if (pEnt->IsEnemy() == true)
-                m_AllTargets.m_vecEnemyBuildings.push_back(pEnt);
+                m_allTargetList.m_vecEnemyBuildings.push_back(pEnt);
             break;
         }
         case SENTRY_GUN: // Store sentries
         {
             if (pEnt->IsEnemy() == true)
-                m_AllTargets.m_vecEnemySentry.push_back(pEnt);
+                m_allTargetList.m_vecEnemySentry.push_back(pEnt);
             break;
         }
         case ROCKET:     // Store projectiles
         case DEMO_PROJECTILES:
         {
             if (pEnt->IsEnemy() == true)
-                m_AllTargets.m_vecEnemyProjectiles.push_back(pEnt);
+                m_allTargetList.m_vecEnemyProjectiles.push_back(pEnt);
             break;
         }
         default:
@@ -95,8 +95,8 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
 
 void AimbotHelper_t::_ClearAimbotData()
 {
-    m_AllTargets.m_vecEnemyPlayers.clear();
-    m_AllTargets.m_vecEnemyBuildings.clear();
-    m_AllTargets.m_vecEnemySentry.clear();
-    m_AllTargets.m_vecEnemyProjectiles.clear();
+    m_allTargetList.m_vecEnemyPlayers.clear();
+    m_allTargetList.m_vecEnemyBuildings.clear();
+    m_allTargetList.m_vecEnemySentry.clear();
+    m_allTargetList.m_vecEnemyProjectiles.clear();
 }

@@ -7,31 +7,33 @@ class CUserCmd;
 
 //----------------------- NETVARS -----------------------
 // BasePlayer
-NETVAR(m_lifeState,  DT_BasePlayer)
-NETVAR(m_iHealth,    DT_BasePlayer)
-NETVAR(m_fFlags,     DT_BasePlayer)
-NETVAR(m_flMaxspeed, DT_BasePlayer)
-
-
-// BaseEntity
-NETVAR(m_iTeamNum,     DT_BaseEntity)
-NETVAR(m_vecOrigin,	   DT_BaseEntity)
-
-// Base Animating
-NETVAR(m_flModelScale, DT_BaseAnimating)
+NETVAR(m_lifeState,				 DT_BasePlayer)
+NETVAR(m_iHealth,				 DT_BasePlayer)
+NETVAR(m_fFlags,				 DT_BasePlayer)
+NETVAR(m_flMaxspeed,			 DT_BasePlayer)
+								 
+								 
+// BaseEntity					 
+NETVAR(m_iTeamNum,				 DT_BaseEntity)
+NETVAR(m_vecOrigin,				 DT_BaseEntity)
+NETVAR(m_hOwnerEntity,			 DT_BaseEntity)
+NETVAR(m_hEffectEntity,			 DT_BaseEntity)
+								 
+// Base Animating				 
+NETVAR(m_flModelScale,			 DT_BaseAnimating)
 
 // Local Player Exclusive
-NETVAR(m_vecViewOffset, m_vecViewOffset[0], DT_LocalPlayerExclusive)
-NETVAR(m_nTickBase,     DT_LocalPlayerExclusive)
-NETVAR(m_Local,		    DT_LocalPlayerExclusive)
-NETVAR(m_hGroundEntity,	DT_LocalPlayerExclusive)
+NETVAR(m_vecViewOffset,			 m_vecViewOffset[0], DT_LocalPlayerExclusive)
+NETVAR(m_nTickBase,				 DT_LocalPlayerExclusive)
+NETVAR(m_Local,					 DT_LocalPlayerExclusive)
+NETVAR(m_hGroundEntity,			 DT_LocalPlayerExclusive)
 
-NETVAR(m_bDucked,		 DT_Local)
-NETVAR(m_bDucking,		 DT_Local)
-NETVAR(m_bInDuckJump,	 DT_Local)
-NETVAR(m_flDucktime,	 DT_Local)
-NETVAR(m_flDuckJumpTime, DT_Local)
-NETVAR(m_flJumpTime,	 DT_Local)
+NETVAR(m_bDucked,				 DT_Local)
+NETVAR(m_bDucking,				 DT_Local)
+NETVAR(m_bInDuckJump,			 DT_Local)
+NETVAR(m_flDucktime,			 DT_Local)
+NETVAR(m_flDuckJumpTime,		 DT_Local)
+NETVAR(m_flJumpTime,			 DT_Local)
 
 NETVAR(m_hActiveWeapon,          DT_BaseCombatCharacter)
 NETVAR(m_bGlowEnabled,           DT_BaseCombatCharacter)
@@ -55,10 +57,11 @@ NETVAR(m_AttributeManager,	     DT_EconEntity)
 NETVAR(m_Item,				     DT_AttributeContainer)
 NETVAR(m_iItemDefinitionIndex,   DT_ScriptCreatedItem)
 
-NETVAR_OFFSET(m_vecAbsVelocity,  m_Collision, DT_BaseEntity, -120)
-NETVAR_OFFSET(m_vecVelocity,	 m_Collision, DT_BaseEntity, -120 -80 -12 -4)
-NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed,  DT_BasePlayer, -0x60)
-NETVAR_OFFSET(m_RefEHandle,		 m_angRotation, DT_BaseEntity, 12)
+// Offset Netvars
+NETVAR_OFFSET(m_vecAbsVelocity,  m_Collision,		DT_BaseEntity,		-120)
+NETVAR_OFFSET(m_vecVelocity,	 m_Collision,		DT_BaseEntity,		-120 -80 -12 -4)
+NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed,		DT_BasePlayer,		-0x60)
+NETVAR_OFFSET(m_RefEHandle,		 m_PredictableID,	DT_PredictableId,	0x18)
 
 class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
@@ -106,7 +109,9 @@ public:
 	NETVAR_GETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 	NETVAR_SETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 
-	NETVAR_GETTER(m_RefEHandle, DT_BaseEntity, CBaseHandle)
+	NETVAR_GETTER(m_RefEHandle, DT_PredictableId, int)
+	NETVAR_GETTER(m_hOwnerEntity, DT_BaseEntity, int)
+	NETVAR_GETTER(m_hEffectEntity, DT_BaseEntity, int)
 
 	// CMD
 	NETVAR_GETTER(m_pCurrentCommand, DT_BasePlayer, CUserCmd*)
@@ -150,7 +155,8 @@ public:
 
 	bool			IsFeignDeathReady();
 
-	float			GetModelScale();
+	NETVAR_GETTER(m_flModelScale, DT_BaseAnimating, float)
+	NETVAR_SETTER(m_flModelScale, DT_BaseAnimating, float)
 
 	// CALL_ATRIB_HOOK's
 	void CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute);

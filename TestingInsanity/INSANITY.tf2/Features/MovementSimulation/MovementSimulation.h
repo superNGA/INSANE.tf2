@@ -41,6 +41,8 @@ struct PlayerDataBackup_t
     vec m_vOrigin;
     vec m_vVelocity;
     vec m_vEyeOffset;
+
+    float m_flModelScale;
 };
 
 class MovementSimulation_t
@@ -49,19 +51,24 @@ public:
     MovementSimulation_t() { Reset(); }
     void Reset();
 
-    bool Initialize(BaseEntity* pEnt, CUserCmd* pCmd);
+    bool Initialize(BaseEntity* pEnt);
     void RunTick();
     void Restore();
 
     bool m_bSimulationRunning = false;
 
+    inline const vec GetSimulationPos() const { return m_moveData.m_vecAbsOrigin; }
+    CMoveData m_moveData;
 private:
     bool  m_bOldInPrediction       = false;
     bool  m_bOldFirstTimePredicted = false;
     float m_flOldFrameTime         = 0.0f;
 
     BaseEntity* m_pPlayer = nullptr;
-    CMoveData moveData;
+    
+    float m_flLastForwardMove = 0.0f;
+    float m_flLastSideMove = 0.0f;
+
     void _ResetMoveData(CMoveData& moveData);
 
     void _SetupMove(BaseEntity* pEnt);

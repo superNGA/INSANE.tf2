@@ -30,7 +30,7 @@ void MovementSimulation_t::Reset()
 
 MAKE_SIG(PlayerMove, "48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B 01 48 8B F9 FF 90", CLIENT_DLL, void*, void*)
 
-bool MovementSimulation_t::Initialize(BaseEntity* pEnt, CUserCmd* pCmd)
+bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
 {
     // Store Original Prediction data & frame time.
     m_bOldInPrediction       = I::cPrediction->m_bInPrediction;
@@ -48,47 +48,32 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt, CUserCmd* pCmd)
     m_pPlayer->m_hGroundEntity(NULL);
 
     // Setting up Move Data
-    _ResetMoveData(moveData);
-    _SetupMoveDataLocal(moveData, m_pPlayer, pCmd);
+    _ResetMoveData(m_moveData);
+    _SetupMove(m_pPlayer);
+    //_SetupMoveDataLocal(m_moveData, m_pPlayer, pCmd);
     
     // Handling Ducking ( Glitching )
     _HandleDuck(m_pPlayer);
 
-    printf("CGameMovement::PlayerMove : %p\n", Sig::PlayerMove.m_ullAdrs);
-
     m_bSimulationRunning = true;
-    m_bInitialized = true;
+    m_bInitialized       = true;
     return true;
 }
 
 
 void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
 {
-   /* int iFlags = pEnt->m_fFlags();
-    for (int i = 0; i < 32; i++)
-    {
-        printf("%d", iFlags & (1 << (31 - i)) ? 1 : 0);
-        if ((i + 1) % 4 == 0)
-            printf(" ");
-        if ((i + 1) % 8 == 0)
-            printf(" ");
-    }
-    printf("\n");*/
-
     if (pEnt->m_fFlags() & FL_DUCKING)
     {
         pEnt->m_flDucktime(0.0f);
         pEnt->m_flDuckJumpTime(0.0f);
-        //pEnt->m_flJumpTime(0.0f);
         pEnt->m_bDucking(false);
         pEnt->m_bDucked(true);
         pEnt->m_bInDuckJump(false);
+        m_moveData.m_nButtons |= IN_DUCK;
             
-        auto pFlags = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(pEnt) + Netvars::DT_BasePlayer::m_fFlags);
-        //*pFlags &= ~FL_ANIMDUCKING;
-        *pFlags &= ~FL_DUCKING;
-        // NOTE : We are also supposed to remove the IN_DUCK bit from UserCmd->Buttons, but 
-        // CurrentCommand is already set to an empty CUserCmd
+        //auto pFlags = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(pEnt) + Netvars::DT_BasePlayer::m_fFlags);
+        //*pFlags &= ~FL_DUCKING;
     }
 }
 
@@ -100,19 +85,19 @@ void MovementSimulation_t::RunTick()
     tfObject.pGlobalVar->frametime        = I::cPrediction->m_bEnginePaused == true ? 0 : tfObject.pGlobalVar->interval_per_tick;
 
     //printf("MoveType : %d\n", *(int*)(reinterpret_cast<uintptr_t>(m_pPlayer) + 0x224));
-    Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &moveData);
+    Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &m_moveData);
     
     // Drawing line connecting all predicted positions
-    if (m_vLastSimulatedPos.IsEmpty() == false)
+    if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true && m_vLastSimulatedPos.IsEmpty() == false)
     {
         I::IDebugOverlay->AddLineOverlay(
             m_vLastSimulatedPos,        // Start
-            moveData.m_vecAbsOrigin,    // End
+            m_moveData.m_vecAbsOrigin,    // End
             255, 255, 255,              // Color
             false, 10.0f                // Depth test & duration
         );
     }
-    m_vLastSimulatedPos = moveData.m_vecAbsOrigin;
+    m_vLastSimulatedPos = m_moveData.m_vecAbsOrigin;
 }
 
 
@@ -127,7 +112,6 @@ void MovementSimulation_t::Restore()
 
     // RESTORING PLAYERS DATA
     m_pPlayer->m_pCurrentCommand(m_playerDataBackup.pOldCmd);
-    
     m_pPlayer->m_fFlags(m_playerDataBackup.m_fFlags);
 
     m_pPlayer->m_flDucktime(m_playerDataBackup.m_flDuckTime);
@@ -141,6 +125,8 @@ void MovementSimulation_t::Restore()
     m_pPlayer->m_vecOrigin(m_playerDataBackup.m_vOrigin);
     m_pPlayer->m_vecVelocity(m_playerDataBackup.m_vVelocity);
     m_pPlayer->m_vecViewOffset(m_playerDataBackup.m_vEyeOffset);
+
+    m_pPlayer->m_flModelScale(m_playerDataBackup.m_flModelScale);
 
     Reset();
     m_bInitialized = false;
@@ -156,7 +142,7 @@ void MovementSimulation_t::Restore()
 // doing something is better than doing nothing :).
 void MovementSimulation_t::_ResetMoveData(CMoveData& moveData)
 {
-    memset(&moveData, 0, sizeof(CMoveData));
+    memset(&m_moveData, 0, sizeof(CMoveData));
 
     /*
     moveData.m_bFirstRunOfFunctions     = false;
@@ -196,67 +182,76 @@ void MovementSimulation_t::_ResetMoveData(CMoveData& moveData)
 
 void MovementSimulation_t::_SetupMove(BaseEntity* pEnt)
 {
-    moveData.m_bFirstRunOfFunctions = false; // Keep it false, else will do extra bullshit and performance loss :(
-    moveData.m_bGameCodeMovedPlayer = false; // Keep false, else calls CatagorizeMovement() & I don't know WTF is that :)
+    m_moveData.m_bFirstRunOfFunctions = false; // Keep it false, else will do extra bullshit and performance loss :(
+    m_moveData.m_bGameCodeMovedPlayer = false; // Keep false, else calls CatagorizeMovement() & I don't know WTF is that :)
 
-    moveData.m_nPlayerHandle    = pEnt->GetRefEHandle();
-    moveData.m_vecAbsOrigin     = pEnt->GetAbsOrigin();
-    moveData.m_vecVelocity      = pEnt->m_vecVelocity();
+    m_moveData.m_nPlayerHandle    = pEnt->GetRefEHandle();
+    m_moveData.m_vecAbsOrigin     = pEnt->GetAbsOrigin();
+    m_moveData.m_vecVelocity      = pEnt->m_vecVelocity();
 
-    moveData.m_vecViewAngles    = pEnt->GetAbsAngles();
-    moveData.m_vecAbsViewAngles = pEnt->GetAbsAngles();
+    m_moveData.m_vecViewAngles    = pEnt->GetAbsAngles(); // Eye angle ( Same for local & world space (probably) in tf2. )
+    m_moveData.m_vecAbsViewAngles = m_moveData.m_vecViewAngles;
+    m_moveData.m_vecAngles        = m_moveData.m_vecViewAngles; // The game's Setupmove ( CPrediction::Setupmove ) is setting it from user cmd
     
-    // Calculating body angle ( not same as shooting angles )
-    // Since we gonna have to make strafe prediction separately, this doesn't matter
-    Maths::VectorAnglesFromSDK(moveData.m_vecVelocity, moveData.m_vecAngles);
+    qangle qVelocity;
+    Maths::VectorAngles(m_moveData.m_vecVelocity, qVelocity);
+    const float flSpeed = m_moveData.m_vecVelocity.mag();
+    float flThetaInDegree = m_moveData.m_vecAbsViewAngles.yaw - qVelocity.yaw;
 
-    // Setup Forward & Side move and we are golden :)
+    const float flForwardMove = flSpeed * cos(DEG2RAD(flThetaInDegree));
+    const float flSideMove    = flSpeed * sin(DEG2RAD(flThetaInDegree));
+
+    // Maybe snap them to max or min value? IDK
+    m_moveData.m_flForwardMove = flForwardMove;
+    m_moveData.m_flSideMove = flSideMove;
+
+    //printf("[PREDICTION] Forward Move : %.2f | Side Move : %.2f\n", flForwardMove, flSideMove);
 }
 
 
 void MovementSimulation_t::_SetupMoveData(CMoveData& moveData, BaseEntity* pEnt)
 {
-    moveData.m_bFirstRunOfFunctions = false;
-    moveData.m_bGameCodeMovedPlayer = false;
+    m_moveData.m_bFirstRunOfFunctions = false;
+    m_moveData.m_bGameCodeMovedPlayer = false;
 
-    moveData.m_nPlayerHandle = pEnt->GetRefEHandle();
-    moveData.m_vecAbsOrigin  = pEnt->GetAbsOrigin();
-    moveData.m_vecAngles     = pEnt->GetRenderAngles(); // Confused between ABS angles and Render angles.
-    moveData.m_vecVelocity   = pEnt->m_vecVelocity();
+    m_moveData.m_nPlayerHandle = pEnt->GetRefEHandle();
+    m_moveData.m_vecAbsOrigin  = pEnt->GetAbsOrigin();
+    m_moveData.m_vecAngles     = pEnt->GetRenderAngles(); // Confused between ABS angles and Render angles.
+    m_moveData.m_vecVelocity   = pEnt->m_vecVelocity();
 
     // The UC guy has only set the yaw for vecAngles, but not the pitch. 
     // I yanked both of em here :).
     qangle qVelocity;
-    Maths::VectorAnglesFromSDK(moveData.m_vecVelocity, qVelocity);
-    moveData.m_vecAbsViewAngles = { qVelocity.pitch, qVelocity.yaw, 0.0f };
-    moveData.m_vecViewAngles    = moveData.m_vecAbsViewAngles;
+    Maths::VectorAnglesFromSDK(m_moveData.m_vecVelocity, qVelocity);
+    m_moveData.m_vecAbsViewAngles = { qVelocity.pitch, qVelocity.yaw, 0.0f };
+    m_moveData.m_vecViewAngles    = m_moveData.m_vecAbsViewAngles;
 
     // Forward Move & Side Move
     vec vForward, vRight;
-    Maths::AngleVectors(moveData.m_vecViewAngles, &vForward, &vRight);
+    Maths::AngleVectors(m_moveData.m_vecViewAngles, &vForward, &vRight);
 
     // Ripped of starigh from @Sonixz
-    moveData.m_flForwardMove = (moveData.m_vecVelocity.y - vRight.y / vRight.x * moveData.m_vecVelocity.x) / (vForward.y - vRight.y / vRight.x * vForward.x);
-    moveData.m_flSideMove    = (moveData.m_vecVelocity.x - vForward.x * moveData.m_flForwardMove) / vRight.x;
+    m_moveData.m_flForwardMove = (m_moveData.m_vecVelocity.y - vRight.y / vRight.x * m_moveData.m_vecVelocity.x) / (vForward.y - vRight.y / vRight.x * vForward.x);
+    m_moveData.m_flSideMove    = (m_moveData.m_vecVelocity.x - vForward.x * m_moveData.m_flForwardMove) / vRight.x;
 
-    printf("Forward move : %.2f, SideMove : %.2f\n", moveData.m_flForwardMove, moveData.m_flSideMove);
+    printf("Forward move : %.2f, SideMove : %.2f\n", m_moveData.m_flForwardMove, m_moveData.m_flSideMove);
 }
 
 void MovementSimulation_t::_SetupMoveDataLocal(CMoveData& moveData, BaseEntity* pEnt, CUserCmd* pCmd)
 {
-    moveData.m_bFirstRunOfFunctions = false;
-    moveData.m_bGameCodeMovedPlayer = false;
+    m_moveData.m_bFirstRunOfFunctions = false;
+    m_moveData.m_bGameCodeMovedPlayer = false;
 
-    moveData.m_nPlayerHandle        = pEnt->GetRefEHandle(); // This is fucked up, fix it
-    moveData.m_vecAbsOrigin         = pEnt->GetAbsOrigin();
-    moveData.m_vecAngles            = pEnt->GetAbsAngles();
-    moveData.m_vecVelocity          = pEnt->m_vecVelocity();
+    m_moveData.m_nPlayerHandle        = pEnt->m_RefEHandle(); // This is fucked up, fix it
+    m_moveData.m_vecAbsOrigin         = pEnt->GetAbsOrigin();
+    m_moveData.m_vecAngles            = pEnt->GetAbsAngles();
+    m_moveData.m_vecVelocity          = pEnt->m_vecVelocity();
 
-    moveData.m_vecViewAngles        = pCmd->viewangles;
-    moveData.m_vecAbsViewAngles     = pCmd->viewangles;
+    m_moveData.m_vecViewAngles        = pCmd->viewangles;
+    m_moveData.m_vecAbsViewAngles     = pCmd->viewangles;
 
-    moveData.m_flForwardMove        = pCmd->forwardmove;
-    moveData.m_flSideMove           = pCmd->sidemove;
+    m_moveData.m_flForwardMove        = pCmd->forwardmove;
+    m_moveData.m_flSideMove           = pCmd->sidemove;
 
     //printf("RefEHandle : %u [ wrong handle : %u ] | ENTITY INDEX : %d | pEnt : %p\n", moveData.m_nPlayerHandle, iWrongHandle, moveData.m_nPlayerHandle.GetEntryIndex(), pEnt);
 }
@@ -292,8 +287,25 @@ MAKE_HOOK(CTraceFilterObject_Constructor, "48 8D 05 ? ? ? ? 48 89 51 ? 48 89 01 
     {
         LOG("Construnting CTraceFilterObject @ [ %p ] %lld , %d , %lld", pTraceFilter, idk1, idk2, idk3);
     }
+    else
+    {
+        WIN_LOG("Game's call to Contrustor::CTraceFilterObject @ [ %p ] %lld , %d , %lld", pTraceFilter, idk1, idk2, idk3);
+    }
 
     return Hook::CTraceFilterObject_Constructor::O_CTraceFilterObject_Constructor(pTraceFilter, idk1, idk2, idk3);
+}
+
+MAKE_HOOK_VTABLE(CEngineTrace_TraceRay, "EngineTraceClient003", 4, __fastcall, ENGINE_DLL, void,
+    void* idk1, void* pRay, int iMask, void* pTraceFilter, void* pTrace)
+{
+    // Gets called from CTFGameMovement::TracePlayerBBox();
+    if (FeatureObj::movementSimulation.m_bSimulationRunning == true)
+    {            
+        LOG("OUR CALL : ray* %p | mask : %d | traceFilter : %p | trace : %p", pRay, iMask, pTraceFilter, pTrace);
+        __debugbreak();
+    }
+
+    return Hook::CEngineTrace_TraceRay::O_CEngineTrace_TraceRay(idk1, pRay, iMask, pTraceFilter, pTrace);
 }
 
 MAKE_HOOK(CGameMovement_CatagorizeMovement, "40 56 48 81 EC ? ? ? ? 48 8B 41 ? 48 8B F1 C7 80", __fastcall, CLIENT_DLL,
@@ -491,6 +503,7 @@ void PlayerDataBackup_t::Store(BaseEntity* pPlayer)
 {
     pOldCmd             = pPlayer->m_pCurrentCommand();
     m_fFlags            = pPlayer->m_fFlags();
+
     m_flJumpTime        = pPlayer->m_flJumpTime();
     m_flDuckJumpTime    = pPlayer->m_flDuckJumpTime();
     m_flDuckTime        = pPlayer->m_flDucktime();
@@ -502,19 +515,30 @@ void PlayerDataBackup_t::Store(BaseEntity* pPlayer)
     m_vOrigin           = pPlayer->m_vecOrigin();
     m_vEyeOffset        = pPlayer->m_vecViewOffset();
     m_vVelocity         = pPlayer->m_vecVelocity();
+
+    m_flModelScale      = pPlayer->m_flModelScale();
 }
 
 void PlayerDataBackup_t::Reset()
 {
     pOldCmd = nullptr;
     m_fFlags = 0;
+
     m_flDuckTime = 0.0f;
     m_flJumpTime = 0.0f;
     m_flDuckJumpTime = 0.0f;
+
     m_bDucked = false;
     m_bDucking = false;
     m_bInDuckJump = false;
+    
     m_hGroundEntity = 0;
+
+    m_vOrigin.Init();
+    m_vVelocity.Init();
+    m_vEyeOffset.Init();
+
+    m_flModelScale = 0.0f;
 
     m_vOrigin.Init();
     m_vEyeOffset.Init();

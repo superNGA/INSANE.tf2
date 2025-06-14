@@ -9,7 +9,7 @@ public:
 	bool			m_bGameCodeMovedPlayer : 1;
 
 	// ( This was originally EntityHandle_t, but 4 bytes is 4 bytes )
-	int				m_nPlayerHandle;	// edict index on server, client entity handle on client
+	int32_t			m_nPlayerHandle;	// edict index on server, client entity handle on client
 
 	int				m_nImpulseCommand;	// Impulse command issued.
 	qangle			m_vecViewAngles;	// Command view angles (local space)

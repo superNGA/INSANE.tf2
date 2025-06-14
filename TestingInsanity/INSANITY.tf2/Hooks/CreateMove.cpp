@@ -84,17 +84,10 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	//======================= Movement Sim Testing =======================
 	if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
 	{
-		// Drawing Start pos
-		constexpr vec vSize(2.0f, 2.0f, 2.0f);
-		vec vOrigin = pLocalPlayer->GetAbsOrigin();
-		I::IDebugOverlay->AddBoxOverlay(
-			vOrigin,
-			vSize,
-			vSize * -1.0f,
-			qangle(0.0f, 0.0f, 0.0f), 255, 0, 0, 100, 10.0f);
+		//printf("[GAME] Forward Move : %.2f | Side Move : %.2f\n", cmd->forwardmove, cmd->sidemove);
 
 		// Initialize Movement Sim
-		FeatureObj::movementSimulation.Initialize(pLocalPlayer, cmd);
+		FeatureObj::movementSimulation.Initialize(pLocalPlayer);
 
 		// Run ticks
 		int32_t nTicksToSim = Features::Aimbot::MovementSim::Ticks_To_Simulate.GetData().m_iVal;

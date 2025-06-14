@@ -7,26 +7,39 @@ class BaseEntity;
 class baseWeapon;
 
 /*
-we will assume that this is the only aimbot we gonna make, 
-this will result in bad & not very scalable implementations, 
-but this will greatly increase the speed of development.
+TODO : 
+    -> Swing Range optimizations
+    -> Fail Safe swing ?
+
+
+    -> Auto BackStab is just some simple vector maths with 
+    comparison to hardcoded numbers.
+    -> Just make sure the range is calculated properly.
+
+    -> Also determine under which feature to place it.
 */
 
 class AimbotMelee_t
 {
 public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket);
+    void RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket);
 
     void Reset();
 
 private:
-    const BaseEntity* _ChooseTarget(BaseEntity* pLocalPlayer) const;
+    const BaseEntity* _ChooseTarget(BaseEntity* pLocalPlayer, float flSwingRange) const;
+    BaseEntity* _ChooseTarget(BaseEntity* pAttacker, float flSmackDelay, float flSwingRange);
+
+    // Gets Closest point accoring to current position
     const vec _GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const;
 
-    bool _ShouldSwing(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    bool _ShouldSetAngle(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    // Works with future position.
+    const vec _GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerOrigin, const BaseEntity* pTarget, const vec& vTargetOrigin) const;
 
-    float _GetSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void _DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget);
+
+    float _GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
 
     bool _IsPathObstructed(const vec& vStart, const vec& vEnd, BaseEntity* pLocalPlayer);
@@ -35,11 +48,12 @@ private:
     void _DrawMeleeHull(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     void _DrawMeleeSwingRadius(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _DrawEyePos(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    void _DrawEntityCollisionHull(const BaseEntity* pEnt) const;
+    void _DrawEntityCollisionHull(const BaseEntity* pEnt, const vec& vOrigin) const;
 
-    float m_flLastAttackTime = 0.0f;
-    bool  m_bSwingActive     = false;
-    uint32_t m_iSwingTick = 0;
+    vec m_vBestTargetFuturePos;
+    vec m_vAttackerFuturePos;
+
+    BaseEntity* m_pBestTarget  = nullptr;
 };
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
@@ -59,25 +73,30 @@ DEFINE_FEATURE(
     "Hits as soon as a target is found");
 
 DEFINE_FEATURE(
-    MeleeAimbot_FOV, FloatSlider_t, Melee_Aimbot, Aimbot, 3,
-    FloatSlider_t(0.0f, 0.0f, 180.0f), FeatureFlag_SupportKeyBind);
+    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 3, false,
+    FeatureFlag_None, "Draws future position for locked targets"
+)
 
-DEFINE_FEATURE(
-    MeleeRange_Circle, bool, Melee_Aimbot, Aimbot, 4, false,
-    FeatureFlag_None, "Draws the melee range for you current weapon");
-
-DEFINE_FEATURE(
-    MeleeEyePos, bool, Melee_Aimbot, Aimbot, 5, false,
-    FeatureFlag_None, "Draws eye pos (Thats where the bullets are fired from)");
-
-DEFINE_FEATURE(
-    MeleeRange_HULL, bool, Melee_Aimbot, Aimbot, 6, false,
-    FeatureFlag_None, "Draw the effective range of you Melee");
-
-DEFINE_FEATURE(
-    MeleeDrawCollisionHull, bool, Melee_Aimbot, Aimbot, 7, false,
-    FeatureFlag_None, "The all-mightly collision box");
-
-DEFINE_FEATURE(
-    Melee_Swing_Range_Ray, bool, Melee_Aimbot, Aimbot, 8, false,
-    FeatureFlag_None, "Draws a line showing your melee range");
+//DEFINE_FEATURE(
+//    MeleeAimbot_FOV, FloatSlider_t, Melee_Aimbot, Aimbot, 3,
+//    FloatSlider_t(0.0f, 0.0f, 180.0f), FeatureFlag_SupportKeyBind);
+//
+//DEFINE_FEATURE(
+//    MeleeRange_Circle, bool, Melee_Aimbot, Aimbot, 4, false,
+//    FeatureFlag_None, "Draws the melee range for you current weapon");
+//
+//DEFINE_FEATURE(
+//    MeleeEyePos, bool, Melee_Aimbot, Aimbot, 5, false,
+//    FeatureFlag_None, "Draws eye pos (Thats where the bullets are fired from)");
+//
+//DEFINE_FEATURE(
+//    MeleeRange_HULL, bool, Melee_Aimbot, Aimbot, 6, false,
+//    FeatureFlag_None, "Draw the effective range of you Melee");
+//
+//DEFINE_FEATURE(
+//    MeleeDrawCollisionHull, bool, Melee_Aimbot, Aimbot, 7, false,
+//    FeatureFlag_None, "The all-mightly collision box");
+//
+//DEFINE_FEATURE(
+//    Melee_Swing_Range_Ray, bool, Melee_Aimbot, Aimbot, 8, false,
+//    FeatureFlag_None, "Draws a line showing your melee range");

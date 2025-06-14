@@ -68,7 +68,7 @@ class I_handle_entity
 public:
 	virtual ~I_handle_entity() {}
 	virtual void SetRefEHandle(const CBaseHandle& handle) = 0;
-	virtual int	 GetRefEHandle() const = 0; // Supposed to reutrn CBaseHandle, but 4 bytes is 4 bytes :)
+	virtual const int32_t& GetRefEHandle() const = 0; // Supposed to reutrn CBaseHandle, but 4 bytes is 4 bytes :) // <-- Look at this fool
 };
 
 class ICollideable_t
@@ -131,13 +131,12 @@ public:
 class I_client_unknown : public I_handle_entity
 {
 public:
-	virtual ICollideable_t* GetCollideable() const = 0;
-	virtual I_client_networkable* GetClientNetworkable() = 0;
-	virtual I_client_renderable* GetClientRenderable() = 0;
-	virtual BaseEntity* GetI_client_entity() = 0;
-	//virtual c_base_entity* GetBaseEntity() = 0;
-	virtual BaseEntity* GetBaseEntity() = 0;
-	virtual I_client_thinkable* GetClientThinkable() = 0;
+	virtual ICollideable_t*			GetCollideable()  const = 0;
+	virtual I_client_networkable*	GetClientNetworkable()  = 0;
+	virtual I_client_renderable*	GetClientRenderable()	= 0;
+	virtual BaseEntity*				GetI_client_entity()	= 0;
+	virtual BaseEntity*				GetBaseEntity()			= 0;
+	virtual I_client_thinkable*		GetClientThinkable()	= 0;
 };
 
 class I_client_renderable

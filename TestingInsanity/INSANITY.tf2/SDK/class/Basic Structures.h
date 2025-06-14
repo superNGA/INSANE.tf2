@@ -156,10 +156,12 @@ struct vec
 		return vec(x / other, y / other, z / other);
 	}
 
-	vec operator +=(vec other)
+	vec& operator +=(vec other)
 	{
-		return vec(x + other.x, y + other.y, z + other.z);
+		x += other.x; y += other.y; z += other.z;
+		return *this;
 	}
+
 	vec& operator *=(float other)
 	{
 		x *= other; y *= other; z *= other;
@@ -228,10 +230,11 @@ struct vec
 		);
 	}
 
-	void NormalizeInPlace()
+	vec& NormalizeInPlace()
 	{
 		float flMagnitude = sqrtf(x * x + y * y + z * z);
 		x /= flMagnitude; y /= flMagnitude; z /= flMagnitude;
+		return *this;
 	}
 };
 
