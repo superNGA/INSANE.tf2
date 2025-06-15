@@ -21,6 +21,7 @@
 #include "../SDK/class/CUserCmd.h"
 #include "../SDK/class/BaseWeapon.h"
 #include "../SDK/class/Source Entity.h"
+#include "../SDK/class/CommonFns.h"
 
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
@@ -80,23 +81,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 
-
-	//======================= Movement Sim Testing =======================
-	if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
-	{
-		//printf("[GAME] Forward Move : %.2f | Side Move : %.2f\n", cmd->forwardmove, cmd->sidemove);
-
-		// Initialize Movement Sim
-		FeatureObj::movementSimulation.Initialize(pLocalPlayer);
-
-		// Run ticks
-		int32_t nTicksToSim = Features::Aimbot::MovementSim::Ticks_To_Simulate.GetData().m_iVal;
-		for (int i = 0; i < nTicksToSim; i++)
-			FeatureObj::movementSimulation.RunTick();
-		
-		// Restore to original
-		FeatureObj::movementSimulation.Restore();
-	}
 
 	return result;
 }

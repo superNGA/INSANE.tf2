@@ -24,9 +24,12 @@ NETVAR(m_flModelScale,			 DT_BaseAnimating)
 
 // Local Player Exclusive
 NETVAR(m_vecViewOffset,			 m_vecViewOffset[0], DT_LocalPlayerExclusive)
+NETVAR(m_angEyeAngles,			 m_angEyeAngles[0], DT_TFLocalPlayerExclusive)
 NETVAR(m_nTickBase,				 DT_LocalPlayerExclusive)
 NETVAR(m_Local,					 DT_LocalPlayerExclusive)
 NETVAR(m_hGroundEntity,			 DT_LocalPlayerExclusive)
+
+NETVAR(m_flNextAttack,			 DT_BCCLocalPlayerExclusive)
 
 NETVAR(m_bDucked,				 DT_Local)
 NETVAR(m_bDucking,				 DT_Local)
@@ -89,6 +92,8 @@ public:
 	NETVAR_GETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_iTeamNum, DT_BaseEntity, int32_t)
+
+	NETVAR_GETTER(m_flNextAttack, DT_BCCLocalPlayerExclusive, float)
 	
 	// Local Player Exclusive
 	NETVAR_GETTER(m_nTickBase, DT_LocalPlayerExclusive, uint32_t)
@@ -108,6 +113,8 @@ public:
 
 	NETVAR_GETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 	NETVAR_SETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
+	
+	NETVAR_GETTER(m_angEyeAngles, DT_TFLocalPlayerExclusive, qangle)
 
 	NETVAR_GETTER(m_RefEHandle, DT_PredictableId, int)
 	NETVAR_GETTER(m_hOwnerEntity, DT_BaseEntity, int)

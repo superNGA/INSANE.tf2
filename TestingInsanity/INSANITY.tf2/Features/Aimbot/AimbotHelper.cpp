@@ -20,10 +20,10 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
 
-    if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE && pLocalPlayer->m_iClass() != TF_SPY)
+    if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
-        FeatureObj::aimbotMelee.RunV2(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        FeatureObj::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
     else if (pActiveWeapon->IsProjectile() == true)
     {

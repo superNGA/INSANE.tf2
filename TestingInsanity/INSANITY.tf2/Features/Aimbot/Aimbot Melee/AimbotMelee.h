@@ -19,15 +19,17 @@ class baseWeapon;
 class AimbotMelee_t
 {
 public:
-    void RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket);
+    void RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
 
 private:
     BaseEntity* _ChooseTarget(BaseEntity* pAttacker, float flSmackDelay, float flSwingRange);
+    
+    bool _ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
 
     // Determines closest point on enemy collision hull from our Eye pos.
     const vec _GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const;
-    const vec _GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerOrigin, const BaseEntity* pTarget, const vec& vTargetOrigin) const;
+    const vec _GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerEyePos, const BaseEntity* pTarget, const vec& vTargetOrigin) const;
 
     void _DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget);
 
@@ -35,7 +37,9 @@ private:
     float _GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
  
-    vec         m_vAttackerFuturePos;
+    bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget);
+
+    vec         m_vAttackerFutureEyePos;
     vec         m_vBestTargetFuturePos;
     vec         m_vBestTargetPosAtLock;
     BaseEntity* m_pBestTarget  = nullptr;
@@ -58,6 +62,12 @@ DEFINE_FEATURE(
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 3, false,
+    MeleeAimbot_OnlyDoBackStabs_Spy, bool, Melee_Aimbot, Aimbot, 3, false,
+    FeatureFlag_SupportKeyBind,
+    "Only Allow back stabs with spy"
+)
+
+DEFINE_FEATURE(
+    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 4, false,
     FeatureFlag_None, "Draws future position for locked targets"
 )

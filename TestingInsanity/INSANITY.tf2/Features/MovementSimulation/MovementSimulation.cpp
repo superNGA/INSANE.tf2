@@ -144,6 +144,9 @@ void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
         pEnt->m_bDucked(true);
         pEnt->m_bInDuckJump(false);
         m_moveData.m_nButtons |= IN_DUCK;
+
+        // Removing the duck flag, else the Z axis for this entity won't change with ducking.
+        *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(pEnt) + Netvars::DT_BasePlayer::m_fFlags) &= ~IN_DUCK;
     }
 }
 

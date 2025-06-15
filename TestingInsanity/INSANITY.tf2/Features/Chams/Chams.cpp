@@ -74,11 +74,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         if (_CreateMaterial("FlatMat", szMat03))
         {
             FlatMat = UM_materials["FlatMat"]->pMaterial;
-            printf("ref count : %d\n", FlatMat->GetRefrenceCount());
             FlatMat->IncrementReferenceCount();
-            printf("ref count : %d\n", FlatMat->GetRefrenceCount());
-            FlatMat->IncrementReferenceCount();
-            printf("ref count : %d @ %p\n", FlatMat->GetRefrenceCount(), FlatMat);
         }
         else
         {
