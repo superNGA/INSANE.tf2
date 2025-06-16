@@ -161,12 +161,6 @@ BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, float flSmackDel
         const vec vClosestPoint = _GetClosestPointOnEntity(pAttacker, m_vAttackerFutureEyePos, pTarget, vTargetFuturePos);
         float flDist            = m_vAttackerFutureEyePos.DistTo(vClosestPoint);
 
-        // Delete this
-        qangle qEye = pAttacker->m_angEyeAngles();
-        vec vDebugNormal;
-        Maths::AngleVectors(qEye, &vDebugNormal);
-        I::IDebugOverlay->AddCircleOverlay(vClosestPoint, vDebugNormal, 5.0f, 3, 255, 255, 255, 255, false, 3.0f, 0.0f);
-
         if (flDist < flBestDistance)
         {
             flBestDistance       = flDist;
@@ -325,9 +319,6 @@ bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
 #endif
 
     float flDotProduct = vAttackerToTarget.x * vTargetViewAngles.x + vAttackerToTarget.y * vTargetViewAngles.y;
-
-    // Delete this
-    printf("DOT : %.2f\n", flDotProduct);
 
     return flDotProduct > 0.0f;
 }
