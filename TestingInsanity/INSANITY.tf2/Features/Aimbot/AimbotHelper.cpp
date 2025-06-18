@@ -35,15 +35,22 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     }
 }
 
+
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
 void AimbotHelper_t::_ConstructAimbotTargetData()
 {
-    int nEntities = I::IClientEntityList->NumberOfEntities(false);
-    
+    int nEntities         = I::IClientEntityList->NumberOfEntities(false);
+    int iLocalPlayerIndex = I::iEngine->GetLocalPlayer();
+    int iFriendlyTeam     = I::IClientEntityList->GetClientEntity(iLocalPlayerIndex)->m_iTeamNum();
+
     for (int iEntIndex = 0; iEntIndex < nEntities; iEntIndex++)
     {
+        // Skip local player
+        if (iEntIndex == iLocalPlayerIndex)
+            continue;
+
         BaseEntity* pEnt = I::IClientEntityList->GetClientEntity(iEntIndex);
         
         // don't want Nullptrs
@@ -58,45 +65,70 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
         if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
             continue;
 
-        IDclass_t iEntID = IDManager.getID(pEnt);
+        bool bEnemy = (pEnt->m_iTeamNum() != iFriendlyTeam);
+        GameObjectID_t iEntID = IDManager.GetObjectID(pEnt);
+
+        // Sorting-n-Filling entities :)
         switch (iEntID)
         {
-        case PLAYER:     // Store Enemy Players
-        {
-            if (pEnt->IsEnemy() == true)
-                m_allTargetList.m_vecEnemyPlayers.push_back(pEnt);
+        case GameObjectID_t::CTF_PLAYER:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemyPlayers.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlyPlayers.push_back(pEnt);
+            break;
+
+        case GameObjectID_t::C_OBJECT_SENTRY_GUN:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemySentry.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlySentry.push_back(pEnt);
+            break;
+
+        case GameObjectID_t::C_OBJECT_DISPENSER:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemyDispensers.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlyDispensers.push_back(pEnt);
+            break;
+
+        case GameObjectID_t::C_OBJECT_TELEPORTER:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemyTeleporters.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlyTeleporters.push_back(pEnt);
+            break;
+
+        case GameObjectID_t::CTF_PROJECTILE_ROCKET:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemyRockets.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlyRockets.push_back(pEnt);
+            break;
+
+        case GameObjectID_t::CTF_PROJECTILE_PIPEBOMB:
+            bEnemy == true ?
+                m_aimbotTargetData.m_vecEnemyPipeBombs.push_back(pEnt) :
+                m_aimbotTargetData.m_vecFriendlyPipeBombs.push_back(pEnt);
             break;
         }
-        case DISPENSER:  // Store Enemy No-Harm Buildings
-        case TELEPORTER:
-        {
-            if (pEnt->IsEnemy() == true)
-                m_allTargetList.m_vecEnemyBuildings.push_back(pEnt);
-            break;
-        }
-        case SENTRY_GUN: // Store sentries
-        {
-            if (pEnt->IsEnemy() == true)
-                m_allTargetList.m_vecEnemySentry.push_back(pEnt);
-            break;
-        }
-        case ROCKET:     // Store projectiles
-        case DEMO_PROJECTILES:
-        {
-            if (pEnt->IsEnemy() == true)
-                m_allTargetList.m_vecEnemyProjectiles.push_back(pEnt);
-            break;
-        }
-        default:
-            break;
-        }
+
     }
+    return;
 }
 
 void AimbotHelper_t::_ClearAimbotData()
 {
-    m_allTargetList.m_vecEnemyPlayers.clear();
-    m_allTargetList.m_vecEnemyBuildings.clear();
-    m_allTargetList.m_vecEnemySentry.clear();
-    m_allTargetList.m_vecEnemyProjectiles.clear();
+    m_aimbotTargetData.m_vecEnemyPlayers.clear();
+    m_aimbotTargetData.m_vecFriendlyPlayers.clear();
+
+    m_aimbotTargetData.m_vecEnemySentry.clear();
+    m_aimbotTargetData.m_vecFriendlySentry.clear();
+
+    m_aimbotTargetData.m_vecEnemyDispensers.clear();
+    m_aimbotTargetData.m_vecFriendlyDispensers.clear();
+
+    m_aimbotTargetData.m_vecEnemyTeleporters.clear();
+    m_aimbotTargetData.m_vecFriendlyTeleporters.clear();
+
+    m_aimbotTargetData.m_vecEnemyRockets.clear();
+    m_aimbotTargetData.m_vecFriendlyRockets.clear();
+
+    m_aimbotTargetData.m_vecEnemyPipeBombs.clear();
+    m_aimbotTargetData.m_vecFriendlyPipeBombs.clear();
 }

@@ -1,6 +1,8 @@
 #include "IVDebugOverlay.h"
 #include "Basic Structures.h"
 
+#include "../../Extra/math.h"
+
 void IVDebugOverlay::AddCircleOverlay(const vec& origin, const vec& normal, const float flRadius, const int nSegments, int r, int g, int b, int a, bool noDepthTest, float duration, float flInitialAngleInRad = 0.0f)
 {
     // Creating a dummy vector that needs to not in the direction of Normal vector.
@@ -39,4 +41,11 @@ void IVDebugOverlay::AddCircleOverlay(const vec& origin, const vec& normal, cons
         // Finally, drawing the line segment.
         I::IDebugOverlay->AddLineOverlayAlpha(vSegmentStart, vSegmentEnd, r, g, b, a, noDepthTest, duration);
     }
+}
+
+void IVDebugOverlay::AddAngleOverlay(const qangle& qAngles, const vec& vOrigin, const float flLength, int r, int g, int b, int a, float flDuration)
+{
+    vec vAngles;
+    Maths::AngleVectors(qAngles, &vAngles);
+    AddLineOverlayAlpha(vOrigin, vOrigin + (vAngles * flLength), r, g, b, a, false, flDuration);
 }

@@ -23,8 +23,13 @@ public:
     void Reset();
 
 private:
-    BaseEntity* _ChooseTarget(BaseEntity* pAttacker, float flSmackDelay, float flSwingRange);
-    
+    BaseEntity* _ChooseTarget(BaseEntity* pAttacker, baseWeapon* pActiveWeapon);
+    BaseEntity* _ChooseTargetFromList(
+        BaseEntity* pAttacker,
+        const std::vector<BaseEntity*>& vecTargets,
+        float flSmackDelay, float flSwingRange,
+        bool bShouldSimulate);
+
     bool _ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
 
     // Determines closest point on enemy collision hull from our Eye pos.
@@ -38,6 +43,7 @@ private:
     float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
  
     bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget);
+    bool _IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, const vec& vTargetPos, float FOV);
 
     vec         m_vAttackerFutureEyePos;
     vec         m_vBestTargetFuturePos;
@@ -47,6 +53,7 @@ private:
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
 
+// Feature's UI
 DEFINE_SECTION(Melee_Aimbot, "Aimbot", 3)
 
 DEFINE_FEATURE(
@@ -62,12 +69,23 @@ DEFINE_FEATURE(
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_OnlyDoBackStabs_Spy, bool, Melee_Aimbot, Aimbot, 3, false,
+    MeleeAimbot_HitTeammates_when_benificial, bool, Melee_Aimbot, Aimbot, 3, false,
+    FeatureFlag_SupportKeyBind,
+    "Aims for teammates with stuff like disiplinary action"
+)
+
+DEFINE_FEATURE(
+    MeleeAimbot_FOV, FloatSlider_t, Melee_Aimbot, Aimbot, 4, FloatSlider_t(10.0f, 0.0f, 180.0f),
+    FeatureFlag_SupportKeyBind, "Will only target entities within FOV circle"
+)
+
+DEFINE_FEATURE(
+    MeleeAimbot_OnlyDoBackStabs_Spy, bool, Melee_Aimbot, Aimbot, 9, false,
     FeatureFlag_SupportKeyBind,
     "Only Allow back stabs with spy"
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 4, false,
+    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 10, false,
     FeatureFlag_None, "Draws future position for locked targets"
 )

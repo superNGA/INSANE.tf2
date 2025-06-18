@@ -28,6 +28,7 @@ public:
 	virtual void AddLineOverlayAlpha(const vec& origin, const vec& dest, int r, int g, int b, int a, bool noDepthTest, float duration) = 0;
 
 	void AddCircleOverlay(const vec& origin, const vec& normal, const float	flRadius, const int nSegments, int r, int g, int b, int a, bool noDepthTest, float duration, float flInitialAngleInRad);
+	void AddAngleOverlay(const qangle& qAngles, const vec& vOrigin, const float flLength, int r, int g, int b, int a, float flDuration);
 };
 
 MAKE_INTERFACE_VERSION(IDebugOverlay, "VDebugOverlay003", IVDebugOverlay, ENGINE_DLL)

@@ -211,7 +211,7 @@ struct vec
 		z = z / flLength;
 	}
 
-	float Dot(vec other) const
+	float Dot(const vec& other) const
 	{
 		return (x * other.x + y * other.y + z * other.z);
 	}

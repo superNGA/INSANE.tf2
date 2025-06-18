@@ -16,6 +16,29 @@
 //=========================================================================
 
 
+GameObjectID_t IDManager_t::GetObjectID(BaseEntity* pEnt)
+{
+	// If cached, then return
+	int iClassID = pEnt->GetClientNetworkable()->GetClientClass()->m_ClassID;
+	auto it = m_mapClassIDToObjectID.find(iClassID);
+	if (it != m_mapClassIDToObjectID.end())
+		return it->second;
+
+	// Else check if object is valid and add to the map
+	std::string szNetworkedName = std::string(pEnt->GetClientNetworkable()->GetClientClass()->m_pNetworkName);
+	auto it2 = m_mapNameToObjectID.find(szNetworkedName);
+
+	// invalid or "IDGAF about this" object
+	if (it2 == m_mapNameToObjectID.end())
+		return GameObjectID_t::UNDEFINED_OBJECT;
+
+	// add n return object ID.
+	m_mapClassIDToObjectID.insert({ iClassID, it2->second });
+	LOG("Cached Class id for [ %s ] as [ %d ]", szNetworkedName.c_str(), m_mapClassIDToObjectID.find(iClassID)->second);
+
+	return it2->second;
+}
+
 //=========================================================================
 // IDclass_t getID(I_client_entity* ent)
 //=========================================================================
@@ -26,7 +49,6 @@
 */
 IDclass_t IDManager_t::getID(BaseEntity* ent)
 {
-
 	// entity clas name
 	std::string name = std::string(ent->GetClientNetworkable()->GetClientClass()->m_pNetworkName);
 
