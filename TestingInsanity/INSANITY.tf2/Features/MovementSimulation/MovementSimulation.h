@@ -55,6 +55,7 @@ public:
     bool m_bSimulationRunning = false;
 
     inline const vec& GetSimulationPos() const { return m_moveData.m_vecAbsOrigin; }
+    inline uint32_t GetSimulationFlags() const { return m_iLastFlags; }
     
 private:
     bool    m_bInitialized           = false;
@@ -62,6 +63,7 @@ private:
     bool    m_bOldFirstTimePredicted = false;
     float   m_flOldFrameTime         = 0.0f;
     vec     m_vLastSimulatedPos;
+    uint32_t m_iLastFlags = 0;
 
     BaseEntity* m_pPlayer = nullptr;
     

@@ -20,7 +20,7 @@ struct ray_t
 	bool m_bIsRay;
 	bool m_bIsSwept;
 
-	void Init(vec const& start, vec const& end)
+	void Init_FAULTY(vec const& start, vec const& end)
 	{
 		//magnitude	= end - start;
 		m_vDelta.x = end.x - start.x;
@@ -33,13 +33,13 @@ struct ray_t
 		m_vStart.z = start.z;
 	}
 
-	void InitV2(const vec& vStart, const vec& vEnd)
+	void Init(const vec& vStart, const vec& vEnd)
 	{
 		m_vStart  = vStart;
 		m_vDelta  = vEnd - vStart;
 		
 		// if Length sqaured != 0
-		m_bIsSwept = (m_vDelta.length() * m_vDelta.length() != 0);
+		m_bIsSwept = ((m_vDelta.length() * m_vDelta.length()) != 0);
 		m_bIsRay   = true;
 	}
 
@@ -121,7 +121,7 @@ public:
 
 	virtual bool ShouldHitEntity(I_handle_entity* pEntToCheck, int iCollisionGroup) 
 	{
-		return (pEntToCheck != skip); // returning true if ray didn't hit local player
+		return (pEntToCheck != skip);
 	}
 
 	virtual TraceType_t	GetTraceType() 
@@ -153,7 +153,7 @@ struct trace_t {
 	csurface_t			m_surface;
 	int					m_hitgroup;
 	short				m_physics_bone;
-	BaseEntity*	m_entity;
+	BaseEntity*			m_entity;
 	int					m_hitbox;
 
 	bool did_hit() const { return m_fraction < 1.f || m_allsolid || m_start_solid; }
@@ -184,6 +184,14 @@ public:
 	{
 		ray_t ray;
 		ray.Init(vecAbsStart, vecAbsEnd, hullMin, hullMax);
+
+		TraceRay(ray, mask, pFilter, ptr);
+	}
+
+	inline void UTIL_TraceRay(const vec& vecAbsStart, const vec& vecAbsEnd, unsigned int mask, i_trace_filter* pFilter, trace_t* ptr)
+	{
+		ray_t ray;
+		ray.Init(vecAbsStart, vecAbsEnd);
 
 		TraceRay(ray, mask, pFilter, ptr);
 	}

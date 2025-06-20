@@ -72,6 +72,8 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	{
 		I::IDebugOverlay->ClearAllOverlays();
 	}
+	else
+		I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
 	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);

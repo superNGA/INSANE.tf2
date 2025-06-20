@@ -41,11 +41,6 @@
 #define RAD2DEG (180.0f / M_PI)
 #define RAD2DEG(x) (static_cast<float>(x) * (180.0f / M_PI))
 
-/* game constants */
-#define TF2_GRAVITY 800.0f
-#define DIRECT_HIT_ROCKET_LAUNCHER 1980.0f
-
-
 // engine trace specific defines
 #define	CONTENTS_SOLID					0x1
 #define	CONTENTS_WINDOW					0x2
@@ -249,7 +244,7 @@ __declspec(align(16)) struct vecAligned : public vec {
 	vecAligned& operator= (const vec& other) 
 	{
 		x = other.x;
-		y = other.x; 
+		y = other.y; 
 		z = other.z;
 		return *this;
 	}

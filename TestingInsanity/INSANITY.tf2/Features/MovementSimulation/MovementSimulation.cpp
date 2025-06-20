@@ -26,6 +26,7 @@ void MovementSimulation_t::Reset()
     m_flOldFrameTime         = 0.0f;
 
     m_pPlayer                = nullptr;
+    m_iLastFlags             = 0;
     m_vLastSimulatedPos.Init();
 
     memset(&m_moveData,         0, sizeof(CMoveData));
@@ -78,6 +79,7 @@ void MovementSimulation_t::RunTick()
     tfObject.pGlobalVar->frametime        = I::cPrediction->m_bEnginePaused == true ? 0 : tfObject.pGlobalVar->interval_per_tick;
 
     Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &m_moveData);
+    m_iLastFlags = m_pPlayer->m_fFlags();
     
     // Drawing line connecting all predicted positions
     if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true && m_vLastSimulatedPos.IsEmpty() == false)

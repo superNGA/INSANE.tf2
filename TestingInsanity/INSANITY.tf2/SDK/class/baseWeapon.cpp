@@ -51,7 +51,7 @@ bool baseWeapon::IsProjectile()
     // TODO : ChatGPT told to use Unordered_set cause switch statements can 
     // sometimes be converted to if-else OR Binary searchs instead of jump tables. 
     // And using a unordered_set would give O(1) time in average case.
-    switch (GetWeaponDefinitionID())
+    switch (GetWeaponTypeID())
     {
     case TF_WEAPON_ROCKETLAUNCHER:
     case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:

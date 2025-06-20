@@ -27,12 +27,16 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     }
     else if (pActiveWeapon->IsProjectile() == true)
     {
-        // Run Projectile Aimbot here
+        // surface-to-air freedom dilivery system :)
+        FeatureObj::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
     else
     {
         // Hitscan aimbot
     }
+
+    // Whenever you decide to make a FOV circle use this formula
+    // (tan( aimbot_fov / 2.0f ) / tan( game_fov / 2.0f )) * (screen_width / 2.0f)
 }
 
 

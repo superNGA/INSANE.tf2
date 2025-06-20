@@ -83,7 +83,10 @@ public:
     int64_t     Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix);
     bool        FreeAllMaterial();
 
+    bool        m_bMateiralUncached = true;
 private:
+    void        _RefreshMaterials(IMaterial** pMat1, IMaterial** pMat2);
+
     bool        _ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, bool bIgnoreZ, bool bChams, const float* pChamClrs, const float flAlpha);
     bool        _IsAmmoPack(uint32_t iHash);
     bool        _IsMedKit(uint32_t iHash);

@@ -27,17 +27,20 @@ Chams_t chams;
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 #include "../Anti Aim/AntiAim.h"
 
-#include "../../Utility/ConsoleLogging.h"
 #include "../../Libraries/Timer.h"
 #include "../../Extra/math.h"
 
-#include "../../Utility/signatures.h"
 #include "../../Utility/ConsoleLogging.h"
+#include "../../Utility/signatures.h"
+#include "../../Utility/Hook_t.h"
 
 #define MIN_TIME 0.0001
 
-MAKE_SIG(CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL, IMaterial*, void*, const char*, KeyValues*)
+MAKE_SIG(CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL, IMaterial*, IMaterialSystem*, const char*, KeyValues*)
 MAKE_SIG(ForcedMaterialOverride, "48 89 91 ? ? ? ? 44 89 81",    STUDIORENDER_DLL, void, void*, IMaterial*, OverrideType_t)
+MAKE_SIG(CMaterialSystem_CacheUsedMateiral, "48 83 EC ? 48 89 5C 24 ? 48 8B D9", MATERIALSYSTEM_DLL, void, IMaterialSystem*)
+MAKE_SIG(CMaterialSystem_FindMateiral, "48 83 EC ? 48 8B 44 24 ? 4C 8B 11", MATERIALSYSTEM_DLL, IMaterial*, 
+    void*, const char* , const char*, bool , const char*)
 
 MAKE_SIG(InitKeyValue,  "40 53 48 83 EC ? 48 8B D9 C7 01",      MATERIALSYSTEM_DLL, KeyValues*, void*, const char*)
 MAKE_SIG(KVSetInt,      "40 53 48 83 EC ? 41 8B D8 41 B0",      MATERIALSYSTEM_DLL, void, KeyValues*, const char*, int64_t)
@@ -64,37 +67,12 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     BaseEntity* pEntity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
     IDclass_t entId          = IDManager.getID(pEntity);
 
-    bool bIsMaterialOverridden = false;
-
-    // remove this and make mechanism
-    static IMaterial* FlatMat = nullptr;
+    // TODO : remove this and make mechanism
+    static IMaterial* FlatMat  = nullptr;
     static IMaterial* ShinyMat = nullptr;
-    if (FlatMat == nullptr)
-    {
-        if (_CreateMaterial("FlatMat", szMat03))
-        {
-            FlatMat = UM_materials["FlatMat"]->pMaterial;
-            FlatMat->IncrementReferenceCount();
-        }
-        else
-        {
-            printf("Failed mat creatoin\n");
-        }
-    }
-    if (ShinyMat == nullptr)
-    {
-        if (_CreateMaterial("ShinyMat", szMat02))
-        {
-            ShinyMat = UM_materials["ShinyMat"]->pMaterial;
-            ShinyMat->IncrementReferenceCount();
-            ShinyMat->IncrementReferenceCount();
-        }
-        else
-        {
-            printf("Failed mat creatoin\n");
-        }
-    }
-    
+    _RefreshMaterials(&FlatMat, &ShinyMat);
+
+    bool bIsMaterialOverridden = false;
     StartTimer();
 
     switch (entId)
@@ -261,6 +239,31 @@ bool Chams_t::FreeAllMaterial()
 //                     PRIVATE METHODS
 //=========================================================================
 
+
+void Chams_t::_RefreshMaterials(IMaterial** pMat1, IMaterial** pMat2)
+{
+    if (m_bMateiralUncached == false)
+        return;
+
+    //FreeAllMaterial();
+    static int nRefreshCount = 0;
+
+    _CreateMaterial(std::format("FlatMat_{}", nRefreshCount).c_str(), szMat03);
+    _CreateMaterial(std::format("ShinyMat_{}", nRefreshCount).c_str(), szMat02);
+
+    *pMat1 = UM_materials.find(std::format("FlatMat_{}", nRefreshCount).c_str())->second->pMaterial;
+    (*pMat1)->IncrementReferenceCount(); 
+    (*pMat1)->IncrementReferenceCount(); 
+    *pMat2 = UM_materials.find(std::format("ShinyMat_{}", nRefreshCount).c_str())->second->pMaterial;
+    (*pMat2)->IncrementReferenceCount();
+    (*pMat2)->IncrementReferenceCount();
+
+    ++nRefreshCount;
+
+    WIN_LOG("Recreated all materials [ %d ]", nRefreshCount);
+
+    m_bMateiralUncached = false;
+}
 
 //=========================================================================
 // bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMaterial, ChamSetting_t& pChamConfig)
@@ -590,14 +593,14 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     }
 
     // returning if already created.
-    auto it = UM_materials.find(szMatName);
+    /*auto it = UM_materials.find(szMatName);
     if (it != UM_materials.end())
     {
         #ifdef _DEBUG
         FAIL_LOG("DME", "Material with name [ %s ] already exists @ [ %p ]", szMatName.c_str(), it->second->pMaterial);
         #endif
         return false;
-    }
+    }*/
 
     // Getting Material properity vector
     std::vector<MatProp_t> vecMaterialVMT;
@@ -647,7 +650,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     newMat->pMaterial = Sig::CreateMaterial(I::iMaterialSystem, szMatName.c_str(), newMat->pKV);
     strncpy(newMat->szMatName, szMatName.c_str(), MAX_MATERIAL_NAME_SIZE-1);
     newMat->szMatName[MAX_MATERIAL_NAME_SIZE - 1] = '\0';
-    UM_materials[szMatName] = newMat;
+    UM_materials.insert({ szMatName, newMat });
     #ifdef _DEBUG
     WIN_LOG("DME", "Successfully Created Material [ %s ]", newMat->szMatName);
     #endif 
@@ -676,7 +679,6 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     }
 
     it->second->pMaterial->DecrementReferenceCount();
-    //it->second->pMaterial->DeleteIfUnreferenced();
 
     //delete it->second->pKV;
     delete it->second;
@@ -684,4 +686,30 @@ bool Chams_t::_DeleteMaterial(std::string szMatName)
     WIN_LOG("DME", "successfully free'ed material [ %s ]", szMatName);
     #endif
     return true;
+}
+
+//=========================================================================
+//                     DEBUG HOOKS
+//=========================================================================
+MAKE_HOOK(CMateiralSystem_UncacheAllMateirals, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B 01 48 8B D9", __fastcall, MATERIALSYSTEM_DLL,
+    void*, void* pIMaterialSystem)
+{
+    FAIL_LOG("Game UnCached all materials :(");
+
+    auto result = Hook::CMateiralSystem_UncacheAllMateirals::O_CMateiralSystem_UncacheAllMateirals(pIMaterialSystem);
+    
+    chams.m_bMateiralUncached = true;
+    
+    return result;
+}
+
+MAKE_HOOK(CMateiralSystem_UncacheUsedMateirals, "4C 8B DC 41 54 41 57 48 83 EC ? 49 89 5B", __fastcall, MATERIALSYSTEM_DLL,
+    void*, void* pIMaterialSystem, char idk1)
+{
+    FAIL_LOG("Game UnCached \"USED\" materials :(");
+    auto result = Hook::CMateiralSystem_UncacheUsedMateirals::O_CMateiralSystem_UncacheUsedMateirals(pIMaterialSystem, idk1);
+
+    chams.m_bMateiralUncached = true;
+
+    return result;
 }

@@ -27,6 +27,7 @@
 
 // FEATURES
 #include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
+#include "../Features/Aimbot/Aimbot Projectile/AimbotProjectile.h"
 #include "../Features/Movement/Movement.h"
 
 Utility util;
@@ -113,6 +114,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		{
 			FeatureObj::critHack.Reset();
 			FeatureObj::aimbotMelee.Reset();
+			FeatureObj::aimbotProjectile.Reset();
 			FeatureObj::movement.Reset();
 			entityManager.Reset();
 		}
