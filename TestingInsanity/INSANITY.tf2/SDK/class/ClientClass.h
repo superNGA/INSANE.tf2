@@ -29,13 +29,13 @@ class RecvProp
 {
 	// This info comes from the receive data table.
 public:
-	const char* m_pVarName;
+	const char*				m_pVarName;
 	SendPropType			m_RecvType;
 	int						m_Flags;
 	int						m_StringBufferSize;
 	bool					m_bInsideArray;		// Set to true by the engine if this property sits inside an array.
 
-	char					Pad[0x10]; //Padding Maxxing by your super reverse engineer superNGA
+	char					Pad[0x10]; // something's missing in between so I added this padding.
 
 	// Extra data that certain special property types bind to the property here.
 	const void* m_pExtraData;

@@ -166,6 +166,6 @@ public:
 	NETVAR_SETTER(m_flModelScale, DT_BaseAnimating, float)
 
 	// CALL_ATRIB_HOOK's
-	void CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute);
-	void CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute);
+	void CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute) const;
+	void CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute) const;
 };

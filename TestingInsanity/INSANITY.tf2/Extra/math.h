@@ -10,6 +10,21 @@ const inline float MIN_YAW = -180.0f;
 
 namespace Maths
 {
+    // I could have used something like a static_assert to std::concept to
+    // restrict this to its basic datatypes, but I didn't :) and IDK why :)
+    template < typename T>
+    __forceinline T MIN(const T& val1, const T& val2)
+    {
+        return (val1 < val2 ? val1 : val2);
+    }
+
+    template < typename T>
+    __forceinline T MAX(const T& val1, const T& val2)
+    {
+        return (val1 > val2 ? val1 : val2);
+    }
+
+
     inline void SinCos(float flRadians, float* pSin, float* pCos)
     {
         *pSin = std::sin(flRadians);

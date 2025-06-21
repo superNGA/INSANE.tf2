@@ -12,11 +12,16 @@ NETVAR_OFFSET(m_flSmackTime, m_bReadyToBackstab, DT_TFWeaponKnife, -0x14)
 NETVAR(m_bReadyToBackstab, DT_TFWeaponKnife)
 NETVAR(m_iReloadMode,	   DT_TFWeaponBase)
 
-NETVAR(m_iClip1, DT_LocalWeaponData)
-NETVAR(m_iClip2, DT_LocalWeaponData)
-NETVAR(m_flObservedCritChance, DT_LocalTFWeaponData)
-NETVAR(m_flLastCritCheckTime, DT_LocalTFWeaponData)
-NETVAR(m_flNextPrimaryAttack, DT_LocalActiveWeaponData)
+NETVAR(m_iClip1,				DT_LocalWeaponData)
+NETVAR(m_iClip2,				DT_LocalWeaponData)
+NETVAR(m_bFlipViewModel,		DT_LocalWeaponData)
+NETVAR(m_flObservedCritChance,	DT_LocalTFWeaponData)
+NETVAR(m_flLastCritCheckTime,	DT_LocalTFWeaponData)
+NETVAR(m_flNextPrimaryAttack,	DT_LocalActiveWeaponData)
+
+// This is charge time for both stickies and sniper's arrows.
+NETVAR(m_flChargeBeginTime,		DT_PipebombLauncherLocalData)
+
 NETVAR_OFFSET(m_nCritSeedRequests, m_nViewModelIndex, DT_LocalWeaponData, -0x4)
 NETVAR_OFFSET(m_nCritChecks,	   m_nViewModelIndex, DT_LocalWeaponData, -0x8)
 NETVAR_OFFSET(m_flCritTokenBucket, m_nViewModelIndex, DT_LocalWeaponData, -0xC)
@@ -49,6 +54,8 @@ public:
 
 	NETVAR_GETTER(m_iClip1, DT_LocalWeaponData, int)
 	NETVAR_GETTER(m_iClip2, DT_LocalWeaponData, int)
+
+	NETVAR_GETTER(m_bFlipViewModel, DT_LocalWeaponData, bool)
 	
 	// Crit Bucket Getters
 	NETVAR_GETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
@@ -64,7 +71,9 @@ public:
 	NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
 
 	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
-	NETVAR_GETTER(m_flSmackTime, DT_TFWeaponKnife, float)
+	NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife, float)
+
+	NETVAR_GETTER(m_flChargeBeginTime, DT_PipebombLauncherLocalData, float)
 
 	bool		IsProjectile();
 

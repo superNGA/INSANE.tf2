@@ -5,6 +5,41 @@
 #define MAX_WEAPON_AMMO_NAME 32
 #define NUM_SHOOT_SOUND_TYPES 16
 
+enum ProjectileType_t : unsigned int
+{
+	TF_PROJECTILE_NONE,
+	TF_PROJECTILE_BULLET,
+	TF_PROJECTILE_ROCKET,
+	TF_PROJECTILE_PIPEBOMB,
+	TF_PROJECTILE_PIPEBOMB_REMOTE,
+	TF_PROJECTILE_SYRINGE,
+	TF_PROJECTILE_FLARE,
+	TF_PROJECTILE_JAR,
+	TF_PROJECTILE_ARROW,
+	TF_PROJECTILE_FLAME_ROCKET,
+	TF_PROJECTILE_JAR_MILK,
+	TF_PROJECTILE_HEALING_BOLT,
+	TF_PROJECTILE_ENERGY_BALL,
+	TF_PROJECTILE_ENERGY_RING,
+	TF_PROJECTILE_PIPEBOMB_PRACTICE,
+	TF_PROJECTILE_CLEAVER,
+	TF_PROJECTILE_STICKY_BALL,
+	TF_PROJECTILE_CANNONBALL,
+	TF_PROJECTILE_BUILDING_REPAIR_BOLT,
+	TF_PROJECTILE_FESTIVE_ARROW,
+	TF_PROJECTILE_THROWABLE,
+	TF_PROJECTILE_SPELL,
+	TF_PROJECTILE_FESTIVE_JAR,
+	TF_PROJECTILE_FESTIVE_HEALING_BOLT,
+	TF_PROJECTILE_BREADMONSTER_JARATE,
+	TF_PROJECTILE_BREADMONSTER_MADMILK,
+
+	TF_PROJECTILE_GRAPPLINGHOOK,
+	TF_PROJECTILE_SENTRY_ROCKET,
+	TF_PROJECTILE_BREAD_MONSTER,
+
+	TF_NUM_PROJECTILES
+};
 
 class FileWeaponInfo_t
 {
@@ -79,7 +114,7 @@ struct WeaponData_t
 	float	m_flTimeReloadStart;			// Time to start into a reload (ie. shotgun)
 	float	m_flTimeReload;					// Time to reload
 	bool	m_bDrawCrosshair;				// Should the weapon draw a crosshair
-	int		m_iProjectile;					// The type of projectile this mode fires
+	ProjectileType_t m_iProjectile;					// The type of projectile this mode fires
 	int		m_iAmmoPerShot;					// How much ammo each shot consumes
 	float	m_flProjectileSpeed;			// Start speed for projectiles (nail, etc.); NOTE: union with something non-projectile
 	float	m_flSmackDelay;					// how long after swing should damage happen for melee weapons

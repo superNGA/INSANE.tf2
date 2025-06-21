@@ -1,10 +1,36 @@
 #pragma once
 
 #include "../../FeatureHandler.h"
+#include "../../../SDK/class/FileWeaponInfo.h"
 
 class BaseEntity;
 class baseWeapon;
 class CUserCmd;
+
+class ProjectileWeaponInfo_t
+{
+public:
+    void  UpdateWpnInfo(baseWeapon* pActiveWeapon);
+
+    vec   GetShootPosOffset(BaseEntity* pWeaponOwner, int bFlipedViewModels) const;
+    float GetProjectileSpeed(BaseEntity* pWeaponOwner) const;
+    float GetProjectileGravity(BaseEntity* pWeaponOwner) const;
+
+    void  Reset();
+
+    baseWeapon*      m_pWeapon;
+    vec              m_vShootPosOffset;
+    float            m_flProjectileBaseSpeed;
+    float            m_flProjectileBaseGravityMult;
+    float            m_flUpwardVelOffset;
+    WeaponData_t*    m_pWeaponFileInfo;
+
+private:
+    const vec   _GetWpnBaseShootPosOffset(const baseWeapon * pWeapon, const ProjectileType_t iProjectileType) const;
+    const float _GetBaseProjectileSpeed(const WeaponData_t * pWeaponFileInfo, const baseWeapon * pWeapon) const;
+    const float _GetBaseProjectileGravityMult(const ProjectileType_t iProjectileType);
+    const float _GetUpwardVelocityOffset(ProjectileType_t iProjectileType);
+};
 
 class AimbotProjectile_t
 {
@@ -16,18 +42,21 @@ private:
     BaseEntity* _ComputeBestTarget(BaseEntity* pLocalPLayer, baseWeapon* pActiveWeapon); 
     float       _GetAngleFromCrosshair(BaseEntity* pLocalPlayer, const vec& vTargetPos);
 
-    bool _FindBestVisibleHullPoint(BaseEntity* pLocalPlayer, BaseEntity* pTarget, uint32_t iFlags, const vec& vTargetPos, vec& vBestPointOut);
+    bool        _FindBestVisibleHullPoint(BaseEntity* pLocalPlayer, BaseEntity* pTarget, uint32_t iFlags, const vec& vTargetPos, vec& vBestPointOut);
+    bool        _SolveProjectileMotion(const vec& vLauchPos, const vec& vTargetPos, const float flProjVelocity, const float flGravity, float & flAngleOut, float & flTimeToReach);
 
-    BaseEntity* _ChooseTarget(BaseEntity* pLocalPlayer);
-    const vec   _GetBestTickToAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pBestTaret, float flProjectileSpeed);
+    const vec   _GetShootOffset(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon) const;
+    float       _GetProjectileSpeed(baseWeapon* pWeapon);
 
-    float _GetProjectileSpeed(baseWeapon* pWeapon);
-
-    void _DrawEntityCollisionHull(BaseEntity* pEnt, int r, int g, int b, int a, float flDuration);
-    void _DrawEntityCollisionHull(BaseEntity* pEnt, const vec& vPosition, int r, int g, int b, int a, float flDuration);
+    ProjectileWeaponInfo_t m_weapon;
 
     BaseEntity* m_pBestTarget = nullptr;
     vec m_vBestTargetFuturePos;
+    float m_flBestAimbotPitch = 0.0f; // Angle to set for parabolic path projectiles.
+
+    void _InitliazeCVars();
+    bool m_bInitializedCVars = false;
+    int  m_bFlipViewModels   = false;
 };
 DECLARE_FEATURE_OBJECT(aimbotProjectile, AimbotProjectile_t)
 
