@@ -12,9 +12,9 @@
 MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
 
 MAKE_SIG(CALL_ATRIB_HOOK_INT, "4C 8B DC 49 89 5B ? 49 89 6B ? 49 89 73 ? 57 41 54 41 55 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35", CLIENT_DLL,
-	int, int, const char*, BaseEntity*, int, bool)
-	MAKE_SIG(CALL_ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35", CLIENT_DLL,
-		float, float, const char*, void*, void*, bool);
+	int, int, const char*, const BaseEntity*, int, bool)
+MAKE_SIG(CALL_ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 56 41 57 48 83 EC ? 48 8B 3D ? ? ? ? 4C 8D 35", CLIENT_DLL,
+		float, float, const char*, const BaseEntity*, void*, bool);
 
 
 // 0x11D8 
@@ -129,12 +129,12 @@ bool BaseEntity::IsFeignDeathReady()
 	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_bFeignDeathReady);
 }
 
-void BaseEntity::CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute)
+void BaseEntity::CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute) const
 {
 	iAtributeOut = Sig::CALL_ATRIB_HOOK_INT(iAtributeOut, szAtribute, this, 0, true);
 }
 
-void BaseEntity::CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute)
+void BaseEntity::CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute) const
 {
 	flAtributeOut = Sig::CALL_ATRIB_HOOK_FLOAT(flAtributeOut, szAtribute, this, 0, true);
 }

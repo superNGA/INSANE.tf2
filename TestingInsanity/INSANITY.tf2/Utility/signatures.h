@@ -20,7 +20,7 @@ class Signature_t : public ISignature_t
 public:
     Signature_t(const char* signature, const char* szDllName, const char* szSigName) :
         ISignature_t(signature, szDllName, szSigName) {}
-    inline Output operator()(Args... args)
+    inline Output operator()(Args... args) const
     {
         return (reinterpret_cast<Output(__fastcall*)(Args...)>(m_ullAdrs))(args...);
     }

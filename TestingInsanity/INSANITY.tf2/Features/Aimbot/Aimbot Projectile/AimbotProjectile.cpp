@@ -11,6 +11,7 @@
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/class/CVar.h"
 #include "../../MovementSimulation/MovementSimulation.h"
+#include "../../ProjectileSimulation/ProjectileSimulation.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 
 #include "../AimbotHelper.h"
@@ -24,157 +25,138 @@ constexpr vec vRocketHullMax( 1.0f,  1.0f,  1.0f);
 //=========================================================================
 void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
-    // Fuck off
+    // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
         return;
 
+    // Initialize CVars.
     _InitliazeCVars();
 
+    // Refreshing weapon's stats
+    m_weaponInfo.UpdateWpnInfo(pActiveWeapon);
+
+    // Scanning for target
     if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == true)
     {
-        BaseEntity* pBestTarget = _ComputeBestTarget(pLocalPlayer, pActiveWeapon);
-
-        if (pBestTarget != nullptr)
-            m_pBestTarget = pBestTarget;
+        m_pBestTarget = _GetBestTarget(m_weaponInfo, pLocalPlayer, pCmd);
     }
 
-    float flCurTime  = TICK_TO_TIME(pLocalPlayer->m_nTickBase());
-    bool  bShouldAim = flCurTime >= pActiveWeapon->m_flNextPrimaryAttack() && (pCmd->buttons & IN_ATTACK);
-    if (bShouldAim == true && m_pBestTarget != nullptr)
-    {
-        _GetShootOffset(pLocalPlayer, pActiveWeapon);
-        float flProjectileSpeed = _GetProjectileSpeed(pActiveWeapon);
-
-        //vec vFutureAttackerToTarget = _GetBestTickToAim(pLocalPlayer, pActiveWeapon, m_pBestTarget, flProjectileSpeed);
-        qangle qBestTargetAngles;
-        Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - pLocalPlayer->GetEyePos(), qBestTargetAngles);
-
-        // Compensating for pitch cause valve has hardcoded some initial velocity offset for projectiles
-        if (pActiveWeapon->GetWeaponTypeID() == TF_WEAPON_PIPEBOMBLAUNCHER || pActiveWeapon->GetWeaponTypeID() == TF_WEAPON_GRENADELAUNCHER)
-        {
-            constexpr float flPipeVelOffsetUp = 200.0f;
-            float flPitchOffset = RAD2DEG(atanf(flPipeVelOffsetUp / flProjectileSpeed));
-            qBestTargetAngles.pitch = (m_flBestAimbotPitch - flPitchOffset) * -1.0f;
-
-            printf("Pitch Offset : %.2f | New Pitch : %.2f | Projectile Speed : %.2f\n", flPitchOffset, qBestTargetAngles.pitch, flProjectileSpeed);
-        }
-
-        pCmd->viewangles = qBestTargetAngles;
-        *pCreatemoveResult = false;
-
-        Reset();
-    }
-}
-
-void AimbotProjectile_t::_InitliazeCVars()
-{
-    if (m_bInitializedCVars == true)
+    // no target found
+    if (m_pBestTarget == nullptr)
         return;
 
-    // Getting all necessary CVars
-    m_bFlipViewModels = I::iCvar->FindVar("cl_flipviewmodels")->GetInt();
+    LOG("Found target");
 
-    WIN_LOG("Initializd CVars : flip status -> %d", m_bFlipViewModels);
+    // if in attack, hit that nigga here.
+    float flCurTime  = TICK_TO_TIME(pLocalPlayer->m_nTickBase());
+    bool  bShouldAim = flCurTime >= pActiveWeapon->m_flNextPrimaryAttack() && (pCmd->buttons & IN_ATTACK);
+    if (bShouldAim == true)
+    {
+        _DrawPredictionHistory();
+        _ClearPredictoinHistory();
 
-    // Initialized CVars
-    m_bInitializedCVars = true;
+        // visualize tragectory
+
+        pCmd->viewangles = _GetTargetAngles(pLocalPlayer, pCmd->viewangles);
+        *pCreatemoveResult = false;
+        _ResetTargetData();
+    }
 }
+
 
 void AimbotProjectile_t::Reset()
 {
+    // CVars...
     m_bInitializedCVars = false;
-    m_bFlipViewModels = 0;
+    m_bFlipViewModels   = 0;
+    m_flGravity         = 0.0f;
 
-    m_pBestTarget = nullptr;
-    m_flBestAimbotPitch = 0.0f;
+    m_pBestTarget       = nullptr;
     m_vBestTargetFuturePos.Init();
 }
 
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-BaseEntity* AimbotProjectile_t::_ComputeBestTarget(BaseEntity* pLocalPLayer, baseWeapon* pActiveWeapon)
+BaseEntity* AimbotProjectile_t::_GetBestTarget(const ProjectileWeaponInfo_t& weaponInfo, BaseEntity* pAttacker, CUserCmd* pCmd)
 {
-    const std::vector<BaseEntity*>& vecEnemyPlayers = FeatureObj::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
-    const vec vLocalPlayerEyePos = pLocalPLayer->GetEyePos();
-    const float flProjectileSpeed = _GetProjectileSpeed(pActiveWeapon);
+    std::vector<BaseEntity*> vecTargets = FeatureObj::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
 
+    float flAngBestDistance = std::numeric_limits<float>::infinity();
     BaseEntity* pBestTarget = nullptr;
-    float       flBestDist  = std::numeric_limits<float>::infinity();
 
-    bool bShouldDoPipePhysics = (pActiveWeapon->GetWeaponTypeID() == TF_WEAPON_GRENADELAUNCHER || pActiveWeapon->GetWeaponTypeID() == TF_WEAPON_PIPEBOMBLAUNCHER);
+    // Projectile's Gravity, Speed & origin
+    float flProjGravity     = weaponInfo.GetProjectileGravity(pAttacker);
+    float flProjVelocity    = weaponInfo.GetProjectileSpeed(pAttacker);
+    vec   vShootPosOffset   = weaponInfo.GetShootPosOffset(pAttacker, m_bFlipViewModels);
+    vec   vProjectileOrigin = weaponInfo.GetProjectileOrigin(pAttacker, vShootPosOffset, pCmd->viewangles);
 
-    for (BaseEntity* pTarget : vecEnemyPlayers)
-    {   
-        constexpr float flMaxTimeToSimulateInSec = 2.0f;
-        uint32_t        nTicksToSimulate         = TIME_TO_TICK(flMaxTimeToSimulateInSec);
-        uint32_t        iEntFlags                = 0;
-        const vec&      vTargetInitialOrigin     = pTarget->GetAbsOrigin();
-        vec             vTargetFutureOrigin;
-        float           flBestAimbotPitch        = 0.0f;
+    uint32_t nTickToSimulate = TIME_TO_TICK(Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxSimulationTime.GetData().m_flVal);
+    m_vecTargetPredictionHistory.resize(nTickToSimulate + 1U);
 
-        // Checking if target is in FOV range or not
-        float flDist = _GetAngleFromCrosshair(pLocalPLayer, vTargetInitialOrigin);
-        if (flDist > Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal)
+    // Looping though all targets and finding the most "killable"
+    for (BaseEntity* pTarget : vecTargets)
+    {
+        // Checking if in FOV or not
+        vec vTargetsInitialPos = pTarget->GetAbsOrigin();
+        vec vTargetFuturePos;
+        float flAngDistance = _GetAngleFromCrosshair(pAttacker, vTargetsInitialPos);
+        if (flAngDistance > Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal)
             continue;
 
+        // Simulating Target
         FeatureObj::movementSimulation.Initialize(pTarget);
-        for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+        for (int iTick = 0; iTick < nTickToSimulate; iTick++)
         {
+            // I absolutely didn't forgot this
             FeatureObj::movementSimulation.RunTick();
 
-            const vec& vTargetOrigin      = FeatureObj::movementSimulation.GetSimulationPos();
-            float flTimeToReachPlayer     = TICK_TO_TIME(iTick);
-            float flTimeToReachProjectile = 0.0f;
+            float flTargetsTimeToReach          = TICK_TO_TIME(iTick);
+            float flProjectilesTimeToReach      = 0.0f;
+            float flProjLaunchAngle             = 0.0f;
+            m_vecTargetPredictionHistory[iTick] = FeatureObj::movementSimulation.GetSimulationPos();
 
-            if (bShouldDoPipePhysics == false)
-            {
-                flTimeToReachProjectile = vLocalPlayerEyePos.DistTo(vTargetOrigin) / flProjectileSpeed;
-            }
-            else
-            {
-                constexpr float flPipeSpeed = 1200.0f;
-                constexpr float flGravity   = -800.0f;
-                _SolveProjectileMotion(vLocalPlayerEyePos, vTargetOrigin, flPipeSpeed, flGravity, flBestAimbotPitch, flTimeToReachProjectile);
-            }
+            // Calculaing our projectile's time to reach to the center of the target
+            _SolveProjectileMotion(
+                vProjectileOrigin,
+                m_vecTargetPredictionHistory[iTick],
+                flProjVelocity,
+                flProjGravity,
+                flProjLaunchAngle,
+                flProjectilesTimeToReach);
 
-            // projectile's time to reach player must be smaller than 
-            // target's time to reach, else we can't possibly hit them.
-            if (flTimeToReachProjectile < flTimeToReachPlayer)
+            // Exit on the first tick when projectile can reach target faster
+            if (flProjectilesTimeToReach < flTargetsTimeToReach)
             {
-                vTargetFutureOrigin = vTargetOrigin;
-                iEntFlags           = FeatureObj::movementSimulation.GetSimulationFlags();
+                vTargetFuturePos         = m_vecTargetPredictionHistory[iTick];
+                m_nValidPredictionRecord = iTick;
                 break;
             }
         }
         FeatureObj::movementSimulation.Restore();
 
-        // if no hittable position found 
-        if (vTargetFutureOrigin.IsEmpty() == true)
-            continue;
-        
-        // Ray Tracing and finding best point on enemy hull.
-        vec vBestPointOnTargetHull;
-        if (_FindBestVisibleHullPoint(pLocalPLayer, pTarget, iEntFlags, vTargetFutureOrigin, vBestPointOnTargetHull) == false)
+        // if we didn't found any hitable tick for this enitity than skip
+        if (vTargetFuturePos.IsEmpty() == true)
             continue;
 
-        // Debug Drawing
-        if(Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugPrediction.IsActive() == true)
-        {
-            I::IDebugOverlay->AddLineOverlay(vTargetInitialOrigin, vTargetFutureOrigin, 255, 255, 255, true, 1.0f);
-            
-            // Delete this
-            I::IDebugOverlay->AddTextOverlay(vTargetInitialOrigin, 1.0f, "FOV : %.2f", flDist);
-        }
+        // Getting best point on target's hull to hit
+        vec vBestHitPoint;
+        bool bCanHit = _GetBestHitPointOnTargetHull(
+            pTarget, vTargetFuturePos,
+            weaponInfo, vBestHitPoint,
+            vProjectileOrigin, flProjVelocity,
+            flProjGravity, pAttacker
+        );
+        if (bCanHit == false)
+            continue;
 
-        if (flDist < flBestDist)
+        // compare against best target
+        if (flAngDistance < flAngBestDistance)
         {
             pBestTarget            = pTarget;
-            flBestDist             = flDist;
-            m_vBestTargetFuturePos = vBestPointOnTargetHull;
-            m_flBestAimbotPitch    = flBestAimbotPitch;
+            flAngBestDistance      = flAngDistance;
+            m_vBestTargetFuturePos = vBestHitPoint;
         }
-
     }
 
     return pBestTarget;
@@ -194,64 +176,12 @@ float AimbotProjectile_t::_GetAngleFromCrosshair(BaseEntity* pLocalPlayer, const
     return RAD2DEG(acosf(flDot));
 }
 
-
-bool AimbotProjectile_t::_FindBestVisibleHullPoint(BaseEntity* pLocalPlayer, BaseEntity* pTarget, uint32_t iFlags, const vec& vTargetPos, vec& vBestPointOut)
+void AimbotProjectile_t::_DrawPredictionHistory()
 {
-    ICollideable_t* pCollidable = pTarget->GetCollideable();
-    const vec&      vHullMins   = pCollidable->OBBMins();
-    const vec&      vHullMaxs   = pCollidable->OBBMaxs();
-
-    float flHeight = vHullMins.z > vHullMaxs.z ? vHullMins.z : vHullMaxs.z;
-
-    constexpr float flSafeTraceOffset = 2.0f;
-    const vec vHead(  0.0f, 0.0f, flHeight - flSafeTraceOffset);
-    const vec vFeet(  0.0f, 0.0f, flSafeTraceOffset);
-    const vec vChest( 0.0f, 0.0f, flHeight * 0.66);
-    const vec vPelvis(0.0f, 0.0f, flHeight * 0.33);
-
-    const vec vHullBoundary1(vHullMins.x, vHullMins.y, flHeight * 0.5f);
-    const vec vHullBoundary2(vHullMaxs.x, vHullMaxs.y, flHeight * 0.5f);
-    const vec vHullBoundary3(vHullMaxs.x, vHullMins.y, flHeight * 0.5f);
-    const vec vHullBoundary4(vHullMins.x, vHullMaxs.y, flHeight * 0.5f);
-
-    bool bOnGround = (iFlags & FL_ONGROUND);
-    std::vector<const vec*> vecHitPointPriorityList = {};
-
-    if (bOnGround == true)
+    for (int i = 1; i <= m_nValidPredictionRecord; i++)
     {
-        vecHitPointPriorityList = { &vFeet, &vChest, &vPelvis, &vHead, &vHullBoundary1, &vHullBoundary2, &vHullBoundary3, &vHullBoundary4 };
+        I::IDebugOverlay->AddLineOverlay(m_vecTargetPredictionHistory[i - 1], m_vecTargetPredictionHistory[i], 255, 255, 255, true, 5.0f);
     }
-    else
-    {
-        vecHitPointPriorityList = { &vChest, &vPelvis, &vHead, &vFeet, &vHullBoundary1, &vHullBoundary2, &vHullBoundary3, &vHullBoundary4 };
-    }
-
-    const vec&     vLocalPlayerEyePos = pLocalPlayer->GetEyePos();
-    i_trace_filter filter(pLocalPlayer);
-    trace_t        trace;
-    for (const vec* vHitPoint : vecHitPointPriorityList)
-    {
-        constexpr vec vDebugMultiPointHullBase(2.0f, 2.0f, 2.0f);
-
-        I::EngineTrace->UTIL_TraceRay(vLocalPlayerEyePos, vTargetPos + *vHitPoint, MASK_SHOT, &filter, &trace);
-
-        // Drawing MultiPoint boxes,
-        // Green = Choosen, white = can't hit
-        if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugMultiPoint.IsActive() == true)
-        {
-            bool bHit = (trace.m_fraction >= 0.99f);
-            I::IDebugOverlay->AddBoxOverlay(vTargetPos + *vHitPoint, vDebugMultiPointHullBase, vDebugMultiPointHullBase * -1.0f,
-                qangle(0.0f, 0.0f, 0.0f), (bHit == true ? 0 : 255), 255, (bHit == true ? 0 : 255), 20.0f, 1.0f);
-        }
-
-        if (trace.m_fraction >= 0.99f)
-        {
-            vBestPointOut = vTargetPos + *vHitPoint;
-            return true;
-        }
-    }
-    
-    return false;
 }
 
 bool AimbotProjectile_t::_SolveProjectileMotion(const vec& vLauchPos, const vec& vTargetPos, const float flProjVelocity, const float flGravity, float& flAngleOut, float& flTimeToReach)
@@ -281,221 +211,157 @@ bool AimbotProjectile_t::_SolveProjectileMotion(const vec& vLauchPos, const vec&
     return true;
 }
 
-
-const vec AimbotProjectile_t::_GetShootOffset(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon) const
+bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(
+    BaseEntity* pTarget,                        const vec& vTargetOrigin, 
+    const ProjectileWeaponInfo_t& weaponInfo,   vec& vBestPointOut, 
+    const vec& vProjectileOrigin,               const float flProjVelocity,
+    const float flProjGravity,                  BaseEntity* pProjectileOwner)
 {
-    vec              vShootPosOffset;
-    bool             bDucking        = (pLocalPlayer->m_fFlags() & IN_DUCK);
-    ProjectileType_t iProjectileType = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_iProjectile;
-    switch (iProjectileType)
-    {
-    case TF_PROJECTILE_ROCKET:
-    {
-        vShootPosOffset = { 23.5f, 12.0f, -3.0f };
-        
-        if (bDucking == true)
-            vShootPosOffset.z = 8.0f;
+    ICollideable_t* pCollidable = pTarget->GetCollideable();
+    const vec&      vHullMins   = pCollidable->OBBMins();
+    const vec&      vHullMaxs   = pCollidable->OBBMaxs();
 
-        break;
+    float flHeight = Maths::MAX<float>(vHullMaxs.z, vHullMins.z);
+
+    constexpr float flSafeTraceOffset = 2.0f;
+    const vec vHead(  0.0f, 0.0f, flHeight - flSafeTraceOffset);
+    const vec vFeet(  0.0f, 0.0f, flSafeTraceOffset);
+    const vec vChest( 0.0f, 0.0f, flHeight * 0.66);
+    const vec vPelvis(0.0f, 0.0f, flHeight * 0.33);
+
+    const vec vHeadLoose1(vHullMins.x, vHullMaxs.y, flHeight - flSafeTraceOffset);
+    const vec vHeadLoose2(vHullMaxs.x, vHullMins.y, flHeight - flSafeTraceOffset);
+
+    const vec vHullBoundary1(vHullMins.x, vHullMins.y, flHeight * 0.5f);
+    const vec vHullBoundary2(vHullMaxs.x, vHullMaxs.y, flHeight * 0.5f);
+    const vec vHullBoundary3(vHullMaxs.x, vHullMins.y, flHeight * 0.5f);
+    const vec vHullBoundary4(vHullMins.x, vHullMaxs.y, flHeight * 0.5f);
+
+    const std::vector<const vec*> vecHeadPriorityHitpointList = {
+        &vHead, &vHeadLoose1, &vHeadLoose2, &vChest, &vPelvis, &vHullBoundary1, &vHullBoundary2,&vHullBoundary3,&vHullBoundary4, &vFeet 
+    };
+    const std::vector<const vec*> vecChestPriorityHitpointList = {
+        &vChest, &vPelvis, &vHead, &vFeet, &vHullBoundary1, &vHullBoundary2, &vHullBoundary3, &vHullBoundary4
+    };
+    const std::vector<const vec*> vecFeetPriorityHitpointList = {
+        &vFeet, &vChest, &vPelvis, &vHullBoundary1, &vHullBoundary2, &vHullBoundary3, &vHullBoundary4, &vHead
+    };
+
+    // Choosing HitPoint Priority list 
+    const std::vector<const vec*>* vecHitPointPriorityList = &vecChestPriorityHitpointList;
+    if (weaponInfo.m_pWeaponFileInfo->m_iProjectile == TF_PROJECTILE_ARROW || 
+        weaponInfo.m_pWeaponFileInfo->m_iProjectile == TF_PROJECTILE_FESTIVE_ARROW)
+    {
+        vecHitPointPriorityList = &vecHeadPriorityHitpointList;
+    }
+    else if (weaponInfo.m_pWeaponFileInfo->m_iProjectile == TF_PROJECTILE_ROCKET && (pTarget->m_fFlags() & FL_ONGROUND))
+    {
+        vecHitPointPriorityList = &vecFeetPriorityHitpointList;
     }
 
-    /*
-    #define SYRINGE_GRAVITY		0.3f
-    #define SYRINGE_VELOCITY	1000.0f
-    */
-    case TF_PROJECTILE_SYRINGE:
+    // Choose HitPoint priority list & loop through it simulating each shit
+    vec vBestHitpoint;
+    for (const vec* vHitPointOffset : *vecHitPointPriorityList)
     {
-        vShootPosOffset = { 16.0f, 6.0f, -8.0f};
-        break;
+        vec vTarget = vTargetOrigin + *vHitPointOffset;
+
+        float flProjLaunchAngle = 0.0f;
+        float flTimeToReach = 0.0f;
+        _SolveProjectileMotion(
+            vProjectileOrigin, 
+            vTarget,
+            flProjVelocity, flProjGravity, 
+            flProjLaunchAngle, flTimeToReach
+        );
+
+        // Calculaing aimbot view angles
+        qangle qProjLaunchAngles;
+        Maths::VectorAnglesFromSDK(vTarget - vProjectileOrigin, qProjLaunchAngles);
+        qProjLaunchAngles.pitch = flProjLaunchAngle;
+
+        uint32_t nTicksToSimulate = TIME_TO_TICK(flTimeToReach);
+        FeatureObj::projectileSimulator.Initialize(
+            vProjectileOrigin, qProjLaunchAngles, flProjVelocity,
+            flProjGravity, weaponInfo.m_flUpwardVelOffset,
+            weaponInfo.m_vHullSize, pProjectileOwner
+        );
+
+        for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+            FeatureObj::projectileSimulator.RunTick();
+
+        constexpr vec vMultiPointBoxMins(3.0f, 3.0f, 3.0f);
+
+        // we can hit this hitpoint.
+        constexpr float flProjectileHitTolerance = 3.0f;
+        if (FeatureObj::projectileSimulator.m_projectileInfo.m_bDidHit == false ||
+            FeatureObj::projectileSimulator.m_projectileInfo.m_vEndPos.DistTo(vTarget) < flProjectileHitTolerance)
+        {
+            vBestHitpoint = vTarget;
+
+            if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugMultiPoint.IsActive() == true)
+                I::IDebugOverlay->AddBoxOverlay(vTarget, vMultiPointBoxMins * -1.0f, vMultiPointBoxMins, qangle(0.0f, 0.0f, 0.0f), 0, 255, 0, 40, 1.0f);
+
+            break;
+        }
+
+        if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugMultiPoint.IsActive() == true)
+            I::IDebugOverlay->AddBoxOverlay(vTarget, vMultiPointBoxMins * -1.0f, vMultiPointBoxMins, qangle(0.0f, 0.0f, 0.0f), 255, 255, 255, 40, 1.0f);
     }
 
-    /*
-    * #define FLARE_GRAVITY				0.3f
-    #define FLARE_SPEED					2000.0f
-
-    call this float attribute "mult_projectile_speed"
-    */
-    case TF_PROJECTILE_FLARE:
-    {
-        vShootPosOffset = { 23.5f, 12.0f, -3.0f };
-
-        if (bDucking == true)
-            vShootPosOffset.z = 8.0f;
-
-        break;
-    }
-
-    /*
-    add 200.0f in UP vector of velocity. 
-    call this float attribute "mult_projectile_range" on speed
-    Get speed via TF weapon info or ? hardcode it maybe?
-
-    NOTE : There a charing mechanism for stickies
-    */
-    case TF_PROJECTILE_PIPEBOMB:
-    case TF_PROJECTILE_PIPEBOMB_REMOTE:
-    case TF_PROJECTILE_PIPEBOMB_PRACTICE:
-    case TF_PROJECTILE_CANNONBALL:
-    {
-        vShootPosOffset = { 16.0f, 8.0f, -6.0f};
-        break;
-    }
-
-    // I think all these jars and shit use the same logic as Pipe bombs
-    /*
-    add 200.0f in UP vector of velocity.
-    Get speed via TF weapon info or ? hardcode it maybe?
-    no attribute to call here
-    */
-    case TF_PROJECTILE_JAR:
-    case TF_PROJECTILE_JAR_MILK:
-    case TF_PROJECTILE_CLEAVER:
-    case TF_PROJECTILE_THROWABLE:
-    case TF_PROJECTILE_FESTIVE_JAR:
-    case TF_PROJECTILE_BREADMONSTER_JARATE:
-    case TF_PROJECTILE_BREADMONSTER_MADMILK:
-    {
-        vShootPosOffset = { 16.0f, 8.0f, -6.0f};
-        break;
-    }
-
-    /*
-    Get velocity from charge, call the fn or some shit
-    */
-    case TF_PROJECTILE_ARROW:
-    case TF_PROJECTILE_HEALING_BOLT:
-    case TF_PROJECTILE_BUILDING_REPAIR_BOLT:
-    case TF_PROJECTILE_FESTIVE_ARROW:
-    case TF_PROJECTILE_FESTIVE_HEALING_BOLT:
-    case TF_PROJECTILE_GRAPPLINGHOOK:
-    {
-        vShootPosOffset = { 23.5f, -8.0f, -3.0f };   
-        break;
-    }
-
-    case TF_PROJECTILE_FLAME_ROCKET: // Drangon's furry uses this maybe
-    {
-        vShootPosOffset = { 23.5f, -8.0f, -3.0f };
-
-        if (bDucking == true)
-            vShootPosOffset.z = 8.0f;
-
-        break;
-    }
-
-    case TF_PROJECTILE_ENERGY_BALL: // Cow-Mangler's projectile
-    case TF_PROJECTILE_ENERGY_RING: // Rightous bison's projectile
-    {
-        vShootPosOffset = { 23.5f, -8.0f, -3.0f };
-
-        if (bDucking == true)
-            vShootPosOffset.z = 8.0f;
-        break;
-    }
-
-    default:
-        break;
-    }
-
-    // Adjusting for center fire weapons
-    int iCenterFireProjectile = 0;
-    pActiveWeapon->CALL_ATRIB_HOOK_INT(iCenterFireProjectile, "centerfire_projectile");
-    if (iCenterFireProjectile == 1)
-        vShootPosOffset.y = 0.0f;
-
-    // Flipping Y offset if model fliped
-    if (m_bFlipViewModels == 1)
-        vShootPosOffset.y *= -1.0f;
-
-    return vShootPosOffset;
+    // if not empty then return true
+    vBestPointOut = vBestHitpoint;
+    LOG_VEC3(vBestPointOut);
+    return (vBestPointOut.IsEmpty() == true ? false : true);
 }
 
 
-float AimbotProjectile_t::_GetProjectileSpeed(baseWeapon* pWeapon)
+const qangle AimbotProjectile_t::_GetTargetAngles(BaseEntity* pAttacker, const qangle& qViewAngles)
 {
-    auto  iProjectileType   = pWeapon->GetTFWeaponInfo()->GetWeaponData()->m_iProjectile;
-    float flProjectileSpeed = pWeapon->GetTFWeaponInfo()->GetWeaponData()->m_flProjectileSpeed;
+    vec vShootOffset = m_weaponInfo.GetShootPosOffset(pAttacker, m_bFlipViewModels);
+    vec vProjectileOrigin = m_weaponInfo.GetProjectileOrigin(pAttacker, vShootOffset, qViewAngles);
+    float flProjVel = m_weaponInfo.GetProjectileSpeed(pAttacker);
+    float flProjGravity = m_weaponInfo.GetProjectileGravity(pAttacker);
 
-    switch (iProjectileType)
-    {
-        // Base Rocket velocity is 0 and if you get it form weapon info then its 0.
-        // so hard coding it is the best option.
-    case TF_PROJECTILE_ROCKET:
-    {
-        constexpr float flBaseRocketVelocity = 1100.0f;
-        float           flRocketVelocity     = flBaseRocketVelocity;
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flRocketVelocity, "mult_projectile_speed");
-        return flRocketVelocity;
-        break;
-    }
-    case TF_PROJECTILE_SYRINGE:
-    {
-        constexpr float SYRINGE_GRAVITY  = 0.3f;
-        constexpr float SYRINGE_VELOCITY = 1000.0f;
-
-        return SYRINGE_VELOCITY;
-    }
-    case TF_PROJECTILE_FLARE:
-    {
-        constexpr float FLARE_GRAVITY = 0.3f;
-        constexpr float FLARE_SPEED   = 2000.0f;
-
-        float flFlareSpeed = FLARE_SPEED;
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flFlareSpeed, "mult_projectile_speed");
-        return flFlareSpeed;
-    }
-    // 200.0f offset upward
-    case TF_PROJECTILE_PIPEBOMB:
-    case TF_PROJECTILE_PIPEBOMB_REMOTE:
-    case TF_PROJECTILE_PIPEBOMB_PRACTICE:
-    case TF_PROJECTILE_CANNONBALL:
-    {
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flProjectileSpeed, "mult_projectile_range");
-        return flProjectileSpeed;
-        break;
-    }
-    case TF_PROJECTILE_JAR:
-    case TF_PROJECTILE_JAR_MILK:
-    case TF_PROJECTILE_CLEAVER:
-    case TF_PROJECTILE_THROWABLE:
-    case TF_PROJECTILE_FESTIVE_JAR:
-    case TF_PROJECTILE_BREADMONSTER_JARATE:
-    case TF_PROJECTILE_BREADMONSTER_MADMILK:
-    {
-        return flProjectileSpeed;
-    }
-    case TF_PROJECTILE_ARROW:
-    case TF_PROJECTILE_HEALING_BOLT:
-    case TF_PROJECTILE_BUILDING_REPAIR_BOLT:
-    case TF_PROJECTILE_FESTIVE_ARROW:
-    case TF_PROJECTILE_FESTIVE_HEALING_BOLT:
-    case TF_PROJECTILE_GRAPPLINGHOOK:
-    {
-
-    }
-
-    default:
-        break;
-    }
-
-    int iWeaponID = pWeapon->GetWeaponTypeID();
+    qangle qBestAngles;
+    Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - vProjectileOrigin, qBestAngles);
     
-    if (iWeaponID == TF_WEAPON_ROCKETLAUNCHER || iWeaponID == TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT)
-    {
-        float flRocketSpeedBase = 1100.0f;
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flRocketSpeedBase, "mult_projectile_speed");
-        return flRocketSpeedBase;
-    }
-    else if(iWeaponID == TF_WEAPON_GRENADELAUNCHER || iWeaponID == TF_WEAPON_PIPEBOMBLAUNCHER)
-    {
-        float flBasePipeSpped = 1200.0f;
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flBasePipeSpped, "mult_projectile_range");
-        return flBasePipeSpped;
-    }
+    float flProjLaunchAngle = 0.0f;
+    float flTimeToReach = 0.0f;
+    _SolveProjectileMotion(
+        vProjectileOrigin, m_vBestTargetFuturePos,
+        flProjVel, flProjGravity,
+        flProjLaunchAngle,
+        flTimeToReach
+    );
+    qBestAngles.pitch = flProjLaunchAngle * -1.0f; // Gotta invert the pitch, cause valve is a nigger
 
-    return 0.0f;
+    FeatureObj::projectileSimulator.Initialize(
+        vProjectileOrigin, qBestAngles,
+        flProjVel, flProjGravity, m_weaponInfo.m_flUpwardVelOffset,
+        m_weaponInfo.m_vHullSize, pAttacker
+    );
+    for (int i = 0; i < TIME_TO_TICK(flTimeToReach); i++)
+        FeatureObj::projectileSimulator.RunTick(true, 5.0f);
+
+    return qBestAngles;
 }
 
+
+void AimbotProjectile_t::_InitliazeCVars()
+{
+    if (m_bInitializedCVars == true)
+        return;
+
+    // Getting all necessary CVars
+    m_bFlipViewModels = I::iCvar->FindVar("cl_flipviewmodels")->GetInt();
+    m_flGravity = I::iCvar->FindVar("sv_gravity")->GetFloat();
+    m_flGravity *= -1.0f; // "Fixxing Gravity"
+
+    WIN_LOG("Initializd CVars");
+
+    // Initialized CVars
+    m_bInitializedCVars = true;
+}
 
 //=========================================================================
 //                     ProjectileWeaponInfo_t METHODS
@@ -503,6 +369,7 @@ float AimbotProjectile_t::_GetProjectileSpeed(baseWeapon* pWeapon)
 void ProjectileWeaponInfo_t::Reset()
 {
     m_vShootPosOffset.Init();
+    m_vHullSize.Init();
     m_pWeapon                     = nullptr;
     m_flProjectileBaseSpeed       = 0.0f;
     m_flUpwardVelOffset           = 0.0f;
@@ -520,9 +387,26 @@ void ProjectileWeaponInfo_t::UpdateWpnInfo(baseWeapon* pActiveWeapon)
     m_pWeapon                     = pActiveWeapon;
     m_pWeaponFileInfo             = m_pWeapon->GetTFWeaponInfo()->GetWeaponData(0);
     m_vShootPosOffset             = _GetWpnBaseShootPosOffset(m_pWeapon, m_pWeaponFileInfo->m_iProjectile);
+    m_vHullSize                   = _GetHullSize(m_pWeaponFileInfo->m_iProjectile);
     m_flProjectileBaseSpeed       = _GetBaseProjectileSpeed(m_pWeaponFileInfo, m_pWeapon);
     m_flProjectileBaseGravityMult = _GetBaseProjectileGravityMult(m_pWeaponFileInfo->m_iProjectile);
     m_flUpwardVelOffset           = _GetUpwardVelocityOffset(m_pWeaponFileInfo->m_iProjectile);
+
+    // Notifying user of weapon stat refresh
+    FAIL_LOG("Weapon change detected, Refreshing weapon's stats");
+    LOG("WPN info updated to the following : ");
+    printf("Base Projectile Speed : %.2f\n", m_flProjectileBaseSpeed);
+    printf("Base Gravity mult     : %.2f\n", m_flProjectileBaseGravityMult);
+    printf("Upward velocty offset : %.2f\n", m_flUpwardVelOffset);
+    LOG_VEC3(m_vShootPosOffset);
+}
+
+vec ProjectileWeaponInfo_t::GetProjectileOrigin(BaseEntity* pWeaponOwner, const vec& vShootPosOffset, const qangle& qViewAngles) const
+{
+    vec vForward, vRight, vUp;
+    Maths::AngleVectors(qViewAngles, &vForward, &vRight, &vUp);
+    vec vProjectileOrigin = pWeaponOwner->GetEyePos() + (vForward * vShootPosOffset.x) + (vRight * vShootPosOffset.y) + (vUp * vShootPosOffset.z);
+    return vProjectileOrigin;
 }
 
 vec ProjectileWeaponInfo_t::GetShootPosOffset(BaseEntity* pWeaponOwner, int bFlipedViewModels) const
@@ -661,7 +545,7 @@ const vec ProjectileWeaponInfo_t::_GetWpnBaseShootPosOffset(const baseWeapon* pW
     case TF_PROJECTILE_FESTIVE_HEALING_BOLT:
     case TF_PROJECTILE_GRAPPLINGHOOK:
     {
-        vShootPosOffset = { 23.5f, -8.0f, -3.0f };
+        vShootPosOffset = { 23.5f, 8.0f, -3.0f };
         break;
     }
 
@@ -694,7 +578,6 @@ const vec ProjectileWeaponInfo_t::_GetWpnBaseShootPosOffset(const baseWeapon* pW
 const float ProjectileWeaponInfo_t::_GetBaseProjectileSpeed(const WeaponData_t* pWeaponFileInfo, const baseWeapon* pWeapon) const
 {
     auto  iProjectileType = pWeaponFileInfo->m_iProjectile;
-    float flProjectileSpeed = pWeaponFileInfo->m_flProjectileSpeed;
 
     switch (iProjectileType)
     {
@@ -727,33 +610,54 @@ const float ProjectileWeaponInfo_t::_GetBaseProjectileSpeed(const WeaponData_t* 
     case TF_PROJECTILE_PIPEBOMB:
     case TF_PROJECTILE_CANNONBALL:
     {
-        pWeapon->CALL_ATRIB_HOOK_FLOAT(flProjectileSpeed, "mult_projectile_range");
-        return flProjectileSpeed;
+        constexpr float TF_DEFAULT_PIPE_VELOCITY = 1200.0f;
+        float flPipeBaseSpeed = TF_DEFAULT_PIPE_VELOCITY;
+        pWeapon->CALL_ATRIB_HOOK_FLOAT(flPipeBaseSpeed, "mult_projectile_range");
+        float flPipeSpeed = sqrtf((flPipeBaseSpeed * flPipeBaseSpeed) + (200.0f * 200.0f));
+        return flPipeSpeed;
         break;
     }
-    // these are chargable, so we can't store these ahead of time
-    //case TF_PROJECTILE_PIPEBOMB_REMOTE:
-    //case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+    
+    // just store the base velocity. This should get us through the 
+    // checking phase atleast.
+    case TF_PROJECTILE_PIPEBOMB_REMOTE:
+    case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+    {
+        constexpr float TF_PIPEBOMB_MIN_CHARGE_VEL = 900.0f;
+        return TF_PIPEBOMB_MIN_CHARGE_VEL;
+    }
     
     case TF_PROJECTILE_JAR:
     case TF_PROJECTILE_JAR_MILK:
-    case TF_PROJECTILE_CLEAVER:
     case TF_PROJECTILE_THROWABLE:
     case TF_PROJECTILE_FESTIVE_JAR:
     case TF_PROJECTILE_BREADMONSTER_JARATE:
     case TF_PROJECTILE_BREADMONSTER_MADMILK:
     {
-        return flProjectileSpeed;
+        constexpr float TF_JAR_SPEED = 1000.0f;
+        return TF_JAR_SPEED;
     }
-    //case TF_PROJECTILE_ARROW: this has charging logic, so not saving upfront for this
-    //case TF_PROJECTILE_FESTIVE_ARROW: this has charging logic, so not saving upfront for this
+    case TF_PROJECTILE_CLEAVER:
+    {
+        constexpr float TF_CLEAVER_SPEED = 7000.0f;
+        return TF_CLEAVER_SPEED;
+    }
+    // The Arrow's velocity is influenced by charge level, but I have store 
+    // the base velocity cause if we are able to hit someone with base velocity we 
+    // should also be able to hit them with increased velocity too. :)
+    case TF_PROJECTILE_ARROW:
+    case TF_PROJECTILE_FESTIVE_ARROW:
+    {
+        constexpr float TF_ARROW_BASE_VELOCITY = 1800.0f;
+        return TF_ARROW_BASE_VELOCITY;
+    }
+    //case TF_PROJECTILE_GRAPPLINGHOOK: I don't think this will benifit form being Projectile Aimbot-ed
     case TF_PROJECTILE_BUILDING_REPAIR_BOLT:
     case TF_PROJECTILE_FESTIVE_HEALING_BOLT:
     case TF_PROJECTILE_HEALING_BOLT: // According to TF official WIKI, this shit also has velocity of 2400.0f 
-    //case TF_PROJECTILE_GRAPPLINGHOOK: I don't think this will benifit form being Projectile Aimbot-ed
     {
-        constexpr float flBaseArrowSpeed = 2400.0f;
-        return flBaseArrowSpeed;
+        constexpr float TF_HEALING_BOLT_BASE_VELOCITY = 2400.0f;
+        return TF_HEALING_BOLT_BASE_VELOCITY;
     }
 
     default:
@@ -771,6 +675,8 @@ const float ProjectileWeaponInfo_t::_GetBaseProjectileGravityMult(const Projecti
     {
     // Default gravity weapons
     case TF_PROJECTILE_ROCKET:
+        return 0.0f;
+
     case TF_PROJECTILE_JAR:
     case TF_PROJECTILE_JAR_MILK:
     case TF_PROJECTILE_CLEAVER:
@@ -781,38 +687,51 @@ const float ProjectileWeaponInfo_t::_GetBaseProjectileGravityMult(const Projecti
         return TF_DEFAULT_NADE_GRAVITY;
 
     case TF_PROJECTILE_SYRINGE:
+    {
         constexpr float SYRINGE_GRAVITY_MULTIPLIER = 0.3f;
         return SYRINGE_GRAVITY_MULTIPLIER;
+    }
     case TF_PROJECTILE_FLARE:
+    {
         constexpr float FLARE_GRAVITY_MULTIPLIER = 0.3f;
         return FLARE_GRAVITY_MULTIPLIER;
+    }
     case TF_PROJECTILE_PIPEBOMB:
     case TF_PROJECTILE_CANNONBALL:
     case TF_PROJECTILE_PIPEBOMB_REMOTE:
     case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+    {
         constexpr float TF_WEAPON_PIPEBOMB_GRAVITY = 0.5f;
         return TF_WEAPON_PIPEBOMB_GRAVITY;
+    }
 
     case TF_PROJECTILE_BUILDING_REPAIR_BOLT:
     case TF_PROJECTILE_FESTIVE_HEALING_BOLT:
     case TF_PROJECTILE_HEALING_BOLT:
+    {
         constexpr float TF_HEALING_BOLT_GRAVITY_MULTIPLIER = 0.2f;
         return TF_HEALING_BOLT_GRAVITY_MULTIPLIER;
+    }
 
     // Although the arrow gravity is depended on the charge level, 
     // I'm storing it as default here, cause if we can hit someone with
     // defult gravity, we shoudl be able to hit them with lowered gravity. :)
     case TF_PROJECTILE_ARROW:
     case TF_PROJECTILE_FESTIVE_ARROW:
+    {
         constexpr float TF_DEFAULT_ARROW_GRAVITY = 0.5f;
         return TF_DEFAULT_ARROW_GRAVITY;
-
     }
+
+    default: break;
+    }
+
+    return 0.0f;
 }
 
 const float ProjectileWeaponInfo_t::_GetUpwardVelocityOffset(ProjectileType_t iProjectileType)
 {
-    constexpr float UPWARD_VELOCITY_OFFSET = 200.0f;
+    constexpr float TF_DEFAULT_UPWARD_VELOCITY_OFFSET = 200.0f;
 
     switch (iProjectileType)
     {
@@ -827,10 +746,33 @@ const float ProjectileWeaponInfo_t::_GetUpwardVelocityOffset(ProjectileType_t iP
     case TF_PROJECTILE_PIPEBOMB_REMOTE:
     case TF_PROJECTILE_PIPEBOMB_PRACTICE:
     case TF_PROJECTILE_CANNONBALL:
-        return UPWARD_VELOCITY_OFFSET;
+        return TF_DEFAULT_UPWARD_VELOCITY_OFFSET;
     default:
         return 0.0f;
     }
 
     return 0.0f;
+}
+
+const vec ProjectileWeaponInfo_t::_GetHullSize(ProjectileType_t iProjectileType)
+{
+    switch (iProjectileType)
+    {
+    case TF_PROJECTILE_JAR:
+    case TF_PROJECTILE_JAR_MILK:
+    case TF_PROJECTILE_CLEAVER:
+    case TF_PROJECTILE_THROWABLE:
+    case TF_PROJECTILE_FESTIVE_JAR:
+    case TF_PROJECTILE_BREADMONSTER_JARATE:
+    case TF_PROJECTILE_BREADMONSTER_MADMILK:
+    case TF_PROJECTILE_PIPEBOMB:
+    case TF_PROJECTILE_PIPEBOMB_REMOTE:
+    case TF_PROJECTILE_PIPEBOMB_PRACTICE:
+    case TF_PROJECTILE_CANNONBALL:
+        return vec(8.0f, 8.0f, 8.0f);
+    default:
+        return vec(0.0f, 0.0f, 0.0f);
+    }
+
+    return vec(0.0f, 0.0f, 0.0f);
 }
