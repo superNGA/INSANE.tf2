@@ -7,6 +7,14 @@ class BaseEntity;
 class baseWeapon;
 class CUserCmd;
 
+/*
+* TODO : 
+-> The Quadractic solver isn't compensating for drag n shit, causing trouble with pipes
+-> The set aimbot angle are bad, always going below the desired destination.
+
+-> We are tracing to the perfect position but we can't fire at that IDK why
+*/
+
 class ProjectileWeaponInfo_t
 {
 public:
@@ -16,7 +24,9 @@ public:
     vec   GetProjectileOrigin(BaseEntity* pWeaponOwner, const vec& vShootPosOffset, const qangle& qViewAngles) const;
     vec   GetShootPosOffset(BaseEntity* pWeaponOwner, int bFlipedViewModels) const;
     float GetProjectileSpeed(BaseEntity* pWeaponOwner) const;
-    float GetProjectileGravity(BaseEntity* pWeaponOwner) const;
+    float GetProjectileGravity(BaseEntity* pWeaponOwner, const float flBaseGravity) const;
+
+    bool  IsUpdated(baseWeapon* pWeapon);
 
     void  Reset();
 
@@ -46,28 +56,42 @@ private:
     BaseEntity* _GetBestTarget(const ProjectileWeaponInfo_t& weaponInfo, BaseEntity* pAttacker, CUserCmd* pCmd);
    
     bool _SolveProjectileMotion(
-        const vec& vLauchPos, const vec& vTargetPos, 
+        const vec& vLauchPos,       const vec& vTargetPos, 
         const float flProjVelocity, const float flGravity, 
-        float& flAngleOut, float& flTimeToReach);
+        float& flAngleOut,          float& flTimeToReach);
 
     bool _GetBestHitPointOnTargetHull(
-        BaseEntity* pTarget, const vec& vTargetOrigin,
+        BaseEntity* pTarget,                      const vec& vTargetOrigin,
         const ProjectileWeaponInfo_t& weaponInfo, vec& vBestPointOut,
-        const vec& vProjectileOrigin, const float flProjVelocity,
-        const float flProjGravity, BaseEntity* pProjectileOwner);
+        const vec& vProjectileOrigin,             const float flProjVelocity,
+        const float flProjGravity,                BaseEntity* pProjectileOwner);
 
-    float _GetAngleFromCrosshair(BaseEntity* pLocalPlayer, const vec& vTargetPos);
+    float _GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles);
     
-    void _DrawPredictionHistory();
+    bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
+    bool m_bLastShouldAim = false;
 
     ProjectileWeaponInfo_t m_weaponInfo;
 
-    void _ClearPredictoinHistory() { m_nValidPredictionRecord = 0; }
+    // Target's Data
+    void _DrawPredictionHistory();
+    void _DrawProjectilePathPred(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void _ClearPredictionHistory() { m_nValidPredictionRecord = 0; }
     std::vector<vec>       m_vecTargetPredictionHistory = {};
+    std::vector<vec>       m_vecProjectilePathPred = {};
+    bool                   m_bProjectilePathPredicted = false;
+    qangle                 m_qLastAimbotAngles;
     uint32_t               m_nValidPredictionRecord = 0;
+    uint32_t               m_nValidProjectilePathRecord = 0;
+    float                  m_flDrawStartTime = 0.0f;
+    static constexpr float flPredictionHistoryDrawingLife = 5.0f;
 
     const qangle _GetTargetAngles(BaseEntity* pAttacker, const qangle& qViewAngles);
-    inline void _ResetTargetData() { m_pBestTarget = nullptr; m_vBestTargetFuturePos.Init(); }
+    inline void _ResetTargetData() 
+    { 
+        m_pBestTarget = nullptr; 
+        m_vBestTargetFuturePos.Init(); 
+    }
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
 

@@ -59,6 +59,7 @@
 
 #define	MASK_ALL					(0xFFFFFFFF)
 #define	MASK_SHOT					(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEBRIS|CONTENTS_HITBOX)
+#define	MASK_NO_SOLID				(CONTENTS_MOVEABLE|CONTENTS_MONSTER|CONTENTS_WINDOW|CONTENTS_DEBRIS|CONTENTS_HITBOX)
 #define	MASK_SOLID					(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
 #define	MASK_PLAYERSOLID			(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_PLAYERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
 #define	MASK_NPCSOLID				(CONTENTS_SOLID|CONTENTS_MOVEABLE|CONTENTS_MONSTERCLIP|CONTENTS_WINDOW|CONTENTS_MONSTER|CONTENTS_GRATE)
@@ -173,9 +174,19 @@ struct vec
 		return sqrtf(x * x + y * y + z * z);
 	}
 
+	float Length2D() const
+	{
+		return sqrtf(x * x + y * y);
+	}
+
 	float DistTo(const vec& other) const
 	{
 		return (*this - other).length();
+	}
+
+	float Dist2Dto(const vec& other) const
+	{
+		return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
 	}
 
 	const float mag()

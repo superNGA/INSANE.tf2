@@ -17,7 +17,7 @@ bool SDK::InAttack(BaseEntity* pPlayer, baseWeapon* pWeapon, CUserCmd* pCmd)
 bool SDK::CanAttack(BaseEntity* pPlayer, baseWeapon* pWeapon, CUserCmd* pCmd)
 {    
     // We got ammo ?
-    if (pWeapon->getSlot() != WPN_SLOT_MELLE && pWeapon->m_iClip1() <= 0)
+    if (pWeapon->getSlot() != WPN_SLOT_MELLE && pWeapon->m_iClip1() == 0)
         return false;
 
     // We can fire when reloading
