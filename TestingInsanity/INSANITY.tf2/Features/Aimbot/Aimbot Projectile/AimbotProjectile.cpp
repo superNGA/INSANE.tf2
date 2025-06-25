@@ -433,7 +433,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(
         vecHitPointPriorityList = &vecFeetPriorityHitpointList;
     }
 
-    // Choosing most hitable HitPoint
+    // Looping & Choosing most hitable HitPoint
     vec vAttackerEyePos = pProjectileOwner->GetEyePos();
     vec vShootPosOffset = weaponInfo.GetShootPosOffset(pProjectileOwner, m_bFlipViewModels);
     vec vBestHitpoint;
@@ -466,23 +466,32 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(
             flProjGravity, weaponInfo.m_flUpwardVelOffset,
             weaponInfo.m_vHullSize, pProjectileOwner
         );
-
+        
+        // Simulating projectile & check if we can reach this hitpoint or not
+        constexpr vec vMultiPointBoxMins(3.0f, 3.0f, 3.0f);
+        bool bCanReach = true;
         for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+        {
             FeatureObj::projectileSimulator.RunTick();
 
-        constexpr vec vMultiPointBoxMins(3.0f, 3.0f, 3.0f);
+            constexpr float flProjHitRangeTolerance = 3.0f;
+            const ProjectileInfo_t& projectileInfo = FeatureObj::projectileSimulator.m_projectileInfo;
 
-        // we can hit this hitpoint.
-        constexpr float flProjectileHitTolerance = 3.0f;
-        const ProjectileInfo_t& projSimInfo      = FeatureObj::projectileSimulator.m_projectileInfo;
-        if( projSimInfo.m_bDidHit == false || projSimInfo.m_pEntHit == pTarget ||
-            FeatureObj::projectileSimulator.m_projectileInfo.m_vEndPos.DistTo(vTargetHitPoint) < flProjectileHitTolerance)
+            // Checking if we hit something mid way
+            if (projectileInfo.m_bDidHit == true &&
+                (projectileInfo.m_vEndPos.IsEmpty() == false && projectileInfo.m_vEndPos.DistTo(vTargetHitPoint) > flProjHitRangeTolerance))
+            {
+                bCanReach = false;
+                break;
+            }
+        }
+
+        // exit if hittable hitpoint found
+        if (bCanReach == true)
         {
             vBestHitpoint = vTargetHitPoint;
-
-            if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugMultiPoint.IsActive() == true)
-                I::IDebugOverlay->AddBoxOverlay(vTargetHitPoint, vMultiPointBoxMins * -1.0f, vMultiPointBoxMins, qangle(0.0f, 0.0f, 0.0f), 0, 255, 0, 40, 1.0f);
-
+            if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_DebugMultiPoint.IsActive() == true && vBestHitpoint.IsEmpty() == false)
+                I::IDebugOverlay->AddBoxOverlay(vBestHitpoint, vMultiPointBoxMins * -1.0f, vMultiPointBoxMins, qangle(0.0f, 0.0f, 0.0f), 0, 255, 0, 40, 1.0f);
             break;
         }
 
