@@ -95,6 +95,7 @@ enum renderGroup_t
 struct qangle
 {
 	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
+	qangle(float flAngle) : pitch(flAngle), yaw(flAngle), roll(flAngle) {}
 	qangle(float PITCH, float YAW, float ROLL) : pitch(PITCH), yaw(YAW), roll(ROLL) {}
 
 	float pitch, yaw, roll;
@@ -121,6 +122,7 @@ struct qangle
 struct vec
 {
 	vec() : x(0.0f), y(0.0f), z(0.0f) {}
+	constexpr vec(float X) : x(X), y(X), z(X) {}
 	constexpr vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
 	float x, y, z;
 
@@ -158,6 +160,12 @@ struct vec
 		return *this;
 	}
 
+	vec& operator-=(vec other)
+	{
+		x -= other.x; y -= other.y; z -= other.z;
+		return *this;
+	}
+
 	vec& operator *=(float other)
 	{
 		x *= other; y *= other; z *= other;
@@ -167,6 +175,11 @@ struct vec
 	void operator= (vec other)
 	{
 		x = other.x; y = other.y; z = other.z;
+	}
+
+	bool operator==(const vec& other) const
+	{
+		return (x == other.x && y == other.y && z == other.z);
 	}
 
 	float length()
@@ -200,7 +213,7 @@ struct vec
 	
 	bool IsEmpty() const
 	{
-		return fabs(x) < 0.001f && fabs(y) < 0.001f && fabs(z) < 0.001f;
+		return fabs(x) < 0.0001f && fabs(y) < 0.0001f && fabs(z) < 0.0001f;
 	}
 
 	bool isEmpty()

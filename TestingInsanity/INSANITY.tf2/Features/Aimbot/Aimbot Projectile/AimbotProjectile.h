@@ -6,45 +6,7 @@
 class BaseEntity;
 class baseWeapon;
 class CUserCmd;
-
-/*
-* TODO : 
--> The Quadractic solver isn't compensating for drag n shit, causing trouble with pipes
--> The set aimbot angle are bad, always going below the desired destination.
-
--> We are tracing to the perfect position but we can't fire at that IDK why
-*/
-
-class ProjectileWeaponInfo_t
-{
-public:
-    ProjectileWeaponInfo_t() { Reset(); }
-    void  UpdateWpnInfo(baseWeapon* pActiveWeapon);
-
-    vec   GetProjectileOrigin(BaseEntity* pWeaponOwner, const vec& vShootPosOffset, const qangle& qViewAngles) const;
-    vec   GetShootPosOffset(BaseEntity* pWeaponOwner, int bFlipedViewModels) const;
-    float GetProjectileSpeed(BaseEntity* pWeaponOwner) const;
-    float GetProjectileGravity(BaseEntity* pWeaponOwner, const float flBaseGravity) const;
-
-    bool  IsUpdated(baseWeapon* pWeapon);
-
-    void  Reset();
-
-    baseWeapon*      m_pWeapon;
-    vec              m_vShootPosOffset;
-    vec              m_vHullSize;
-    float            m_flProjectileBaseSpeed;
-    float            m_flProjectileBaseGravityMult;
-    float            m_flUpwardVelOffset;
-    WeaponData_t*    m_pWeaponFileInfo;
-
-private:
-    const vec   _GetWpnBaseShootPosOffset(const baseWeapon* pWeapon, const ProjectileType_t iProjectileType) const;
-    const float _GetBaseProjectileSpeed(const WeaponData_t* pWeaponFileInfo, const baseWeapon * pWeapon) const;
-    const float _GetBaseProjectileGravityMult(const ProjectileType_t iProjectileType);
-    const float _GetUpwardVelocityOffset(ProjectileType_t iProjectileType);
-    const vec   _GetHullSize(ProjectileType_t iProjectileType);
-};
+class ProjectileInfo_tV2;
 
 class AimbotProjectile_t
 {
@@ -53,45 +15,22 @@ public:
     void Reset();
 
 private:
-    BaseEntity* _GetBestTarget(const ProjectileWeaponInfo_t& weaponInfo, BaseEntity* pAttacker, CUserCmd* pCmd);
-   
-    bool _SolveProjectileMotion(
-        const vec& vLauchPos,       const vec& vTargetPos, 
-        const float flProjVelocity, const float flGravity, 
-        float& flAngleOut,          float& flTimeToReach);
-
-    bool _GetBestHitPointOnTargetHull(
-        BaseEntity* pTarget,                      const vec& vTargetOrigin,
-        const ProjectileWeaponInfo_t& weaponInfo, vec& vBestPointOut,
-        const vec& vProjectileOrigin,             const float flProjVelocity,
-        const float flProjGravity,                BaseEntity* pProjectileOwner);
+    BaseEntity* _GetBestTarget(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd);
+    bool _SolveProjectileMotion(const ProjectileInfo_tV2& projInfo, const vec& vTargetPos, const float& flGravity, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flAngleOut, float& flTimeToReach, const float m_flTargetsTimeToReach = 0.0f);
+    bool _GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin, ProjectileInfo_tV2& projInfo, vec& vBestPointOut, const vec& vProjectileOrigin, const float flProjVelocity, const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon);
 
     float _GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles);
-    
-    bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
+    bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_tV2& projInfo);
     bool m_bLastShouldAim = false;
 
-    ProjectileWeaponInfo_t m_weaponInfo;
+    void DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
 
-    // Target's Data
-    void _DrawPredictionHistory();
-    void _DrawProjectilePathPred(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
-    void _ClearPredictionHistory() { m_nValidPredictionRecord = 0; }
-    std::vector<vec>       m_vecTargetPredictionHistory = {};
-    std::vector<vec>       m_vecProjectilePathPred = {};
-    bool                   m_bProjectilePathPredicted = false;
-    qangle                 m_qLastAimbotAngles;
-    uint32_t               m_nValidPredictionRecord = 0;
-    uint32_t               m_nValidProjectilePathRecord = 0;
-    float                  m_flDrawStartTime = 0.0f;
-    static constexpr float flPredictionHistoryDrawingLife = 5.0f;
-
-    const qangle _GetTargetAngles(BaseEntity* pAttacker, const qangle& qViewAngles);
-    inline void _ResetTargetData() 
-    { 
-        m_pBestTarget = nullptr; 
-        m_vBestTargetFuturePos.Init(); 
-    }
+    const qangle _GetTargetAngles(
+        ProjectileInfo_tV2& projInfo, 
+        BaseEntity*         pAttacker, 
+        baseWeapon*         pWeapon, 
+        const qangle&       qViewAngles);
+    inline void _ResetTargetData() { m_pBestTarget = nullptr; }
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
 
@@ -141,3 +80,15 @@ DEFINE_FEATURE(
     FloatSlider_t(2.0f, 0.5f, 5.0f), FeatureFlag_None, 
     "Maximum future position to check for hitability. ( Affects Performance!! )"
 )
+
+DEFINE_FEATURE(
+    ProjAimbot_SimulateProjectile, bool, Aimbot_Projectile, Aimbot, 7, 
+    false, FeatureFlag_SupportKeyBind,
+    "Shows the predicted path of projectiles"
+)
+
+/*
+When enemy at x,y,z
+
+shooting will almsot alwayas cause wrong angles.
+*/

@@ -68,12 +68,9 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
 	
-	if (Features::Aimbot::MovementSim::Debug_MovementSim.IsActive() == true)
-	{
-		I::IDebugOverlay->ClearAllOverlays();
-	}
-	else
-		I::IDebugOverlay->ClearAllOverlays();
+	// TODO : Make proper function rich drawing mechanism to we don't have to relly on this dog shit.
+	//		  This also slows down own stuff & not as functional.
+	I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
 	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);

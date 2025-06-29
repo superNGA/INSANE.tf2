@@ -29,6 +29,7 @@
 #include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
 #include "../Features/Aimbot/Aimbot Projectile/AimbotProjectile.h"
 #include "../Features/Movement/Movement.h"
+#include "../Features/Projectile Engine/ProjectileEngine.h"
 
 Utility util;
 
@@ -116,6 +117,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 			FeatureObj::aimbotMelee.Reset();
 			FeatureObj::aimbotProjectile.Reset();
 			FeatureObj::movement.Reset();
+			FeatureObj::projectileEngine.Reset();
 			entityManager.Reset();
 		}
 

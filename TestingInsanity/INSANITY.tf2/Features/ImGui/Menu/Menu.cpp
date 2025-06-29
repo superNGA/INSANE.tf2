@@ -164,7 +164,7 @@ void UIMenu::_DrawFloatSlidereature(IFeature* pFeature, bool bOverride)
         ImGui::SliderFloat((pFloatFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
             &pFloatFeature->m_OverrideData.m_flVal, 
             pFloatFeature->m_OverrideData.m_flMin,
-            pFloatFeature->m_OverrideData.m_flMax, "%.2f");
+            pFloatFeature->m_OverrideData.m_flMax, "%.6f");
         return;
     }
 
@@ -172,7 +172,7 @@ void UIMenu::_DrawFloatSlidereature(IFeature* pFeature, bool bOverride)
     ImGui::SliderFloat((pFloatFeature->m_szFeatureDisplayName + "##Feature").c_str(), 
         pFloatFeature->m_bIsOverrideActive == true ? &pFloatFeature->m_OverrideData.m_flVal : &pFloatFeature->m_Data.m_flVal, 
         pFloatFeature->m_Data.m_flMin, 
-        pFloatFeature->m_Data.m_flMax, "%.2f");
+        pFloatFeature->m_Data.m_flMax, "%.6f");
 
     _DrawFeatureOptionWindow(pFeature);
 }
