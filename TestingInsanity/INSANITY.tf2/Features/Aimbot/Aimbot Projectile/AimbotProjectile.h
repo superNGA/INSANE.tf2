@@ -16,14 +16,13 @@ public:
 
 private:
     BaseEntity* _GetBestTarget(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd);
-    bool _SolveProjectileMotion(const ProjectileInfo_tV2& projInfo, const vec& vTargetPos, const float& flGravity, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flAngleOut, float& flTimeToReach, const float m_flTargetsTimeToReach = 0.0f);
     bool _GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin, ProjectileInfo_tV2& projInfo, vec& vBestPointOut, const vec& vProjectileOrigin, const float flProjVelocity, const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon);
 
     float _GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles);
     bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_tV2& projInfo);
     bool m_bLastShouldAim = false;
 
-    void DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
+    bool _SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_tV2& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut);
 
     const qangle _GetTargetAngles(
         ProjectileInfo_tV2& projInfo, 
@@ -58,9 +57,9 @@ DEFINE_FEATURE(
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_HitClosestEnemy, bool, Aimbot_Projectile, Aimbot, 3, false,
+    ProjAimbot_MaxDistance, FloatSlider_t, Aimbot_Projectile, Aimbot, 3, FloatSlider_t(200.0f, 0.0f, 1000.0f),
     FeatureFlag_None,
-    "Targets closest enemy to you, intsead of closest to your crosshair"
+    "Max distance to target"
 )
 
 DEFINE_FEATURE(

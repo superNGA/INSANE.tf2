@@ -71,13 +71,17 @@ void ProjectileEngine_t::Reset()
 }
 
 
-void ProjectileEngine_t::RunTick()
+void ProjectileEngine_t::RunTick(bool bTrace = true)
 {
     if (m_pObj == nullptr)
         return;
 
     m_pEnv->Simulate(TICK_INTERVAL);
     m_pObj->GetPosition(&m_projInfo.m_vOrigin, nullptr);
+
+    
+    if (bTrace == false)
+        return;
 
     // Ray tracing from projectile origin to detect collision
     vec vVelocity;

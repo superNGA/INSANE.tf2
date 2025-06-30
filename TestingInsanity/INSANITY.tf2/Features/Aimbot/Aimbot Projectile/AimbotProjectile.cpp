@@ -22,9 +22,6 @@
 //=========================================================================
 void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
-    // Doing complex ass shit
-    DoComplexAssShit(pLocalPlayer, pActiveWeapon, pCmd);
-
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
         return;
@@ -57,19 +54,19 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 }
 
 
-void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
+bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_tV2& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
 {
-    vec vForward;
-    Maths::AngleVectors(pCmd->viewangles, &vForward);
-    i_trace_filter filter(pLocalPlayer); trace_t trace;
-    I::EngineTrace->UTIL_TraceRay(pLocalPlayer->GetEyePos(), pLocalPlayer->GetEyePos() + (vForward * 2000.0f), MASK_SHOT, &filter, &trace);
-    vec vTarget = trace.m_end;
-
-    auto& projInfo  = FeatureObj::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
-    float flGravity = projInfo.m_flGravityMult * 800.0f * -1.0f;
+    float flGravity = projInfo.m_flGravityMult * m_flGravity * -1.0f;
 
     float x = projInfo.m_vOrigin.Dist2Dto(vTarget);
     float y = vTarget.z - projInfo.m_vOrigin.z;
+
+    if (projInfo.m_flGravityMult == 0.0f)
+    {
+        flAngleOut       = RAD2DEG(atanf(y / x));
+        flTimeToReachOut = projInfo.m_vStart.DistTo(vTarget) / projInfo.m_flSpeed;
+        return true;
+    }
 
     // Quadratic shit here
     float flSpeed        = sqrtf((projInfo.m_flSpeed * projInfo.m_flSpeed) + (projInfo.m_flUpwardVelOffset * projInfo.m_flUpwardVelOffset));
@@ -78,12 +75,12 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
     // if even quadratic can't reach this point
     if (flDiscriminant < 0.0f)
     {
-        I::IDebugOverlay->AddTextOverlayRGB(vTarget, 0, 1.0f, 255, 0, 0, 255, "Can't reach this point");
-        return;
+        //I::IDebugOverlay->AddTextOverlayRGB(vTarget, 0, 1.0f, 255, 0, 0, 255, "Can't reach this point");
+        return false;
     }
     else // Drawing target
     {
-        I::IDebugOverlay->AddBoxOverlay(vTarget, vec(4.0f), vec(-4.0f), qangle(0.0f), 255, 0, 0, 20, 1.0f);
+        //I::IDebugOverlay->AddBoxOverlay(vTarget, vec(4.0f), vec(-4.0f), qangle(0.0f), 255, 0, 0, 20, 1.0f);
     }
 
     // Getting best angles & speed
@@ -105,7 +102,7 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
     float flBestTimeToReach = 0.0f;
 
     constexpr float flProjLife   = 3.0f;
-    constexpr float flTolerance  = 8.0f;
+    constexpr float flTolerance  = 20.0f;
     float           flDeltaAngle = 0.0f;
     float           flStepSize   = 5.0f;
     float           flLastEndPosDelta = 0.0f;
@@ -130,7 +127,7 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
         vec   vLastPos; // This is for drawing
         for(int iTick = 0; iTick < TIME_TO_TICK(flProjLife); iTick++)
         {
-            FeatureObj::projectileEngine.RunTick();
+            FeatureObj::projectileEngine.RunTick(false);
 
             vec   vOrigin = FeatureObj::projectileEngine.GetPos();
             float flDist  = vOrigin.DistTo(vTarget);
@@ -151,14 +148,14 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
         // Did projectile even reach that point
         if (vEnd.IsEmpty() == true)
         {
-            FAIL_LOG("Projectile can't reach this place");
+            //FAIL_LOG("Projectile can't reach this place");
             continue;
         }
 
         // Draw end pos
         bDidSucceed = vEnd.DistTo(vTarget) <= flTolerance;
-        I::IDebugOverlay->AddTextOverlay(vEnd, 1.0f, "[ %d ]", iAttempt + 1);
-        I::IDebugOverlay->AddBoxOverlay(vEnd, vec(4.0f), vec(-4.0f), qangle(0.0f), 0, bDidSucceed == true ? 255 : 0, bDidSucceed == true ? 0 : 255, 255, 1.0f);
+        //I::IDebugOverlay->AddTextOverlay(vEnd, 1.0f, "[ %d ]", iAttempt + 1);
+        //I::IDebugOverlay->AddBoxOverlay(vEnd, vec(4.0f), vec(-4.0f), qangle(0.0f), 0, bDidSucceed == true ? 255 : 0, bDidSucceed == true ? 0 : 255, 255, 1.0f);
         if (bDidSucceed == true)
         {
             break;
@@ -178,7 +175,7 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
         if (bDidGoPastTarget == true)
         {
             flStepSize *= 0.5f;
-            LOG("We went past the target @ %d attempt, new step size is [ %.2f ]", iAttempt, flStepSize);
+            //LOG("We went past the target @ %d attempt, new step size is [ %.2f ]", iAttempt, flStepSize);
         }
         if (flEndPosDelta > 0.0f)
         {
@@ -192,7 +189,9 @@ void AimbotProjectile_t::DoComplexAssShit(BaseEntity* pLocalPlayer, baseWeapon* 
 
     }
 
-
+    flAngleOut       = flBestAngle;
+    flTimeToReachOut = flBestTimeToReach;
+    return bDidSucceed;
 }
 
 
@@ -256,7 +255,7 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_tV2& projInfo, Bas
 
             // Calculaing our projectile's time to reach to the center of the target
             bool bCanReach = _SolveProjectileMotion(
-                projInfo, vFuturePos, flProjGravity, pAttacker, pWeapon, flProjLaunchAngle, flProjectilesTimeToReach, flTargetsTimeToReach
+                pAttacker, pWeapon, projInfo, vFuturePos, flProjLaunchAngle, flProjectilesTimeToReach
             );
 
             // Exit on the first tick when projectile can reach target faster
@@ -270,6 +269,10 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_tV2& projInfo, Bas
 
         // if we didn't found any hitable tick for this enitity than skip
         if (vTargetFuturePos.IsEmpty() == true)
+            continue;
+
+        // Max distance check for drag weapons
+        if (projInfo.m_bUsesDrag == true && projInfo.m_vStart.DistTo(vTargetFuturePos) > Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxDistance.GetData().m_flVal)
             continue;
 
         // Getting best point on target's hull to hit
@@ -337,57 +340,6 @@ bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiv
 }
 
 
-
-bool AimbotProjectile_t::_SolveProjectileMotion(const ProjectileInfo_tV2& projInfo, const vec& vTargetPos,
-    const float& flGravity, BaseEntity* pLocalPlayer,
-    baseWeapon* pActiveWeapon, float& flAngleOut, float& flTimeToReach, const float flTargetsTimeToReach)
-{
-    float x = projInfo.m_vOrigin.Dist2Dto(vTargetPos);
-    float y = vTargetPos.z - projInfo.m_vOrigin.z;
-
-    // Handling no gravity case like Rockets
-    if (projInfo.m_flGravityMult < 0.01f)
-    {
-        flAngleOut    = RAD2DEG(atanf(y / x));
-        flTimeToReach = projInfo.m_vOrigin.DistTo(vTargetPos) / projInfo.m_flSpeed;
-
-        // we can always hit a enemy with a rocket ( without any walls )
-        return true;
-    }
-
-    float flSpeed = sqrtf(projInfo.m_flSpeed * projInfo.m_flSpeed + projInfo.m_flUpwardVelOffset * projInfo.m_flUpwardVelOffset);
-
-    float flDiscriminant = powf(flSpeed, 4.0f) - flGravity * (((x * x) * flGravity) - (2.0f * flSpeed * flSpeed * y));
-
-    // Projectile can't reach this position.
-    if (flDiscriminant < 0.0f)
-        return false;
-
-    // Calculating both solutions
-    float flSolution1 = (-(flSpeed * flSpeed) + sqrtf(flDiscriminant)) / (x * flGravity);
-    float flSolution2 = (-(flSpeed * flSpeed) - sqrtf(flDiscriminant)) / (x * flGravity);
-
-    float flAngle1InDeg = RAD2DEG(atanf(flSolution1));
-    float flAngle2InDeg = RAD2DEG(atanf(flSolution2));
-
-    float flTimeToReach1 = x / (flSpeed * cos(atanf(flSolution1)));
-    float flTimeToReach2 = x / (flSpeed * cos(atanf(flSolution2)));
-
-    float flBestAngle       = flTimeToReach1 < flTimeToReach2 ? flAngle1InDeg  : flAngle2InDeg;
-    float flBestTimeToReach = flTimeToReach1 < flTimeToReach2 ? flTimeToReach1 : flTimeToReach2;
-
-    // quadratic equation's solution is absolute if theres no drag
-    if(/*projInfo.m_bUsesDrag == false*/ true)
-    {
-        flAngleOut    = flBestAngle;
-        flTimeToReach = flBestTimeToReach;
-        return true;
-    }
-
-    return false;
-}
-
-
 bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin,
     ProjectileInfo_tV2& projInfo, vec& vBestPointOut,
     const vec& vProjectileOrigin, const float flProjVelocity,
@@ -395,7 +347,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
 {
     ICollideable_t* pCollidable = pTarget->GetCollideable();
     const vec& vHullMins = pCollidable->OBBMins();
-    const vec&      vHullMaxs   = pCollidable->OBBMaxs();
+    const vec& vHullMaxs = pCollidable->OBBMaxs();
 
     float flHeight = Maths::MAX<float>(vHullMaxs.z, vHullMins.z);
 
@@ -450,10 +402,10 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
         projInfo.SetProjectileAngle(vAttackerEyePos, qAttackerToHitPoint);
 
         float flProjLaunchAngle = 0.0f;
-        float flTimeToReach = 0.0f;
+        float flTimeToReach     = 0.0f;
         _SolveProjectileMotion(
-            projInfo,
-            vTargetHitPoint, flProjGravity, pProjectileOwner, pWeapon, flProjLaunchAngle, flTimeToReach);
+            pProjectileOwner, pWeapon, projInfo, vTargetHitPoint, flProjLaunchAngle, flTimeToReach
+        );
 
         // Calculaing aimbot view angles
         qangle qProjLaunchAngles;
@@ -470,7 +422,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
         bool bCanReach = true;
         for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
         {
-            FeatureObj::projectileEngine.RunTick();
+            FeatureObj::projectileEngine.RunTick(true);
 
             constexpr float flProjHitRangeTolerance = 3.0f;
 
@@ -503,19 +455,20 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
 
 const qangle AimbotProjectile_t::_GetTargetAngles(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, const qangle& qViewAngles)
 {
+    // Rotating projectile info so the projectile origin is positioned properly
     qangle qAttackerToTarget;
     Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - pAttacker->GetEyePos(), qAttackerToTarget);
-    vec   vProjectileOrigin = projInfo.m_vStart;
-    float flProjVel = projInfo.m_flSpeed;
-    float flProjGravity = projInfo.m_flGravityMult * m_flGravity * -1.0f;
+    projInfo.SetProjectileAngle(pAttacker->GetEyePos(), qAttackerToTarget);
 
-    qangle qBestAngles;
-    Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - vProjectileOrigin, qBestAngles);
-    
+    // Getting angle to hit target
     float flProjLaunchAngle = 0.0f;
     float flTimeToReach     = 0.0f;
-    _SolveProjectileMotion(projInfo, m_vBestTargetFuturePos, flProjGravity, pAttacker, pWeapon, flProjLaunchAngle, flTimeToReach);
-    qBestAngles.pitch = flProjLaunchAngle * -1.0f; // Gotta invert the pitch.
+    _SolveProjectileMotion(pAttacker, pWeapon, projInfo, m_vBestTargetFuturePos, flProjLaunchAngle, flTimeToReach);
+    
+    // Constructing aimbot angles
+    qangle qBestAngles;
+    Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - projInfo.m_vStart, qBestAngles);
+    qBestAngles.pitch = flProjLaunchAngle * -1.0f; // Converting pitch to source engine format
 
     return qBestAngles;
 }
