@@ -9,6 +9,8 @@
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/IInputSystem.h"
 
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
+
 #define SPACEBAR_STATE (1 << 0)
 
 Movement_t::Movement_t()
@@ -24,6 +26,8 @@ Movement_t::Movement_t()
 //=========================================================================
 void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
+	PROFILE_FUNCTION();
+
 	_InitializeKeyCodes();
 
 	_Bhop(pCmd, result, pLocalPlayer);

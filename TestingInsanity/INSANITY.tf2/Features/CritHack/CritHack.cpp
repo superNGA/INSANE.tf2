@@ -23,6 +23,7 @@
 
 // DEUBG related
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 #define TF_DAMAGE_CRIT_CHANCE_MELEE     0.15f
 #define TF_DAMAGE_CRIT_CHANCE           0.02f
@@ -66,6 +67,8 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //=========================================================================
 void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
+    PROFILE_FUNCTION();
+
     // Storing some basic info.. ( nothing to look at here )
     m_pLocalPlayer         = pLocalPlayer;
     m_iLocalPlayerEntIndex = pLocalPlayer->entindex();

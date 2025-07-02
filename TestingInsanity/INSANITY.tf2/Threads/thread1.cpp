@@ -16,6 +16,7 @@
 #include "../Utility/Hook_t.h"
 #include "../Utility/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
+#include "../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../SDK/NetVars/NetVarHandler.h"
 #include "../Features/FeatureHandler.h"
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
@@ -98,7 +99,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	{
 		_terminate(instance);
 	}
-	
 
 	//=======================MAIN CHEAT LOOP=======================
 	LOG("thread 1", "initialized thread 1");
@@ -173,6 +173,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 	{
 		FAIL_LOG("thread 1", "terminating without hooking (early exit) something went wrong");
 		UNINITIALIZE_CONSOLE();
+		UNINITIALIZE_PROFILER();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}
@@ -205,6 +206,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 		// freeing terminal..
 		LOG("thread 1", "uninitiazed everything, teminated software gracefully");
 		UNINITIALIZE_CONSOLE();
+		UNINITIALIZE_PROFILER();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}

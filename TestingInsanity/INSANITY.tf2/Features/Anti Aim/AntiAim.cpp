@@ -12,6 +12,8 @@
 #include "../../Utility/signatures.h"
 #include "../../Extra/math.h"
 
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
+
 MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*);
 
 //=========================================================================
@@ -19,6 +21,8 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer)
 {
+	PROFILE_FUNCTION();
+
 	if (Features::AntiAim::AntiAim::AntiAim.IsActive() == false)
 		return;
 

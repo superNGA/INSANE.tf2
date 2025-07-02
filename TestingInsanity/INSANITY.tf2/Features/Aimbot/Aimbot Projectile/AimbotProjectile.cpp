@@ -14,6 +14,7 @@
 #include "../../Projectile Engine/ProjectileEngine.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 
+#include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../AimbotHelper.h"
 #include "../../../Extra/math.h"
 
@@ -22,6 +23,8 @@
 //=========================================================================
 void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
+    PROFILE_FUNCTION("ProjAimbot::Run");
+
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
         return;
@@ -211,6 +214,8 @@ void AimbotProjectile_t::Reset()
 //=========================================================================
 BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
 {
+    PROFILE_FUNCTION();
+
     std::vector<BaseEntity*> vecTargets = FeatureObj::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
 
     float flAngBestDistance = std::numeric_limits<float>::infinity();
@@ -345,6 +350,8 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
     const vec& vProjectileOrigin, const float flProjVelocity,
     const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon)
 {
+    PROFILE_FUNCTION();
+
     ICollideable_t* pCollidable = pTarget->GetCollideable();
     const vec& vHullMins = pCollidable->OBBMins();
     const vec& vHullMaxs = pCollidable->OBBMaxs();

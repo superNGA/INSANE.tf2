@@ -7,6 +7,7 @@
 #include "../Utility/signatures.h"
 #include "../Utility/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
+#include "../Utility/Insane Profiler/InsaneProfiler.h"
 
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
@@ -31,6 +32,8 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	if ( cmd == nullptr || cmd->command_number == 0)
 		return result;
+
+	PROFILE_THREAD();
 
 	// Getting Local Player
 	BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
@@ -79,7 +82,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
 	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
-
 
 	return result;
 }

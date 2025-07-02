@@ -15,7 +15,12 @@
 #define LOG_VEC3(Vector)        EXPAND(CONS_FASTLOG_FLOAT_ARR_CUSTOM(Vector, sizeof(float) * 3))
 #define LOG_VEC2(Vector)        EXPAND(CONS_FASTLOG_FLOAT_ARR_CUSTOM(Vector, sizeof(float) * 2))
 
+#define CONCAT_HELPER(x,y)      x##y
+#define CONCAT(x,y)             CONCAT_HELPER(x,y)
+
 #else 
+
+#define EXPAND(X)               (void)0
 
 #define WIN_LOG(msg, ...)       (void)0
 #define FAIL_LOG(msg, ...)      (void)0
@@ -24,5 +29,8 @@
 #define UNINITIALIZE_CONSOLE()  (void)0
 #define LOG_VEC3(Vector)        (void)0
 #define LOG_VEC2(Vector)        (void)0
+
+#define CONCAT_HELPER(x,y)      (void)0
+#define CONCAT(x,y)             (void)0
 
 #endif // _DEBUG

@@ -7,6 +7,7 @@
 
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 
 /*================ Giving namespace variables default value here ========================*/
@@ -147,6 +148,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     Render::InfoWindow.Draw();
     Render::uiMenu.Draw();
+    insaneProfiler.Render();
 
     /* Frame end */
     ImGui::EndFrame();
