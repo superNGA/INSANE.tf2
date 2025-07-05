@@ -113,11 +113,12 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		// Resetting features if not in game
 		if(bInGame == false)
 		{
-			FeatureObj::critHack.Reset();
-			FeatureObj::aimbotMelee.Reset();
-			FeatureObj::aimbotProjectile.Reset();
-			FeatureObj::movement.Reset();
-			FeatureObj::projectileEngine.Reset();
+			F::critHack.Reset();
+			F::aimbotMelee.Reset();
+			F::aimbotProjectile.Reset();
+			F::aimbotProjectile.DeleteProjLUT(); // TODO : Maybe move it to _terminate() ?
+			F::movement.Reset();
+			F::projectileEngine.Reset();
 			entityManager.Reset();
 		}
 
@@ -173,7 +174,6 @@ void thread1_t::_terminate(HINSTANCE instance)
 	{
 		FAIL_LOG("thread 1", "terminating without hooking (early exit) something went wrong");
 		UNINITIALIZE_CONSOLE();
-		UNINITIALIZE_PROFILER();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}
@@ -206,7 +206,6 @@ void thread1_t::_terminate(HINSTANCE instance)
 		// freeing terminal..
 		LOG("thread 1", "uninitiazed everything, teminated software gracefully");
 		UNINITIALIZE_CONSOLE();
-		UNINITIALIZE_PROFILER();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
 	}

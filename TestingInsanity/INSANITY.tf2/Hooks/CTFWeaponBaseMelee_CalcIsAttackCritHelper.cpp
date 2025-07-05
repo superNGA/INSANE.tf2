@@ -19,9 +19,11 @@ MAKE_HOOK(CTFWeaponBase_CalcIsAttackCritical, "48 89 74 24 ? 57 48 83 EC ? 48 8B
     float        flNextAttackTime     = pActiveWeapon->m_flNextPrimaryAttack();
     if (tfObject.pGlobalVar->curtime >= flNextAttackTime && (flNextAttackTime != flLastNextAttackTime || flLastNextAttackTime < 0.0f))
     {
-        FeatureObj::critHack.CalcIsAttackCriticalHandler();
-        FeatureObj::critHack.AddToWeaponsBucket(pActiveWeapon);
+        F::critHack.CalcIsAttackCriticalHandler();
+        F::critHack.AddToWeaponsBucket(pActiveWeapon);
         flLastNextAttackTime = flNextAttackTime;
+
+        // Delete this
         printf("--> shot detected & added to bucket <--\n");
     }
 

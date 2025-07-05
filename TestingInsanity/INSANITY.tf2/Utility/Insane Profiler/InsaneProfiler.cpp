@@ -1,18 +1,23 @@
+//=========================================================================
+//                      INSANE PROFILER
+//=========================================================================
+// by      : INSANE
+// created : 30/06/2025
+// 
+// purpose : Record & displays time take by FNs in a "Reverse flame" like pattern
+//-------------------------------------------------------------------------
 #include "InsaneProfiler.h"
-#include <Windows.h>
 #include <numeric>
 
+// UTILITY
 #include "../../External Libraries/ImGui/imgui.h"
 #include "../ConsoleLogging.h"
 #include "../../Extra/math.h"
-#include <stack>
 
-/*
-make a stack at time of registering scope
-put time starts on top
-when time end calls. 
-*/
 
+//=========================================================================
+//                     PUBLIC METHODS
+//=========================================================================
 
 void InsaneProfiler_t::RegisterThread(uint32_t iThreadID, std::string szName)
 {
@@ -131,92 +136,134 @@ void InsaneProfiler_t::Render()
     ImVec2 vOrigin   = ImGui::GetCursorPos();
     auto*  pDrawList = ImGui::GetWindowDrawList();
 
-    for (auto& [iThreadID, parentScope] : m_mapRegisteredScopes)
+    // Making drop down menu with all scopes
+    std::vector<ScopeData_t*> vecAllScopes;
+    for (auto& scope : m_mapRegisteredScopes)
+        vecAllScopes.push_back(&scope.second);
+    static int iCurrentItem = 0;
+
+    if (vecAllScopes.size() < 1)
     {
-        // Getting data to render
-        const auto* qRenderData = parentScope.GetRenderData();
-        if (qRenderData->m_qData.empty() == true)
-            continue;
-
-        // Drawing the scale ( on top )
+        ImGui::End();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+        return;
+    }
+   
+    if (ImGui::BeginCombo("Select Item", vecAllScopes[iCurrentItem]->m_szScopeName.c_str()))
+    {
+        for (int i = 0; i < vecAllScopes.size(); ++i)
         {
-            constexpr float flScaleStepSize   = 0.25f;
-            constexpr float flScaleMarkLength = 6.0f;
-            ImVec2 flTimeStringSize;
-            int nScaleMarks = static_cast<int>(1.0f / flScaleStepSize);
-            for (int i = 0; i <= nScaleMarks; i++)
-            {
-                float flPos = i * flScaleStepSize * io.DisplaySize.x;
-                pDrawList->AddLine({ flPos, vOrigin.y }, { flPos, vOrigin.y + flScaleMarkLength }, ImColor(255, 255, 255, 255), 5.0f);
-                
-                // Drawing time's text
-                std::string szTime = GetTimeString(i * flScaleStepSize * qRenderData->m_iScopeExecTimeInNs);
-                flTimeStringSize = ImGui::CalcTextSize(szTime.c_str());
-                pDrawList->AddText({ flPos - (flTimeStringSize.x / 2.0f), vOrigin.y + 5.0f }, ImColor(255, 255, 255, 255), szTime.c_str());
-            }
+            bool bIsSelected = (iCurrentItem == i);
+            if (ImGui::Selectable(vecAllScopes[i]->m_szScopeName.c_str(), bIsSelected))
+                iCurrentItem = i;
 
-            // so we don't draw over the scale.
-            vOrigin.y += flScaleMarkLength + flTimeStringSize.y + 2.0f; // extra 2 pixels just for padding.
+            if (bIsSelected == true)
+                ImGui::SetItemDefaultFocus(); // Auto-focus
+        }
+        ImGui::EndCombo();
+    }
+
+    ScopeData_t& parentScope = *vecAllScopes[iCurrentItem];
+        
+    // Getting data to render
+    const auto* qRenderData = parentScope.GetRenderData();
+    if (qRenderData->m_qData.empty() == true)
+    {
+        ImGui::End();
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+        return;
+    }
+
+    // Drawing the scale ( on top )
+    {
+        constexpr float flScaleStepSize = 0.25f;
+        constexpr float flScaleMarkLength = 6.0f;
+        ImVec2 flTimeStringSize;
+        int nScaleMarks = static_cast<int>(1.0f / flScaleStepSize);
+        for (int i = 0; i <= nScaleMarks; i++)
+        {
+            float flPos = i * flScaleStepSize * io.DisplaySize.x;
+            pDrawList->AddLine({ flPos, vOrigin.y }, { flPos, vOrigin.y + flScaleMarkLength }, ImColor(255, 255, 255, 255), 5.0f);
+
+            // Drawing time's text
+            std::string szTime = GetTimeString(i * flScaleStepSize * qRenderData->m_iScopeExecTimeInNs);
+            flTimeStringSize = ImGui::CalcTextSize(szTime.c_str());
+            pDrawList->AddText({ flPos - (flTimeStringSize.x / 2.0f), vOrigin.y + 5.0f }, ImColor(255, 255, 255, 255), szTime.c_str());
         }
 
-        /*
-        We need to draw dashed lines from some boxes to the scale to represent the start & end times
-        also write the time comsumed at the end of the names. 
-        do this for all height 0 boxes and for hovered boxes.
-        */
+        // so we don't draw over the scale.
+        vOrigin.y += flScaleMarkLength + flTimeStringSize.y + 2.0f; // extra 2 pixels just for padding.
+    }
 
-        // Drawing each timer record on top of that scope box we just made
-        for (const auto& data : qRenderData->m_qData)
+    /*
+    We need to draw dashed lines from some boxes to the scale to represent the start & end times
+    also write the time comsumed at the end of the names.
+    do this for all height 0 boxes and for hovered boxes.
+    */
+
+    // Drawing each timer record on top of that scope box we just made
+    for (const auto& data : qRenderData->m_qData)
+    {
+        float flStart = Maths::RemapValClamped(data.m_iStartTime, 0, qRenderData->m_iScopeExecTimeInNs, 0, io.DisplaySize.x);
+        float flEnd = Maths::RemapValClamped(data.m_iEndTime, 0, qRenderData->m_iScopeExecTimeInNs, 0, io.DisplaySize.x);
+
+        if (flEnd >= io.DisplaySize.x)
+            FAIL_LOG("Scope avg. %llu | start [ %llu ] | end [ %llu ]", qRenderData->m_iScopeExecTimeInNs, data.m_iEndTime, data.m_iStartTime);
+
+        // Box's measurments
+        float flTop = vOrigin.y + (flDefaultHeight * (data.m_iHeight - 1));
+        float flBottom = vOrigin.y + (flDefaultHeight * data.m_iHeight);
+        ImVec2 vStart{ flStart, flTop };
+        ImVec2 vEnd{ flEnd,   flBottom };
+
+        // Drawing a rectangle represent the time taken
+        pDrawList->AddRectFilled(vStart, vEnd, _GetFlameColor(data.m_iHeight, (flEnd - flStart) / io.DisplaySize.x), 1.0f);
+
+        // Connecting to scale
+        if (data.m_iHeight == 1)
         {
-            float flStart = Maths::RemapValClamped(data.m_iStartTime, 0, qRenderData->m_iScopeExecTimeInNs, 0, io.DisplaySize.x);
-            float flEnd   = Maths::RemapValClamped(data.m_iEndTime,   0, qRenderData->m_iScopeExecTimeInNs, 0, io.DisplaySize.x);
-            
-            if (flEnd >= io.DisplaySize.x)
-                FAIL_LOG("Scope avg. %llu | start [ %llu ] | end [ %llu ]", qRenderData->m_iScopeExecTimeInNs, data.m_iEndTime, data.m_iStartTime);
+            ConnectToTimeScale(vStart, { vEnd.x, vStart.y }, data.m_iStartTime, data.m_iEndTime, pDrawList);
+        }
 
-            // Box's measurments
-            float flTop    = vOrigin.y + (flDefaultHeight * (data.m_iHeight - 1));
-            float flBottom = vOrigin.y + (flDefaultHeight * data.m_iHeight);
-            ImVec2 vStart{ flStart, flTop };
-            ImVec2 vEnd{   flEnd,   flBottom };
+        // Drawing FN name
+        std::string szStatString = GetBlockName(vStart, vEnd, data.m_iEndTime - data.m_iStartTime, data.m_szName, false);
+        float       flStatStringWidth = ImGui::CalcTextSize(szStatString.c_str()).x;
+        if (szStatString != "")
+        {
+            pDrawList->AddText(
+                { flStart + ((flEnd - flStart) - flStatStringWidth) / 2.0f, flTop }, // Centering the text in the box
+                ImColor(255, 255, 255, 255), szStatString.c_str());
+        }
 
-            // Drawing a rectangle represent the time taken
-            pDrawList->AddRectFilled(vStart, vEnd, _GetFlameColor(data.m_iHeight, (flEnd - flStart) / io.DisplaySize.x), 1.0f);
+        if (ImGui::IsMouseHoveringRect(vStart, vEnd, true) == true)
+        {
+            ImGui::SetTooltip(GetBlockName(vStart, vEnd, data.m_iEndTime - data.m_iStartTime, data.m_szName, true).c_str());
 
-            // Connecting to scale
-            if (data.m_iHeight == 1)
+            // if being hovered over & not on level 1 then draw start & end times
+            if (data.m_iHeight > 1)
             {
                 ConnectToTimeScale(vStart, { vEnd.x, vStart.y }, data.m_iStartTime, data.m_iEndTime, pDrawList);
             }
-
-            // Drawing FN name
-            std::string szStatString = GetBlockName(vStart, vEnd, data.m_iEndTime - data.m_iStartTime, data.m_szName, false);
-            float       flStatStringWidth  = ImGui::CalcTextSize(szStatString.c_str()).x;
-            if (szStatString != "")
-            {
-                pDrawList->AddText(
-                    { flStart + ((flEnd - flStart) - flStatStringWidth) / 2.0f, flTop }, // Centering the text in the box
-                    ImColor(255, 255, 255, 255), szStatString.c_str());
-            }
-
-            if (ImGui::IsMouseHoveringRect(vStart, vEnd, true) == true)
-            {
-                ImGui::SetTooltip(GetBlockName(vStart, vEnd, data.m_iEndTime - data.m_iStartTime, data.m_szName, true).c_str());
-
-                // if being hovered over & not on level 1 then draw start & end times
-                if (data.m_iHeight > 1)
-                {
-                    ConnectToTimeScale(vStart, { vEnd.x, vStart.y }, data.m_iStartTime, data.m_iEndTime, pDrawList);
-                }
-            }
-
-            // Updating Max height
-            if (data.m_iHeight > iMaxheight)
-                iMaxheight = data.m_iHeight;
         }
 
-        // Updating cursor pos so auto-resize could work
-        ImGui::SetCursorPosY(vOrigin.y + (iMaxheight * flDefaultHeight));
+        // Updating Max height
+        if (data.m_iHeight > iMaxheight)
+            iMaxheight = data.m_iHeight;
+    }
+
+    // Updating cursor pos so auto-resize could work
+    ImGui::SetCursorPosY(vOrigin.y + (iMaxheight * flDefaultHeight));
+    ImGui::SetCursorPosX(0.0f);
+
+    // Rendering the averaged out time for each fn called more than once.
+    // NOTE : This also handles the cursor pos for the most part.
+    for (const auto& avgTimerData : qRenderData->m_qAvgData)
+    {
+        ImGui::Text("%s ( %d calls, %.2f%% of total )\n", avgTimerData.m_szName.c_str(), avgTimerData.m_iCount, avgTimerData.m_flPercentageOfTotal);
+        ImGui::Text("       AVG   time : %s\n", GetTimeString(avgTimerData.m_iAvgExecTimeInNs).c_str());
+        ImGui::Text("       Total time : %s\n", GetTimeString(avgTimerData.m_iAvgExecTimeInNs * avgTimerData.m_iCount).c_str());
     }
 
     ImGui::End();
@@ -233,21 +280,25 @@ void InsaneProfiler_t::Render() { return; }
 
 std::string InsaneProfiler_t::GetTimeString(uint64_t iTimeInNs)
 {
+    // Returning time in Nano-seconds
     if (iTimeInNs / int(1e3) == 0)
     {
         return std::format("{}ns", iTimeInNs);
     }
+    // Returning time in Mirco-seconds
     else if (iTimeInNs / int(1e6) == 0)
     {
-        return std::format("{}us", iTimeInNs / int(1e3));
+        return std::format("{}us", iTimeInNs / int(1e3f));
     }
+    // Returning time in Milli-seconds
     else if (iTimeInNs / int(1e9) == 0)
     {
-        return std::format("{}ms", iTimeInNs / int(1e6));
+        return std::format("{:.1f}ms", static_cast<float>(iTimeInNs) / 1e6f);
     }
+    // returning time in Seconds ( I hope I don't have to ever return FN time something in seconds )
     else
     {
-        return std::format("{}s", iTimeInNs / int(1e9));
+        return std::format("{:.1f}s", static_cast<float>(iTimeInNs) / 1e9f);
     }
 
 }
@@ -358,6 +409,53 @@ InsaneProfiler::ProfilerRenderData_t* ScopeData_t::GetRenderData()
         // SWAPPING BUFFER if enough time has gone by.
         if (flTimeSinceLastUpdate > Features::Insane_Profiler::Settings::UpdateRate_InSec.GetData().m_flVal)
         {
+            // Calculating difference between both
+            m_pRenderDataBuffer[m_iWriteBufferIndex].m_qAvgData.clear();
+            ProfilerData_t* pLastBase = nullptr;
+            for (auto& fnTime : m_pRenderDataBuffer[m_iWriteBufferIndex].m_qData)
+            {
+                // Checking if we already averaged out & stored this data
+                {
+                    bool bAlreadyRecorded = false;
+                    for (const auto& avgData : m_pRenderDataBuffer[m_iWriteBufferIndex].m_qAvgData)
+                    {
+                        if (avgData.m_szName == fnTime.m_szName)
+                        {
+                            bAlreadyRecorded = true;
+                            break;
+                        }
+                    }
+                    if (bAlreadyRecorded == true)
+                        continue;
+                }
+
+                if (fnTime.m_iHeight == 1)
+                    pLastBase = &fnTime;
+
+                uint32_t iCount   = 0;
+                uint64_t iAvgTime = 0;
+                for (const auto& fnTime_2 : m_pRenderDataBuffer[m_iWriteBufferIndex].m_qData)
+                {
+                    if (fnTime.m_szName == fnTime_2.m_szName)
+                    {
+                        iCount++;
+                        iAvgTime += fnTime_2.m_iEndTime - fnTime_2.m_iStartTime;
+                    }
+                }
+
+                if (iCount > 1)
+                {
+                    const auto& base = m_pRenderDataBuffer[m_iWriteBufferIndex].m_qData[0];
+
+                    m_pRenderDataBuffer[m_iWriteBufferIndex].m_qAvgData.push_back({ 
+                        fnTime.m_szName, 
+                        iAvgTime / iCount, 
+                        iCount, 
+                        pLastBase != nullptr ? (static_cast<float>(iAvgTime) / static_cast<float>(pLastBase->m_iEndTime - pLastBase->m_iStartTime)) * 100.0f : 1.0f
+                    });
+                }
+            }
+
             m_iWriteBufferIndex  = (m_iWriteBufferIndex == 0 ? 1 : 0);
             m_lastBufferSawpTime = now;
         }

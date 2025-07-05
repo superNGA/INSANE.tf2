@@ -194,7 +194,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
     {
         if (Features::AntiAim::AntiAim::Cham.IsActive() == true)
         {
-            Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, FeatureObj::antiAim.pBone); // <- fake me
+            Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, F::antiAim.pBone); // <- fake me
         }
         Sig::ForcedMaterialOverride(I::iStudioRender, nullptr, OverrideType_t::OVERRIDE_NORMAL);
         result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix); // <- real me

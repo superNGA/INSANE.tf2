@@ -25,6 +25,9 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
 
+    // Constructing LUT
+    //m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
+
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
         return;
@@ -33,7 +36,7 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     _InitliazeCVars();
 
     // Get Projectile info ( like gravity, speed n stuff )
-    auto& projInfo = FeatureObj::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
+    auto& projInfo = F::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
 
     // Scanning for target
     if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == true)
@@ -57,8 +60,10 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 }
 
 
-bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_tV2& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
+bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
 {
+    PROFILE_FUNCTION("Proj::Solver");
+
     float flGravity = projInfo.m_flGravityMult * m_flGravity * -1.0f;
 
     float x = projInfo.m_vOrigin.Dist2Dto(vTarget);
@@ -100,6 +105,9 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
     float flQuadraticTimeToReach = flTimeToReach1 < flTimeToReach2 ? flTimeToReach1 : flTimeToReach2;
 
     //printf("Simple quadratic says we can reach with angle [ %.2f ] & time [ %.2f ]\n", flBestAngle, flBestTimeToReach);
+    //flAngleOut = flQuadraticAngles;
+    //flTimeToReachOut = flQuadraticTimeToReach;
+    //return true;
 
     float flBestAngle = 0.0f;
     float flBestTimeToReach = 0.0f;
@@ -122,7 +130,7 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
 
             //printf("Attempting with angle :  %.2f,  %.2f,  %.2f\n", qSimAngle.pitch, qSimAngle.yaw, qSimAngle.roll);
         }
-        FeatureObj::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qSimAngle);
+        F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qSimAngle);
 
         float flLastDistance = 1000000.0f;
         vec   vEnd;
@@ -130,9 +138,9 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
         vec   vLastPos; // This is for drawing
         for(int iTick = 0; iTick < TIME_TO_TICK(flProjLife); iTick++)
         {
-            FeatureObj::projectileEngine.RunTick(false);
+            F::projectileEngine.RunTick(false);
 
-            vec   vOrigin = FeatureObj::projectileEngine.GetPos();
+            vec   vOrigin = F::projectileEngine.GetPos();
             float flDist  = vOrigin.DistTo(vTarget);
 
             // Invalidate this angle if distance is more than last distance.
@@ -212,11 +220,11 @@ void AimbotProjectile_t::Reset()
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
+BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
 {
     PROFILE_FUNCTION();
 
-    std::vector<BaseEntity*> vecTargets = FeatureObj::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
+    std::vector<BaseEntity*> vecTargets = F::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
 
     float flAngBestDistance = std::numeric_limits<float>::infinity();
     BaseEntity* pBestTarget = nullptr;
@@ -247,30 +255,40 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_tV2& projInfo, Bas
         projInfo.SetProjectileAngle(vAttackerEyePos, qAttackerToTarget);
 
         // Simulating Target
-        FeatureObj::movementSimulation.Initialize(pTarget);
+        F::movementSimulation.Initialize(pTarget);
         for (int iTick = 0; iTick < nTickToSimulate; iTick++)
         {
             // I absolutely didn't forgot this
-            FeatureObj::movementSimulation.RunTick();
+            F::movementSimulation.RunTick();
 
             float flTargetsTimeToReach          = TICK_TO_TIME(iTick);
             float flProjectilesTimeToReach      = 0.0f;
             float flProjLaunchAngle             = 0.0f;
-            vec   vFuturePos                    = FeatureObj::movementSimulation.GetSimulationPos();
+            vec   vFuturePos                    = F::movementSimulation.GetSimulationPos();
+            
+            bool  bCanReach = false;
 
             // Calculaing our projectile's time to reach to the center of the target
-            bool bCanReach = _SolveProjectileMotion(
+            bCanReach = _SolveProjectileMotion(
                 pAttacker, pWeapon, projInfo, vFuturePos, flProjLaunchAngle, flProjectilesTimeToReach
             );
+            float flLUTTimeToReach = 0.0f;
+            if(projInfo.m_bUsesDrag == true)
+            {
+                /*flLUTTimeToReach = m_lutTrajactory.GetTravelTime(vFuturePos.Dist2Dto(projInfo.m_vStart), vFuturePos.z - projInfo.m_vStart.z, true);
+                bCanReach = true;*/
+            }
 
             // Exit on the first tick when projectile can reach target faster
             if (bCanReach == true && flProjectilesTimeToReach < flTargetsTimeToReach)
             {
+                //LOG(" Solver : %.6f | LUT : %.6f | Diff : %.4f\n", flProjectilesTimeToReach, flLUTTimeToReach, flLUTTimeToReach - flProjectilesTimeToReach);
+
                 vTargetFuturePos = vFuturePos;
                 break;
             }
         }
-        FeatureObj::movementSimulation.Restore();
+        F::movementSimulation.Restore();
 
         // if we didn't found any hitable tick for this enitity than skip
         if (vTargetFuturePos.IsEmpty() == true)
@@ -316,7 +334,7 @@ float AimbotProjectile_t::_GetAngleFromCrosshair(const vec& vTargetPos, const ve
 }
 
 
-bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_tV2& projInfo)
+bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_t& projInfo)
 {
     // can we even attack this tick?
     if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == false)
@@ -346,7 +364,7 @@ bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiv
 
 
 bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin,
-    ProjectileInfo_tV2& projInfo, vec& vBestPointOut,
+    ProjectileInfo_t& projInfo, vec& vBestPointOut,
     const vec& vProjectileOrigin, const float flProjVelocity,
     const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon)
 {
@@ -420,7 +438,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
         //qProjLaunchAngles.pitch = flProjLaunchAngle * -1.0f; // setting pitch in valve format ( down -ve & up +ve )
 
         uint32_t nTicksToSimulate = TIME_TO_TICK(flTimeToReach);
-        FeatureObj::projectileEngine.Initialize(
+        F::projectileEngine.Initialize(
             pProjectileOwner, pWeapon, qProjLaunchAngles
         );
 
@@ -429,7 +447,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
         bool bCanReach = true;
         for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
         {
-            FeatureObj::projectileEngine.RunTick(true);
+            F::projectileEngine.RunTick(true);
 
             constexpr float flProjHitRangeTolerance = 3.0f;
 
@@ -460,7 +478,13 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
 }
 
 
-const qangle AimbotProjectile_t::_GetTargetAngles(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, const qangle& qViewAngles)
+void AimbotProjectile_t::DeleteProjLUT()
+{
+    m_lutTrajactory.Delete();
+}
+
+
+const qangle AimbotProjectile_t::_GetTargetAngles(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, const qangle& qViewAngles)
 {
     // Rotating projectile info so the projectile origin is positioned properly
     qangle qAttackerToTarget;
@@ -495,4 +519,315 @@ void AimbotProjectile_t::_InitliazeCVars()
 
     // Initialized CVars
     m_bInitializedCVars = true;
+}
+
+
+//=========================================================================
+//                     TRAJECTORY LOOK UP TABLE HANDLER
+//=========================================================================
+
+/*
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+
+    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
+    Total coverable Y = 5256
+    Total coverable X = 2336
+*/
+
+/*
+TODO : 
+    -> Simulate & estimate the max & min height and Max Range.
+    -> allocate memory to LUT according to that & Store that imfo.
+    -> fill up using that memory.
+    -> decide whether to make a operator or fn to look up.
+    -> test it.
+*/
+
+void TrajactoryLUT_t::Initialize(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    if (pActiveWeapon->GetWeaponDefinitionID() != m_iWpnDefID || m_pTrajactoryLUT == nullptr)
+    {
+        _AllocToLUT(pLocalPlayer, pActiveWeapon);
+        
+        // setting this to false forces refilling of LUT.
+        // and since we reallocated memory and set it to 0. we want refil.
+        m_bFilledTrajactoryLUT = false;
+    }
+
+    if (m_bFilledTrajactoryLUT == false)
+    {
+        _Fill(pLocalPlayer, pActiveWeapon);
+    }
+
+    m_iWpnDefID = pActiveWeapon->GetWeaponDefinitionID();
+}
+
+
+void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    if (m_bFilledTrajactoryLUT == true)
+        return;
+
+    float flInitialSimAngle = m_flSimAngle;
+    //for(float flSimAngle = -89.0f; m_flSimAngle < flInitialSimAngle + 10.0f; m_flSimAngle += 1.0f)
+    for(float flSimAngle = -89.0f; flSimAngle < 89.0f; flSimAngle += 1.0f)
+    {
+        F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(flSimAngle, 0.0f, 0.0f));
+
+        vec vProjOrigin = F::projectileEngine.m_projInfo.m_vStart;
+
+        for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
+        {
+            F::projectileEngine.RunTick(false);
+
+            // get pos relative to origin & store best time to reach.
+            vec   vProjPos      = F::projectileEngine.GetPos();
+            float x             = vProjPos.Dist2Dto(vProjOrigin);
+            float y             = vProjPos.z - vProjOrigin.z;
+
+            float flTimeToReach = TICK_TO_TIME(iTick);
+
+            // Storing x, y & time to reach.
+            _Set(x, y, flTimeToReach);
+        }
+    }
+
+    // if we reached from MinPitch to MaxPitch then we have filled up our Lookuptable.
+    /*if (m_flSimAngle >= MAX_PITCH - 1.0f)
+    {
+        m_bFilledTrajactoryLUT = true;
+    }*/
+
+    m_bFilledTrajactoryLUT = true;
+}
+
+
+float TrajactoryLUT_t::_SafeGetter(uint32_t iRow, uint32_t iCol)
+{
+    // out of range check
+    if (iRow * m_nLUTCols + iCol > m_nLUTRows * m_nLUTRows)
+    {
+        return -1.0f;
+    }
+
+    return m_pTrajactoryLUT[iRow * m_nLUTCols + iCol];
+}
+
+
+void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach)
+{
+    if (m_pTrajactoryLUT == nullptr)
+    {
+        FAIL_LOG("Memory is not allocated to the LUT. And your nigga ass is trying to store shit in it. Fuck you!");
+        return;
+    }
+
+    // clamping just in case. My code is very prone to bullshit cause me head crooked :)
+    int32_t iRange  = static_cast<int32_t>(std::clamp(x, 0.0f, m_flMaxRange));
+    int32_t iHeight = static_cast<int32_t>(std::clamp(y, m_flMinHeight, m_flMaxHeight));
+
+    int32_t iRow = static_cast<int32_t>(m_iLUTRowForZeroY) - (iHeight / static_cast<int32_t>(m_iStepSize)); // NOTE : here we are going up from y = 0 on the LUT, since the first row store data for the greatest Y.
+    int32_t iCol = iRange / static_cast<int32_t>(m_iStepSize);
+
+    if (iRow + 1 > m_nLUTRows || iCol + 1 > m_nLUTCols)
+    {
+        FAIL_LOG("Trying to store at index [ %d ][ %d ], while the LUT is [ %d ][ %d ]", iRow, iCol, m_nLUTRows, m_nLUTCols);
+        return;
+    }
+
+    float& flTargetSlot = m_pTrajactoryLUT[(iRow * m_nLUTCols) + iCol];
+    
+    // Only place this Time-To-Reach if either there's nothing stored there or this Time-To-Reach is faster.
+    if(flTargetSlot < 0.001f || flTimeToReach < flTargetSlot)
+    {
+        flTargetSlot = flTimeToReach;
+    }
+}
+
+
+float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpolation)
+{
+    if(m_pTrajactoryLUT == nullptr)
+    {
+        return std::numeric_limits<float>::infinity();
+    }
+
+    int32_t iRange  = static_cast<int32_t>(std::clamp(x, 0.0f,          m_flMaxRange));
+    int32_t iHeight = static_cast<int32_t>(std::clamp(y, m_flMinHeight, m_flMaxHeight));
+
+    // make sure you cast the fucking unsigned ints to signed ints else bullshit will occur. Not like It happened to me.
+    int32_t iRow    = static_cast<int32_t>(m_iLUTRowForZeroY) - (iHeight / static_cast<int32_t>(m_iStepSize)); // NOTE : here we are going up from y = 0 on the LUT, since the first row store data for the greatest Y.
+    int32_t iCol    = iRange / static_cast<int32_t>(m_iStepSize);
+
+    if (iRow + 1 > m_nLUTRows || iCol + 1 > m_nLUTCols)
+    {
+        return std::numeric_limits<float>::infinity();
+    }
+
+    float flBaseTimeToReach = _SafeGetter(iRow, iCol);
+
+    // don't want interpolation or we can't reach that position ( < 0 )
+    if (bInterpolation == false || flBaseTimeToReach < 0.0f)
+    {
+        return flBaseTimeToReach;
+    }
+
+    // INTERPOLATING the value to get a more accurate travel time.
+    {
+        float flDeltaX = x - iRange;
+        float flDeltaY = y - iHeight;
+        float flDeltaMagnitude = sqrtf(flDeltaX * flDeltaX + flDeltaY * flDeltaY);
+
+        // Checking if interpolation is possible or not. ( we need one heigher & one adjacent value to interpolate
+        // Do we have the data to interpolate this projectile going up?
+        if (flDeltaY > 0.0f)
+        {
+            if (m_nLUTRows < (iRow + 1) + 1 || _SafeGetter(iRow - 1, iCol) < 0.01f)
+                return flBaseTimeToReach;
+        }
+        else // do we have data to interpolate this projectile going down?
+        {
+            if (m_nLUTRows < (iRow + 1) + 1 || _SafeGetter(iRow + 1, iCol) < 0.01f)
+                return flBaseTimeToReach;
+        }
+
+        // Do we have data for 40 ( step size ) units further ?
+        if (m_nLUTCols < (iCol + 1) + 1 || _SafeGetter(iRow, iCol + 1) < 0.01f)
+        {
+            return flBaseTimeToReach;
+        }
+
+        float flThetaInRad = atan2f(flDeltaY, flDeltaX);
+
+        // if projectile going up ( delta > 0 ) get time to reach 40 units above else below.
+        float flSuccessorTimeY  = flDeltaY > 0.0f ? _SafeGetter(iRow - 1, iCol) : _SafeGetter(iRow + 1, iCol);
+        float flSuccessorTimeX  = _SafeGetter(iRow, iCol + 1);
+
+        float flDeltaTimeX      = flSuccessorTimeX - flBaseTimeToReach;
+        float flDeltaTimeY      = flSuccessorTimeY - flBaseTimeToReach;
+
+        float flInterpOffset    = flDeltaTimeX * cosf(flThetaInRad) + flDeltaTimeY * sinf(flThetaInRad);
+
+        printf("Base Time to reach was [ %.2f ] inter offset [ %.2f ] | FINAL TIME TO REACH : %.2f\n", flBaseTimeToReach, flInterpOffset, flBaseTimeToReach + flInterpOffset);
+
+        return flBaseTimeToReach + flInterpOffset;
+    }
+
+}
+
+
+void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flMaxHeightOut, float& flMinHeightOut, float& flMaxRangeOut)
+{
+    // MAX HEIGHT
+    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(-89.0f, 0.0f, 0.0f));
+    
+    vec   vStart       = F::projectileEngine.m_projInfo.m_vStart.z;
+    float flLastHeight = 0.0f;
+
+    for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
+    {
+        F::projectileEngine.RunTick(false);
+
+        float flDeltaHeight = F::projectileEngine.GetPos().z - flLastHeight;
+        
+        // if delta is less than 0, the projectile is not going down. store & exit!
+        if (flDeltaHeight < 0.0f)
+        {
+            flMaxHeightOut = flLastHeight;
+            break;
+        }
+
+        flLastHeight = F::projectileEngine.GetPos().z;
+    }
+
+
+    // MIN - HEIGHT
+    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(89.0f, 0.0f, 0.0f));
+    for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
+    {
+        F::projectileEngine.RunTick(false);
+    }
+    // Min Height will be in negative. ( something like -4000 )
+    flMinHeightOut = F::projectileEngine.GetPos().z - F::projectileEngine.m_projInfo.m_vStart.z; 
+    
+    
+    // MAX - RANGE
+    // max range is at launch angle of 45 but due to drag its should be a little lower than 45.
+    // From my experiments, -1 degree ( or 1 degree in source engine terms ) will give us the maximum range.
+    /*1851.17 @ 35  | 1973.99 @ 30 | 2078.95 @ 25 | 2336.26 @ -1*/
+    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(1.0f, 0.0f, 0.0f)); 
+    for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
+    {
+        F::projectileEngine.RunTick(false);
+    }
+    // Min Height will be in negative. ( something like -4000 )
+    flMaxRangeOut = F::projectileEngine.GetPos().Dist2Dto(F::projectileEngine.m_projInfo.m_vStart);
+}
+
+
+void TrajactoryLUT_t::_AllocToLUT(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    _GetMaxRange(pLocalPlayer, pActiveWeapon, m_flMaxHeight, m_flMinHeight, m_flMaxRange);
+
+    uint32_t nRow = static_cast<uint32_t>(fabs(m_flMaxHeight) + fabs(m_flMinHeight) + 1) / m_iStepSize; // NOTE : this +1 is for row representing y = 0. to make our calc easier
+    uint32_t nCol = (static_cast<uint32_t>(fabs(m_flMaxRange)) / m_iStepSize) + 1; // NOTE : since x = 0 is at col 0, we gotta have to do +1 do add space for the extra 0 colum.
+
+    uint32_t iMemRequired = nRow * nCol * sizeof(float);
+
+    // Checking and clamping size required.
+    if (iMemRequired > m_iMaxMemInBytes)
+    {
+        // Cutting down the range so it fits under 50 KiBs.
+        float    iColPerByte = static_cast<float>(nCol) / static_cast<float>(iMemRequired); // ex : 0.1 coloum per byte
+        
+        // converting the extra memory into extra coloums & rounding to nearst bigger integer.
+        uint32_t iExtraCols  = std::ceilf((iMemRequired - m_iMaxMemInBytes) * iColPerByte); 
+        nCol -= iExtraCols;
+
+        // so I can see if something fucks midway :)
+        FAIL_LOG("Look up table is taking [ %u ] Bytes more than threshold of [ %u ] KiB. Cutting max range by [ %u ]",
+            iMemRequired - m_iMaxMemInBytes, m_iMaxMemInBytes / 1024, iExtraCols * m_iStepSize);
+    }
+
+    // We don't want that shit no more
+    if (m_pTrajactoryLUT != nullptr)
+        free(m_pTrajactoryLUT);
+
+    // NOTE : cols are trimmed & rows are not.
+    m_nLUTRows = nRow;
+    m_nLUTCols = nCol;
+    m_iLUTRowForZeroY = (static_cast<uint32_t>(m_flMaxHeight) / m_iStepSize) /* + 1 */;
+
+    m_pTrajactoryLUT = reinterpret_cast<float*>(malloc(nRow * nCol * sizeof(float)));
+
+    if (m_pTrajactoryLUT == nullptr)
+    {
+        FAIL_LOG("Failed allocation :(");
+        return;
+    }
+
+    memset(m_pTrajactoryLUT, 0, nRow * nCol * sizeof(float));
+    WIN_LOG("Allocated mem to LUT successfully [ %d x %d ] %d KiB | [ %.2f <-> %.2f] [ %.2f ], Center @ %d:)", 
+        nRow, nCol, iMemRequired / 1024, m_flMinHeight, m_flMaxHeight, m_flMaxRange, m_iLUTRowForZeroY);
+}
+
+
+void TrajactoryLUT_t::Delete()
+{
+    if (m_pTrajactoryLUT != nullptr)
+    {
+        free(m_pTrajactoryLUT);
+        m_pTrajactoryLUT = nullptr;
+    }
 }

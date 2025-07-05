@@ -119,7 +119,7 @@ void AimbotMelee_t::Reset()
 //=========================================================================
 BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, baseWeapon* pActiveWeapon)
 {
-    const AimbotHelper_t::AimbotTargetData_t& aimbotTargetData = FeatureObj::aimbotHelper.GetAimbotTargetData();
+    const AimbotHelper_t::AimbotTargetData_t& aimbotTargetData = F::aimbotHelper.GetAimbotTargetData();
     float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flSmackDelay;
     float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
 
@@ -172,12 +172,12 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
     // Attacker's future position
     if (bShouldSimulate == true)
     {
-        FeatureObj::movementSimulation.Initialize(pAttacker);
+        F::movementSimulation.Initialize(pAttacker);
         for (int i = 0; i < nTicksToSimulate; i++)
-            FeatureObj::movementSimulation.RunTick();
+            F::movementSimulation.RunTick();
 
-        m_vAttackerFutureEyePos = FeatureObj::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
-        FeatureObj::movementSimulation.Restore();
+        m_vAttackerFutureEyePos = F::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
+        F::movementSimulation.Restore();
     }
     else
     {
@@ -193,13 +193,13 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
         vec vTargetFuturePos;
         if (bShouldSimulate == true)
         {
-            FeatureObj::movementSimulation.Initialize(pTarget);
+            F::movementSimulation.Initialize(pTarget);
             for (int i = 0; i < nTicksToSimulate; i++)
-                FeatureObj::movementSimulation.RunTick();
+                F::movementSimulation.RunTick();
 
-            vTargetFuturePos = FeatureObj::movementSimulation.GetSimulationPos();
+            vTargetFuturePos = F::movementSimulation.GetSimulationPos();
 
-            FeatureObj::movementSimulation.Restore();
+            F::movementSimulation.Restore();
         }
         else
         {

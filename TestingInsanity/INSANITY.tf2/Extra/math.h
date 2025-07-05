@@ -24,6 +24,11 @@ namespace Maths
         return (val1 > val2 ? val1 : val2);
     }
 
+    template <typename T>
+    __forceinline T Ceil(const T numToDevide, const T numToDevideWith)
+    {
+        return ((numToDevide + numToDevideWith - 1) / numToDevideWith);
+    }
 
     inline void SinCos(float flRadians, float* pSin, float* pCos)
     {

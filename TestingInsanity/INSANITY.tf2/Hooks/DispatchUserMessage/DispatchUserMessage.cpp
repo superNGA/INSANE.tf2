@@ -33,7 +33,7 @@ MAKE_HOOK(DispatchUserMsg, "40 56 48 83 EC ? 49 8B F0", __fastcall, CLIENT_DLL, 
         
         //Features::noSpread.ParsePlayerPerf(sMsg);
         //Features::noSpread.ParsePlayerPerfExperimental(sMsg);
-        FeatureObj::noSpread._ParsePlayerPerf(sMsg);
+        F::noSpread._ParsePlayerPerf(sMsg);
     }
     //printf("data type recieved : %d -> [ %s ]\n", iDataType, GetMsgName(pVTable, iDataType));
 

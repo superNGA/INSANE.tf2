@@ -100,7 +100,7 @@ void ProjectileEngine_t::RunTick(bool bTrace = true)
 }
 
 
-ProjectileInfo_tV2& ProjectileEngine_t::SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles)
+ProjectileInfo_t& ProjectileEngine_t::SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles)
 {
     m_projInfo.Initialize(pWeapon, pWeaponOwner->m_fFlags() & FL_DUCKING, m_bFlipViewModels);
 
@@ -186,7 +186,7 @@ bool ProjectileEngine_t::_SetupPhysicsObject()
         // Setting up object parameters
         objectparams_t objectParams{ g_PhysDefaultObjectParams };
         objectParams.damping          = 0.0f;
-        objectParams.enableCollisions = true;
+        objectParams.enableCollisions = false;
         objectParams.volume           = 100.0f;
         objectParams.inertia          = 0.0f;
         objectParams.rotdamping       = 0.0f;
@@ -287,12 +287,12 @@ void ProjectileEngine_t::_InitializeCVars()
 //=========================================================================
 //                     PROJECTILE INFO METHODS
 //=========================================================================
-void ProjectileInfo_tV2::Reset()
+void ProjectileInfo_t::Reset()
 {
-    memset(this, 0, sizeof(ProjectileInfo_tV2));
+    memset(this, 0, sizeof(ProjectileInfo_t));
 }
 
-void ProjectileInfo_tV2::ClearPosData()
+void ProjectileInfo_t::ClearPosData()
 {
     m_vStart.Init();
     m_vEnd.Init();
@@ -302,7 +302,7 @@ void ProjectileInfo_tV2::ClearPosData()
 
 
 
-void ProjectileInfo_tV2::SetProjectileAngle(const vec& vOwnerEyePos, const qangle& qOwnerAngles)
+void ProjectileInfo_t::SetProjectileAngle(const vec& vOwnerEyePos, const qangle& qOwnerAngles)
 {
     // Angles
     vec vOwnerAngles;
@@ -319,7 +319,7 @@ void ProjectileInfo_tV2::SetProjectileAngle(const vec& vOwnerEyePos, const qangl
 }
 
 
-void ProjectileInfo_tV2::Initialize(baseWeapon* pWeapon, const bool bDucking, const bool bViewModelFlipped)
+void ProjectileInfo_t::Initialize(baseWeapon* pWeapon, const bool bDucking, const bool bViewModelFlipped)
 {
     ClearPosData();
 

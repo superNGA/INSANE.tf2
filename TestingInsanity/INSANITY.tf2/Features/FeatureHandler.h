@@ -274,7 +274,7 @@ public:
 };
 
 // MACROS
-#define DECLARE_FEATURE_OBJECT(szName, Type) namespace FeatureObj{ inline Type szName; }
+#define DECLARE_FEATURE_OBJECT(szName, Type) namespace F{ inline Type szName; }
 #define DECLARE_CUSTOM_OBJECT(szName, Type, spaceName) namespace spaceName{ inline Type szName; }
 
 #define DEFINE_TAB(DisplayName, index) namespace Tabs{inline Tab_t DisplayName(#DisplayName, index); }

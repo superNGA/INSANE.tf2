@@ -1,17 +1,27 @@
+//=========================================================================
+//                      INSANE PROFILER
+//=========================================================================
+// by      : INSANE
+// created : 30/06/2025
+// 
+// purpose : Record & displays time take by FNs in a "Reverse flame" like pattern
+//-------------------------------------------------------------------------
 #pragma once
 
+// STD libs
 #include <chrono>
 #include <unordered_map>
 #include <vector>
 #include <stack>
-#include <queue>
 #include <deque>
 #include <Windows.h>
 #include <string>
-#include "../ConsoleLogging.h"
 
+// UTILITY
+#include "../ConsoleLogging.h"
 #include "../../Features/FeatureHandler.h"
 
+// This disable the entire profiler
 #define ENABLE_INSANE_PROFILER true
 
 #if (ENABLE_INSANE_PROFILER == true)
@@ -36,30 +46,18 @@ ScopeTimer_t CONCAT(ScopeTimer_, __COUNTER__);
 // Enter custom fn name or will use default one ( with namespace name n shit )
 #define PROFILE_FUNCTION(...)   EXPAND(CHOOSE_PROFILER_FN(GET_FN_NAME_SUFFIX(##__VA_ARGS__))(__VA_ARGS__))
 
-#define UNINITIALIZE_PROFILER() insaneProfiler.Uninitialize();
 
 #else
 
-#define PROFILE_THREAD()        void(0)
+#define PROFILE_THREAD()                     void(0)
 
 #define PROFILE_FUNCTION_FN_NAME()           void(0)
 #define PROFILE_FUNCTION_CUSTOM_NAME(szName) void(0)
-
-#define GET_THIRD_ARG(arg1, arg2, arg3, ...) arg3 // Simply returns the third argument
-
-// Gets the suffix to choose between 2 macros.
-// 1 argument -> _CUSTOM_NAME | 0 arguments -> _FN_NAME
+#define GET_THIRD_ARG(arg1, arg2, arg3, ...) arg3
 #define GET_FN_NAME_SUFFIX(...) GET_THIRD_ARG(arg1, ##__VA_ARGS__, _CUSTOM_NAME,_FN_NAME)
-
-// Merge 2 names tokens together
 #define CHOOSE_PROFILER_FN(extension) CONCAT(PROFILE_FUNCTION, extension)
 
-// Enter custom fn name or will use default one ( with namespace name n shit )
 #define PROFILE_FUNCTION(...)   EXPAND(CHOOSE_PROFILER_FN(GET_FN_NAME_SUFFIX(##__VA_ARGS__))(__VA_ARGS__))
-
-#define UNINITIALIZE_PROFILER() insaneProfiler.Uninitialize();
-
-#define UNINITIALIZE_PROFILER() void(0)
 
 #endif
 
@@ -110,6 +108,7 @@ inline InsaneProfiler_t insaneProfiler;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
 struct FnTimer_t
 {
     FnTimer_t(std::string szName)
@@ -123,7 +122,6 @@ struct FnTimer_t
     }
     std::string m_szName;
 };
-
 struct ScopeTimer_t
 {
     ScopeTimer_t()
@@ -135,6 +133,7 @@ struct ScopeTimer_t
         insaneProfiler.SetScopeEndTime(std::chrono::high_resolution_clock::now(), GetCurrentThreadId());
     }
 };
+
 
 
 struct ProfilerData_t
@@ -154,10 +153,20 @@ struct ProfilerData_t
 
 namespace InsaneProfiler
 {
+    struct AvgProfilerData_t
+    {
+        std::string m_szName              = "";
+        uint64_t    m_iAvgExecTimeInNs    = 0;
+        uint32_t    m_iCount              = 0;
+        float       m_flPercentageOfTotal = 0.0f;
+    };
+
     struct ProfilerRenderData_t
     {
         ProfilerDataQueue m_qData;
-        uint64_t          m_iScopeExecTimeInNs;
+        uint64_t          m_iScopeExecTimeInNs  = 0;
+
+        std::deque<AvgProfilerData_t> m_qAvgData;
     };
 }
 
@@ -198,19 +207,19 @@ DEFINE_FEATURE(
     Enable, bool, Settings, Insane_Profiler,
     1, true, FeatureFlag_SupportKeyBind,
     "Render profiler window"
-);
+)
 
 DEFINE_FEATURE(
     UpdateRate_InSec, FloatSlider_t, Settings, Insane_Profiler,
     2, FloatSlider_t(1.0f, 0.0f, 10.0f), FeatureFlag_None,
     "Will update data after this much time ( in seconds )."
-);
+)
 
 DEFINE_FEATURE(
     BG_Clr, ColorData_t, Settings, Insane_Profiler,
     3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
     "Background color for your profiler window"
-);
+)
 
 //#endif
 ////////////////////////////////////////////////////////////////////////

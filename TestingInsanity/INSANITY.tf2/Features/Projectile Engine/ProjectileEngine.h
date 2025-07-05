@@ -19,9 +19,9 @@ class baseWeapon;
 class BaseEntity;
 struct WeaponData_t;
 
-struct ProjectileInfo_tV2
+struct ProjectileInfo_t
 {
-    ProjectileInfo_tV2() { Reset(); }
+    ProjectileInfo_t() { Reset(); }
     void Initialize(baseWeapon* pWeapon, const bool bDucking, const bool bViewModelFlipped);
     void SetProjectileAngle(const vec& vOwnerEyePos, const qangle & qOwnerAngles);
 
@@ -61,8 +61,8 @@ public:
     void RunTick(bool bTrace);
     void Reset();
 
-    ProjectileInfo_tV2& SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles);
-    ProjectileInfo_tV2 m_projInfo;
+    ProjectileInfo_t& SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles);
+    ProjectileInfo_t m_projInfo;
     inline vec GetPos() const { return m_projInfo.m_vOrigin; } 
 
 private:

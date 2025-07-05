@@ -76,12 +76,12 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
-	FeatureObj::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
-	FeatureObj::fakeLag.Run(bSendPacket, cmd);
-	FeatureObj::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
-	FeatureObj::noSpread.Run(cmd, result); // incomplete, not working
-	FeatureObj::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
-	FeatureObj::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+	F::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
+	F::fakeLag.Run(bSendPacket, cmd);
+	F::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
+	F::noSpread.Run(cmd, result); // incomplete, not working
+	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
+	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 
 	return result;
 }

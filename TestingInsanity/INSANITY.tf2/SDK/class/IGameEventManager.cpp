@@ -51,13 +51,13 @@ void IGameEventListener2::FireGameEvent(IGameEvent* event)
     switch (iHash)
     {
     case FNV1A32("player_hurt"):
-        FeatureObj::critHack.RecordDamageEvent(event);
+        F::critHack.RecordDamageEvent(event);
         break;
 
     //case FNV1A32("round_end"):
     //case FNV1A32("round_start"):
     case FNV1A32("stats_resetround"):
-        FeatureObj::critHack.ResetDamageRecords();
+        F::critHack.ResetDamageRecords();
         break;
 
     default: break;

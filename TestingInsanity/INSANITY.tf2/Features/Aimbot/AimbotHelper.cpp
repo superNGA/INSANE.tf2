@@ -25,12 +25,12 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
-        FeatureObj::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
         // surface-to-air freedom dilivery system :)
-        FeatureObj::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
     else
     {

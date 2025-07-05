@@ -1,37 +1,96 @@
 #pragma once
 
 #include "../../FeatureHandler.h"
+#include "../../../Extra/math.h"
 #include "../../../SDK/class/FileWeaponInfo.h"
 
 class BaseEntity;
 class baseWeapon;
 class CUserCmd;
-class ProjectileInfo_tV2;
+class ProjectileInfo_t;
+
+
+class TrajactoryLUT_t
+{
+public:
+    void Initialize(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void Delete();
+
+    // Make sure x & y are relative to projetile origin0;
+    float GetTravelTime(const float x, const float y, bool bInterpolation = true);
+
+private:
+    // -1 means not in range.
+    float _SafeGetter(uint32_t iRow, uint32_t iCol);
+    void _Set(float x, float y, float flTimeToReach);
+    void _Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void _GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flMaxHeightOut, float& flMinHeightOut, float& flMaxRangeOut);
+    void _AllocToLUT(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+
+    // Tracks LUT fill progress
+    float*      m_pTrajactoryLUT       = nullptr;
+    float       m_flSimAngle           = MIN_PITCH;
+    bool        m_bFilledTrajactoryLUT = false;
+    uint32_t    m_iStepSize            = 40;
+
+    // Weapon
+    baseWeapon* pWeapon     = nullptr;
+    uint32_t    m_iWpnDefID = 0;
+
+    // LUT size
+    float    m_flMaxHeight = 0.0f;
+    float    m_flMinHeight = 0.0f;
+    float    m_flMaxRange  = 0.0f;
+
+    uint32_t m_nLUTCols         = 0;
+    uint32_t m_nLUTRows         = 0;
+    uint32_t m_iLUTRowForZeroY  = 0; // this is the row index for Y = 0.
+
+    static constexpr uint32_t m_iMaxMemInBytes = 50 * 1024; // 50 KiBs
+
+    /*
+    NOTE : This trajactory Look up table is meant to be a 2D array, with rows 
+            representing height of the projectile relative of projectile origin 
+            at a step size of 40 
+            AND
+            colums represnting 2D distance ( distance in the x,y plane ) of projectile 
+            relative to the projectile origin.
+    */
+};
+
 
 class AimbotProjectile_t
 {
 public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
+    void DeleteProjLUT();
 
 private:
-    BaseEntity* _GetBestTarget(ProjectileInfo_tV2& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd);
-    bool _GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin, ProjectileInfo_tV2& projInfo, vec& vBestPointOut, const vec& vProjectileOrigin, const float flProjVelocity, const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon);
+    BaseEntity* _GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd);
+    bool _GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin, ProjectileInfo_t& projInfo, vec& vBestPointOut, const vec& vProjectileOrigin, const float flProjVelocity, const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon);
 
     float _GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles);
-    bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_tV2& projInfo);
+    bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_t& projInfo);
     bool m_bLastShouldAim = false;
 
-    bool _SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_tV2& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut);
+    bool _SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut);
 
+
+    // This is trajactory's look up table, used to estimate the time to reach for drag VPhyics projectiles ( which are affected by drag ).
+    TrajactoryLUT_t m_lutTrajactory;
+    
+
+    // Target data...
     const qangle _GetTargetAngles(
-        ProjectileInfo_tV2& projInfo, 
+        ProjectileInfo_t& projInfo, 
         BaseEntity*         pAttacker, 
         baseWeapon*         pWeapon, 
         const qangle&       qViewAngles);
     inline void _ResetTargetData() { m_pBestTarget = nullptr; }
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
+
 
     // CVars
     void  _InitliazeCVars();
@@ -85,9 +144,3 @@ DEFINE_FEATURE(
     false, FeatureFlag_SupportKeyBind,
     "Shows the predicted path of projectiles"
 )
-
-/*
-When enemy at x,y,z
-
-shooting will almsot alwayas cause wrong angles.
-*/
