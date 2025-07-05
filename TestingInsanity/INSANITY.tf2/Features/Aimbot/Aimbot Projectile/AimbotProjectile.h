@@ -19,10 +19,14 @@ public:
     // Make sure x & y are relative to projetile origin0;
     float GetTravelTime(const float x, const float y, bool bInterpolation = true);
 
+    // Debugging fns
+    void DrawClosestPointAvialable(const vec& vOrigin, const vec& vTarget);
+
 private:
     // -1 means not in range.
     float _SafeGetter(uint32_t iRow, uint32_t iCol);
-    void _Set(float x, float y, float flTimeToReach);
+
+    void _Set(float x, float y, float flTimeToReach, float flAngle);
     void _Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     void _GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flMaxHeightOut, float& flMinHeightOut, float& flMaxRangeOut);
     void _AllocToLUT(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);

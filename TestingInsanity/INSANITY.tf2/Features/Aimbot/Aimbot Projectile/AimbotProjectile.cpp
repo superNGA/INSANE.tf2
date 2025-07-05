@@ -25,8 +25,9 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
 
-    // Constructing LUT
-    //m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
+    // Constructing LUT ( only for pipes )
+    if(pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
+        m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
 
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
@@ -269,21 +270,24 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
             bool  bCanReach = false;
 
             // Calculaing our projectile's time to reach to the center of the target
-            bCanReach = _SolveProjectileMotion(
-                pAttacker, pWeapon, projInfo, vFuturePos, flProjLaunchAngle, flProjectilesTimeToReach
-            );
-            float flLUTTimeToReach = 0.0f;
-            if(projInfo.m_bUsesDrag == true)
+            if(pWeapon->getSlot() == WPN_SLOT_PRIMARY && pAttacker->m_iClass() == TF_DEMOMAN && projInfo.m_bUsesDrag == true)
             {
-                /*flLUTTimeToReach = m_lutTrajactory.GetTravelTime(vFuturePos.Dist2Dto(projInfo.m_vStart), vFuturePos.z - projInfo.m_vStart.z, true);
-                bCanReach = true;*/
+                flProjectilesTimeToReach = m_lutTrajactory.GetTravelTime(projInfo.m_vStart.Dist2Dto(vFuturePos), vFuturePos.z - projInfo.m_vStart.z, true);
+                bCanReach = true;
+            }
+            else
+            {
+                bCanReach = _SolveProjectileMotion(
+                    pAttacker, pWeapon, projInfo, vFuturePos, flProjLaunchAngle, flProjectilesTimeToReach
+                );
             }
 
             // Exit on the first tick when projectile can reach target faster
             if (bCanReach == true && flProjectilesTimeToReach < flTargetsTimeToReach)
             {
-                //LOG(" Solver : %.6f | LUT : %.6f | Diff : %.4f\n", flProjectilesTimeToReach, flLUTTimeToReach, flLUTTimeToReach - flProjectilesTimeToReach);
+                //LOG("Using time  ->  %.2f", flProjectilesTimeToReach);
 
+                //m_lutTrajactory.DrawClosestPointAvialable(projInfo.m_vStart, vFuturePos);
                 vTargetFuturePos = vFuturePos;
                 break;
             }
@@ -581,7 +585,7 @@ void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 
     float flInitialSimAngle = m_flSimAngle;
     //for(float flSimAngle = -89.0f; m_flSimAngle < flInitialSimAngle + 10.0f; m_flSimAngle += 1.0f)
-    for(float flSimAngle = -89.0f; flSimAngle < 89.0f; flSimAngle += 1.0f)
+    for(float flSimAngle = -89.0f; flSimAngle <= 89.0f; flSimAngle += 1.0f)
     {
         F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(flSimAngle, 0.0f, 0.0f));
 
@@ -599,7 +603,7 @@ void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
             float flTimeToReach = TICK_TO_TIME(iTick);
 
             // Storing x, y & time to reach.
-            _Set(x, y, flTimeToReach);
+            _Set(x, y, flTimeToReach, flSimAngle);
         }
     }
 
@@ -625,22 +629,16 @@ float TrajactoryLUT_t::_SafeGetter(uint32_t iRow, uint32_t iCol)
 }
 
 
-void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach)
+void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach, float flAngle = 0.0f)
 {
-    if (m_pTrajactoryLUT == nullptr)
-    {
-        FAIL_LOG("Memory is not allocated to the LUT. And your nigga ass is trying to store shit in it. Fuck you!");
-        return;
-    }
-
     // clamping just in case. My code is very prone to bullshit cause me head crooked :)
-    int32_t iRange  = static_cast<int32_t>(std::clamp(x, 0.0f, m_flMaxRange));
+    int32_t iRange = static_cast<int32_t>(std::clamp(x, 0.0f, m_flMaxRange));
     int32_t iHeight = static_cast<int32_t>(std::clamp(y, m_flMinHeight, m_flMaxHeight));
 
     int32_t iRow = static_cast<int32_t>(m_iLUTRowForZeroY) - (iHeight / static_cast<int32_t>(m_iStepSize)); // NOTE : here we are going up from y = 0 on the LUT, since the first row store data for the greatest Y.
     int32_t iCol = iRange / static_cast<int32_t>(m_iStepSize);
 
-    if (iRow + 1 > m_nLUTRows || iCol + 1 > m_nLUTCols)
+    if (_SafeGetter(iRow, iCol) < 0.0f)
     {
         FAIL_LOG("Trying to store at index [ %d ][ %d ], while the LUT is [ %d ][ %d ]", iRow, iCol, m_nLUTRows, m_nLUTCols);
         return;
@@ -648,8 +646,8 @@ void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach)
 
     float& flTargetSlot = m_pTrajactoryLUT[(iRow * m_nLUTCols) + iCol];
     
-    // Only place this Time-To-Reach if either there's nothing stored there or this Time-To-Reach is faster.
-    if(flTargetSlot < 0.001f || flTimeToReach < flTargetSlot)
+    // Only store this Time_To_Reach if this slot if uninitialized or this Time_To_Reach is faster.
+    if (flTargetSlot == 0.0f || flTimeToReach < flTargetSlot)
     {
         flTargetSlot = flTimeToReach;
     }
@@ -658,35 +656,35 @@ void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach)
 
 float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpolation)
 {
+    PROFILE_FUNCTION("GetTravelTime");
+
     if(m_pTrajactoryLUT == nullptr)
     {
         return std::numeric_limits<float>::infinity();
     }
 
-    int32_t iRange  = static_cast<int32_t>(std::clamp(x, 0.0f,          m_flMaxRange));
-    int32_t iHeight = static_cast<int32_t>(std::clamp(y, m_flMinHeight, m_flMaxHeight));
+    //int32_t iRange = static_cast<int32_t>(std::clamp(x, 0.0f, m_flMaxRange));
+    //int32_t iHeight = static_cast<int32_t>(std::clamp(y, m_flMinHeight, m_flMaxHeight));
 
     // make sure you cast the fucking unsigned ints to signed ints else bullshit will occur. Not like It happened to me.
-    int32_t iRow    = static_cast<int32_t>(m_iLUTRowForZeroY) - (iHeight / static_cast<int32_t>(m_iStepSize)); // NOTE : here we are going up from y = 0 on the LUT, since the first row store data for the greatest Y.
-    int32_t iCol    = iRange / static_cast<int32_t>(m_iStepSize);
-
-    if (iRow + 1 > m_nLUTRows || iCol + 1 > m_nLUTCols)
-    {
-        return std::numeric_limits<float>::infinity();
-    }
+    int32_t iRow = static_cast<int32_t>(m_iLUTRowForZeroY) - (y / static_cast<int32_t>(m_iStepSize)); // NOTE : here we are going up from y = 0 on the LUT, since the first row store data for the greatest Y.
+    int32_t iCol = x / static_cast<int32_t>(m_iStepSize);
 
     float flBaseTimeToReach = _SafeGetter(iRow, iCol);
 
     // don't want interpolation or we can't reach that position ( < 0 )
-    if (bInterpolation == false || flBaseTimeToReach < 0.0f)
+    if (bInterpolation == false || flBaseTimeToReach <= 0.0f)
     {
         return flBaseTimeToReach;
     }
 
     // INTERPOLATING the value to get a more accurate travel time.
     {
-        float flDeltaX = x - iRange;
-        float flDeltaY = y - iHeight;
+        float flClosestX = static_cast<float>(iCol * m_iStepSize);
+        float flClosestY = (static_cast<int32_t>(m_iLUTRowForZeroY) - static_cast<int32_t>(iRow)) * static_cast<int32_t>(m_iStepSize);
+
+        float flDeltaX = x - flClosestX;
+        float flDeltaY = y - flClosestY;
         float flDeltaMagnitude = sqrtf(flDeltaX * flDeltaX + flDeltaY * flDeltaY);
 
         // Checking if interpolation is possible or not. ( we need one heigher & one adjacent value to interpolate
@@ -719,7 +717,8 @@ float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpo
 
         float flInterpOffset    = flDeltaTimeX * cosf(flThetaInRad) + flDeltaTimeY * sinf(flThetaInRad);
 
-        printf("Base Time to reach was [ %.2f ] inter offset [ %.2f ] | FINAL TIME TO REACH : %.2f\n", flBaseTimeToReach, flInterpOffset, flBaseTimeToReach + flInterpOffset);
+        // Delete this
+        //printf("Base Time to reach was [ %.2f ] inter offset [ %.2f ] | FINAL TIME TO REACH : %.2f\n", flBaseTimeToReach, flInterpOffset, flBaseTimeToReach + flInterpOffset);
 
         return flBaseTimeToReach + flInterpOffset;
     }
@@ -727,10 +726,44 @@ float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpo
 }
 
 
+void TrajactoryLUT_t::DrawClosestPointAvialable(const vec& vOrigin, const vec& vTarget)
+{
+    float x = vTarget.Dist2Dto(vOrigin);
+    float y = vTarget.z - vOrigin.z;
+
+    uint32_t iRow = static_cast<int32_t>(m_iLUTRowForZeroY) - (y / static_cast<int32_t>(m_iStepSize));
+    uint32_t iCol = x / static_cast<int32_t>(m_iStepSize);
+
+    float flClosestX = static_cast<float>(iCol * m_iStepSize);
+    float flClosestY = (static_cast<int32_t>(m_iLUTRowForZeroY) - static_cast<int32_t>(iRow)) * static_cast<int32_t>(m_iStepSize);
+
+    float flTimeToReach = _SafeGetter(iRow, iCol);
+    if (flTimeToReach < 0.0f)
+    {
+        FAIL_LOG("Can't reach this place");
+        return;
+    }
+
+    vec vAttackerToTarget = vTarget - vOrigin;
+    vAttackerToTarget.NormalizeInPlace();
+
+    float flMag       = sqrtf(flClosestX * flClosestX + flClosestY * flClosestY);
+    vec   vClosestPos = vOrigin + (vAttackerToTarget * flMag);
+
+    I::IDebugOverlay->AddBoxOverlay(vOrigin + (vAttackerToTarget * flMag), vec(-5.0f), vec(5.0f), qangle(0.0f), 0, 0, 255, 255, 1.0f);
+
+    printf("Drew box @ [ %.2f ] away from target\n", vTarget.DistTo(vClosestPos));
+}
+
+
 void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, float& flMaxHeightOut, float& flMinHeightOut, float& flMaxRangeOut)
 {
+    // Roughly calculating angle for max height ( -89 won't do due to the extra upward velocity thats been added to drag weapons )
+    const auto& projInfo   = F::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, qangle(0.0f));
+    float flMaxHeightAngle = 89.0f - RAD2DEG(atan2f(projInfo.m_flUpwardVelOffset, projInfo.m_flSpeed));
+
     // MAX HEIGHT
-    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(-89.0f, 0.0f, 0.0f));
+    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(-flMaxHeightAngle, 0.0f, 0.0f));
     
     vec   vStart       = F::projectileEngine.m_projInfo.m_vStart.z;
     float flLastHeight = 0.0f;
@@ -739,16 +772,18 @@ void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActive
     {
         F::projectileEngine.RunTick(false);
 
-        float flDeltaHeight = F::projectileEngine.GetPos().z - flLastHeight;
+        // Height relative to the projectile origin.
+        float flHeight      = F::projectileEngine.GetPos().z - F::projectileEngine.m_projInfo.m_vStart.z;
+        float flDeltaHeight = flHeight - flLastHeight;
         
-        // if delta is less than 0, the projectile is not going down. store & exit!
+        // if delta is less than 0, the projectile is now going down. store & exit!
         if (flDeltaHeight < 0.0f)
         {
-            flMaxHeightOut = flLastHeight;
+            flMaxHeightOut = flHeight;
             break;
         }
 
-        flLastHeight = F::projectileEngine.GetPos().z;
+        flLastHeight = flHeight;
     }
 
 
@@ -758,7 +793,7 @@ void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActive
     {
         F::projectileEngine.RunTick(false);
     }
-    // Min Height will be in negative. ( something like -4000 )
+    // Min Height will be negative. ( something like -4000 )
     flMinHeightOut = F::projectileEngine.GetPos().z - F::projectileEngine.m_projInfo.m_vStart.z; 
     
     
