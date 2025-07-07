@@ -18,9 +18,6 @@
 // global data
 #include "../GlobalVars.h"
 
-//======================= GAME HOOKS =======================
-#include "../Hooks/TraceRay/TraceRay.h"
-
 //======================= UI / RENDERING HOOKS =======================
 #include "../Hooks/EndScene/EndScene.h" // <- this has console_system included init
 #include "../Hooks/WinProc/WinProc.h"

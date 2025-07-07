@@ -13,7 +13,6 @@
 #include <unordered_map>
 
 // SDK
-#include "../../SDK/Class ID Manager/classIDManager.h"
 #include "../FeatureHandler.h"
 
 class CUserCmd;

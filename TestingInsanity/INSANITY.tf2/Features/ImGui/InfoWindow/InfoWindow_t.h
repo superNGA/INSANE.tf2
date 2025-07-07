@@ -42,4 +42,4 @@ private:
     std::unordered_map <uint32_t, TextMsg_t> m_mapAllDataCenterWindow; // stores all the data for info window.
 };
 
-DECLARE_CUSTOM_OBJECT(InfoWindow, InfoWindow_t, Render);
+DECLARE_CUSTOM_OBJECT(InfoWindow, InfoWindow_t, Render)

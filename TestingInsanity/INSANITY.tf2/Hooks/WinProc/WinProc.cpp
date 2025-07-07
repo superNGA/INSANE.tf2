@@ -2,8 +2,8 @@
 #include "../../Features/ImGui/Menu/Menu.h"
 
 // Utility
-#include "../../Utility/Hook_t.h"
-#include "../../Utility/signatures.h"
+#include "../../Utility/Hook Handler/Hook_t.h"
+#include "../../Utility/Signature Handler/signatures.h"
 #include "../../Libraries/Utility/Utility.h"
 
 // SDK

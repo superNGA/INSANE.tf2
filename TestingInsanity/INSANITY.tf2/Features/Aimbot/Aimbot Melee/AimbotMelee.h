@@ -8,6 +8,7 @@
 //-------------------------------------------------------------------------
 #pragma once
 #include "../../FeatureHandler.h"
+#include "../../../SDK/class/Basic Structures.h"
 
 class CUserCmd;
 class BaseEntity;

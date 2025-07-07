@@ -55,6 +55,7 @@ public:
     bool m_bSimulationRunning = false;
 
     inline const vec& GetSimulationPos() const { return m_moveData.m_vecAbsOrigin; }
+    inline const vec& GetSimulationVel() const { return m_moveData.m_vecVelocity; }
     inline uint32_t GetSimulationFlags() const { return m_iLastFlags; }
     
 private:

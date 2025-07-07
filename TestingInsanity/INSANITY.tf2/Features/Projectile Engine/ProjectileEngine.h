@@ -58,7 +58,7 @@ public:
     ProjectileEngine_t();
 
     bool Initialize(BaseEntity* pWeaponOwner, baseWeapon* pWeapon, const qangle& qOwnerAngles);
-    void RunTick(bool bTrace);
+    void RunTick(bool bTrace, BaseEntity* pIgnoreEnt);
     void Reset();
 
     ProjectileInfo_t& SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles);

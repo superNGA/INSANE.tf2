@@ -35,7 +35,7 @@ private:
     float*      m_pTrajactoryLUT       = nullptr;
     float       m_flSimAngle           = MIN_PITCH;
     bool        m_bFilledTrajactoryLUT = false;
-    uint32_t    m_iStepSize            = 40;
+    uint32_t    m_iStepSize            = /*40*/30;
 
     // Weapon
     baseWeapon* pWeapon     = nullptr;
@@ -50,7 +50,7 @@ private:
     uint32_t m_nLUTRows         = 0;
     uint32_t m_iLUTRowForZeroY  = 0; // this is the row index for Y = 0.
 
-    static constexpr uint32_t m_iMaxMemInBytes = 50 * 1024; // 50 KiBs
+    static constexpr uint32_t m_iMaxMemInBytes = 60 * 1024; // 60 KiBs
 
     /*
     NOTE : This trajactory Look up table is meant to be a 2D array, with rows 
@@ -79,7 +79,6 @@ private:
     bool m_bLastShouldAim = false;
 
     bool _SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut);
-
 
     // This is trajactory's look up table, used to estimate the time to reach for drag VPhyics projectiles ( which are affected by drag ).
     TrajactoryLUT_t m_lutTrajactory;

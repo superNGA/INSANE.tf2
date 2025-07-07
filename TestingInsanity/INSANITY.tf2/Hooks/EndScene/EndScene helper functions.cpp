@@ -7,93 +7,93 @@
 #define STB_IMAGE_IMPLEMENTATION // required for this library, I dont know what it does
 #include "../../External Libraries/stb image/stb_image.h"
 
-void directX::initialize_image_texture()
-{
-    /* logo */
-    textures::logo.texture          = load_texture_from_image_data(resource::logo, textures::logo);
-    textures::logo.update_res();
-
-    /* icons */
-    textures::aimbot.texture        = load_texture_from_image_data(resource::aimbot_data, textures::aimbot);
-    textures::folder.texture        = load_texture_from_image_data(resource::folder_data, textures::folder);
-    textures::left_wing.texture     = load_texture_from_image_data(resource::left_wing_data, textures::left_wing);
-    textures::right_wing.texture    = load_texture_from_image_data(resource::right_wing_data, textures::right_wing);
-    textures::planet.texture        = load_texture_from_image_data(resource::planet_data, textures::planet);
-    textures::player.texture        = load_texture_from_image_data(resource::player_data, textures::player);
-    textures::setting.texture       = load_texture_from_image_data(resource::setting_data, textures::setting);
-    textures::stars.texture         = load_texture_from_image_data(resource::stars_data, textures::stars);
-    textures::view.texture          = load_texture_from_image_data(resource::view_data, textures::view);
-    textures::misc.texture          = load_texture_from_image_data(resource::misc, textures::misc);
-    textures::antiaim.texture       = load_texture_from_image_data(resource::anti_aim, textures::antiaim);
-
-    /* background*/
-    textures::background            = load_texture_from_image_data(resource::background, textures::background);
-}
-
-
-void* directX::load_texture_from_image_data(raw_image_data& image_data, texture_data& texture_object)
-{
-    unsigned char* decoded_data = nullptr;
-    int channels = 0;
-
-    decoded_data = stbi_load_from_memory((stbi_uc*)image_data.image_bytes, image_data.image_bytearray_size, &texture_object.image_width, &texture_object.image_height, &channels, STBI_rgb_alpha);
-    if (!decoded_data)
-    {
-        #ifdef _DEBUG
-        LOG("E R R O R");
-        printf("Load from memory failed : %s | resolution : %d x %d | size -> %zd\n", texture_object.name, texture_object.image_height, texture_object.image_width, image_data.image_bytearray_size);
-        #endif
-        return nullptr;
-    }
-
-    /*creating the texture*/
-    IDirect3DTexture9* texture = nullptr;
-    HRESULT hr = device->CreateTexture(
-        texture_object.image_width,
-        texture_object.image_height,
-        1,
-        D3DUSAGE_DYNAMIC,
-        D3DFMT_A8R8G8B8,
-        D3DPOOL_DEFAULT,
-        &texture,
-        nullptr
-    );
-
-    if (FAILED(hr)) {
-        #ifdef _DEBUG
-        LOG("Failed to create DirectX9 texture");
-        #endif // _DEBUG
-
-        stbi_image_free(decoded_data);
-        return nullptr;
-    }
-
-    // Lock the texture to copy the pixel data
-    D3DLOCKED_RECT rect;
-    texture->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD);
-    unsigned char* dest = (unsigned char*)rect.pBits;
-    unsigned char* src = decoded_data;
-    for (int y = 0; y < texture_object.image_height; ++y) {
-        memcpy(dest, src, texture_object.image_width * 4); // Copy one row
-        dest += rect.Pitch;  // Move to the next row in the texture
-        src += texture_object.image_width * 4; // Move to the next row in the source data
-    }
-
-    texture->UnlockRect(0);
-
-    // Free the decoded data
-    stbi_image_free(decoded_data);
-
-    #ifdef _DEBUG
-    printf("TEXTURE NAME : %s | ", texture_object.name);
-    printf("RES. : %d x %d | ", texture_object.image_width, texture_object.image_height);
-    printf("ARRAY SIZE : %zd | ", image_data.image_bytearray_size);
-    printf("CHANNELS : %d\n", channels);
-    #endif // _DEBUG
+//void directX::initialize_image_texture()
+//{
+//    /* logo */
+//    textures::logo.texture          = load_texture_from_image_data(resource::logo, textures::logo);
+//    textures::logo.update_res();
+//
+//    /* icons */
+//    textures::aimbot.texture        = load_texture_from_image_data(resource::aimbot_data, textures::aimbot);
+//    textures::folder.texture        = load_texture_from_image_data(resource::folder_data, textures::folder);
+//    textures::left_wing.texture     = load_texture_from_image_data(resource::left_wing_data, textures::left_wing);
+//    textures::right_wing.texture    = load_texture_from_image_data(resource::right_wing_data, textures::right_wing);
+//    textures::planet.texture        = load_texture_from_image_data(resource::planet_data, textures::planet);
+//    textures::player.texture        = load_texture_from_image_data(resource::player_data, textures::player);
+//    textures::setting.texture       = load_texture_from_image_data(resource::setting_data, textures::setting);
+//    textures::stars.texture         = load_texture_from_image_data(resource::stars_data, textures::stars);
+//    textures::view.texture          = load_texture_from_image_data(resource::view_data, textures::view);
+//    textures::misc.texture          = load_texture_from_image_data(resource::misc, textures::misc);
+//    textures::antiaim.texture       = load_texture_from_image_data(resource::anti_aim, textures::antiaim);
+//
+//    /* background*/
+//    textures::background            = load_texture_from_image_data(resource::background, textures::background);
+//}
 
 
-    return (void*)texture;
-}
+//void* directX::load_texture_from_image_data(raw_image_data& image_data, texture_data& texture_object)
+//{
+//    unsigned char* decoded_data = nullptr;
+//    int channels = 0;
+//
+//    decoded_data = stbi_load_from_memory((stbi_uc*)image_data.image_bytes, image_data.image_bytearray_size, &texture_object.image_width, &texture_object.image_height, &channels, STBI_rgb_alpha);
+//    if (!decoded_data)
+//    {
+//        #ifdef _DEBUG
+//        LOG("E R R O R");
+//        printf("Load from memory failed : %s | resolution : %d x %d | size -> %zd\n", texture_object.name, texture_object.image_height, texture_object.image_width, image_data.image_bytearray_size);
+//        #endif
+//        return nullptr;
+//    }
+//
+//    /*creating the texture*/
+//    IDirect3DTexture9* texture = nullptr;
+//    HRESULT hr = device->CreateTexture(
+//        texture_object.image_width,
+//        texture_object.image_height,
+//        1,
+//        D3DUSAGE_DYNAMIC,
+//        D3DFMT_A8R8G8B8,
+//        D3DPOOL_DEFAULT,
+//        &texture,
+//        nullptr
+//    );
+//
+//    if (FAILED(hr)) {
+//        #ifdef _DEBUG
+//        LOG("Failed to create DirectX9 texture");
+//        #endif // _DEBUG
+//
+//        stbi_image_free(decoded_data);
+//        return nullptr;
+//    }
+//
+//    // Lock the texture to copy the pixel data
+//    D3DLOCKED_RECT rect;
+//    texture->LockRect(0, &rect, nullptr, D3DLOCK_DISCARD);
+//    unsigned char* dest = (unsigned char*)rect.pBits;
+//    unsigned char* src = decoded_data;
+//    for (int y = 0; y < texture_object.image_height; ++y) {
+//        memcpy(dest, src, texture_object.image_width * 4); // Copy one row
+//        dest += rect.Pitch;  // Move to the next row in the texture
+//        src += texture_object.image_width * 4; // Move to the next row in the source data
+//    }
+//
+//    texture->UnlockRect(0);
+//
+//    // Free the decoded data
+//    stbi_image_free(decoded_data);
+//
+//    #ifdef _DEBUG
+//    printf("TEXTURE NAME : %s | ", texture_object.name);
+//    printf("RES. : %d x %d | ", texture_object.image_width, texture_object.image_height);
+//    printf("ARRAY SIZE : %zd | ", image_data.image_bytearray_size);
+//    printf("CHANNELS : %d\n", channels);
+//    #endif // _DEBUG
+//
+//
+//    return (void*)texture;
+//}
 
 
 void directX::initialize_backends()
@@ -207,26 +207,26 @@ void directX::load_all_fonts()
 }
 
 
-void directX::do_static_calc()
-{
-    /* getting heading width */
-    ImGui::PushFont(fonts::haas_black);
-    UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
-
-    /* getting quote size */
-    ImGui::PushFont(cheat_window::quotes::quote_font);
-    cheat_window::quotes::quote_size = ImGui::CalcTextSize(cheat_window::quotes::quote1);
-
-    /*getting message size for close animation */
-    ImGui::PushFont(UI::shutdown_anim_font);
-    UI::end_meassage_size = ImGui::CalcTextSize(UI::end_message);
-
-    ImGui::PopFont();
-    ImGui::PopFont();
-    ImGui::PopFont();
-
-    UI::static_calc_done = true;
-}
+//void directX::do_static_calc()
+//{
+//    /* getting heading width */
+//    ImGui::PushFont(fonts::haas_black);
+//    UI::top_text_width = ImGui::CalcTextSize(UI::heading).x;
+//
+//    /* getting quote size */
+//    ImGui::PushFont(cheat_window::quotes::quote_font);
+//    cheat_window::quotes::quote_size = ImGui::CalcTextSize(cheat_window::quotes::quote1);
+//
+//    /*getting message size for close animation */
+//    ImGui::PushFont(UI::shutdown_anim_font);
+//    UI::end_meassage_size = ImGui::CalcTextSize(UI::end_message);
+//
+//    ImGui::PopFont();
+//    ImGui::PopFont();
+//    ImGui::PopFont();
+//
+//    UI::static_calc_done = true;
+//}
 
 
 void directX::make_it_pretty()

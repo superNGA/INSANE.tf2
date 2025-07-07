@@ -1,6 +1,6 @@
 #pragma once
 #include "ClientClass.h"
-#include "../../Utility/Interface.h"
+#include "../../Utility/Interface Handler/Interface.h"
 
 class IBaseClientDLL
 {

@@ -4,8 +4,8 @@
 #include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/FN index Manager/FN index manager.h"
 #include "../Extra/math.h"
-#include "../Utility/signatures.h"
-#include "../Utility/Hook_t.h"
+#include "../Utility/Signature Handler/signatures.h"
+#include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
 #include "../Utility/Insane Profiler/InsaneProfiler.h"
 
@@ -23,6 +23,8 @@
 #include "../SDK/class/BaseWeapon.h"
 #include "../SDK/class/Source Entity.h"
 #include "../SDK/class/CommonFns.h"
+#include "../SDK/class/IVEngineClient.h"
+#include "../SDK/class/IVDebugOverlay.h"
 
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,

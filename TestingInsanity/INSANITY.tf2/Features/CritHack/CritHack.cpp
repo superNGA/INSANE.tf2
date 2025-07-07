@@ -1,11 +1,10 @@
 #include "CritHack.h"
 
 // UTILITY
-#include "../../Utility/signatures.h"
-#include "../../Utility/ExportFnHelper.h"
-#include "../../Utility/ConsoleLogging.h"
-#include "../../Utility/Interface.h"
-#include "../../Utility/Hook_t.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Export Fn Handler/ExportFnHelper.h"
+#include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/PullFromAssembly.h"
 #include "../../Extra/math.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
@@ -18,7 +17,8 @@
 #include "../../SDK/class/CVar.h"
 #include "../../SDK/class/LocalPlayerScoring.h"
 #include "../../SDK/class/IGameEventManager.h"
-#include "../../SDK/Class ID Manager/classIDManager.h"
+//#include "../../SDK/Class ID Manager/classIDManager.h"
+#include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../SDK/class/CPrediction.h"
 
 // DEUBG related
@@ -820,10 +820,8 @@ void CritHack_t::_StoreHealthChanges()
         if (pEnt->IsDormant() == true)
             continue;
 
-        auto iEntID = IDManager.getID(pEnt);
-
         // Fuck non-player entities
-        if (iEntID != IDclass_t::PLAYER)
+        if (pEnt->GetClientClass()->m_ClassID != ClassID::CTFPlayer)
             continue;
 
         // Fuck non-enemy entities

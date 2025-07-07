@@ -71,7 +71,7 @@ void ProjectileEngine_t::Reset()
 }
 
 
-void ProjectileEngine_t::RunTick(bool bTrace = true)
+void ProjectileEngine_t::RunTick(bool bTrace = true, BaseEntity* pIgnoreEnt = nullptr)
 {
     if (m_pObj == nullptr)
         return;
@@ -88,12 +88,12 @@ void ProjectileEngine_t::RunTick(bool bTrace = true)
     m_pObj->GetVelocity(&vVelocity, nullptr);
     
     trace_t trace;
-    i_trace_filter filter(nullptr);
+    ITraceFilter_IgnoreSpawnVisualizer filter(pIgnoreEnt);
     I::EngineTrace->UTIL_TraceRay(
         m_projInfo.m_vOrigin, m_projInfo.m_vOrigin + (vVelocity * TICK_INTERVAL), MASK_SHOT,
         &filter, &trace);
 
-    if (trace.m_fraction < 0.99f || trace.m_start_solid == true)
+    if (trace.m_fraction < 1.0f || trace.m_start_solid == true)
     {
         m_projInfo.m_vEnd = trace.m_end;
     }

@@ -5,7 +5,7 @@
 #include "ClientClass.h"
 
 // UTILITY
-#include "../../Utility/Interface.h"
+#include "../../Utility/Interface Handler/Interface.h"
 
 
 /*

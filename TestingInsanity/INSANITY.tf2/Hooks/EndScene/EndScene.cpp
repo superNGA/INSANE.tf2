@@ -1,4 +1,3 @@
-#pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include <format>
 #include "EndScene.h"
@@ -14,7 +13,7 @@
 namespace directX {
     namespace UI
     {
-        cur_window section_index = QUOTE_WINDOW;
+        //cur_window section_index = QUOTE_WINDOW;
 
         int height_window = 575;
         int width_window = 950;
@@ -52,26 +51,26 @@ namespace directX {
         ImFont* shutdown_anim_font = nullptr; // <- intialized in load_all_fonts() cause initalizing it here will just fill current values, which are all nullptrs :(
     };
 
-    namespace textures
-    {
-        bool are_textures_initialized = false;
+    //namespace textures
+    //{
+    //    bool are_textures_initialized = false;
 
-        texture_data logo(nullptr, "Logo", 0, 0, 1,0.2f);
-        texture_data aimbot(nullptr, "aimbot scope");
-        texture_data folder(nullptr, "config folder");
-        texture_data left_wing(nullptr, "left wing image");
-        texture_data right_wing(nullptr, "right wing image");
-        texture_data planet(nullptr, "planet");
-        texture_data player(nullptr, "player");
-        texture_data setting(nullptr, "setting");
-        texture_data stars(nullptr, "stars");
-        texture_data view(nullptr, "view");
-        texture_data misc(nullptr, "miscellaneous");
-        texture_data antiaim(nullptr, "anti aim");
+    //    texture_data logo(nullptr, "Logo", 0, 0, 1,0.2f);
+    //    texture_data aimbot(nullptr, "aimbot scope");
+    //    texture_data folder(nullptr, "config folder");
+    //    texture_data left_wing(nullptr, "left wing image");
+    //    texture_data right_wing(nullptr, "right wing image");
+    //    texture_data planet(nullptr, "planet");
+    //    texture_data player(nullptr, "player");
+    //    texture_data setting(nullptr, "setting");
+    //    texture_data stars(nullptr, "stars");
+    //    texture_data view(nullptr, "view");
+    //    texture_data misc(nullptr, "miscellaneous");
+    //    texture_data antiaim(nullptr, "anti aim");
 
-        /* background */
-        texture_data background(nullptr, "background image");
-    };
+    //    /* background */
+    //    texture_data background(nullptr, "background image");
+    //};
 
     namespace fonts
     {
@@ -118,7 +117,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* Initializing textures */
-    if (!textures::are_textures_initialized)
+    /*if (!textures::are_textures_initialized)
     {
         initialize_image_texture();
         textures::are_textures_initialized = true;
@@ -126,7 +125,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         #ifdef _DEBUG
         WIN_LOG(" All textures initialized ");
         #endif
-    }
+    }*/
 
     /* Initializing fonts */
     if (!fonts::fonts_initialized && UI::UI_initialized_DX9 && UI::WIN32_initialized)
@@ -139,8 +138,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     /* Starting ImGui new frame*/
     ImGuiIO& io = ImGui::GetIO();
-    global::window_size.x = ImGui::GetMainViewport()->Size.x;
-    global::window_size.y = ImGui::GetMainViewport()->Size.y;
     io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();

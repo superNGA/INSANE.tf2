@@ -6,7 +6,6 @@
 
 // UTILITY
 #include "../NetVars/NetVarHandler.h"
-#include "../../Libraries/Utility/Utility.h"
 
 NETVAR_OFFSET(m_flSmackTime, m_bReadyToBackstab, DT_TFWeaponKnife, -0x14)
 NETVAR(m_bReadyToBackstab, DT_TFWeaponKnife)

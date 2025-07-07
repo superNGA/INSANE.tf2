@@ -3,7 +3,8 @@
 // SDK
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/Source Entity.h"
-#include "../../SDK/Class ID Manager/classIDManager.h"
+#include "../../SDK/class/IVEngineClient.h"
+#include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 
 // AIMBOTS
 #include "Aimbot Hitscan/AimbotHitscan.h"
@@ -72,46 +73,48 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
             continue;
 
         bool bEnemy = (pEnt->m_iTeamNum() != iFriendlyTeam);
-        GameObjectID_t iEntID = IDManager.GetObjectID(pEnt);
+        int  iEntID = pEnt->GetClientClass()->m_ClassID;
 
-        // Sorting-n-Filling entities :)
-        switch (iEntID)
+
+        // TODO : Make jumptable mechanism for this so it is fast. This is ass.
+        // 
+        // Forgive me for not using a switch stament here. But I am retrieving the 
+        // Class ID at runtime to avoid breaking in future. I shall make a jumptable myself soon.
+        if (iEntID == ClassID::CTFPlayer)
         {
-        case GameObjectID_t::CTF_PLAYER:
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemyPlayers.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlyPlayers.push_back(pEnt);
-            break;
-
-        case GameObjectID_t::C_OBJECT_SENTRY_GUN:
+        }
+        else if (iEntID == ClassID::CObjectSentrygun)
+        {
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemySentry.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlySentry.push_back(pEnt);
-            break;
-
-        case GameObjectID_t::C_OBJECT_DISPENSER:
+        }
+        else if (iEntID == ClassID::CObjectDispenser)
+        {
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemyDispensers.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlyDispensers.push_back(pEnt);
-            break;
-
-        case GameObjectID_t::C_OBJECT_TELEPORTER:
+        }
+        else if (iEntID == ClassID::CObjectTeleporter)
+        {
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemyTeleporters.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlyTeleporters.push_back(pEnt);
-            break;
-
-        case GameObjectID_t::CTF_PROJECTILE_ROCKET:
+        }
+        else if (iEntID == ClassID::CTFProjectile_Rocket)
+        {
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemyRockets.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlyRockets.push_back(pEnt);
-            break;
-
-        case GameObjectID_t::CTF_PROJECTILE_PIPEBOMB:
+        }
+        else if (iEntID == ClassID::CTFGrenadePipebombProjectile)
+        {
             bEnemy == true ?
                 m_aimbotTargetData.m_vecEnemyPipeBombs.push_back(pEnt) :
                 m_aimbotTargetData.m_vecFriendlyPipeBombs.push_back(pEnt);
-            break;
         }
 
     }

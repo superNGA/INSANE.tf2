@@ -2,7 +2,8 @@
 
 #include "Source Entity.h"
 #include "IEngineTrace.h"
-#include "../../Utility/signatures.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/ConsoleLogging.h"
 
 MAKE_SIG(CCollisionProperty_WorldSpaceCenter, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8D 99 ? ? ? ? E8", CLIENT_DLL, 
 	vec*, BaseEntity*)

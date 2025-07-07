@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Utility/Interface.h"
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "INetChannelInfo.h"
 
 struct global_var_base

@@ -1,8 +1,8 @@
 #include "BaseWeapon.h"
 
 // Utility
-#include "../../Utility/signatures.h"
-#include "../../Utility/Interface.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/PullFromAssembly.h"
 #include "../NetVars/NetVarHandler.h"
 

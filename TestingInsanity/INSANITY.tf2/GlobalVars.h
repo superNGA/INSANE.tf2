@@ -6,41 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Utility/ConsoleLogging.h"
-
-#define M_PI 3.14159265358979323846
-
-/* game module names */
-#define CLIENT_DLL				"client.dll"
-#define ENGINE_DLL				"engine.dll"
-#define VGUI2_DLL				"vgui2.dll"
-#define MATERIALSYSTEM_DLL		"materialsystem.dll"
-#define STUDIORENDER_DLL		"studiorender.dll"
-#define VSTDLIB_DLL				"vstdlib.dll"
-
-/* game interfaces names */
-#define IVENGIENCLIENT013		"VEngineClient014"
-#define ICLIENTENTITYLIST		"VClientEntityList003"
-#define VENGINERANDOM001		"VEngineRandom001"
-#define IGAMEEVENTLISTNER		"GAMEEVENTSMANAGER002"
-#define IVDEBUGOVERLAY			"VDebugOverlay003"
-#define ENGINETRACE_SERVER		"EngineTraceServer003"
-#define ENGINETRACE_CLIENT		"EngineTraceClient003"
-#define ENGINE_CLIENT_REPLAY	"EngineClientReplay001"
-#define IENGINETRACE			"EngineTraceClient003"
-#define IVDEBUGOVERLAY			"VDebugOverlay003"
-#define VGUI_PANEL				"VGUI_Panel009"
-#define BASE_CLIENT_DLL			"VClient017"
-#define GAME_MOVEMENT			"GameMovement001"
-#define IMATERIAL_SYSTEM		"VMaterialSystem082"
-#define IVRENDER_MODEL			"VEngineModel016"
-#define ISTUDIO_RENDER			"VStudioRender025"
-#define IVRENDER_VIEW			"VEngineRenderView014"
-#define IVMODELINFO				"VModelInfoClient006"
-
-/* this is config file */
-#include "Features/config.h"
-
 /* game classes */
 #include "SDK/class/I_BaseEntityDLL.h"
 #include "SDK/class/Source Entity.h"

@@ -15,7 +15,7 @@ Chams_t chams;
 
 // SDK
 #include "../../SDK/class/BaseEntity.h"
-#include "../../SDK/Class ID Manager/classIDManager.h"
+#include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/class/IVModelInfo.h"
@@ -23,16 +23,14 @@ Chams_t chams;
 #include "../../SDK/class/IStudioRender.h"
 #include "../../SDK/class/IMaterialSystem.h"
 
-#include "../../Libraries/Utility/Utility.h"
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 #include "../Anti Aim/AntiAim.h"
 
 #include "../../Libraries/Timer.h"
 #include "../../Extra/math.h"
 
-#include "../../Utility/ConsoleLogging.h"
-#include "../../Utility/signatures.h"
-#include "../../Utility/Hook_t.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Hook Handler/Hook_t.h"
 
 #define MIN_TIME 0.0001
 
@@ -65,7 +63,7 @@ int64_t Chams_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInf
         return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
 
     BaseEntity* pEntity      = static_cast<BaseEntity*>(renderInfo->pRenderable);
-    IDclass_t entId          = IDManager.getID(pEntity);
+    int         entId        = pEntity->GetClientClass()->m_ClassID;
 
     // TODO : remove this and make mechanism
     static IMaterial* FlatMat  = nullptr;

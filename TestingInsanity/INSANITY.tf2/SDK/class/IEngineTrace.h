@@ -1,9 +1,10 @@
 #pragma once
-#include "Basic Structures.h"
-#include <iostream>
-#include "Source Entity.h"
 
-#include "../../Utility/Interface.h"
+#include "Basic Structures.h"
+#include "BaseEntity.h"
+#include "CTraceFilters.h"
+
+#include "../../Utility/Interface Handler/Interface.h"
 
 #define DEBUG_RAY_INIT false
 
@@ -74,64 +75,6 @@ struct ray_t
 	}
 };
 
-enum TraceType_t
-{
-	TRACE_EVERYTHING = 0,
-	TRACE_WORLD_ONLY,				// NOTE: This does *not* test static props!!!
-	TRACE_ENTITIES_ONLY,			// NOTE: This version will *not* test static props
-	TRACE_EVERYTHING_FILTER_PROPS,	// NOTE: This version will pass the IHandleEntity for props through the filter, unlike all other filters
-};
-
-enum Collision_Group_t
-{
-	COLLISION_GROUP_NONE = 0,
-	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
-	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
-	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
-	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
-	COLLISION_GROUP_PLAYER,
-	COLLISION_GROUP_BREAKABLE_GLASS,
-	COLLISION_GROUP_VEHICLE,
-	COLLISION_GROUP_PLAYER_MOVEMENT,  // For HL2, same as Collision_Group_Player, for
-	// TF2, this filters out other players and CBaseObjects
-	COLLISION_GROUP_NPC,			// Generic NPC group
-	COLLISION_GROUP_IN_VEHICLE,		// for any entity inside a vehicle
-	COLLISION_GROUP_WEAPON,			// for any weapons that need collision detection
-	COLLISION_GROUP_VEHICLE_CLIP,	// vehicle clip brush to restrict vehicle movement
-	COLLISION_GROUP_PROJECTILE,		// Projectiles!
-	COLLISION_GROUP_DOOR_BLOCKER,	// Blocks entities not permitted to get near moving doors
-	COLLISION_GROUP_PASSABLE_DOOR,	// Doors that the player shouldn't collide with
-	COLLISION_GROUP_DISSOLVING,		// Things that are dissolving are in this group
-	COLLISION_GROUP_PUSHAWAY,		// Nonsolid on client and server, pushaway in player code
-
-	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
-	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
-
-	LAST_SHARED_COLLISION_GROUP
-};
-
-
-class i_trace_filter {
-private:
-	I_handle_entity* skip;
-
-public:
-	i_trace_filter(I_handle_entity* pEntSkip, int iCollisionGroup = COLLISION_GROUP_NONE) : 
-		skip(pEntSkip), m_iCollisionGroup(iCollisionGroup) {}
-
-	virtual bool ShouldHitEntity(I_handle_entity* pEntToCheck, int iCollisionGroup) 
-	{
-		return (pEntToCheck != skip);
-	}
-
-	virtual TraceType_t	GetTraceType() 
-	{
-		return TraceType_t::TRACE_EVERYTHING;
-	}
-
-	void*			 m_pPassEnt;
-	int				 m_iCollisionGroup;
-};
 
 struct cplane_tt {
 	vec normal;
@@ -168,19 +111,19 @@ public:
 	virtual int		GetPointContents_Collideable(ICollideable* pCollide, const vec& vecAbsPosition) = 0;
 	virtual void	ClipRayToEntity(const ray_t& ray, unsigned int fMask, void* pEnt, CGameTrace* pTrace) = 0;
 	virtual void	ClipRayToCollideable(const ray_t& ray, unsigned int fMask, ICollideable* pCollide, CGameTrace* pTrace) = 0;
-	virtual void	TraceRay(const ray_t& ray, unsigned int fMask, i_trace_filter* pTraceFilter, CGameTrace* pTrace) = 0;
+	virtual void	TraceRay(const ray_t& ray, unsigned int fMask, ITraceFilter* pTraceFilter, CGameTrace* pTrace) = 0;
 	virtual void	SetupLeafAndEntityListRay(const ray_t& ray, DWORD& traceData) = 0;
 	virtual void    SetupLeafAndEntityListBox(const vec& vecBoxMin, const vec& vecBoxMax, DWORD& traceData) = 0;
-	virtual void	TraceRayAgainstLeafAndEntityList(const ray_t& ray, DWORD& traceData, unsigned int fMask, i_trace_filter* pTraceFilter, CGameTrace* pTrace) = 0;
+	virtual void	TraceRayAgainstLeafAndEntityList(const ray_t& ray, DWORD& traceData, unsigned int fMask, ITraceFilter* pTraceFilter, CGameTrace* pTrace) = 0;
 	virtual void	SweepCollideable(ICollideable* pCollide, const vec& vecAbsStart, const vec& vecAbsEnd,
-		const qangle& vecAngles, unsigned int fMask, i_trace_filter* pTraceFilter, CGameTrace* pTrace) = 0;
+		const qangle& vecAngles, unsigned int fMask, ITraceFilter* pTraceFilter, CGameTrace* pTrace) = 0;
 	virtual void	EnumerateEntities(const ray_t& ray, bool triggers, void* pEnumerator) = 0;
 	virtual void	EnumerateEntities(const vec& vecAbsMins, const vec& vecAbsMaxs, void* pEnumerator) = 0;
 	virtual ICollideable* GetCollideable(void** pEntity) = 0;
 	virtual int		GetStatByIndex(int index, bool bClear) = 0;
 
 	inline void UTIL_TraceHull(const vec& vecAbsStart, const vec& vecAbsEnd, const vec& hullMin,
-		const vec& hullMax, unsigned int mask, i_trace_filter* pFilter, trace_t* ptr)
+		const vec& hullMax, unsigned int mask, ITraceFilter* pFilter, trace_t* ptr)
 	{
 		ray_t ray;
 		ray.Init(vecAbsStart, vecAbsEnd, hullMin, hullMax);
@@ -188,7 +131,7 @@ public:
 		TraceRay(ray, mask, pFilter, ptr);
 	}
 
-	inline void UTIL_TraceRay(const vec& vecAbsStart, const vec& vecAbsEnd, unsigned int mask, i_trace_filter* pFilter, trace_t* ptr)
+	inline void UTIL_TraceRay(const vec& vecAbsStart, const vec& vecAbsEnd, unsigned int mask, ITraceFilter* pFilter, trace_t* ptr)
 	{
 		ray_t ray;
 		ray.Init(vecAbsStart, vecAbsEnd);

@@ -11,6 +11,8 @@
 // GUI library
 #include "../../../External Libraries/ImGui/imgui.h"
 
+#include "../../../Utility/ConsoleLogging.h"
+
 constexpr ImVec2 MENU_DIMENSIONS(400.0f, 500.0f);
 constexpr ImVec2 BACK_BUTTON_DIMENSIONS(100.0f, 35.0f);
 

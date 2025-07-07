@@ -4,7 +4,7 @@
 #include "../TF object manager/TFOjectManager.h"
 #include "../Entity Manager/entityManager.h"
 #include "../../Extra/math.h"
-#include "../../Utility/signatures.h"
+#include "../../Utility/Signature Handler/signatures.h"
 
 // SDK
 #include "../../SDK/class/IVEngineClient.h"
@@ -65,16 +65,18 @@ int32_t BaseEntity::GetWeaponIndex()
 void BaseEntity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 
 	// skip if not in thirdpeson
-	if (!config.miscConfig.third_person) {
-		return;
-	}
+	//if (!config.miscConfig.third_person) {
+	//	return;
+	//}
 
-	// skip if not selected
-	if (!config.viewConfig.alwaysRenderInThirdPerson) {
-		return;
-	}
+	//// skip if not selected
+	//if (!config.viewConfig.alwaysRenderInThirdPerson) {
+	//	return;
+	//}
 
-	tfObject.addToLeafSystem(this, renderGroup);
+	//tfObject.addToLeafSystem(this, renderGroup);
+
+	return;
 }
 
 

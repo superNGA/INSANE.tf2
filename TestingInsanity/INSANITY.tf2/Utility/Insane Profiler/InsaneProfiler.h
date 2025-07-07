@@ -17,9 +17,12 @@
 #include <Windows.h>
 #include <string>
 
+//#include "../../External Libraries/ImGui/imgui.h"
+
 // UTILITY
 #include "../ConsoleLogging.h"
 #include "../../Features/FeatureHandler.h"
+
 
 // This disable the entire profiler
 #define ENABLE_INSANE_PROFILER true
@@ -64,6 +67,9 @@ ScopeTimer_t CONCAT(ScopeTimer_, __COUNTER__);
 struct FnTimer_t;
 struct ProfilerData_t;
 struct ScopeData_t;
+struct ImVec2;
+struct ImDrawList;
+struct ImColor;
 
 namespace InsaneProfiler
 {

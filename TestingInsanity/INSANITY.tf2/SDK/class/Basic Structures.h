@@ -222,12 +222,10 @@ struct vec
 		return true;
 	}
 
-	void Normalize()
+	vec Normalize() const
 	{
 		float flLength = sqrtf(x * x + y * y + z * z);
-		x = x / flLength;
-		y = y / flLength;
-		z = z / flLength;
+		return vec(x / flLength, y / flLength, z / flLength);
 	}
 
 	float Dot(const vec& other) const
@@ -445,7 +443,6 @@ class bf_read;
 struct CMouthInfo {};
 struct SpatializationInfo_t {};
 struct ClientThinkHandle_t {};
-struct ITraceFilter {};
 struct client_textmessage_t {};
 class IMaterial;
 struct SurfInfo {};

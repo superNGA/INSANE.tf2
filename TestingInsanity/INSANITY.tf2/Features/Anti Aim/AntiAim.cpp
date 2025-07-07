@@ -8,8 +8,8 @@
 
 //======================= Internal stuff =======================
 #include "../../SDK/TF object manager/TFOjectManager.h"
-#include "../../Utility/Interface.h"
-#include "../../Utility/signatures.h"
+#include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/Signature Handler/signatures.h"
 #include "../../Extra/math.h"
 
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"

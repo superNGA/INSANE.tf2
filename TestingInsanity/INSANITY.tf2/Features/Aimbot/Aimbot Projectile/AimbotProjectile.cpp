@@ -3,6 +3,7 @@
 // SDK
 #include "../../../SDK/class/BaseEntity.h"
 #include "../../../SDK/class/BaseWeapon.h"
+#include "../../../SDK/class/ClientClass.h"
 #include "../../../SDK/class/ETFWeaponType.h"
 #include "../../../SDK/class/CUserCmd.h"
 #include "../../../SDK/class/CommonFns.h"
@@ -15,8 +16,19 @@
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../AimbotHelper.h"
 #include "../../../Extra/math.h"
+
+
+/*
+TODO : 
+    -> Fix visibility check.
+    -> Fix mask, getting stopped @ walkway invisible walls.
+    -> Fix initial pos for time to reach.
+    -> 
+*/
+
 
 //=========================================================================
 //                     PUBLIC METHODS
@@ -27,7 +39,9 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 
     // Constructing LUT ( only for pipes )
     if(pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
+    {
         m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
+    }
 
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
@@ -139,7 +153,7 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
         vec   vLastPos; // This is for drawing
         for(int iTick = 0; iTick < TIME_TO_TICK(flProjLife); iTick++)
         {
-            F::projectileEngine.RunTick(false);
+            F::projectileEngine.RunTick(false, nullptr);
 
             vec   vOrigin = F::projectileEngine.GetPos();
             float flDist  = vOrigin.DistTo(vTarget);
@@ -451,7 +465,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
         bool bCanReach = true;
         for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
         {
-            F::projectileEngine.RunTick(true);
+            F::projectileEngine.RunTick(true, pProjectileOwner);
 
             constexpr float flProjHitRangeTolerance = 3.0f;
 
@@ -593,7 +607,7 @@ void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 
         for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
         {
-            F::projectileEngine.RunTick(false);
+            F::projectileEngine.RunTick(false, nullptr);
 
             // get pos relative to origin & store best time to reach.
             vec   vProjPos      = F::projectileEngine.GetPos();
@@ -770,7 +784,7 @@ void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActive
 
     for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
     {
-        F::projectileEngine.RunTick(false);
+        F::projectileEngine.RunTick(false, nullptr);
 
         // Height relative to the projectile origin.
         float flHeight      = F::projectileEngine.GetPos().z - F::projectileEngine.m_projInfo.m_vStart.z;
@@ -791,7 +805,7 @@ void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActive
     F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(89.0f, 0.0f, 0.0f));
     for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
     {
-        F::projectileEngine.RunTick(false);
+        F::projectileEngine.RunTick(false, nullptr);
     }
     // Min Height will be negative. ( something like -4000 )
     flMinHeightOut = F::projectileEngine.GetPos().z - F::projectileEngine.m_projInfo.m_vStart.z; 
@@ -804,7 +818,7 @@ void TrajactoryLUT_t::_GetMaxRange(BaseEntity* pLocalPlayer, baseWeapon* pActive
     F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(1.0f, 0.0f, 0.0f)); 
     for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
     {
-        F::projectileEngine.RunTick(false);
+        F::projectileEngine.RunTick(false, nullptr);
     }
     // Min Height will be in negative. ( something like -4000 )
     flMaxRangeOut = F::projectileEngine.GetPos().Dist2Dto(F::projectileEngine.m_projInfo.m_vStart);
@@ -831,8 +845,8 @@ void TrajactoryLUT_t::_AllocToLUT(BaseEntity* pLocalPlayer, baseWeapon* pActiveW
         nCol -= iExtraCols;
 
         // so I can see if something fucks midway :)
-        FAIL_LOG("Look up table is taking [ %u ] Bytes more than threshold of [ %u ] KiB. Cutting max range by [ %u ]",
-            iMemRequired - m_iMaxMemInBytes, m_iMaxMemInBytes / 1024, iExtraCols * m_iStepSize);
+        FAIL_LOG("Look up table is taking [ %u ] Bytes more than threshold of [ %u ] KiB. Cutting max range by [ %u ]. New col count [ %u ]",
+            iMemRequired - m_iMaxMemInBytes, m_iMaxMemInBytes / 1024, iExtraCols * m_iStepSize, nCol);
     }
 
     // We don't want that shit no more

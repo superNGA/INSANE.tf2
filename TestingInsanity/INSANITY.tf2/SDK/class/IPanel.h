@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Utility/Interface.h"
+#include "../../Utility/Interface Handler/Interface.h"
 #include "IBaseInterface.h"
 
 class IPanel : public IBaseInterface

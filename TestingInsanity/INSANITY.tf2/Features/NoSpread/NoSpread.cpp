@@ -25,8 +25,8 @@
 
 //======================= Internal stuff =======================
 #include "../../Extra/math.h"
-#include "../../Utility/signatures.h"
-#include "../../Utility/ExportFnHelper.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 
 GET_EXPORT_FN_NO_ARGS(Plat_FloatTime, "tier0.dll", double)
@@ -45,8 +45,10 @@ MAKE_INTERFACE_SIGNATURE(CBaseClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? 41 8B 57
 
 void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 {
-	if (config.aimbotConfig.bNoSpread == false)
-		return;
+	// Will return. VENGENCE !
+	return;
+	/*if (config.aimbotConfig.bNoSpread == false)
+		return;*/
 
 	pCmd = cmd;
 
@@ -107,7 +109,7 @@ bool NoSpread_t::_ParsePlayerPerf(std::string sMsg)
 	if (m_qServerTimes.size() > MAX_TIME_RECORDS)
 		m_qServerTimes.pop_front();
 	m_flDelta = std::reduce(m_qServerTimes.begin(), m_qServerTimes.end()) / m_qServerTimes.size();
-	m_flDelta += tfObject.pGlobalVar->interval_per_tick * float(config.miscConfig.iServerTimeOffset); // adding offset for finner adjustment.
+	m_flDelta += tfObject.pGlobalVar->interval_per_tick * float(/*config.miscConfig.iServerTimeOffset*/ 0.0f); // adding offset for finner adjustment.
 
 	float flMantissaStep = _CalcMantissaStep(m_flServerTime);
 	if (flMantissaStep > 1.0f && m_qServerTimes.size() >= MAX_TIME_RECORDS)
@@ -146,7 +148,7 @@ uint32_t NoSpread_t::GetSeed()
 
 bool NoSpread_t::_ShouldRun(CUserCmd* cmd)
 {
-	if (config.aimbotConfig.bNoSpread == false)
+	if (/*config.aimbotConfig.bNoSpread == false*/ true)
 		return false;
 
 	if ((cmd->buttons & IN_ATTACK) == false)

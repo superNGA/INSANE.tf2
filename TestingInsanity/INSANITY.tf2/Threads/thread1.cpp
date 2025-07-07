@@ -11,12 +11,13 @@
 #include "thread1.h"
 
 // UTILITY
-#include "../Utility/signatures.h"
-#include "../Utility/Interface.h"
-#include "../Utility/Hook_t.h"
-#include "../Utility/ExportFnHelper.h"
+#include "../Utility/Signature Handler/signatures.h"
+#include "../Utility/Interface Handler/Interface.h"
+#include "../Utility/Hook Handler/Hook_t.h"
+#include "../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
 #include "../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../SDK/NetVars/NetVarHandler.h"
 #include "../Features/FeatureHandler.h"
 #include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
@@ -61,6 +62,11 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}
 
 	if (netVarHandler.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (F::classIDHandler.Initialize() == false)
 	{
 		_terminate(instance);
 	}

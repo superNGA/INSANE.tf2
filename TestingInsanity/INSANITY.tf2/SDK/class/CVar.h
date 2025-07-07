@@ -2,7 +2,7 @@
 #include "IAppSystem.h"
 #include "Convar.h"
 
-#include "../../Utility/Interface.h"
+#include "../../Utility/Interface Handler/Interface.h"
 
 class ICvar: public IAppSystem
 {

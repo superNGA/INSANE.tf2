@@ -3,9 +3,9 @@
 // UTILITY
 #include "../../Extra/math.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
-#include "../../Utility/signatures.h"
-#include "../../Utility/Interface.h"
-#include "../../Utility/Hook_t.h"
+#include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/Hook Handler/Hook_t.h"
 
 //SDK
 #include "../../SDK/class/CUserCmd.h"

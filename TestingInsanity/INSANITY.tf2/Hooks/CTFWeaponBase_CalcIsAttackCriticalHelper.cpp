@@ -1,7 +1,7 @@
 // UTILITY
 #include "../Utility/ConsoleLogging.h"
-#include "../Utility/Hook_t.h"
-#include "../Utility/signatures.h"
+#include "../Utility/Hook Handler/Hook_t.h"
+#include "../Utility/Signature Handler/signatures.h"
 #include "../Features/CritHack/CritHack.h"
 
 class baseWeapon;

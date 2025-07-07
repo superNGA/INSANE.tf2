@@ -5,7 +5,7 @@
 #include <d3dx9.h>
 
 //global vars
-#include "../../GlobalVars.h"
+//#include "../../GlobalVars.h"
 
 //ImGui
 #include "../../External Libraries/ImGui/imgui.h"
@@ -13,7 +13,7 @@
 #include "../../External Libraries/ImGui/imgui_impl_win32.h"
 
 /*extra*/
-#include "../../Extra/spacing.h"
+//#include "../../Extra/spacing.h"
 
 
 //stb image
@@ -26,7 +26,7 @@ namespace directX
 	{
 		/* this is the important one, this stores the window the user wants to see.
 		the default is 0, where I plan to show quotes :)*/
-		extern cur_window section_index;
+		//extern cur_window section_index;
 
 		extern int	height_window;
 		extern int	width_window;
@@ -67,28 +67,28 @@ namespace directX
 	};
 
 	/* This will be popullated initialize_image_texture funtion :)*/
-	namespace textures
-	{
-		/* logo */
-		extern texture_data logo;
-		extern bool are_textures_initialized;
+	//namespace textures
+	//{
+	//	/* logo */
+	//	extern texture_data logo;
+	//	extern bool are_textures_initialized;
 
-		/* icons */
-		extern texture_data aimbot;
-		extern texture_data folder;
-		extern texture_data left_wing;
-		extern texture_data right_wing;
-		extern texture_data planet;
-		extern texture_data player;
-		extern texture_data setting;
-		extern texture_data stars;
-		extern texture_data view;
-		extern texture_data misc;
-		extern texture_data antiaim;
+	//	/* icons */
+	//	extern texture_data aimbot;
+	//	extern texture_data folder;
+	//	extern texture_data left_wing;
+	//	extern texture_data right_wing;
+	//	extern texture_data planet;
+	//	extern texture_data player;
+	//	extern texture_data setting;
+	//	extern texture_data stars;
+	//	extern texture_data view;
+	//	extern texture_data misc;
+	//	extern texture_data antiaim;
 
-		/* texture */
-		extern texture_data background;
-	};
+	//	/* texture */
+	//	extern texture_data background;
+	//};
 
 	/* information about fonts and their initializtaions status*/
 	namespace fonts
@@ -138,7 +138,7 @@ namespace directX
 
 	/*This function will turn image data into a DirectX 9 texture,
 	which ImGui can use directly.*/
-	void* load_texture_from_image_data(raw_image_data& image_data, texture_data& texture_object);
+	//void* load_texture_from_image_data(raw_image_data& image_data, texture_data& texture_object);
 
 	/*does the ImGui DirectX9 backend implementation & 
 	ImGui WIN32 backend implementation*/
