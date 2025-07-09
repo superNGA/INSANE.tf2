@@ -4,9 +4,20 @@
 #include "cheatFeaturesRendering.h"
 #include "Cheat windows/cheat_window.h"
 
+#include "../../Features/Visual Engine/VisualEngine.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
+
+
+HRESULT directX::H_BeginScene(LPDIRECT3DDEVICE9 P_DEVICE)
+{
+    auto result = directX::O_BeginScene(P_DEVICE);
+
+    //F::visualEngine.Run(P_DEVICE);
+
+    return result;
+}
 
 
 /*================ Giving namespace variables default value here ========================*/
@@ -143,6 +154,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
+    //F::visualEngine.Run(P_DEVICE);
     Render::InfoWindow.Draw();
     Render::uiMenu.Draw();
     insaneProfiler.Render();
@@ -162,7 +174,9 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* calling original function */
-	return O_endscene(P_DEVICE);
+	auto result = O_endscene(P_DEVICE);
+
+    return result;
 }
 
 

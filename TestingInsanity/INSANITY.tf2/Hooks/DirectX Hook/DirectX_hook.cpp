@@ -13,6 +13,13 @@ void* get_endscene()
 	}
 }
 
+void* GetBeginScene()
+{
+	if (GET_DIRECTX_DEVICES_VTABLE(DIRECTX_DEVICE_VTABLE, sizeof(DIRECTX_DEVICE_VTABLE))) {
+		return DIRECTX_DEVICE_VTABLE[41];
+	}
+}
+
 bool GET_DIRECTX_DEVICES_VTABLE(void** P_TABLE, size_t SIZE)
 {
 	if (!P_TABLE) {

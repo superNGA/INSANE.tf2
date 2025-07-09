@@ -126,10 +126,12 @@ namespace directX
 	typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
 	
 	inline T_endscene O_endscene = nullptr;
+	inline T_endscene O_BeginScene = nullptr;
 	inline LPDIRECT3DDEVICE9 device = nullptr;
 
 	/*This is the hook function, all ImGui stuff will happen here*/
 	HRESULT H_endscene(LPDIRECT3DDEVICE9 P_DEVICE); 
+	HRESULT H_BeginScene(LPDIRECT3DDEVICE9 P_DEVICE); 
 
 	/*This function will initialize all the image texture which will
 	be used during the life time of the software

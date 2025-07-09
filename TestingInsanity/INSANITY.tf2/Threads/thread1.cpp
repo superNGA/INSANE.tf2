@@ -66,17 +66,17 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
-	if (F::classIDHandler.Initialize() == false)
-	{
-		_terminate(instance);
-	}
-
 	if (_initializeHooks() == false)
 	{
 		_terminate(instance);
 	}
 
 	if (allSignatures.Initialize() == false)
+	{
+		_terminate(instance);
+	}
+
+	if (F::classIDHandler.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -155,6 +155,7 @@ bool thread1_t::_initializeHooks()
 
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene);
+	MH_CreateHook((LPVOID*)GetBeginScene(), (LPVOID)directX::H_BeginScene, (LPVOID*)&directX::O_BeginScene);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc();

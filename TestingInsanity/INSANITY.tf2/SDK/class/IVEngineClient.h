@@ -118,7 +118,7 @@ public:
 	virtual const char* GetGameDirectory(void) = 0;
 
 	// Get access to the world to screen transformation matrix
-	virtual const view_matrix& WorldToScreenMatrix() = 0;
+	virtual view_matrix& WorldToScreenMatrix() = 0;
 
 	// Get the matrix to move a point from world space into view space
 	// (translate and rotate so the camera is at the origin looking down X).

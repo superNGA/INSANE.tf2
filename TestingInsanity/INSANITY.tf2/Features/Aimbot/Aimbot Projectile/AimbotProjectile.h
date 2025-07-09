@@ -50,7 +50,7 @@ private:
     uint32_t m_nLUTRows         = 0;
     uint32_t m_iLUTRowForZeroY  = 0; // this is the row index for Y = 0.
 
-    static constexpr uint32_t m_iMaxMemInBytes = 60 * 1024; // 60 KiBs
+    const uint32_t m_iMaxMemInBytes = 60 * 1024; // 60 KiBs
 
     /*
     NOTE : This trajactory Look up table is meant to be a 2D array, with rows 

@@ -13,6 +13,7 @@
 #include "../../../SDK/class/CVar.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../Projectile Engine/ProjectileEngine.h"
+#include "../../Visual Engine/VisualEngine.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"

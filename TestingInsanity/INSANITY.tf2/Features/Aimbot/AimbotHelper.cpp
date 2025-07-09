@@ -75,7 +75,6 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
         bool bEnemy = (pEnt->m_iTeamNum() != iFriendlyTeam);
         int  iEntID = pEnt->GetClientClass()->m_ClassID;
 
-
         // TODO : Make jumptable mechanism for this so it is fast. This is ass.
         // 
         // Forgive me for not using a switch stament here. But I am retrieving the 
