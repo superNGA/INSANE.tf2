@@ -22,13 +22,13 @@ public:
     bool Initialize();
 
 private:
-    std::unordered_map<std::string, ClassID_t*> m_mapClassNameToID = {};
-
+    std::unordered_map<std::string, ClassID_t*> m_mapClassNameToID = {}; 
+    bool m_bInitialized = false;
 };
 DECLARE_FEATURE_OBJECT(classIDHandler, ClassIDHandler_t)
 
 #define REGISTER_CLASS_ID(szName)\
-namespace ClassID{ inline int szName = 0; }\
+namespace ClassID{ inline int szName = -1; }\
 namespace ClassID_Helper{ inline ClassID_t ClassID_##szName(&ClassID::##szName, std::string(#szName));}
 
 //REGISTER_CLASS_ID(CTFWearableRazorback)

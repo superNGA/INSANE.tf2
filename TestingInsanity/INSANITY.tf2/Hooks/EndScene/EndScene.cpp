@@ -12,11 +12,7 @@
 
 HRESULT directX::H_BeginScene(LPDIRECT3DDEVICE9 P_DEVICE)
 {
-    auto result = directX::O_BeginScene(P_DEVICE);
-
-    //F::visualEngine.Run(P_DEVICE);
-
-    return result;
+    return directX::O_BeginScene(P_DEVICE);
 }
 
 
@@ -154,7 +150,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
-    //F::visualEngine.Run(P_DEVICE);
+    F::insaneOverlay.Run(P_DEVICE);
     Render::InfoWindow.Draw();
     Render::uiMenu.Draw();
     insaneProfiler.Render();

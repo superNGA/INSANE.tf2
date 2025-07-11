@@ -8,6 +8,7 @@
 #include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
 #include "../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../Utility/ClassIDHandler/ClassIDHandler.h"
 
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
@@ -17,6 +18,7 @@
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
+#include "../Features/ESP/ESP.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -36,6 +38,8 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 		return result;
 
 	PROFILE_THREAD();
+
+	F::classIDHandler.Initialize();
 
 	// Getting Local Player
 	BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
@@ -84,6 +88,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::noSpread.Run(cmd, result); // incomplete, not working
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
+	F::esp.Run();
 
 	return result;
 }

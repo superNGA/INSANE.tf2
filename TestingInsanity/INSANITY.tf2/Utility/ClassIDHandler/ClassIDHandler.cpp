@@ -31,6 +31,9 @@ void ClassIDHandler_t::RegisterClassID(ClassID_t* pClassID)
 
 bool ClassIDHandler_t::Initialize()
 {
+    if (m_bInitialized == true)
+        return true;
+
     ClientClass* pClientClass = I::IBaseClient->GetAllClasses();
 
     while (pClientClass != nullptr)
@@ -39,20 +42,26 @@ bool ClassIDHandler_t::Initialize()
         auto it = m_mapClassNameToID.find(std::string(pClientClass->m_pNetworkName));
         if (it != m_mapClassNameToID.end())
         {
-            *it->second->m_pDestination = pClientClass->m_ClassID;
-            m_mapClassNameToID.erase(it);
+            *(it->second->m_pDestination) = pClientClass->m_ClassID;
+            if(pClientClass->m_ClassID > 0)
+            {
+                m_mapClassNameToID.erase(it);
+                LOG("initialized [ %s ] with class ID [ %d ]", pClientClass->m_pNetworkName, pClientClass->m_ClassID);
+            }
         }
 
         pClientClass = pClientClass->m_pNext;
     }
 
-
-    if (m_mapClassNameToID.empty() == false)
+    
+    // we found all the IDs!
+    if (m_mapClassNameToID.empty() == true)
     {
-        FAIL_LOG("Failed to find all classes, [ %d ] remaining", m_mapClassNameToID.size());
-        return false;
+        m_bInitialized = true;
+        WIN_LOG("CACHED CLASS IDs");
+        return true;
     }
 
-    WIN_LOG("Found ID for all classes");
-    return true;
+    FAIL_LOG("Failed to find all classes, [ %d ] remaining", m_mapClassNameToID.size());
+    return false;
 }

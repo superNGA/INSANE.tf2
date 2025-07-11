@@ -38,6 +38,14 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
 
+
+    // Delete this
+    // Drawing testing
+    {
+        //F::insaneOverlay.DrawRect("Test", { 0.0f, 0.0f, 0.0f }, { 100.0f, 100.0f, 100.0f });
+    }
+
+
     // Constructing LUT ( only for pipes )
     if(pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
     {
