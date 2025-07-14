@@ -1,16 +1,32 @@
 #include "ESP.h"
 
-#include "../Visual Engine/VisualEngine.h"
+// SDK
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/IVEngineClient.h"
-#include "../../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../../SDK/class/CUserCmd.h"
 
-void ESP_t::Run()
+// UTILITY
+#include "../Graphics Engine/Graphics Engine/GraphicsEngine.h"
+#include "../../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../../Utility/Insane Profiler/InsaneProfiler.h"
+
+
+void ESP_t::Run(CUserCmd* pCmd)
 {
+    PROFILE_FUNCTION("ESP");
+
     int iLocalPlayerIndex = I::iEngine->GetLocalPlayer();
-    int nEnt = I::IClientEntityList->NumberOfEntities(false);
-    int iFriendlyTeam = I::IClientEntityList->GetClientEntity(iLocalPlayerIndex)->m_iTeamNum();
+    int nEnt              = I::IClientEntityList->NumberOfEntities(false);
+    int iFriendlyTeam     = I::IClientEntityList->GetClientEntity(iLocalPlayerIndex)->m_iTeamNum();
+
+    GraphicInfo_t espGraphicInfo(
+        Features::ESP::PLAYER::TOP_LEFT.GetData().GetAsBytes(),
+        Features::ESP::PLAYER::TOP_RIGHT.GetData().GetAsBytes(),
+        Features::ESP::PLAYER::BOTTOM_RIGHT.GetData().GetAsBytes(),
+        Features::ESP::PLAYER::BOTTOM_LEFT.GetData().GetAsBytes(),
+        Features::ESP::PLAYER::Thickness.GetData().m_flVal
+    );
 
     for (int iEntIndex = 0; iEntIndex < nEnt; iEntIndex++)
     {
@@ -32,9 +48,10 @@ void ESP_t::Run()
             continue;
 
         bool bEnemy = (pEnt->m_iTeamNum() != iFriendlyTeam);
-        int  iEntID = pEnt->GetClientClass()->m_ClassID;
+        if (bEnemy == false)
+            continue;
 
-        if (iEntID == ClassID::CTFPlayer)
+        if (pEnt->GetClientClass()->m_ClassID == ClassID::CTFPlayer)
         {
             const vec& vOrigin = pEnt->GetCollideable()->GetCollisionOrigin();
             const vec& vMin = pEnt->GetCollideable()->OBBMins();
@@ -42,7 +59,7 @@ void ESP_t::Run()
             
             const char vNum = '0' + iEntIndex;
 
-            F::insaneOverlay.DrawRect(std::format("ENT_{}", iEntIndex), vOrigin + vMin, vOrigin + vMax, 1000.0f);
+            F::graphicsEngine.DrawRect(std::format("ENT_{}", iEntIndex), vOrigin + vMin, vOrigin + vMax, pCmd->viewangles, 1000.0f, &espGraphicInfo);
         }
     }
 }

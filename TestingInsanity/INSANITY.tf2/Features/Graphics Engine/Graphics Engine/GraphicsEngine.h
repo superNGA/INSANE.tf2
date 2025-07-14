@@ -1,0 +1,105 @@
+#pragma once
+
+#include <d3d9.h>
+#include <d3dx9.h>
+#include <atomic>
+#include <string>
+#include <unordered_map>
+
+
+#include "../Draw Objects/DrawObj.h"
+#include "../../FeatureHandler.h"
+#include "../../../SDK/class/Basic Structures.h"
+
+
+struct DrawObjList_t
+{
+    DrawObjList_t(D3DPRIMITIVETYPE iDrawType, std::string szName, uint32_t iStride);
+
+    // DirectX9 stuff
+    D3DPRIMITIVETYPE m_iDrawType;
+    uint32_t         m_iStride = sizeof(Vertex_t);
+    uint32_t         m_iVertexPerObject = 0;
+
+    std::atomic<bool> m_bBeingDrawn;
+
+    // Stores all objects
+    std::unordered_map<std::string, BaseDrawObj_t*> m_mapIDToObj = {};
+
+    // NOTE : its very important that this Verticies count is correct. else 
+    //          a nothing will draw correctly.
+    // This is only incremented when an object is created & 
+    // only decremented in the RemoveDrawObj fn.
+    uint32_t m_nVertcies = 0;
+
+    // Vertex buffer & its stats
+    uint32_t                  m_nBufferSize = 0;
+    IDirect3DVertexBuffer9*   m_pVertexBuffer = nullptr;
+    static constexpr uint32_t MAX_VERTEX_BUFFER_SIZE_InBytes = 10 * 1024; // 10 KiBs
+
+    bool DoubleBufferSize(LPDIRECT3DDEVICE9 pDevice);
+    bool HalfBufferSize(LPDIRECT3DDEVICE9 pDevice);
+
+    void RemoveDrawObj(std::string szID);
+    void Free();
+
+    std::string m_szName = "UNDEFINED";
+};
+
+
+
+//=========================================================================
+//                     GRAPHICS ENGINE
+//=========================================================================
+class GraphicsEngine_t
+{
+public:
+    GraphicsEngine_t() :
+        m_lineList(D3DPT_LINELIST,    "LineList",      sizeof(Vertex_t)),
+        m_triList(D3DPT_TRIANGLELIST, "Traingle List", sizeof(Vertex_t))
+    {}
+
+    // All rendering happens here...
+    void Run(LPDIRECT3DDEVICE9 pDevice);
+
+    // Drawing different stuff    
+    void DrawRect(std::string szID,
+        const vec& vMin,
+        const vec& vMax,
+        const qangle& qNormal,
+        const float flLife = DEFAULT_LIFE_IN_MS, 
+        GraphicInfo_t* pGraphicInfo = nullptr);
+
+    // Deleting stuff
+    void FreeAllDrawObjs();
+    void FindAndDelete(std::string szID);
+
+private:
+    template <typename T>
+    inline T* CreateAndRegisterDrawObj(std::string& szID, DrawObjList_t& drawObjList)
+    {
+        T* pNewDrawObj = new T;
+        drawObjList.m_mapIDToObj.insert({ szID, pNewDrawObj });
+        drawObjList.m_nVertcies += reinterpret_cast<BaseDrawObj_t*>(pNewDrawObj)->GetVertexCount();
+
+        return pNewDrawObj;
+    }
+
+
+    DrawObjList_t m_lineList;
+    DrawObjList_t m_triList;
+
+
+    static constexpr float DEFAULT_LIFE_IN_MS = 1000.0f;
+};
+DECLARE_FEATURE_OBJECT(graphicsEngine, GraphicsEngine_t)
+
+
+
+DEFINE_FEATURE(Speed, FloatSlider_t, PLAYER, ESP,
+    1, FloatSlider_t(100.0f, 0.0f, 1000.0f), FeatureFlag_None,
+    "Speed of ESP animtion")
+
+DEFINE_FEATURE(GlowPower, FloatSlider_t, PLAYER, ESP,
+    7, FloatSlider_t(5.0f, 1.0f, 100.0f), FeatureFlag_None,
+    "ESP border thickness")

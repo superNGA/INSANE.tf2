@@ -4,8 +4,10 @@
 #include <type_traits>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 
 #include "../Hooks/EndScene/EndScene.h"
+#include "../SDK/class/Basic Structures.h"
 
 // DATA TYPES
 struct IntSlider_t 
@@ -24,9 +26,25 @@ struct FloatSlider_t
 
 struct ColorData_t
 {
-    ColorData_t() : r(0), g(0), b(0), a(0){}
-    ColorData_t(float R, float G, float B, float A) : r(R), g(G), b(B), a(A){}
+    ColorData_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
+    ColorData_t(float R, float G, float B, float A)
+    {
+        r = R / 255.0f;
+        g = G / 255.0f;
+        b = B / 255.0f;
+        a = A / 255.0f;
+    }
     float r, g, b, a;
+
+    inline RGBA_t GetAsBytes() const
+    {
+        return RGBA_t(
+            static_cast<unsigned char>(std::clamp<float>(r * 255.0f, 0.0f, 255.0f)),
+            static_cast<unsigned char>(std::clamp<float>(g * 255.0f, 0.0f, 255.0f)),
+            static_cast<unsigned char>(std::clamp<float>(b * 255.0f, 0.0f, 255.0f)),
+            static_cast<unsigned char>(std::clamp<float>(a * 255.0f, 0.0f, 255.0f))
+        );
+    }
 };
 
 enum FeatureFlags

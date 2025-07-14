@@ -300,10 +300,10 @@ bool ConfigHandler_t::WriteToConfigFile(std::string szFileName) const
         {
             auto* pFeatureDerived = static_cast<Feature<ColorData_t>*>(pFeature);
             
-            pFile << pFeatureDerived->m_Data.r * 0xFF << cConfigBreaker;
-            pFile << pFeatureDerived->m_Data.g * 0xFF << cConfigBreaker;
-            pFile << pFeatureDerived->m_Data.b * 0xFF << cConfigBreaker;
-            pFile << pFeatureDerived->m_Data.a * 0xFF << cConfigBreaker;
+            pFile << pFeatureDerived->m_Data.r         * 0xFF << cConfigBreaker;
+            pFile << pFeatureDerived->m_Data.g         * 0xFF << cConfigBreaker;
+            pFile << pFeatureDerived->m_Data.b         * 0xFF << cConfigBreaker;
+            pFile << pFeatureDerived->m_Data.a         * 0xFF << cConfigBreaker;
             pFile << pFeatureDerived->m_OverrideData.r * 0xFF << cConfigBreaker;
             pFile << pFeatureDerived->m_OverrideData.g * 0xFF << cConfigBreaker;
             pFile << pFeatureDerived->m_OverrideData.b * 0xFF << cConfigBreaker;

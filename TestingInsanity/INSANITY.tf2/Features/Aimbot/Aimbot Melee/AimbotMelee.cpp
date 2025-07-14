@@ -21,8 +21,10 @@
 #include "../../../SDK/class/CUserCmd.h"
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
-
 #include "../../../SDK/class/CommonFns.h"
+
+// UTILITY
+#include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
 #include "../../ImGui/InfoWindow/InfoWindow_t.h"
@@ -39,6 +41,8 @@ constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
 //=========================================================================
 void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
+    PROFILE_FUNCTION("Melee Aimbot");
+
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return;
 

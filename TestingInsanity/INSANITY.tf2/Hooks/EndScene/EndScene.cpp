@@ -4,7 +4,7 @@
 #include "cheatFeaturesRendering.h"
 #include "Cheat windows/cheat_window.h"
 
-#include "../../Features/Visual Engine/VisualEngine.h"
+#include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
@@ -150,7 +150,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
-    F::insaneOverlay.Run(P_DEVICE);
+    F::graphicsEngine.Run(P_DEVICE);
     Render::InfoWindow.Draw();
     Render::uiMenu.Draw();
     insaneProfiler.Render();

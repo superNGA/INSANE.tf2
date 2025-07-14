@@ -119,6 +119,25 @@ struct qangle
 	}
 };
 
+
+struct RGBA_t
+{
+	constexpr RGBA_t() : r(0), g(0), b(0), a(0) {}
+	constexpr RGBA_t(unsigned char RGB) : r(RGB), g(RGB), b(RGB), a(0xFF) {}
+	constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
+		r(R), g(G), b(B), a(A) {}
+
+	unsigned char r, g, b, a;
+
+	// OPERATORS
+	RGBA_t& operator=(RGBA_t other)
+	{
+		r = other.r; g = other.g; b = other.b; a = other.a;
+		return *this;
+	}
+};
+
+
 struct vec
 {
 	vec() : x(0.0f), y(0.0f), z(0.0f) {}

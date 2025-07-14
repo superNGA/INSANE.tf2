@@ -32,7 +32,7 @@
 #include "../Features/Aimbot/Aimbot Projectile/AimbotProjectile.h"
 #include "../Features/Movement/Movement.h"
 #include "../Features/Projectile Engine/ProjectileEngine.h"
-#include "../Features/Visual Engine/VisualEngine.h"
+#include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 
 Utility util;
 
@@ -178,7 +178,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 		FAIL_LOG("thread 1", "terminating without hooking (early exit) something went wrong");
 		UNINITIALIZE_CONSOLE();
 		FreeLibraryAndExitThread(instance, 0);
-		F::insaneOverlay.FreeAllDrawObjs();
+		F::graphicsEngine.FreeAllDrawObjs();
 		return;
 	}
 	// handling exit if hooks are intialized
@@ -193,7 +193,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 		}
 	
 		// Deleting all dynamically allocated visual objects...
-		F::insaneOverlay.FreeAllDrawObjs();
+		F::graphicsEngine.FreeAllDrawObjs();
 
 		// unhooking...
 		MH_DisableHook(MH_ALL_HOOKS);
