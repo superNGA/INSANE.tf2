@@ -6,10 +6,18 @@
 // SDK
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
+//#include "../../SDK/class/BaseEntity.h"
+//#include "../../SDK/class/BaseWeapon.h"
+//#include "../../SDK/class/IVEngineClient.h"
+//#include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
+//#include "../../Features/Projectile Engine/ProjectileEngine.h"
+//#include "../../Utility/Insane Profiler/InsaneProfiler.h"
+
 
 //void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_frame_stage frame_stage)
 MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, void* pVTable, client_frame_stage frameStage)
 {
+
 	Hook::FrameStateNotify::O_FrameStateNotify(pVTable, frameStage);
 
 	static int16_t frameCounter = 0; // counts frames elapsed
@@ -40,7 +48,7 @@ MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, voi
 	case FRAME_RENDER_START:
 		break;
 
-	case FRAME_RENDER_END: 
+	case FRAME_RENDER_END:
 		break;
 	default: 
 		break;

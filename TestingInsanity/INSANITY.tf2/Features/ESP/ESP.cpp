@@ -31,7 +31,9 @@ void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
         Features::ESP::PLAYER::TOP_RIGHT.GetData().GetAsBytes(),
         Features::ESP::PLAYER::BOTTOM_RIGHT.GetData().GetAsBytes(),
         Features::ESP::PLAYER::BOTTOM_LEFT.GetData().GetAsBytes(),
-        Features::ESP::PLAYER::Thickness.GetData().m_flVal
+        Features::ESP::PLAYER::Thickness.GetData().m_flVal,
+        Features::ESP::PLAYER::Speed.GetData().m_flVal,
+        Features::ESP::PLAYER::glowPower.GetData().m_flVal
     );
 
     for (int iEntIndex = 0; iEntIndex < nEnt; iEntIndex++)

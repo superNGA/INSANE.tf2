@@ -21,8 +21,6 @@ public:
 
     void SetW2SMatrix();
     void SetShaderTime();
-    void SetSpeed(const float flSpeed);
-    void SetGlowPower(const float flGlowPower);
 
     void Draw(DrawObjList_t& drawlist, LPDIRECT3DDEVICE9 pDevice);
 
@@ -44,10 +42,12 @@ DECLARE_FEATURE_OBJECT(directxHandler, DirectxHandler_t)
 
 static _D3DVERTEXELEMENT9 vertexDecl[] =
 {
-    // Stream, Offset, Type,               Method,                Usage,                 Usage Index
-      {0,      0,      D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION , 0},
-      {0,      sizeof(float) * 3, D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR , 0},
-      {0,      (sizeof(float) * 3) + (sizeof(char) * 4), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD , 0},
+    // Stream, Offset,                                                         Type,               Method,                Usage,                 Usage Index
+      {0,      0,                                                              D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION , 0},
+      {0,      sizeof(float) * 3,                                              D3DDECLTYPE_UBYTE4N, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR ,   0},
+      {0,      (sizeof(float) * 3) + (sizeof(char) * 4),                       D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD , 0},
+      {0,      (sizeof(float) * 3) + (sizeof(char) * 4) + sizeof(float),       D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD , 1},
+      {0,      (sizeof(float) * 3) + (sizeof(char) * 4) + (sizeof(float) * 2), D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD , 2},
       D3DDECL_END()
 };
 
@@ -61,6 +61,8 @@ struct vs_input {
     float3 Pos : POSITION;
     float4 clr : COLOR;
     float flWidth : TEXCOORD0;
+    float flSpeed : TEXCOORD1;
+    float flGlowPower : TEXCOORD2;
 };
 
 // OUTPUT STRUCT
@@ -68,13 +70,13 @@ struct vs_output {
     float4 Pos : POSITION;
     float4 clr : COLOR;
     float flWidth : TEXCOORD0;
+    float flSpeed : TEXCOORD1;
+    float flGlowPower : TEXCOORD2;
 };
 
 // World to screen matrix which gets loaded here form frame state NET_UPDATE_END.
 float4x4 g_worldToScreen;
 float    flTime;
-float    flSpeed;
-float    flGlowPower;
 
 float4 clrDefault = (1.0, 0.0, 0.0, 1.0);
 
@@ -98,9 +100,10 @@ vs_output VS(vs_input input)
 
     output.Pos = W2S(input.Pos);
 
-    output.clr = input.clr;
-
+    output.clr     = input.clr;
     output.flWidth = input.flWidth;
+    output.flSpeed = input.flSpeed;
+    output.flGlowPower = input.flGlowPower;
 
     return output;
 }
@@ -171,9 +174,10 @@ float4 PS(vs_output output) : COLOR
     HSV clrHSV = RGB2HSV(output.clr);
 
     // RGB-ing
-    clrHSV.h = fmod(clrHSV.h + (flTime * flSpeed), 360.0);
+    clrHSV.h = fmod(clrHSV.h + (flTime * output.flSpeed), 360.0);
 
-    float flAlpha = exp(-pow(output.flWidth * flGlowPower, 2));
+    float flAlpha = exp(-pow(output.flWidth * output.flGlowPower, 2));
+    flAlpha = min(flAlpha, output.clr.a);
 
     clrHSV.v = saturate(clrHSV.v + (0.3 * flAlpha));
     clrHSV.s = saturate(clrHSV.s + (0.2 * flAlpha));

@@ -1,5 +1,7 @@
 #include "GraphicsEngine.h"
 
+#include <format>
+
 #include "../../../Utility/ConsoleLogging.h"
 #include "../../../Extra/math.h"
 
@@ -15,13 +17,11 @@ void GraphicsEngine_t::Run(LPDIRECT3DDEVICE9 pDevice)
     F::directxHandler.Initialize(pDevice);
     F::directxHandler.CaptureState();
     F::directxHandler.SetShaderTime();
-    F::directxHandler.SetSpeed(Features::ESP::PLAYER::Speed.GetData().m_flVal);
-    F::directxHandler.SetGlowPower(Features::ESP::PLAYER::GlowPower.GetData().m_flVal);
 
     // Drawing line list
-    m_lineList.m_bBeingDrawn.store(true);
-    F::directxHandler.Draw(m_lineList, pDevice);
-    m_lineList.m_bBeingDrawn.store(false);
+    //m_lineList.m_bBeingDrawn.store(true);
+    //F::directxHandler.Draw(m_lineList, pDevice);
+    //m_lineList.m_bBeingDrawn.store(false);
 
     // Drawing traingle list.
     m_triList.m_bBeingDrawn.store(true);
@@ -33,7 +33,7 @@ void GraphicsEngine_t::Run(LPDIRECT3DDEVICE9 pDevice)
 }
 
 
-void GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
+BaseDrawObj_t* GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
 {
     auto it = m_triList.m_mapIDToObj.find(szID);
 
@@ -45,19 +45,20 @@ void GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, const vec& vM
 
         WIN_LOG("Created BOX with ID [ %s ]. Vertex Count -> [ %u ]", szID.c_str(), m_triList.m_nVertcies);
 
-        return;
+        return pDrawObj;
     }
 
     if (it->second->IsLocked() == true)
-        return;
+        return it->second;
 
     reinterpret_cast<RectDrawObj_t*>(it->second)->Set( vMin, vMax, qNormal, pGraphicInfo);
 
     it->second->SetLife(flLife);
+    return it->second;
 }
 
 
-void GraphicsEngine_t::DrawBox(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
+BaseDrawObj_t* GraphicsEngine_t::DrawBox(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
 {
     auto it = m_triList.m_mapIDToObj.find(szID);
     if (it == m_triList.m_mapIDToObj.end())
@@ -65,19 +66,19 @@ void GraphicsEngine_t::DrawBox(std::string szID, const vec& vMin, const vec& vMa
         CuboidDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<CuboidDrawObj_t>(szID, m_triList);
         pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
         pDrawObj->SetLife(flLife);
-        return;
+        return pDrawObj;
     }
 
     if (it->second->IsLocked() == true)
-        return;
+        return it->second;
 
     reinterpret_cast<CuboidDrawObj_t*>(it->second)->Set(vMin, vMax, qNormal, pGraphicInfo);
     it->second->SetLife(flLife);
-    return;
+    return it->second;
 }
 
 
-void GraphicsEngine_t::DrawLine(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
+BaseDrawObj_t* GraphicsEngine_t::DrawLine(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
 {
     auto it = m_triList.m_mapIDToObj.find(szID);
     if (it == m_triList.m_mapIDToObj.end())
@@ -85,15 +86,15 @@ void GraphicsEngine_t::DrawLine(std::string szID, const vec& vMin, const vec& vM
         LineDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<LineDrawObj_t>(szID, m_triList);
         pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
         pDrawObj->SetLife(flLife);
-        return;
+        return pDrawObj;
     }
 
     if (it->second->IsLocked() == true)
-        return;
+        return it->second;
 
     reinterpret_cast<LineDrawObj_t*>(it->second)->Set(vMin, vMax, qNormal, pGraphicInfo);
     it->second->SetLife(flLife);
-    return;
+    return it->second;
 }
 
 
@@ -233,9 +234,8 @@ void DrawObjList_t::RemoveDrawObj(std::string szID)
 //-------------------------------------------------------------------------
 void DrawObjList_t::Free()
 {
-    // Don't free while being drawn else crash.
-    if (m_bBeingDrawn.load() == true)
-        return;
+    while (m_bBeingDrawn.load() == true)
+        FAIL_LOG("Waiting for frame end before deleting.");
 
     for (auto& [szID, drawObj] : m_mapIDToObj)
     {

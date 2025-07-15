@@ -38,7 +38,6 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
 
-
     // Constructing LUT ( only for pipes )
     if(pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
     {
@@ -71,6 +70,21 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
         // Aimbot-ing.
         pCmd->viewangles    = _GetTargetAngles(projInfo, pLocalPlayer, pActiveWeapon, pCmd->viewangles);
         *pCreatemoveResult  = false;
+
+        GraphicInfo_t graphicInfo(
+            Features::Aimbot::Visuals::CLR1.GetData().GetAsBytes(),
+            Features::Aimbot::Visuals::CLR2.GetData().GetAsBytes(),
+            Features::Aimbot::Visuals::CLR3.GetData().GetAsBytes(),
+            Features::Aimbot::Visuals::CLR4.GetData().GetAsBytes(),
+            Features::Aimbot::Visuals::Thickness.GetData().m_flVal,
+            Features::Aimbot::Visuals::Speed.GetData().m_flVal,
+            Features::Aimbot::Visuals::GlowPower.GetData().m_flVal
+        );
+
+        // Draiwng
+        _DrawProjectilePath(pLocalPlayer, pActiveWeapon, pCmd->viewangles, &graphicInfo);
+        _DrawTargetFuturePos(&graphicInfo, pCmd->viewangles);
+        _DrawTargetPath(pCmd->viewangles, &graphicInfo);
 
         _ResetTargetData();
     }
@@ -122,9 +136,12 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
     float flQuadraticTimeToReach = flTimeToReach1 < flTimeToReach2 ? flTimeToReach1 : flTimeToReach2;
 
     //printf("Simple quadratic says we can reach with angle [ %.2f ] & time [ %.2f ]\n", flBestAngle, flBestTimeToReach);
-    //flAngleOut = flQuadraticAngles;
-    //flTimeToReachOut = flQuadraticTimeToReach;
-    //return true;
+    if(projInfo.m_bUsesDrag == false)
+    {
+        flAngleOut = flQuadraticAngles;
+        flTimeToReachOut = flQuadraticTimeToReach;
+        return true;
+    }
 
     float flBestAngle = 0.0f;
     float flBestTimeToReach = 0.0f;
@@ -232,11 +249,73 @@ void AimbotProjectile_t::Reset()
 
     m_pBestTarget       = nullptr;
     m_vBestTargetFuturePos.Init();
+    m_vFutureFootPos.Init();
 }
+
 
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
+
+
+void AimbotProjectile_t::_DrawTargetFuturePos(GraphicInfo_t* pGraphicInfo, const qangle& qNormal)
+{
+    auto* pDrawObj = F::graphicsEngine.DrawBox(
+        "Target",
+        m_vFutureFootPos + m_pBestTarget->GetCollideable()->OBBMins(),
+        m_vFutureFootPos + m_pBestTarget->GetCollideable()->OBBMaxs(),
+        qNormal, 2000.0f, pGraphicInfo);
+}
+
+
+void AimbotProjectile_t::_DrawTargetPath(const qangle& qNormal, GraphicInfo_t* pGraphicInfo)
+{
+    uint32_t nRecords = m_vecTargetPathRecord.size();
+    if (nRecords <= 0)
+        return;
+
+    for (uint32_t iRecordIndex = 1; iRecordIndex < nRecords; iRecordIndex++)
+    {
+        F::graphicsEngine.DrawLine(std::format("PathRecord_{}", iRecordIndex),
+            m_vecTargetPathRecord[iRecordIndex - 1],
+            m_vecTargetPathRecord[iRecordIndex],
+            qNormal, 2000.0f, pGraphicInfo);
+    }
+}
+
+
+void AimbotProjectile_t::_DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, const qangle& qProjLauchAngles, GraphicInfo_t* pGraphicInfo) const
+{
+    F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qProjLauchAngles);
+    
+    GraphicInfo_t graphicInfo1(
+        Features::Aimbot::Visuals::CLR2.GetData().GetAsBytes(),
+        Features::Aimbot::Visuals::CLR1.GetData().GetAsBytes(),
+        Features::Aimbot::Visuals::CLR3.GetData().GetAsBytes(),
+        Features::Aimbot::Visuals::CLR4.GetData().GetAsBytes(),
+        pGraphicInfo->m_flThickness, pGraphicInfo->m_flSpeed, pGraphicInfo->m_flGlowPower
+    );
+
+    vec vLastProjPos(0.0f);
+    for (int iTick = 0; iTick < TIME_TO_TICK(3.0f); iTick++)
+    {
+        F::projectileEngine.RunTick(true, pLocalPlayer);
+        const vec vProjPos = F::projectileEngine.GetPos();
+
+        if (vLastProjPos.IsEmpty() == false)
+        {
+            F::graphicsEngine.DrawLine(std::format("ProjAimbot_{}", iTick), vLastProjPos, vProjPos, qProjLauchAngles, 2000.0f + (static_cast<float>(iTick) * 50.0f), iTick % 2 == 0 ? pGraphicInfo : &graphicInfo1);
+        }
+        vLastProjPos = vProjPos;
+
+        // projectile hit Target or some obsticle, so we end drawing here
+        if (F::projectileEngine.m_projInfo.m_vEnd.isEmpty() == false ||
+            vProjPos.DistTo(m_vBestTargetFuturePos) < 50.0f)
+            return;
+    }
+}
+
+
 BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
 {
     PROFILE_FUNCTION();
@@ -254,12 +333,16 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
 
     uint32_t nTickToSimulate = TIME_TO_TICK(Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxSimulationTime.GetData().m_flVal);
 
+    std::vector<vec> vecPlayerPathRecord(nTickToSimulate);
+
     // Looping though all targets and finding the most "killable"
     for (BaseEntity* pTarget : vecTargets)
     {
+        vecPlayerPathRecord.clear();
         // Checking if in FOV or not
         // TODO : ABS origin ain't a good place to check time against, Take the center of
         //      face in the direction of target's movement. That should be a good enough place.
+
         vec vTargetsInitialPos = pTarget->GetAbsOrigin();
         vec vTargetFuturePos;
         float flAngDistance = _GetAngleFromCrosshair(vTargetsInitialPos, vAttackerEyePos, pCmd->viewangles);
@@ -282,6 +365,8 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
             float flProjectilesTimeToReach      = 0.0f;
             float flProjLaunchAngle             = 0.0f;
             vec   vFuturePos                    = F::movementSimulation.GetSimulationPos();
+            
+            vecPlayerPathRecord.push_back(vFuturePos);
             
             bool  bCanReach = false;
 
@@ -334,6 +419,10 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
             pBestTarget            = pTarget;
             flAngBestDistance      = flAngDistance;
             m_vBestTargetFuturePos = vBestHitPoint;
+            m_vFutureFootPos       = vTargetFuturePos;
+            
+            m_vecTargetPathRecord = std::move(vecPlayerPathRecord);
+            vecPlayerPathRecord.clear();
         }
     }
 

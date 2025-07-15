@@ -77,25 +77,6 @@ void DirectxHandler_t::SetShaderTime()
 }
 
 
-void DirectxHandler_t::SetSpeed(const float flSpeed)
-{
-    if (m_pEffect == nullptr)
-        return;
-
-    m_pEffect->SetFloat("flSpeed", flSpeed);
-}
-
-
-void DirectxHandler_t::SetGlowPower(const float flGlowPower)
-{
-    if (m_pEffect == nullptr)
-        return;
-
-    m_pEffect->SetFloat("flGlowPower", flGlowPower);
-}
-
-
-
 bool DirectxHandler_t::_CompileShaders(LPDIRECT3DDEVICE9 pDevice)
 {
     if (m_pEffect != nullptr)

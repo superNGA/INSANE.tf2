@@ -12,12 +12,14 @@ constexpr uint32_t VERTEX_PER_QUAD = 6u;
 inline void BuildQuad(
     const vec& vMin, 
     const vec& vMax, 
-    const qangle& qNormal, 
-    const float flThickness, 
+    const qangle& qNormal,
     Vertex_t* pStorage, 
     uint32_t iStartIndex, 
-    RGBA_t clrMin, 
-    RGBA_t clrMax)
+    RGBA_t clrMin = ERROR_CLR, 
+    RGBA_t clrMax = ERROR_CLR,
+    const float flThickness = 1.0f,
+    const float flSpeed = 0.0f,
+    const float flGlowPower = 0.0f)
 {
     if (pStorage == nullptr)
         return;
@@ -28,75 +30,34 @@ inline void BuildQuad(
     vec vDirection = (vMax - vMin).NormalizeInPlace();
     vec vRight = vDirection.CrossProduct(vForward).NormalizeInPlace();
 
-    pStorage[iStartIndex + 0]           = vMin + (vRight * flThickness * 0.5f) + (vDirection * flThickness * -0.5f);
-    pStorage[iStartIndex + 0].clr       = clrMin;
-    pStorage[iStartIndex + 0].flHeight  = 1.0f;
+    pStorage[iStartIndex + 0]               = vMin + (vRight * flThickness * 0.5f) + (vDirection * flThickness * -0.5f);
+    pStorage[iStartIndex + 0].clr           = clrMin;
+    pStorage[iStartIndex + 0].m_flHeight    = 1.0f;
+    pStorage[iStartIndex + 0].m_flSpeed     = flSpeed;
+    pStorage[iStartIndex + 0].m_flGlowPower = flGlowPower;
 
-    pStorage[iStartIndex + 1]           = vMin + (vRight * flThickness * -0.5f) + (vDirection * flThickness * -0.5f);
-    pStorage[iStartIndex + 1].clr       = clrMin;
-    pStorage[iStartIndex + 1].flHeight  = -1.0f;
+    pStorage[iStartIndex + 1]               = vMin + (vRight * flThickness * -0.5f) + (vDirection * flThickness * -0.5f);
+    pStorage[iStartIndex + 1].clr           = clrMin;
+    pStorage[iStartIndex + 1].m_flHeight    = -1.0f;
+    pStorage[iStartIndex + 1].m_flSpeed     = flSpeed;
+    pStorage[iStartIndex + 1].m_flGlowPower = flGlowPower;
 
-    pStorage[iStartIndex + 2]           = vMax + (vRight * flThickness * 0.5f) + (vDirection * flThickness * 0.5f);
-    pStorage[iStartIndex + 2].clr       = clrMax;
-    pStorage[iStartIndex + 2].flHeight  = 1.0f;
+    pStorage[iStartIndex + 2]               = vMax + (vRight * flThickness * 0.5f) + (vDirection * flThickness * 0.5f);
+    pStorage[iStartIndex + 2].clr           = clrMax;
+    pStorage[iStartIndex + 2].m_flHeight    = 1.0f;
+    pStorage[iStartIndex + 2].m_flSpeed     = flSpeed;
+    pStorage[iStartIndex + 2].m_flGlowPower = flGlowPower;
 
-    pStorage[iStartIndex + 3] = pStorage[iStartIndex + 1];
-    pStorage[iStartIndex + 4] = pStorage[iStartIndex + 2];
+    pStorage[iStartIndex + 3]               = pStorage[iStartIndex + 1];
+    pStorage[iStartIndex + 4]               = pStorage[iStartIndex + 2];
 
-    pStorage[iStartIndex + 5]           = vMax + (vRight * flThickness * -0.5f) + (vDirection * flThickness * 0.5f);
-    pStorage[iStartIndex + 5].clr       = clrMax;
-    pStorage[iStartIndex + 5].flHeight  = -1.0f;
+    pStorage[iStartIndex + 5]               = vMax + (vRight * flThickness * -0.5f) + (vDirection * flThickness * 0.5f);
+    pStorage[iStartIndex + 5].clr           = clrMax;
+    pStorage[iStartIndex + 5].m_flHeight    = -1.0f;
+    pStorage[iStartIndex + 5].m_flSpeed     = flSpeed;
+    pStorage[iStartIndex + 5].m_flGlowPower = flGlowPower;
 }
 
-inline void BuildQuad(
-    const vec& vMin, 
-    const vec& vMax, 
-    const qangle& qNormal, 
-    const float flThickness, 
-    std::vector<Vertex_t>* pStorage, 
-    RGBA_t clrMin, 
-    RGBA_t clrMax)
-{
-    if (pStorage == nullptr)
-        return;
-
-    vec vForward;
-    Maths::AngleVectors(qNormal, &vForward);
-
-    vec vDirection = (vMax - vMin).NormalizeInPlace();
-    vec vRight = vDirection.CrossProduct(vForward).NormalizeInPlace();
-
-    Vertex_t vertex;
-    vertex          = vMin + (vRight * flThickness * 0.5f) + (vDirection * flThickness * -0.5f);
-    vertex.clr      = clrMin;
-    vertex.flHeight = 1.0f;
-    pStorage->push_back(vertex);
-
-    vertex           = vMin + (vRight * flThickness * -0.5f) + (vDirection * flThickness * -0.5f);
-    vertex.clr       = clrMin;
-    vertex.flHeight  = -1.0f;
-    pStorage->push_back(vertex);
-
-    vertex          = vMax + (vRight * flThickness * 0.5f) + (vDirection * flThickness * 0.5f);
-    vertex.clr      = clrMax;
-    vertex.flHeight = 1.0f;
-    pStorage->push_back(vertex);
-
-    vertex           = vMin + (vRight * flThickness * -0.5f) + (vDirection * flThickness * -0.5f);
-    vertex.clr       = clrMin;
-    vertex.flHeight  = -1.0f;
-    pStorage->push_back(vertex);
-
-    vertex          = vMax + (vRight * flThickness * 0.5f) + (vDirection * flThickness * 0.5f);
-    vertex.clr      = clrMax;
-    vertex.flHeight = 1.0f;
-    pStorage->push_back(vertex);
-
-    vertex           = vMax + (vRight * flThickness * -0.5f) + (vDirection * flThickness * 0.5f);
-    vertex.clr       = clrMax;
-    vertex.flHeight  = -1.0f;
-    pStorage->push_back(vertex);
-}
 
 
 inline void BuildRectangle(
@@ -105,24 +66,27 @@ inline void BuildRectangle(
     const qangle& qNormal,
     Vertex_t* pStorage,
     uint32_t iStartIndex,
-    const float flThickness,
-    RGBA_t ULclr,
-    RGBA_t URclr,
-    RGBA_t BLclr,
-    RGBA_t BRclr)
+    RGBA_t ULclr = ERROR_CLR,
+    RGBA_t URclr = ERROR_CLR,
+    RGBA_t BLclr = ERROR_CLR,
+    RGBA_t BRclr = ERROR_CLR, 
+    const float flThickness = 1.0f,
+    const float flSpeed     = 0.0f,
+    const float flGlowPower = 0.0f)
 {
     // top left -> top right
-    BuildQuad(vMin, vec{ vMax.x, vMax.y, vMin.z }, qNormal, flThickness, pStorage, iStartIndex + 0, ULclr, URclr);
+    BuildQuad(vMin, vec{ vMax.x, vMax.y, vMin.z }, qNormal, pStorage, iStartIndex + 0, ULclr, URclr, flThickness, flSpeed, flGlowPower);
 
     // top right -> bottom right
-    BuildQuad(vec{ vMax.x, vMax.y, vMin.z }, vMax, qNormal, flThickness, pStorage, iStartIndex + 6, URclr, BRclr);
+    BuildQuad(vec{ vMax.x, vMax.y, vMin.z }, vMax, qNormal, pStorage, iStartIndex + 6, URclr, BRclr, flThickness, flSpeed, flGlowPower);
 
     // bottom right -> botton left
-    BuildQuad(vMax, vec{ vMin.x, vMin.y, vMax.z }, qNormal, flThickness, pStorage, iStartIndex + 12, BRclr, BLclr);
+    BuildQuad(vMax, vec{ vMin.x, vMin.y, vMax.z }, qNormal, pStorage, iStartIndex + 12, BRclr, BLclr, flThickness, flSpeed, flGlowPower);
 
     // bottom left -> top left
-    BuildQuad(vec{ vMin.x, vMin.y, vMax.z }, vMin, qNormal, flThickness, pStorage, iStartIndex + 18, BLclr, ULclr);
+    BuildQuad(vec{ vMin.x, vMin.y, vMax.z }, vMin, qNormal, pStorage, iStartIndex + 18, BLclr, ULclr, flThickness, flSpeed, flGlowPower);
 }
+
 
 
 void RectDrawObj_t::Set(const vec& vMin, const vec& vMax, const qangle& qNormal, GraphicInfo_t* pGraphicInfo)
@@ -133,15 +97,18 @@ void RectDrawObj_t::Set(const vec& vMin, const vec& vMax, const qangle& qNormal,
 
     if (pGraphicInfo == nullptr)
     {
-        BuildRectangle(vMin, vMax, qNormal, m_vecVertcies, 0, 1.0f, ERROR_CLR, ERROR_CLR, ERROR_CLR, ERROR_CLR);
+        BuildRectangle(vMin, vMax, qNormal, m_vecVertcies, 0, ERROR_CLR, ERROR_CLR, ERROR_CLR, ERROR_CLR, 1.0f, 0.0f, 0.0f);
     }
     else
     {
-        BuildRectangle(vMin, vMax, qNormal, m_vecVertcies, 0, pGraphicInfo->m_flThickness, 
+        BuildRectangle(vMin, vMax, qNormal, m_vecVertcies, 0, 
             pGraphicInfo->m_ULclr, 
             pGraphicInfo->m_URclr, 
             pGraphicInfo->m_BLclr, 
-            pGraphicInfo->m_BRclr);
+            pGraphicInfo->m_BRclr,
+            pGraphicInfo->m_flThickness,
+            pGraphicInfo->m_flSpeed,
+            pGraphicInfo->m_flGlowPower);
     }
 
 }
@@ -155,42 +122,67 @@ void CuboidDrawObj_t::Set(const vec& vMin, const vec& vMax, const qangle& qNorma
     if (pGraphicInfo == nullptr)
     {
         uint32_t iStoreIndex = 0;
-        BuildQuad(vMin, vec(vMin.x, vMax.y, vMin.z), qNormal, 1.0f, m_vecVertcies, iStoreIndex, ERROR_CLR, ERROR_CLR);
+        BuildQuad(vMin, vec(vMin.x, vMax.y, vMin.z), qNormal, m_vecVertcies, iStoreIndex);
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMax.x, vMin.y, vMin.z), vec(vMax.x, vMax.y, vMin.z), qNormal, 1.0f, m_vecVertcies, iStoreIndex, ERROR_CLR, ERROR_CLR);
+        BuildQuad(vec(vMax.x, vMin.y, vMin.z), vec(vMax.x, vMax.y, vMin.z), qNormal, m_vecVertcies, iStoreIndex);
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMax.x, vMin.y, vMax.z), vMax, qNormal, 1.0f, m_vecVertcies, iStoreIndex, ERROR_CLR, ERROR_CLR);
+        BuildQuad(vec(vMax.x, vMin.y, vMax.z), vMax, qNormal, m_vecVertcies, iStoreIndex);
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMin.x, vMin.y, vMax.z), vec(vMin.x, vMax.y, vMax.z), qNormal, 1.0f, m_vecVertcies, iStoreIndex, ERROR_CLR, ERROR_CLR);
+        BuildQuad(vec(vMin.x, vMin.y, vMax.z), vec(vMin.x, vMax.y, vMax.z), qNormal, m_vecVertcies, iStoreIndex);
         iStoreIndex += 3u * 2u;
 
-        BuildRectangle(vMin, vec(vMax.x, vMin.y, vMax.z), qNormal, m_vecVertcies, iStoreIndex, 1.0f,
-            ERROR_CLR, ERROR_CLR, ERROR_CLR, ERROR_CLR);
+        BuildRectangle(vMin, vec(vMax.x, vMin.y, vMax.z), qNormal, m_vecVertcies, iStoreIndex);
 
         iStoreIndex += 3u * 2u * 4u;
 
-        BuildRectangle(vec(vMin.x, vMax.y, vMin.z), vMax, qNormal, m_vecVertcies, iStoreIndex, 1.0f,
-            ERROR_CLR, ERROR_CLR, ERROR_CLR, ERROR_CLR);
+        BuildRectangle(vec(vMin.x, vMax.y, vMin.z), vMax, qNormal, m_vecVertcies, iStoreIndex);
     }
     else
     {
         uint32_t iStoreIndex = 0;
-        BuildQuad(vMin, vec(vMin.x, vMax.y, vMin.z), qNormal, pGraphicInfo->m_flThickness, m_vecVertcies, iStoreIndex, pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr);
+
+        BuildQuad(vMin, vec(vMin.x, vMax.y, vMin.z), 
+            qNormal, m_vecVertcies, iStoreIndex, 
+            pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr, 
+            pGraphicInfo->m_flThickness, 
+            pGraphicInfo->m_flSpeed, 
+            pGraphicInfo->m_flGlowPower);
+
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMax.x, vMin.y, vMin.z), vec(vMax.x, vMax.y, vMin.z), qNormal, pGraphicInfo->m_flThickness, m_vecVertcies, iStoreIndex, pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr);
+        BuildQuad(vec(vMax.x, vMin.y, vMin.z), vec(vMax.x, vMax.y, vMin.z), 
+            qNormal, m_vecVertcies, iStoreIndex, 
+            pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr, 
+            pGraphicInfo->m_flThickness, 
+            pGraphicInfo->m_flSpeed, 
+            pGraphicInfo->m_flGlowPower);
+
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMax.x, vMin.y, vMax.z), vMax, qNormal, pGraphicInfo->m_flThickness, m_vecVertcies, iStoreIndex, pGraphicInfo->m_BLclr, pGraphicInfo->m_BRclr);
+        BuildQuad(vec(vMax.x, vMin.y, vMax.z), vMax, 
+            qNormal, m_vecVertcies, iStoreIndex, 
+            pGraphicInfo->m_BLclr, pGraphicInfo->m_BRclr, 
+            pGraphicInfo->m_flThickness, 
+            pGraphicInfo->m_flSpeed, 
+            pGraphicInfo->m_flGlowPower);
+
         iStoreIndex += 3u * 2u;
-        BuildQuad(vec(vMin.x, vMin.y, vMax.z), vec(vMin.x, vMax.y, vMax.z), qNormal, pGraphicInfo->m_flThickness, m_vecVertcies, iStoreIndex, pGraphicInfo->m_BLclr, pGraphicInfo->m_BRclr);
+        BuildQuad(vec(vMin.x, vMin.y, vMax.z), vec(vMin.x, vMax.y, vMax.z), 
+            qNormal, m_vecVertcies, iStoreIndex, 
+            pGraphicInfo->m_BLclr, pGraphicInfo->m_BRclr, 
+            pGraphicInfo->m_flThickness, 
+            pGraphicInfo->m_flSpeed, 
+            pGraphicInfo->m_flGlowPower);
+
         iStoreIndex += 3u * 2u;
 
-        BuildRectangle(vMin, vec(vMax.x, vMin.y, vMax.z), qNormal, m_vecVertcies, iStoreIndex, pGraphicInfo->m_flThickness,
-            pGraphicInfo->m_ULclr, pGraphicInfo->m_ULclr, pGraphicInfo->m_BLclr, pGraphicInfo->m_BLclr);
+        BuildRectangle(vMin, vec(vMax.x, vMin.y, vMax.z), qNormal, m_vecVertcies, iStoreIndex,
+            pGraphicInfo->m_ULclr, pGraphicInfo->m_ULclr, pGraphicInfo->m_BLclr, pGraphicInfo->m_BLclr,
+            pGraphicInfo->m_flThickness, pGraphicInfo->m_flSpeed, pGraphicInfo->m_flGlowPower);
 
         iStoreIndex += 3u * 2u * 4u;
         
-        BuildRectangle(vec(vMin.x, vMax.y, vMin.z), vMax, qNormal, m_vecVertcies, iStoreIndex, pGraphicInfo->m_flThickness,
-            pGraphicInfo->m_URclr, pGraphicInfo->m_URclr, pGraphicInfo->m_BRclr, pGraphicInfo->m_BRclr);
+        BuildRectangle(vec(vMin.x, vMax.y, vMin.z), vMax, qNormal, m_vecVertcies, iStoreIndex,
+            pGraphicInfo->m_URclr, pGraphicInfo->m_URclr, pGraphicInfo->m_BRclr, pGraphicInfo->m_BRclr,
+            pGraphicInfo->m_flThickness, pGraphicInfo->m_flSpeed, pGraphicInfo->m_flGlowPower);
 
     }
 }
@@ -202,10 +194,14 @@ void LineDrawObj_t::Set(const vec& vMin, const vec& vMax, const qangle& qNormal,
 
     if (pGraphicInfo == nullptr)
     {
-        BuildQuad(vMin, vMax, qNormal, 1.0f, m_vecVertcies, 0, ERROR_CLR, ERROR_CLR);
+        BuildQuad(vMin, vMax, qNormal, m_vecVertcies, 0);
     }
     else
     {
-        BuildQuad(vMin, vMax, qNormal, pGraphicInfo->m_flThickness, m_vecVertcies, 0, pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr);
+        BuildQuad(vMin, vMax, qNormal, m_vecVertcies, 0, 
+            pGraphicInfo->m_ULclr, pGraphicInfo->m_URclr, 
+            pGraphicInfo->m_flThickness, 
+            pGraphicInfo->m_flSpeed, 
+            pGraphicInfo->m_flGlowPower);
     }
 }

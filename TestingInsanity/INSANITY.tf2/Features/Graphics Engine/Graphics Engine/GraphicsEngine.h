@@ -63,26 +63,31 @@ public:
     void Run(LPDIRECT3DDEVICE9 pDevice);
 
     // Drawing different stuff    
-    void DrawRect(std::string szID,
+    BaseDrawObj_t* DrawRect(std::string szID,
         const vec& vMin,
         const vec& vMax,
         const qangle& qNormal,
         const float flLife = DEFAULT_LIFE_IN_MS, 
         GraphicInfo_t* pGraphicInfo = nullptr);
 
-    void DrawBox(std::string szID,
+    BaseDrawObj_t* DrawBox(std::string szID,
         const vec& vMin,
         const vec& vMax,
         const qangle& qNormal,
         const float flLife = DEFAULT_LIFE_IN_MS,
         GraphicInfo_t* pGraphicInfo = nullptr);
     
-    void DrawLine(std::string szID,
+    BaseDrawObj_t* DrawLine(std::string szID,
         const vec& vMin,
         const vec& vMax,
         const qangle& qNormal,
         const float flLife = DEFAULT_LIFE_IN_MS,
         GraphicInfo_t* pGraphicInfo = nullptr);
+
+    void DrawLineList(std::string szID,
+        const std::vector<vec&>& vecPoints,
+        const qangle& qNormal, const bool bLock,
+        const float flLife = DEFAULT_LIFE_IN_MS, GraphicInfo_t* pGraphicInfo = nullptr);
 
     // Deleting stuff
     void FreeAllDrawObjs();
@@ -99,6 +104,7 @@ private:
         return pNewDrawObj;
     }
 
+    std::vector<std::vector<LineDrawObj_t*>> m_vecLineList = {};
 
     DrawObjList_t m_lineList;
     DrawObjList_t m_triList;
@@ -107,17 +113,6 @@ private:
     static constexpr float DEFAULT_LIFE_IN_MS = 1000.0f;
 };
 DECLARE_FEATURE_OBJECT(graphicsEngine, GraphicsEngine_t)
-
-
-
-DEFINE_FEATURE(Speed, FloatSlider_t, PLAYER, ESP,
-    1, FloatSlider_t(100.0f, 0.0f, 1000.0f), FeatureFlag_None,
-    "Speed of ESP animtion")
-
-DEFINE_FEATURE(GlowPower, FloatSlider_t, PLAYER, ESP,
-    7, FloatSlider_t(5.0f, 1.0f, 100.0f), FeatureFlag_None,
-    "ESP border thickness")
-
 
 
 /*

@@ -8,11 +8,14 @@
 struct GraphicInfo_t
 {
     GraphicInfo_t() : 
-        m_ULclr(0), m_URclr(0), m_BRclr(0), m_BLclr(0), m_flThickness(1.0f) {}
+        m_ULclr(0), m_URclr(0), m_BRclr(0), m_BLclr(0), m_flThickness(1.0f), m_flSpeed(0.0f), m_flGlowPower(0.0f)  {}
     GraphicInfo_t(
-        RGBA_t ULclr, RGBA_t URclr, RGBA_t BLclr, RGBA_t BRclr, float flThickness) :
-        m_ULclr(ULclr), m_URclr(URclr), m_BRclr(BRclr), m_BLclr(BLclr), m_flThickness(flThickness)
+        RGBA_t ULclr, RGBA_t URclr, RGBA_t BLclr, RGBA_t BRclr, 
+        float flThickness = 1.0f, float flSpeed = 0.0f, float flGlowPower = 0.0f) :
+        m_ULclr(ULclr), m_URclr(URclr), m_BRclr(BRclr), m_BLclr(BLclr), 
+        m_flThickness(flThickness), m_flSpeed(flSpeed), m_flGlowPower(flGlowPower)
     {}
+
 
     RGBA_t m_ULclr;
     RGBA_t m_URclr;
@@ -20,6 +23,8 @@ struct GraphicInfo_t
     RGBA_t m_BRclr;
 
     float m_flThickness = 1.0f;
+    float m_flSpeed     = 0.0f;
+    float m_flGlowPower = 0.0f;
 };
 
 
@@ -28,7 +33,9 @@ struct Vertex_t
     float x, y, z;
     RGBA_t clr;
 
-    float flHeight = 1.0f;
+    float m_flHeight      = 1.0f;
+    float m_flSpeed       = 0.0f;
+    float m_flGlowPower   = 0.0f;
 
     Vertex_t& operator=(const vec& other)
     {
@@ -37,9 +44,13 @@ struct Vertex_t
     }
     Vertex_t& operator=(const Vertex_t& other)
     {
-        x = other.x; y = other.y; z = other.z;
-        clr = other.clr;
-        flHeight = other.flHeight;
+        x               = other.x; 
+        y               = other.y; 
+        z               = other.z;
+        clr             = other.clr;
+        m_flHeight      = other.m_flHeight;
+        m_flSpeed       = other.m_flSpeed;
+        m_flGlowPower   = other.m_flGlowPower;
         return *this;
     }
 };
@@ -62,6 +73,7 @@ public:
     inline void SetLife(float flTimeInMs) { m_flLife = flTimeInMs; }
     inline void Lock()   { m_bLocked = true;  }
     inline void Unlock() { m_bLocked = false; }
+    inline void SetLock(const bool bLock) { m_bLocked = bLock; }
     inline bool IsLocked() const { return m_bLocked; }
 
     // Storing update time

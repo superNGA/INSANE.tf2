@@ -8,6 +8,7 @@ class BaseEntity;
 class baseWeapon;
 class CUserCmd;
 class ProjectileInfo_t;
+struct GraphicInfo_t;
 
 
 class TrajactoryLUT_t
@@ -82,17 +83,24 @@ private:
 
     // This is trajactory's look up table, used to estimate the time to reach for drag VPhyics projectiles ( which are affected by drag ).
     TrajactoryLUT_t m_lutTrajactory;
-    
+
+    // Drawing funcitons ( RGB drawing!, cool init )
+    void _DrawTargetFuturePos(GraphicInfo_t * pGraphicInfo, const qangle& qNormal);
+    void _DrawTargetPath(const qangle& qNormal, GraphicInfo_t* pGraphicInfo);
+    void _DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, const qangle& qProjLauchAngles, GraphicInfo_t* pGraphicInfo) const;
+    std::vector<vec> m_vecTargetPathRecord = {};
+
 
     // Target data...
     const qangle _GetTargetAngles(
-        ProjectileInfo_t& projInfo, 
+        ProjectileInfo_t&   projInfo, 
         BaseEntity*         pAttacker, 
         baseWeapon*         pWeapon, 
         const qangle&       qViewAngles);
     inline void _ResetTargetData() { m_pBestTarget = nullptr; }
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
+    vec         m_vFutureFootPos;
 
 
     // CVars
@@ -138,12 +146,41 @@ DEFINE_FEATURE(
 
 DEFINE_FEATURE(
     ProjAimbot_MaxSimulationTime, FloatSlider_t, Aimbot_Projectile, Aimbot, 6,
-    FloatSlider_t(2.0f, 0.5f, 5.0f), FeatureFlag_None, 
+    FloatSlider_t(2.0f, 0.5f, 5.0f), FeatureFlag_None,
     "Maximum future position to check for hitability. ( Affects Performance!! )"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_SimulateProjectile, bool, Aimbot_Projectile, Aimbot, 7, 
+    ProjAimbot_SimulateProjectile, bool, Aimbot_Projectile, Aimbot, 7,
     false, FeatureFlag_SupportKeyBind,
     "Shows the predicted path of projectiles"
 )
+
+
+DEFINE_SECTION(Visuals, "Aimbot", 11);
+
+
+DEFINE_FEATURE(Speed, FloatSlider_t, Visuals, Aimbot,
+    1, FloatSlider_t(100.0f, 0.0f, 500.0f), FeatureFlag_None,
+    "RGB speed")
+
+DEFINE_FEATURE(Thickness, FloatSlider_t, Visuals, Aimbot,
+    2, FloatSlider_t(5.0f, 1.0f, 100.0f), FeatureFlag_None,
+    "ESP border thickness")
+
+DEFINE_FEATURE(CLR1, ColorData_t, Visuals, Aimbot,
+    3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
+    "TOP_LEFT corner clr")
+DEFINE_FEATURE(CLR2, ColorData_t, Visuals, Aimbot,
+    4, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
+    "TOP_RIGHT corner clr")
+DEFINE_FEATURE(CLR3, ColorData_t, Visuals, Aimbot,
+    5, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
+    "BOTTON_LEFT corner clr")
+DEFINE_FEATURE(CLR4, ColorData_t, Visuals, Aimbot,
+    6, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
+    "BOTTOM_RIGHT corner clr")
+
+DEFINE_FEATURE(GlowPower, FloatSlider_t, Visuals, Aimbot,
+    7, FloatSlider_t(3.0f, 0.0f, 25.0f), FeatureFlag_None,
+    "Glow power maybe, IDK")
