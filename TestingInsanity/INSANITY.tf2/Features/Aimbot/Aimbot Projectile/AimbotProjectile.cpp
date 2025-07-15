@@ -14,6 +14,7 @@
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../Projectile Engine/ProjectileEngine.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
+#include "../../Graphics Engine/Graphics Engine/GraphicsEngine.h"
 
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../../Utility/ClassIDHandler/ClassIDHandler.h"
@@ -36,13 +37,6 @@ TODO :
 void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
-
-
-    // Delete this
-    // Drawing testing
-    {
-        //F::insaneOverlay.DrawRect("Test", { 0.0f, 0.0f, 0.0f }, { 100.0f, 100.0f, 100.0f });
-    }
 
 
     // Constructing LUT ( only for pipes )

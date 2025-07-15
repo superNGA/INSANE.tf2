@@ -54,6 +54,7 @@ public:
     {
         m_lastUpdateTime = std::chrono::high_resolution_clock::now();
     }
+    virtual ~BaseDrawObj_t() {}
 
     virtual inline Vertex_t* GetVertcies() { return nullptr; }
     virtual inline uint32_t  GetVertexCount() { return 0; }
@@ -97,4 +98,46 @@ public:
 private:
     static constexpr uint16_t m_iVertexCount = 3U * 2U * 4U; // vertex per triangle * triangle per side * number of sides.
     Vertex_t m_vecVertcies[m_iVertexCount]   = {};
+};
+
+
+class CuboidDrawObj_t : public BaseDrawObj_t
+{
+public:
+    CuboidDrawObj_t() : BaseDrawObj_t() {}
+
+    void Set(
+        const vec& vMin,
+        const vec& vMax,
+        const qangle& qNormal,
+        GraphicInfo_t* pGraphicInfo = nullptr);
+
+    // BaseDrawObj_t virtual fn overrides.
+    inline Vertex_t* GetVertcies()    override { return m_vecVertcies; }
+    inline uint32_t  GetVertexCount() override { return m_iVertexCount; }
+
+private:
+    static constexpr uint16_t m_iVertexCount = 3U * 2U * 12U; // Vertex per traingle * traingle per side * total sides count
+    Vertex_t m_vecVertcies[m_iVertexCount] = {};
+};
+
+
+class LineDrawObj_t : public BaseDrawObj_t
+{
+public:
+    LineDrawObj_t() : BaseDrawObj_t() {}
+
+    void Set(
+        const vec& vMin,
+        const vec& vMax,
+        const qangle& qNormal,
+        GraphicInfo_t* pGraphicInfo = nullptr);
+
+    // BaseDrawObj_t virtual fn overrides.
+    inline Vertex_t* GetVertcies()    override { return m_vecVertcies; }
+    inline uint32_t  GetVertexCount() override { return m_iVertexCount; }
+
+private:
+    static constexpr uint16_t m_iVertexCount = 3U * 2U; // Vertex per traingle * traingle per side
+    Vertex_t m_vecVertcies[m_iVertexCount] = {};
 };

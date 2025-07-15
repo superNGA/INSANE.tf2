@@ -88,7 +88,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::noSpread.Run(cmd, result); // incomplete, not working
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
-	F::esp.Run(cmd);
+	F::esp.Run(pLocalPlayer, cmd);
 
 	return result;
 }

@@ -34,6 +34,13 @@ struct ColorData_t
         b = B / 255.0f;
         a = A / 255.0f;
     }
+    ColorData_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A)
+    {
+        r = static_cast<float>(R) / 255.0f;
+        g = static_cast<float>(G) / 255.0f;
+        b = static_cast<float>(B) / 255.0f;
+        a = static_cast<float>(A) / 255.0f;
+    }
     float r, g, b, a;
 
     inline RGBA_t GetAsBytes() const

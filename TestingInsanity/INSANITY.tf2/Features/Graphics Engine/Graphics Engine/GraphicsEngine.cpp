@@ -57,6 +57,46 @@ void GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, const vec& vM
 }
 
 
+void GraphicsEngine_t::DrawBox(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
+{
+    auto it = m_triList.m_mapIDToObj.find(szID);
+    if (it == m_triList.m_mapIDToObj.end())
+    {
+        CuboidDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<CuboidDrawObj_t>(szID, m_triList);
+        pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
+        pDrawObj->SetLife(flLife);
+        return;
+    }
+
+    if (it->second->IsLocked() == true)
+        return;
+
+    reinterpret_cast<CuboidDrawObj_t*>(it->second)->Set(vMin, vMax, qNormal, pGraphicInfo);
+    it->second->SetLife(flLife);
+    return;
+}
+
+
+void GraphicsEngine_t::DrawLine(std::string szID, const vec& vMin, const vec& vMax, const qangle& qNormal, const float flLife, GraphicInfo_t* pGraphicInfo)
+{
+    auto it = m_triList.m_mapIDToObj.find(szID);
+    if (it == m_triList.m_mapIDToObj.end())
+    {
+        LineDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<LineDrawObj_t>(szID, m_triList);
+        pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
+        pDrawObj->SetLife(flLife);
+        return;
+    }
+
+    if (it->second->IsLocked() == true)
+        return;
+
+    reinterpret_cast<LineDrawObj_t*>(it->second)->Set(vMin, vMax, qNormal, pGraphicInfo);
+    it->second->SetLife(flLife);
+    return;
+}
+
+
 void GraphicsEngine_t::FreeAllDrawObjs()
 {
     m_lineList.Free();

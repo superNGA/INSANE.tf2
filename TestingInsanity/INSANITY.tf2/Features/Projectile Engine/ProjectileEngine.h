@@ -44,7 +44,7 @@ struct ProjectileInfo_t
 
     bool     m_bUsesDrag;
 
-    // This data gets cleared every call
+    // This data gets cleared every call to Initialize()
     vec      m_vStart;
     vec      m_vEnd;
     vec      m_vOrigin; // current origin

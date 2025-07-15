@@ -162,7 +162,7 @@ void DirectxHandler_t::Draw(DrawObjList_t& drawlist, LPDIRECT3DDEVICE9 pDevice)
         return;
 
     // Locking up our buffer
-    Vertex_t* pBuffer = nullptr;
+    Vertex_t* pBuffer     = nullptr;
     auto      bLockResult = drawlist.m_pVertexBuffer->Lock(0, drawlist.m_iStride * drawlist.m_nVertcies, reinterpret_cast<void**>(&pBuffer), D3DLOCK_DISCARD);
     if (FAILED(bLockResult) == true || pBuffer == nullptr)
     {
@@ -171,7 +171,7 @@ void DirectxHandler_t::Draw(DrawObjList_t& drawlist, LPDIRECT3DDEVICE9 pDevice)
     }
 
     // Dumping data into the buffer.
-    auto now = std::chrono::high_resolution_clock::now();
+    auto     now        = std::chrono::high_resolution_clock::now();
     uint32_t iCopyIndex = 0;
     std::vector<std::string> m_vecExpiredObjs = {};
 
@@ -186,6 +186,7 @@ void DirectxHandler_t::Draw(DrawObjList_t& drawlist, LPDIRECT3DDEVICE9 pDevice)
             continue;
         }
 
+        // Actual data copy here.
         memcpy(&pBuffer[iCopyIndex], drawObj->GetVertcies(), drawlist.m_iStride * drawObj->GetVertexCount());
         iCopyIndex += drawObj->GetVertexCount();
     }

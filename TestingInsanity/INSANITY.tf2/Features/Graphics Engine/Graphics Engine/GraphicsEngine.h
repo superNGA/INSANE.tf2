@@ -70,6 +70,20 @@ public:
         const float flLife = DEFAULT_LIFE_IN_MS, 
         GraphicInfo_t* pGraphicInfo = nullptr);
 
+    void DrawBox(std::string szID,
+        const vec& vMin,
+        const vec& vMax,
+        const qangle& qNormal,
+        const float flLife = DEFAULT_LIFE_IN_MS,
+        GraphicInfo_t* pGraphicInfo = nullptr);
+    
+    void DrawLine(std::string szID,
+        const vec& vMin,
+        const vec& vMax,
+        const qangle& qNormal,
+        const float flLife = DEFAULT_LIFE_IN_MS,
+        GraphicInfo_t* pGraphicInfo = nullptr);
+
     // Deleting stuff
     void FreeAllDrawObjs();
     void FindAndDelete(std::string szID);
@@ -103,3 +117,16 @@ DEFINE_FEATURE(Speed, FloatSlider_t, PLAYER, ESP,
 DEFINE_FEATURE(GlowPower, FloatSlider_t, PLAYER, ESP,
     7, FloatSlider_t(5.0f, 1.0f, 100.0f), FeatureFlag_None,
     "ESP border thickness")
+
+
+
+/*
+
+should I use lines to make line list or quads? quads will look cool. Like rally cool.
+wiht RGB n shit. but lines will be cheaper. I think imma have to go with quads. but 
+I must know the size at runtime.
+
+I think I will have to create a shit tone of these line draw objs for my line list. 
+this way I can very nicely manage the vertex count n stuff
+
+*/

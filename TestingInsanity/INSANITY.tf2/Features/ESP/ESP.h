@@ -2,12 +2,15 @@
 
 #include "../FeatureHandler.h"
 
+
 class CUserCmd;
+class BaseEntity;
+
 
 class ESP_t
 {
 public:
-    void Run(CUserCmd* pCmd);
+    void Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd);
 };
 DECLARE_FEATURE_OBJECT(esp, ESP_t)
 

@@ -5,16 +5,22 @@
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CUserCmd.h"
+#include "../../SDK/class/IVEfx.h"
+#include "../../SDK/TF object manager/TFOjectManager.h"
 
 // UTILITY
 #include "../Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../../Extra/math.h"
 
 
-void ESP_t::Run(CUserCmd* pCmd)
+void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
 {
     PROFILE_FUNCTION("ESP");
+
+    vec vForward, vUp, vRight;
+    Maths::AngleVectors(pCmd->viewangles, &vForward, &vRight, &vUp);
 
     int iLocalPlayerIndex = I::iEngine->GetLocalPlayer();
     int nEnt              = I::IClientEntityList->NumberOfEntities(false);
@@ -53,13 +59,26 @@ void ESP_t::Run(CUserCmd* pCmd)
 
         if (pEnt->GetClientClass()->m_ClassID == ClassID::CTFPlayer)
         {
-            const vec& vOrigin = pEnt->GetCollideable()->GetCollisionOrigin();
-            const vec& vMin = pEnt->GetCollideable()->OBBMins();
-            const vec& vMax = pEnt->GetCollideable()->OBBMaxs();
+            auto* pEntCollidable = pEnt->GetCollideable();
+            const vec& vOrigin = pEntCollidable->GetCollisionOrigin();
+            const vec& vMin = pEntCollidable->OBBMins();
+            const vec& vMax = pEntCollidable->OBBMaxs();
+
+            float flEntWidht  = vMax.Dist2Dto(vMin);
+            float flEntHeight = Maths::MAX<float>(vMin.z, vMax.z);
             
             const char vNum = '0' + iEntIndex;
 
-            F::graphicsEngine.DrawRect(std::format("ENT_{}", iEntIndex), vOrigin + vMin, vOrigin + vMax, pCmd->viewangles, 1000.0f, &espGraphicInfo);
+            //F::graphicsEngine.DrawRect(
+            //    std::format("ENT_{}", iEntIndex), 
+            //    vOrigin + (vRight * (flEntWidht * 0.5f)), // Bottom right corner
+            //    vOrigin + (vRight * (flEntWidht * -0.5f)) + (vUp * flEntHeight), // Top Left corner
+            //    pCmd->viewangles, 1000.0f, &espGraphicInfo);
+
+            F::graphicsEngine.DrawBox(
+                std::format("ENT_{}", iEntIndex), 
+                vOrigin + vMin, vOrigin + vMax,
+                pCmd->viewangles, 1000.0f, &espGraphicInfo);
         }
     }
 }
