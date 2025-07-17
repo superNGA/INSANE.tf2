@@ -33,6 +33,7 @@
 #include "../Features/Movement/Movement.h"
 #include "../Features/Projectile Engine/ProjectileEngine.h"
 #include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
+#include "../Features/MovementSimulation/MovementSimulation.h"
 
 Utility util;
 
@@ -42,7 +43,8 @@ Utility util;
 
 
 //=========================================================================
-// void thread1_t::execute_thread1(HINSTANCE instance)
+// void thread1_t::execute_thread1(HINST
+// ANCE instance)
 //=========================================================================
 /**
 * initialized software and runs main cheat loop
@@ -121,6 +123,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 			F::aimbotProjectile.DeleteProjLUT(); // TODO : Maybe move it to _terminate() ?
 			F::movement.Reset();
 			F::projectileEngine.Reset();
+			F::movementSimulation.ClearStrafeData();
 			entityManager.Reset();
 		}
 

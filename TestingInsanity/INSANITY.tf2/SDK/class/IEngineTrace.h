@@ -40,7 +40,7 @@ struct ray_t
 		m_vDelta  = vEnd - vStart;
 		
 		// if Length sqaured != 0
-		m_bIsSwept = ((m_vDelta.length() * m_vDelta.length()) != 0);
+		m_bIsSwept = ((m_vDelta.Length() * m_vDelta.Length()) != 0);
 		m_bIsRay   = true;
 	}
 
@@ -49,13 +49,13 @@ struct ray_t
 		m_vDelta       = vEnd - vStart;
 
 		// if Length sqaured != 0
-		m_bIsSwept     = ((m_vDelta.length() * m_vDelta.length()) != 0);
+		m_bIsSwept     = ((m_vDelta.Length() * m_vDelta.Length()) != 0);
 				
 		m_vExtends	   = vHullMax - vHullMin;
 		m_vExtends	   *= 0.5f;
 		
 		// Is this "Hull" a "ray" ? ( I did it cause valve did it, and ray traces are sensitive AF and I don't want more segfaults )
-		m_bIsRay       = ((m_vExtends.length() * m_vExtends.length()) < 1e-6);
+		m_bIsRay       = ((m_vExtends.Length() * m_vExtends.Length()) < 1e-6);
 
 		// Setting up Start Offset
 		m_vStartOffset = vHullMin + vHullMax;

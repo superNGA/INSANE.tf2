@@ -9,6 +9,8 @@
 #include "../Utility/ConsoleLogging.h"
 #include "../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../SDK/TF object manager/TFOjectManager.h"
+#include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
@@ -89,6 +91,31 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 	F::esp.Run(pLocalPlayer, cmd);
+
+
+	// Delete this
+	// Testing Strafe prediction
+	//{
+	//	PROFILE_FUNCTION("Strafe_Pred_Test");
+	//
+	//	F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
+	//	if (F::movementSimulation.Initialize(pLocalPlayer) == true)
+	//	{
+	//		vec vLastPos(0.0f);
+	//		for(int iTick = 0; iTick < TIME_TO_TICK(1.0f); iTick++)
+	//		{
+	//			F::movementSimulation.RunTick();
+	//			vec vPos = F::movementSimulation.GetSimulationPos();
+	//			if (vLastPos.IsEmpty() == false)
+	//			{
+	//				F::graphicsEngine.DrawLine(std::format("SIMTEST_{}", iTick), vLastPos, vPos, cmd->viewangles);
+	//			}
+	//			vLastPos = vPos;
+	//		}
+	//		F::movementSimulation.Restore();
+	//	}
+	//}
+
 
 	return result;
 }

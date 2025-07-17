@@ -43,13 +43,13 @@ bool ConfigHandler_t::DeleteConfigFile(const std::string& szFileName)
     
     if (HasValidExtension(szFileName) == false)
     {
-        printf("bad extensoin %s\n", szAssertedFileName.c_str());
+        FAIL_LOG("bad extensoin %s\n", szAssertedFileName.c_str());
         return false;
     }
 
     if (IsFileSigned(szAssertedFileName) == false)
     {
-        printf("bad signature %s\n", szAssertedFileName.c_str());
+        FAIL_LOG("bad signature %s\n", szAssertedFileName.c_str());
         return false;
     }
 

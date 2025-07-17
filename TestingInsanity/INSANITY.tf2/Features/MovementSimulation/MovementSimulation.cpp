@@ -1,11 +1,14 @@
 #include "MovementSimulation.h"
 
+#include <algorithm>
+
 // UTILITY
 #include "../../Extra/math.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
+#include "../ImGui/InfoWindow/InfoWindow_t.h"
 
 //SDK
 #include "../../SDK/class/CUserCmd.h"
@@ -42,6 +45,11 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
         return false;
     }
 
+    // Storing strafing data for this target
+    bool bLocalPlayer = pEnt->entindex() == I::iEngine->GetLocalPlayer();
+    m_iInitialFlags = pEnt->m_fFlags();
+    _CalculateStrafeAmmount(pEnt);
+
     // Store Original Prediction data & frame time.
     m_bOldInPrediction       = I::cPrediction->m_bInPrediction;
     m_bOldFirstTimePredicted = I::cPrediction->m_bFirstTimePredicted;
@@ -56,12 +64,40 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
     m_pPlayer->m_hGroundEntity(NULL);
 
     // Setting up Move Data
-    _SetupMove(m_pPlayer);
+    _SetupMove(m_pPlayer, bLocalPlayer);
     
     // Handling Ducking ( Glitching )
     _HandleDuck(m_pPlayer);
 
-    m_bInitialized       = true;
+    // Delete this
+    if(false)
+    {
+        float flMoveAngle = RAD2DEG(atan2f(m_moveData.m_flForwardMove, m_moveData.m_flSideMove)) - 90.0f;
+        
+        if (fabs(m_moveData.m_flSideMove) > 2.0f && fabs(m_moveData.m_flForwardMove) > 2.0f && fabs(m_flDeltaYaw) > 0.001f)
+        {
+            // NOTE : Aimming right -> negative Delta yaw | Aimming left -> Positive delta yaw.
+            if (flMoveAngle < 0.0f && m_flDeltaYaw < 0.0f)
+            {
+                WIN_LOG("strafing RIGHT | Delta yaw [ %.2f ] | moveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
+            }
+            else if (flMoveAngle > 0.0f && m_flDeltaYaw > 0.0f)
+            {
+                WIN_LOG("strafing LEFT  | Delta yaw [ %.2f ] | moveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
+            }
+            else
+            {
+                FAIL_LOG("Bullshit strafing | DeltaYaw : [ %.2f ] | MoveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
+            }
+        }
+        else
+        {
+            FAIL_LOG("Are you even strafing lil nigga?");
+        }
+    }
+
+    m_bInitialized = true;
+
     return true;
 }
 
@@ -78,6 +114,10 @@ void MovementSimulation_t::RunTick()
     I::cPrediction->m_bFirstTimePredicted = false;
     tfObject.pGlobalVar->frametime        = I::cPrediction->m_bEnginePaused == true ? 0 : tfObject.pGlobalVar->interval_per_tick;
 
+    // strafin' Predicsha'
+    if(Features::Aimbot::MovementSim::Enable_Strafe_Prediction.IsActive() == true)
+        _ApplyStrafe(m_iTick);
+
     Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &m_moveData);
     m_iLastFlags = m_pPlayer->m_fFlags();
     
@@ -91,7 +131,9 @@ void MovementSimulation_t::RunTick()
             false, 10.0f                // Depth test & duration
         );
     }
+
     m_vLastSimulatedPos = m_moveData.m_vecAbsOrigin;
+    m_iTick++;
 }
 
 void MovementSimulation_t::Restore()
@@ -107,6 +149,8 @@ void MovementSimulation_t::Restore()
     m_bSimulationRunning = false;
     m_bInitialized       = false;
 
+    m_iTick = 0;
+
     Reset();
 };
 
@@ -114,7 +158,7 @@ void MovementSimulation_t::Restore()
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-void MovementSimulation_t::_SetupMove(BaseEntity* pEnt)
+void MovementSimulation_t::_SetupMove(BaseEntity* pEnt, const bool bLocalPlayer)
 {
     m_moveData.m_bFirstRunOfFunctions = false; // Keep it false, else will do extra bullshit and performance loss :(
     m_moveData.m_bGameCodeMovedPlayer = false; // Keep false, else calls CatagorizeMovement() & I don't know WTF is that :)
@@ -123,17 +167,22 @@ void MovementSimulation_t::_SetupMove(BaseEntity* pEnt)
     m_moveData.m_vecAbsOrigin     = pEnt->GetAbsOrigin();
     m_moveData.m_vecVelocity      = pEnt->m_vecVelocity();
 
-    m_moveData.m_vecViewAngles    = pEnt->GetAbsAngles(); // Eye angle ( Same for local & world space (probably) in tf2. )
+    m_moveData.m_vecViewAngles    = bLocalPlayer == true ? pEnt->GetAbsAngles() : pEnt->m_angEyeAngles(); // Eye angle ( Same for local & world space (probably) in tf2. )
     m_moveData.m_vecAbsViewAngles = m_moveData.m_vecViewAngles;
     m_moveData.m_vecAngles        = m_moveData.m_vecViewAngles; // The game's Setupmove ( CPrediction::Setupmove ) is setting it from user cmd
     
     qangle qVelocity;
-    Maths::VectorAngles(m_moveData.m_vecVelocity, qVelocity);
-    const float flSpeed   = m_moveData.m_vecVelocity.mag();
+    Maths::VectorAnglesFromSDK(m_moveData.m_vecVelocity, qVelocity);
+    const float flSpeed   = m_moveData.m_vecVelocity.Length();
     float flThetaInDegree = m_moveData.m_vecAbsViewAngles.yaw - qVelocity.yaw;
 
-    m_moveData.m_flForwardMove = flSpeed * cos(DEG2RAD(flThetaInDegree));
-    m_moveData.m_flSideMove    = flSpeed * sin(DEG2RAD(flThetaInDegree));
+    //printf("Delta Angle : %.2f | %.2f - %.2f\n", flThetaInDegree, m_moveData.m_vecAbsViewAngles.yaw, qVelocity.yaw);
+
+    // if we don't clamp this shit, "move" will rise to 500+ when rocket jumping. ( Fairly accurate otherwise. )
+    m_moveData.m_flForwardMove = std::clamp<float>(flSpeed * cos(DEG2RAD(flThetaInDegree)), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
+    m_moveData.m_flSideMove    = std::clamp<float>(flSpeed * sin(DEG2RAD(flThetaInDegree)), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
+
+    //printf("FWD : [ %.2f ] | SD : [ %.2f ]\n", m_moveData.m_flForwardMove, m_moveData.m_flSideMove);
 }
 
 void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
@@ -151,6 +200,137 @@ void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
         *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(pEnt) + Netvars::DT_BasePlayer::m_fFlags) &= ~IN_DUCK;
     }
 }
+
+
+void MovementSimulation_t::RecordStrafeData(BaseEntity* pEnt, const bool bIsLocalPlayer)
+{
+    // Sometimes in loopback servers, local players Eye Angle is incorrect & delayed, hence we use absolute angle here.
+    float flYaw = bIsLocalPlayer == true ? pEnt->GetAbsAngles().yaw : pEnt->m_angEyeAngles().yaw;
+
+    auto it = m_mapStrafeSamples.find(pEnt);
+    if (it == m_mapStrafeSamples.end())
+    {
+        m_mapStrafeSamples.emplace(
+            pEnt,  // Key
+            std::deque<StrafeData_t>{StrafeData_t{ flYaw }} // Strafe data queue. 
+        ); 
+        return;
+    }
+    
+
+    // removing older items
+    if (it->second.size() > MAX_STRAFE_SAMPLES)
+    {
+        it->second.pop_front();
+    }
+
+    it->second.push_back(StrafeData_t{ flYaw });
+}
+
+
+void MovementSimulation_t::ClearStrafeData()
+{
+    m_mapStrafeSamples.clear();
+    m_flDeltaYaw    = 0.0f;
+    m_iInitialFlags = 0;
+}
+
+
+void MovementSimulation_t::_CalculateStrafeAmmount(BaseEntity* pEnt)
+{
+    auto it = m_mapStrafeSamples.find(pEnt);
+    if (it == m_mapStrafeSamples.end())
+        return; // We don't have no data for this target.
+
+
+    const std::deque<StrafeData_t>& qStrafeSamples = it->second;
+    int nSamples = qStrafeSamples.size();
+    if (nSamples < 3)
+        return; // we don't have enough data for this target.
+
+
+    // Calculating rate of change of view angle.
+    float flAvgDeltaYaw = 0.0f;
+
+    for (int iSampleIndex = 1; iSampleIndex < nSamples; iSampleIndex++)
+    {
+        // Calculating sum of change in yaw.
+        float flDeltaYaw = qStrafeSamples[iSampleIndex].m_flYaw -   qStrafeSamples[iSampleIndex - 1].m_flYaw;
+
+        // Handling sus angles ( i.e. angle going over the -180 to 180 seem )
+        if (fabs(flDeltaYaw) > 180.0f)
+        {
+            // Just getting the angle from the smaller side.
+            flDeltaYaw = std::remainderf(360.0f, flDeltaYaw) * -1.0f;
+
+            //FAIL_LOG("Handled sus angle");
+        }
+        
+        flAvgDeltaYaw += flDeltaYaw;
+    }
+
+    m_flDeltaYaw = flAvgDeltaYaw / static_cast<float>(nSamples - 1);
+}
+
+
+void MovementSimulation_t::_ApplyStrafe(uint32_t iTick)
+{
+    // adjusting view angles
+    m_moveData.m_vecViewAngles.yaw    += m_flDeltaYaw;
+    m_moveData.m_vecAbsViewAngles.yaw += m_flDeltaYaw;
+    m_moveData.m_vecAngles.yaw        += m_flDeltaYaw;
+
+
+    // NOTE : In Air conditions work a little differently and I have made a 
+    //      quirky solution, I hope it works. ( for ground, changing view angles work like magic )
+    if (m_iInitialFlags & FL_ONGROUND)
+        return;
+
+    
+    // We must have forward & side move inputs as non zero. else no strafing would occur.
+    constexpr float flMinMoveForStrafe = 1.0f;
+    if (fabs(m_moveData.m_flSideMove) < flMinMoveForStrafe || fabs(m_moveData.m_flForwardMove) < flMinMoveForStrafe)
+        return;
+
+    // Target must be changing angles to strafe.
+    if (fabs(m_flDeltaYaw) < 0.001f)
+        return;
+
+    // For strafing, the change-in-yaw per tick & angle of the "move" resultant vector must be of same sign.
+    // Determined experimentally cause I ain't very methamatical :(
+    float flMoveAngle   = RAD2DEG(atan2f(m_moveData.m_flForwardMove, m_moveData.m_flSideMove)) - 90.0f;
+    bool  bHaveSameSign = (flMoveAngle * m_flDeltaYaw) > 0.0f;
+    if (bHaveSameSign == false)
+        return;
+
+    vec vVelOriginal = m_moveData.m_vecVelocity;
+    vVelOriginal.z   = 0.0f;
+    float flSpeed2D  = vVelOriginal.Length2D();
+
+    qangle qVelocity;
+    Maths::VectorAnglesFromSDK(vVelOriginal, qVelocity);
+    qVelocity.yaw += m_flDeltaYaw;
+
+    // Making sure velocity yaw remains in valid range.
+    {
+        if (qVelocity.yaw > 180.0f)
+        {
+            qVelocity.yaw = -180.0f + std::fmodf(qVelocity.yaw, 180.0f);
+        }
+        else if (qVelocity.yaw < -180.0f)
+        {
+            qVelocity.yaw = 180 - std::fmod(fabs(qVelocity.yaw), 180.0f);
+        }
+    }
+
+    // Converting back to velocity
+    Maths::AngleVectors(qVelocity, &vVelOriginal);
+    vVelOriginal.NormalizeInPlace();
+    vVelOriginal *= flSpeed2D;
+    vVelOriginal.z = m_moveData.m_vecVelocity.z;
+    m_moveData.m_vecVelocity = vVelOriginal;
+}
+
 
 //=========================================================================
 //                     PLAYER DATA BACKUP

@@ -36,6 +36,22 @@ namespace Maths
         *pCos = std::cos(flRadians);
     }
 
+
+    //---------------------------------------------------------------------------------------
+    // PURPOSE : Handles source engine angle subtractions. ex : going from -179 to 179 is 2
+    //---------------------------------------------------------------------------------------
+    __forceinline float DeltaAngle(const float flSubFrom, const float flSubThis)
+    {
+        if (fabs(flSubFrom - flSubThis) > 180.0f)
+        {
+            return std::remainderf(360.0f, flSubFrom - flSubThis) * -1.0f;
+        }
+        else
+        {
+            return flSubFrom - flSubThis;
+        }
+    }
+
 //=========================================================================
 // inline void AngleVectors(const qangle& angles, vec* forward, vec* right = nullptr, vec* up = nullptr)
 //=========================================================================
@@ -85,7 +101,7 @@ namespace Maths
 // inline void ClampQAngle(qangle& anglesIn)
 //=========================================================================
 /**
-* clampes qangles to fixed values
+* clampes qangles to souce engine format ( yaw -> -180 to 180 ) ( pitch -> -89 to 89 )
 *
 * @param anglesIn : input angles, to be clamped
 **************************************************************************/
@@ -130,7 +146,7 @@ namespace Maths
 **************************************************************************/
     inline void VectorAngles(const vec& forward, qangle& angles)
     {
-        // NOTE : PITCH IS INVERTED IN TF2. CAUSE VALVE IS A FUCKING NIGGER.
+        // NOTE : PITCH IS INVERTED IN source engine.
         float yaw, pitch;
 
         if (forward.y == 0 && forward.x == 0)

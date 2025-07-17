@@ -14,6 +14,9 @@
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../Extra/math.h"
 
+// Delete this
+#include "../MovementSimulation/MovementSimulation.h"
+
 
 void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
 {
@@ -71,16 +74,20 @@ void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
             
             const char vNum = '0' + iEntIndex;
 
-            //F::graphicsEngine.DrawRect(
-            //    std::format("ENT_{}", iEntIndex), 
-            //    vOrigin + (vRight * (flEntWidht * 0.5f)), // Bottom right corner
-            //    vOrigin + (vRight * (flEntWidht * -0.5f)) + (vUp * flEntHeight), // Top Left corner
-            //    pCmd->viewangles, 1000.0f, &espGraphicInfo);
+            F::graphicsEngine.DrawRect(
+                std::format("ENT_{}", iEntIndex), 
+                vOrigin + (vRight * (flEntWidht * 0.5f)), // Bottom right corner
+                vOrigin + (vRight * (flEntWidht * -0.5f)) + (vUp * flEntHeight), // Top Left corner
+                pCmd->viewangles, 1000.0f, &espGraphicInfo);
 
-            F::graphicsEngine.DrawBox(
+            /*F::graphicsEngine.DrawBox(
                 std::format("ENT_{}", iEntIndex), 
                 vOrigin + vMin, vOrigin + vMax,
-                pCmd->viewangles, 1000.0f, &espGraphicInfo);
+                pCmd->viewangles, 1000.0f, &espGraphicInfo);*/
+
+            // Recording angle & velocity for all entities.
+            // This is a temporary solution
+            F::movementSimulation.RecordStrafeData(pEnt, false);
         }
     }
 }

@@ -201,7 +201,7 @@ struct vec
 		return (x == other.x && y == other.y && z == other.z);
 	}
 
-	float length()
+	float Length()
 	{
 		return sqrtf(x * x + y * y + z * z);
 	}
@@ -213,21 +213,12 @@ struct vec
 
 	float DistTo(const vec& other) const
 	{
-		return (*this - other).length();
+		return (*this - other).Length();
 	}
 
 	float Dist2Dto(const vec& other) const
 	{
 		return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-	}
-
-	const float mag()
-	{
-		return sqrt(x * x + y * y + z * z);
-	}
-
-	float magnitude() {
-		return sqrt(x * x + y * y + z * z);
 	}
 	
 	bool IsEmpty() const
