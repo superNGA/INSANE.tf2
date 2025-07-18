@@ -27,14 +27,14 @@
 
 /*
 DONE : 
-    -> Misses on targets flying / moving fast ( like rocket jumping niggas. ) ( still messes on surfing entities )
+    -> Misses on targets flying / moving fast ( like rocket jumping niggas. )
+    -> Reaches too late on surfing entis.
+    -> Works like shit with high ping.
 */
 
 /*
 TODO : 
-    -> Works like shit with high ping.
     -> Sometimes doesn't simulate at all & just shoots at current position.
-    -> Reaches too late on surfing entis.
 
     -> Arrows ain't hitting head all the time, most of the time.
     -> Arrows have timming error. it won't set angles at the correct tick.
@@ -63,8 +63,10 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
         m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
     }
 
-    // Return if disabled.
-    if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
+    // Return if disabled. 
+    // ( NOTE : Running for 1 extra tick is intentional. Thats helps when user has aimbot bind to mouse1 & is using compound bow
+    //          , so aimbot doesn't turn off on the exact tick when we aim. )
+    if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false && pCmd->tick_count > m_iLastAimbotTick + 1)
         return;
 
     // Get Projectile info ( like gravity, speed n stuff )
@@ -81,7 +83,8 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
         return;
 
     // Aim at calculated position
-    if (_ShouldAim(pLocalPlayer, pActiveWeapon, pCmd, projInfo) == true)
+    bool bShouldAimbotThisTick = _ShouldAim(pLocalPlayer, pActiveWeapon, pCmd, projInfo);
+    if (bShouldAimbotThisTick == true)
     {
         // Aimbot-ing.
         pCmd->viewangles    = _GetTargetAngles(projInfo, pLocalPlayer, pActiveWeapon, pCmd->viewangles);
@@ -104,6 +107,8 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 
         _ResetTargetData();
     }
+
+    m_iLastAimbotTick = pCmd->tick_count;
 }
 
 
@@ -366,12 +371,8 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
 
 float AimbotProjectile_t::_GetNetworkDelay()
 {
-    float flNetLatency = Features::Aimbot::Aimbot_Projectile::ProjAimbot_Ping_comp.IsActive() == true ?
-        I::iEngineClientReplay->GetAvgLatency(FLOW_OUTGOING) : 0.0f;
-
-    float flLerp = Features::Aimbot::Aimbot_Projectile::ProjAimbot_Lerp_comp.IsActive() == true ?
-        std::max<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate)) : 0.0f;
-
+    float flNetLatency = I::iEngineClientReplay->GetAvgLatency(FLOW_OUTGOING);
+    float flLerp       = std::max<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate));
     return flNetLatency + flLerp;
 }
 
@@ -379,9 +380,11 @@ float AimbotProjectile_t::_GetNetworkDelay()
 
 void AimbotProjectile_t::Reset()
 {
-    m_pBestTarget       = nullptr;
+    m_pBestTarget = nullptr;
     m_vBestTargetFuturePos.Init();
     m_vFutureFootPos.Init();
+    m_vecTargetPathRecord.clear();
+    m_iLastAimbotTick = 0;
 }
 
 
@@ -462,33 +465,33 @@ float AimbotProjectile_t::_GetAngleFromCrosshair(const vec& vTargetPos, const ve
 }
 
 
+
 bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_t& projInfo)
 {
     // can we even attack this tick?
     if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == false)
         return false;
 
-    float flCurTime = TICK_TO_TIME(pLocalPlayer->m_nTickBase());
+    float flCurTime  = TICK_TO_TIME(pLocalPlayer->m_nTickBase());
     bool  bShouldAim = flCurTime >= pActiveWeapon->m_flNextPrimaryAttack() && (pCmd->buttons & IN_ATTACK);
 
     bool bRequiresCharging = 
-        projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_ARROW ||
-        projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_FESTIVE_ARROW ||
+        projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_ARROW           ||
+        projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_FESTIVE_ARROW   ||
         projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_PIPEBOMB_REMOTE ||
         projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_PIPEBOMB_PRACTICE;
 
     // if doesn't require charing them aim this will work flawlessly.
     if (bRequiresCharging == false)
         return bShouldAim;
-
-    // NOTE : if we are using charging weapons, then we need to aim on the tick we lift our attack button,
-    //          that is the first tick where "bShouldAim" is false.
-    if (m_bLastShouldAim == true && bShouldAim == false)
+    
+    // Handling charging weapons
+    if (bShouldAim == false && pActiveWeapon->m_flChargeBeginTime() > 0.001f)
         return true;
 
-    m_bLastShouldAim = bShouldAim;
     return false;
 }
+
 
 
 bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin,

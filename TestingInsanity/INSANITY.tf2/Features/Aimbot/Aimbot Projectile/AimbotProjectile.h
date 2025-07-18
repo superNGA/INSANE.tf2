@@ -103,6 +103,8 @@ private:
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
     vec         m_vFutureFootPos;
+
+    uint32_t    m_iLastAimbotTick = 0;
 };
 DECLARE_FEATURE_OBJECT(aimbotProjectile, AimbotProjectile_t)
 
@@ -179,10 +181,3 @@ DEFINE_FEATURE(CLR4, ColorData_t, Visuals, Aimbot,
 DEFINE_FEATURE(GlowPower, FloatSlider_t, Visuals, Aimbot,
     7, FloatSlider_t(3.0f, 0.0f, 25.0f), FeatureFlag_None,
     "Glow power maybe, IDK")
-
-DEFINE_FEATURE(
-    ProjAimbot_Lerp_comp, bool, Aimbot_Projectile, Aimbot, 8,
-    false)
-DEFINE_FEATURE(
-    ProjAimbot_Ping_comp, bool, Aimbot_Projectile, Aimbot, 9,
-    false)
