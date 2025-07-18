@@ -11,11 +11,14 @@
 #include "../../../SDK/class/FileWeaponInfo.h"
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/class/CVar.h"
+#include "../../../SDK/class/I_EngineClientReplay.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../Projectile Engine/ProjectileEngine.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Graphics Engine/Graphics Engine/GraphicsEngine.h"
 
+// UTILITY
+#include "../../../Utility/CVar Handler/CVarHandler.h"
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../AimbotHelper.h"
@@ -23,11 +26,27 @@
 
 
 /*
+DONE : 
+    -> Misses on targets flying / moving fast ( like rocket jumping niggas. ) ( still messes on surfing entities )
+*/
+
+/*
 TODO : 
-    -> Fix visibility check.
-    -> Fix mask, getting stopped @ walkway invisible walls.
-    -> Fix initial pos for time to reach.
-    -> 
+    -> Works like shit with high ping.
+    -> Sometimes doesn't simulate at all & just shoots at current position.
+    -> Reaches too late on surfing entis.
+
+    -> Arrows ain't hitting head all the time, most of the time.
+    -> Arrows have timming error. it won't set angles at the correct tick.
+
+    -> Visibility checks are not robust.
+    -> Visibility checks are too expensive & taking too much performance.
+
+    -> Doesn't work with stickies, as its too expensive. and I won't be doing that fucking binary search method.
+
+    -> No splash damage n shit at all
+
+    -> Very cluttered file.
 */
 
 
@@ -47,9 +66,6 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     // Return if disabled.
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false)
         return;
-
-    // Initialize CVars.
-    _InitliazeCVars();
 
     // Get Projectile info ( like gravity, speed n stuff )
     auto& projInfo = F::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
@@ -71,6 +87,7 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
         pCmd->viewangles    = _GetTargetAngles(projInfo, pLocalPlayer, pActiveWeapon, pCmd->viewangles);
         *pCreatemoveResult  = false;
 
+        // Drawing
         GraphicInfo_t graphicInfo(
             Features::Aimbot::Visuals::CLR1.GetData().GetAsBytes(),
             Features::Aimbot::Visuals::CLR2.GetData().GetAsBytes(),
@@ -81,7 +98,6 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
             Features::Aimbot::Visuals::GlowPower.GetData().m_flVal
         );
 
-        // Draiwng
         _DrawProjectilePath(pLocalPlayer, pActiveWeapon, pCmd->viewangles, &graphicInfo);
         _DrawTargetFuturePos(&graphicInfo, pCmd->viewangles);
         _DrawTargetPath(pCmd->viewangles, &graphicInfo);
@@ -91,11 +107,125 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 }
 
 
+BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
+{
+    PROFILE_FUNCTION();
+
+    std::vector<BaseEntity*> vecTargets = F::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
+
+    float flAngBestDistance = std::numeric_limits<float>::infinity();
+    BaseEntity* pBestTarget = nullptr;
+
+    // Our Eyepos 
+    vec vAttackerEyePos = pAttacker->GetEyePos();
+
+    // Projectile's Gravity
+    float flProjGravity = projInfo.m_flGravityMult * CVars::sv_gravity * -1.0f;
+
+    uint32_t nTickToSimulate = TIME_TO_TICK(Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxSimulationTime.GetData().m_flVal);
+
+    std::vector<vec> vecPlayerPathRecord(nTickToSimulate);
+
+    float flNetLatencyInMs = _GetNetworkDelay(); 
+
+    // Looping though all targets and finding the most "killable"
+    for (BaseEntity* pTarget : vecTargets)
+    {
+        vecPlayerPathRecord.clear();        
+        vec vTargetsInitialPos = pTarget->GetAbsOrigin();
+        vec vTargetFuturePos;
+        float flAngDistance = _GetAngleFromCrosshair(vTargetsInitialPos, vAttackerEyePos, pCmd->viewangles);
+        if (flAngDistance > Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal)
+            continue;
+
+        // Constructing Projectile Origin for each entity.
+        qangle qAttackerToTarget;
+        Maths::VectorAnglesFromSDK(vTargetsInitialPos - vAttackerEyePos, qAttackerToTarget);
+        projInfo.SetProjectileAngle(vAttackerEyePos, qAttackerToTarget);
+
+        // Simulating Target
+        F::movementSimulation.Initialize(pTarget);
+        for (int iTick = 0; iTick < nTickToSimulate; iTick++)
+        {
+            // I absolutely didn't forgot this
+            F::movementSimulation.RunTick();
+
+            float flTargetsTimeToReachInMs     = TICK_TO_TIME(iTick);
+            float flProjectilesTimeToReachInMs = 0.0f;
+            float flProjLaunchAngle            = 0.0f;
+            vec   vFuturePos                   = F::movementSimulation.GetSimulationPos();
+            vec   vBestHitPoint                = _GetBaseHitPoint(pTarget, pWeapon, vFuturePos, projInfo, &F::movementSimulation.GetSimulationVel());
+
+            // Storing pos for drawing path later.
+            vecPlayerPathRecord.push_back(vFuturePos);
+
+            bool  bCanReach = false;
+
+            // Calculaing our projectile's time to reach to the center of the target
+            if (pWeapon->getSlot() == WPN_SLOT_PRIMARY && pAttacker->m_iClass() == TF_DEMOMAN && projInfo.m_bUsesDrag == true)
+            {
+                flProjectilesTimeToReachInMs = m_lutTrajactory.GetTravelTime(projInfo.m_vStart.Dist2Dto(vBestHitPoint), vBestHitPoint.z - projInfo.m_vStart.z, true);
+                bCanReach = true;
+            }
+            else
+            {
+                bCanReach = _SolveProjectileMotion(
+                    pAttacker, pWeapon, projInfo, vBestHitPoint, flProjLaunchAngle, flProjectilesTimeToReachInMs
+                );
+            }
+            flProjectilesTimeToReachInMs += flNetLatencyInMs;
+
+            // Exit on the first tick when projectile can reach target faster
+            if (bCanReach == true && flProjectilesTimeToReachInMs < flTargetsTimeToReachInMs)
+            {
+                vTargetFuturePos = vFuturePos;
+                break;
+            }
+        }
+        F::movementSimulation.Restore();
+
+        // if we can't hit this entity on any tick, skip
+        if (vTargetFuturePos.IsEmpty() == true)
+            continue;
+
+        // Max distance check for drag weapons
+        if (projInfo.m_bUsesDrag == true && projInfo.m_vStart.DistTo(vTargetFuturePos) > Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxDistance.GetData().m_flVal)
+            continue;
+
+        // Getting best point on target's hull to hit
+        vec vBestHitPoint;
+        bool bCanHit = _GetBestHitPointOnTargetHull(
+            pTarget, vTargetFuturePos,
+            projInfo, vBestHitPoint,
+            projInfo.m_vOrigin, projInfo.m_flSpeed,
+            flProjGravity, pAttacker, pWeapon);
+
+        if (bCanHit == false)
+            continue;
+
+        // compare against best target
+        if (flAngDistance < flAngBestDistance)
+        {
+            pBestTarget             = pTarget;
+            flAngBestDistance       = flAngDistance;
+            m_vBestTargetFuturePos  = vBestHitPoint;
+            m_vFutureFootPos        = vTargetFuturePos;
+
+            // Storing path record for best target.
+            m_vecTargetPathRecord = std::move(vecPlayerPathRecord);
+            vecPlayerPathRecord.clear();
+        }
+    }
+
+    return pBestTarget;
+}
+
+
 bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
 {
     PROFILE_FUNCTION("Proj::Solver");
 
-    float flGravity = projInfo.m_flGravityMult * m_flGravity * -1.0f;
+    float flGravity = projInfo.m_flGravityMult * CVars::sv_gravity * -1.0f;
 
     float x = projInfo.m_vOrigin.Dist2Dto(vTarget);
     float y = vTarget.z - projInfo.m_vOrigin.z;
@@ -113,14 +243,7 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
 
     // if even quadratic can't reach this point
     if (flDiscriminant < 0.0f)
-    {
-        //I::IDebugOverlay->AddTextOverlayRGB(vTarget, 0, 1.0f, 255, 0, 0, 255, "Can't reach this point");
         return false;
-    }
-    else // Drawing target
-    {
-        //I::IDebugOverlay->AddBoxOverlay(vTarget, vec(4.0f), vec(-4.0f), qangle(0.0f), 255, 0, 0, 20, 1.0f);
-    }
 
     // Getting best angles & speed
     float flSolution1       = (-(flSpeed * flSpeed) + sqrtf(flDiscriminant)) / (x * flGravity);
@@ -240,13 +363,22 @@ bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWe
 }
 
 
+
+float AimbotProjectile_t::_GetNetworkDelay()
+{
+    float flNetLatency = Features::Aimbot::Aimbot_Projectile::ProjAimbot_Ping_comp.IsActive() == true ?
+        I::iEngineClientReplay->GetAvgLatency(FLOW_OUTGOING) : 0.0f;
+
+    float flLerp = Features::Aimbot::Aimbot_Projectile::ProjAimbot_Lerp_comp.IsActive() == true ?
+        std::max<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate)) : 0.0f;
+
+    return flNetLatency + flLerp;
+}
+
+
+
 void AimbotProjectile_t::Reset()
 {
-    // CVars...
-    m_bInitializedCVars = false;
-    m_bFlipViewModels   = 0;
-    m_flGravity         = 0.0f;
-
     m_pBestTarget       = nullptr;
     m_vBestTargetFuturePos.Init();
     m_vFutureFootPos.Init();
@@ -315,119 +447,6 @@ void AimbotProjectile_t::_DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapo
     }
 }
 
-
-BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
-{
-    PROFILE_FUNCTION();
-
-    std::vector<BaseEntity*> vecTargets = F::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
-
-    float flAngBestDistance = std::numeric_limits<float>::infinity();
-    BaseEntity* pBestTarget = nullptr;
-
-    // Our Eyepos 
-    vec vAttackerEyePos = pAttacker->GetEyePos();
-
-    // Projectile's Gravity, Speed & origin
-    float flProjGravity = projInfo.m_flGravityMult * m_flGravity * -1.0f;
-
-    uint32_t nTickToSimulate = TIME_TO_TICK(Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxSimulationTime.GetData().m_flVal);
-
-    std::vector<vec> vecPlayerPathRecord(nTickToSimulate);
-
-    // Looping though all targets and finding the most "killable"
-    for (BaseEntity* pTarget : vecTargets)
-    {
-        vecPlayerPathRecord.clear();
-        // Checking if in FOV or not
-        // TODO : ABS origin ain't a good place to check time against, Take the center of
-        //      face in the direction of target's movement. That should be a good enough place.
-
-        vec vTargetsInitialPos = pTarget->GetAbsOrigin();
-        vec vTargetFuturePos;
-        float flAngDistance = _GetAngleFromCrosshair(vTargetsInitialPos, vAttackerEyePos, pCmd->viewangles);
-        if (flAngDistance > Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal)
-            continue;
-
-        // Constructing Projectile Origin for each entity.
-        qangle qAttackerToTarget;
-        Maths::VectorAnglesFromSDK(vTargetsInitialPos - vAttackerEyePos, qAttackerToTarget);
-        projInfo.SetProjectileAngle(vAttackerEyePos, qAttackerToTarget);
-
-        // Simulating Target
-        F::movementSimulation.Initialize(pTarget);
-        for (int iTick = 0; iTick < nTickToSimulate; iTick++)
-        {
-            // I absolutely didn't forgot this
-            F::movementSimulation.RunTick();
-
-            float flTargetsTimeToReach          = TICK_TO_TIME(iTick);
-            float flProjectilesTimeToReach      = 0.0f;
-            float flProjLaunchAngle             = 0.0f;
-            vec   vFuturePos                    = F::movementSimulation.GetSimulationPos();
-            
-            vecPlayerPathRecord.push_back(vFuturePos);
-            
-            bool  bCanReach = false;
-
-            // Calculaing our projectile's time to reach to the center of the target
-            if(pWeapon->getSlot() == WPN_SLOT_PRIMARY && pAttacker->m_iClass() == TF_DEMOMAN && projInfo.m_bUsesDrag == true)
-            {
-                flProjectilesTimeToReach = m_lutTrajactory.GetTravelTime(projInfo.m_vStart.Dist2Dto(vFuturePos), vFuturePos.z - projInfo.m_vStart.z, true);
-                bCanReach = true;
-            }
-            else
-            {
-                bCanReach = _SolveProjectileMotion(
-                    pAttacker, pWeapon, projInfo, vFuturePos, flProjLaunchAngle, flProjectilesTimeToReach
-                );
-            }
-
-            // Exit on the first tick when projectile can reach target faster
-            if (bCanReach == true && flProjectilesTimeToReach < flTargetsTimeToReach)
-            {
-                //LOG("Using time  ->  %.2f", flProjectilesTimeToReach);
-
-                //m_lutTrajactory.DrawClosestPointAvialable(projInfo.m_vStart, vFuturePos);
-                vTargetFuturePos = vFuturePos;
-                break;
-            }
-        }
-        F::movementSimulation.Restore();
-
-        // if we didn't found any hitable tick for this enitity than skip
-        if (vTargetFuturePos.IsEmpty() == true)
-            continue;
-
-        // Max distance check for drag weapons
-        if (projInfo.m_bUsesDrag == true && projInfo.m_vStart.DistTo(vTargetFuturePos) > Features::Aimbot::Aimbot_Projectile::ProjAimbot_MaxDistance.GetData().m_flVal)
-            continue;
-
-        // Getting best point on target's hull to hit
-        vec vBestHitPoint;
-        bool bCanHit = _GetBestHitPointOnTargetHull(
-            pTarget, vTargetFuturePos,
-            projInfo, vBestHitPoint,
-            projInfo.m_vOrigin, projInfo.m_flSpeed,
-            flProjGravity, pAttacker, pWeapon);
-        if (bCanHit == false)
-            continue;
-
-        // compare against best target
-        if (flAngDistance < flAngBestDistance)
-        {
-            pBestTarget            = pTarget;
-            flAngBestDistance      = flAngDistance;
-            m_vBestTargetFuturePos = vBestHitPoint;
-            m_vFutureFootPos       = vTargetFuturePos;
-            
-            m_vecTargetPathRecord = std::move(vecPlayerPathRecord);
-            vecPlayerPathRecord.clear();
-        }
-    }
-
-    return pBestTarget;
-}
 
 float AimbotProjectile_t::_GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles)
 {
@@ -518,7 +537,7 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
     {
         vecHitPointPriorityList = &vecHeadPriorityHitpointList;
     }
-    else if (projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_ROCKET && (pTarget->m_fFlags() & FL_ONGROUND))
+    else if (pWeapon->GetWeaponDefinitionID() != TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT && projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_ROCKET && (pTarget->m_fFlags() & FL_ONGROUND))
     {
         vecHitPointPriorityList = &vecFeetPriorityHitpointList;
     }
@@ -587,6 +606,41 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
 }
 
 
+
+
+vec AimbotProjectile_t::_GetBaseHitPoint(BaseEntity* pTarget, baseWeapon* pActiveWeapon, const vec& vPos, ProjectileInfo_t& projInfo, const vec* vVel = nullptr) const
+{
+    vec vBestHitPoint = vPos;
+    vec vMin = pTarget->GetCollideable()->OBBMins();
+    vec vMax = pTarget->GetCollideable()->OBBMaxs();
+
+    // Dimensions of the target entities hull.
+    float flLength = vMax.Dist2Dto(vMin);
+    float flHeight = Maths::MAX<float>(vMin.z, vMax.z);
+
+    if (projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_ARROW || projInfo.m_pTFWpnFileInfo->m_iProjectile == TF_PROJECTILE_FESTIVE_ARROW)
+    {
+        vBestHitPoint.z += flHeight - 2.0f;
+    }
+    else
+    {
+        vBestHitPoint.z += flHeight * 0.5f;
+    }
+
+    if (vVel != nullptr)
+    {
+        vec vVelDir = vVel->Normalize();
+        vVelDir.z   = 0.0f;
+        vVelDir *= flLength * 0.25f; // a quator of the length.
+        vBestHitPoint += vVelDir;
+    }
+
+    return vBestHitPoint;
+}
+
+
+
+
 void AimbotProjectile_t::DeleteProjLUT()
 {
     m_lutTrajactory.Delete();
@@ -613,55 +667,9 @@ const qangle AimbotProjectile_t::_GetTargetAngles(ProjectileInfo_t& projInfo, Ba
     return qBestAngles;
 }
 
-
-
-void AimbotProjectile_t::_InitliazeCVars()
-{
-    if (m_bInitializedCVars == true)
-        return;
-
-    // Getting all necessary CVars
-    m_bFlipViewModels = I::iCvar->FindVar("cl_flipviewmodels")->GetInt();
-    m_flGravity = I::iCvar->FindVar("sv_gravity")->GetFloat();
-
-    WIN_LOG("Initializd CVars");
-
-    // Initialized CVars
-    m_bInitializedCVars = true;
-}
-
-
 //=========================================================================
 //                     TRAJECTORY LOOK UP TABLE HANDLER
 //=========================================================================
-
-/*
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-
-    Max Height : 742.20 | Min Height : -4514.32 | Max Range : 2336.83
-    Total coverable Y = 5256
-    Total coverable X = 2336
-*/
-
-/*
-TODO : 
-    -> Simulate & estimate the max & min height and Max Range.
-    -> allocate memory to LUT according to that & Store that imfo.
-    -> fill up using that memory.
-    -> decide whether to make a operator or fn to look up.
-    -> test it.
-*/
 
 void TrajactoryLUT_t::Initialize(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
@@ -689,7 +697,7 @@ void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
         return;
 
     float flInitialSimAngle = m_flSimAngle;
-    //for(float flSimAngle = -89.0f; m_flSimAngle < flInitialSimAngle + 10.0f; m_flSimAngle += 1.0f)
+
     for(float flSimAngle = -89.0f; flSimAngle <= 89.0f; flSimAngle += 1.0f)
     {
         F::projectileEngine.Initialize(pLocalPlayer, pActiveWeapon, qangle(flSimAngle, 0.0f, 0.0f));
@@ -712,16 +720,13 @@ void TrajactoryLUT_t::_Fill(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
         }
     }
 
-    // if we reached from MinPitch to MaxPitch then we have filled up our Lookuptable.
-    /*if (m_flSimAngle >= MAX_PITCH - 1.0f)
-    {
-        m_bFilledTrajactoryLUT = true;
-    }*/
-
     m_bFilledTrajactoryLUT = true;
 }
 
 
+//-------------------------------------------------------------------------
+// PURPOSE : Checks index validity before trying to access element
+//-------------------------------------------------------------------------
 float TrajactoryLUT_t::_SafeGetter(uint32_t iRow, uint32_t iCol)
 {
     // out of range check

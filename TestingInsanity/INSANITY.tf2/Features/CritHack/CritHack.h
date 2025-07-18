@@ -68,11 +68,6 @@ public:
     
     void Reset();
 
-    // Crit Bucket parameters ( depends on server configuration )
-    float m_flCritBucketBottom  = 0;
-    float m_flCritBucketCap     = 0;
-    float m_flCritBucketDefault = 0;
-
 private:
     int   m_iWishSeed                    = 0;
     bool  m_bLastShotDeemedCrit          = false; // <-- This helps crithack to not break in case of accidental crits.
@@ -117,8 +112,6 @@ private:
     void _Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackStatus, 
         WeaponCritData_t* pWeaponCritData, int iPendingDamage);
 
-    void _InitializeCVars();
-
     bool _IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon);
     float _GetCritChance(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
     
@@ -137,7 +130,6 @@ private:
     std::unordered_map<BaseEntity*, HealthRecord_t> m_mapHealthRecords = {};
 
     // Crit bucket parameters
-    bool     m_bCVarsInitialized    = false;
     uint32_t m_iLocalPlayerEntIndex = 0;
     uint32_t m_iTotalDamage         = 0;
     uint32_t m_iRangedCritDamage    = 0;

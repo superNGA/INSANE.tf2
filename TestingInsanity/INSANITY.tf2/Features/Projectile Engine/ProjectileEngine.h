@@ -73,11 +73,5 @@ private:
 
     IPhysicsEnvironment* m_pEnv;
     IPhysicsObject*      m_pObj;
-
-    // CVars...
-    void _InitializeCVars();
-    bool  m_bCVarsInitialize;
-    bool  m_bFlipViewModels;
-    float m_flGravity;
 };
 DECLARE_FEATURE_OBJECT(projectileEngine, ProjectileEngine_t)

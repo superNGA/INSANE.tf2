@@ -47,7 +47,7 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
 
     // Storing strafing data for this target
     bool bLocalPlayer = pEnt->entindex() == I::iEngine->GetLocalPlayer();
-    m_iInitialFlags = pEnt->m_fFlags();
+    m_iInitialFlags   = pEnt->m_fFlags();
     _CalculateStrafeAmmount(pEnt);
 
     // Store Original Prediction data & frame time.
@@ -68,33 +68,6 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
     
     // Handling Ducking ( Glitching )
     _HandleDuck(m_pPlayer);
-
-    // Delete this
-    if(false)
-    {
-        float flMoveAngle = RAD2DEG(atan2f(m_moveData.m_flForwardMove, m_moveData.m_flSideMove)) - 90.0f;
-        
-        if (fabs(m_moveData.m_flSideMove) > 2.0f && fabs(m_moveData.m_flForwardMove) > 2.0f && fabs(m_flDeltaYaw) > 0.001f)
-        {
-            // NOTE : Aimming right -> negative Delta yaw | Aimming left -> Positive delta yaw.
-            if (flMoveAngle < 0.0f && m_flDeltaYaw < 0.0f)
-            {
-                WIN_LOG("strafing RIGHT | Delta yaw [ %.2f ] | moveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
-            }
-            else if (flMoveAngle > 0.0f && m_flDeltaYaw > 0.0f)
-            {
-                WIN_LOG("strafing LEFT  | Delta yaw [ %.2f ] | moveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
-            }
-            else
-            {
-                FAIL_LOG("Bullshit strafing | DeltaYaw : [ %.2f ] | MoveAngle : [ %.2f ]", m_flDeltaYaw, flMoveAngle);
-            }
-        }
-        else
-        {
-            FAIL_LOG("Are you even strafing lil nigga?");
-        }
-    }
 
     m_bInitialized = true;
 
@@ -176,13 +149,13 @@ void MovementSimulation_t::_SetupMove(BaseEntity* pEnt, const bool bLocalPlayer)
     const float flSpeed   = m_moveData.m_vecVelocity.Length();
     float flThetaInDegree = m_moveData.m_vecAbsViewAngles.yaw - qVelocity.yaw;
 
-    //printf("Delta Angle : %.2f | %.2f - %.2f\n", flThetaInDegree, m_moveData.m_vecAbsViewAngles.yaw, qVelocity.yaw);
-
     // if we don't clamp this shit, "move" will rise to 500+ when rocket jumping. ( Fairly accurate otherwise. )
     m_moveData.m_flForwardMove = std::clamp<float>(flSpeed * cos(DEG2RAD(flThetaInDegree)), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
     m_moveData.m_flSideMove    = std::clamp<float>(flSpeed * sin(DEG2RAD(flThetaInDegree)), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
 
-    //printf("FWD : [ %.2f ] | SD : [ %.2f ]\n", m_moveData.m_flForwardMove, m_moveData.m_flSideMove);
+    m_moveData.m_flMaxSpeed         = 10000.0f;
+    m_moveData.m_flClientMaxSpeed   = 10000.0f;
+    m_moveData.m_flConstraintRadius = 0.0f; // radius 0 means no movement constraints ?
 }
 
 void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)

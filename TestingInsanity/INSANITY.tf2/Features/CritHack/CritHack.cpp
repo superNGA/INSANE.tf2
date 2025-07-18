@@ -4,6 +4,7 @@
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/CVar Handler/CVarHandler.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/PullFromAssembly.h"
 #include "../../Extra/math.h"
@@ -17,7 +18,6 @@
 #include "../../SDK/class/CVar.h"
 #include "../../SDK/class/LocalPlayerScoring.h"
 #include "../../SDK/class/IGameEventManager.h"
-//#include "../../SDK/Class ID Manager/classIDManager.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../SDK/class/CPrediction.h"
 
@@ -76,9 +76,6 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
 
     // Record all changes in Health for Enimies.
     _StoreHealthChanges();
-
-    // Initialize CVars for this server (Updates each time disconnected, i.e. (iEngine->isinGame() == false))
-    _InitializeCVars();
 
     // Updating Weapon Crit Data
     WeaponCritData_t* pWeaponCritData = GetWeaponCritData(pActiveWeapon);
@@ -175,7 +172,7 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         Render::InfoWindow.AddToCenterConsole("CritsLeft",
             std::format("{} / {}",
                 static_cast<int32_t>(pWeaponCritData->m_flCritBucket / flLooseCost),          // Crits Left
-                static_cast<int32_t>(F::critHack.m_flCritBucketCap / flLooseCost))); // Total Potential Crits
+                static_cast<int32_t>(CVars::tf_weapon_criticals_bucket_cap / flLooseCost))); // Total Potential Crits
 
         // CRIT BAN STATUS
         switch (iBanStatus)
@@ -590,14 +587,7 @@ WeaponCritData_t* CritHack_t::GetWeaponCritData(baseWeapon* pActiveWeapon)
 
 
 void CritHack_t::Reset()
-{
-    // Resetting Crit Bucket parameters ( server specific )
-    m_bCVarsInitialized       = false;
-    m_flCritBucketBottom      = 0.0f;
-    m_flCritBucketCap         = 0.0f;
-    m_flCritBucketDefault     = 0.0f;
-
-                              
+{                              
     // Resetting...           
     m_iWishSeed               = 0;
     m_nOldCritCount           = DEFAULT_OLD_CRIT_COUNT;
@@ -707,26 +697,6 @@ MAKE_HOOK(Server_TFBaseWeapon_CalcIsAttackCriticalHelper, "48 89 5C 24 ? 55 56 5
 //=========================================================================
 //                     PRIVATE METHODS
 //=========================================================================
-void CritHack_t::_InitializeCVars()
-{
-    if (m_bCVarsInitialized == true)
-        return;
-
-    m_flCritBucketBottom  = I::iCvar->FindVar("tf_weapon_criticals_bucket_bottom")->GetFloat();
-    m_flCritBucketCap     = I::iCvar->FindVar("tf_weapon_criticals_bucket_cap")->GetFloat();
-    m_flCritBucketDefault = I::iCvar->FindVar("tf_weapon_criticals_bucket_default")->GetFloat();
-
-    m_bCVarsInitialized   = true;
-
-    WIN_LOG("Intitialized CVars for this server");
-
-#if defined(DEBUG_CRITHACK_CVAR)
-    Render::InfoWindow.AddToInfoWindow("bucket bottom",  std::format("Bucket bottom {:.2f}",  m_flCritBucketBottom));
-    Render::InfoWindow.AddToInfoWindow("bucket cap",     std::format("Bucket cap {:.2f}",     m_flCritBucketCap));
-    Render::InfoWindow.AddToInfoWindow("bucket default", std::format("Bucket default {:.2f}", m_flCritBucketDefault));
-#endif
-}
-
 bool CritHack_t::_IsWeaponEligibleForCritHack(BaseEntity* pLocalPlayer, WeaponCritData_t* pActiveWeapon)
 {
     player_class iCharChoice = pLocalPlayer->m_iClass();
@@ -875,8 +845,8 @@ void WeaponCritData_t::AddToCritBucket()
 
     // adding to crit bucket, and capping it.
     m_flCritBucket += m_flDamagePerShot;
-    if (m_flCritBucket >= F::critHack.m_flCritBucketCap)
-        m_flCritBucket = F::critHack.m_flCritBucketCap;
+    if (m_flCritBucket >= CVars::tf_weapon_criticals_bucket_cap)
+        m_flCritBucket = CVars::tf_weapon_criticals_bucket_cap;
 }
 
 
@@ -903,8 +873,8 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
 
     // deducting crit cost & capping bucket
     m_flCritBucket -= flCritCost;
-    if (m_flCritBucket < F::critHack.m_flCritBucketBottom)
-        m_flCritBucket = F::critHack.m_flCritBucketBottom;
+    if (m_flCritBucket < CVars::tf_weapon_criticals_bucket_bottom)
+        m_flCritBucket = CVars::tf_weapon_criticals_bucket_bottom;
 
     // Storing last withdrawl time
     m_flLastWithdrawlTime = tfObject.pGlobalVar->curtime;
@@ -914,7 +884,7 @@ void WeaponCritData_t::WithDrawlFromCritBucket()
 bool WeaponCritData_t::UpdateStats(baseWeapon* pWeapon)
 {
     if (m_pWeapon == nullptr)
-        m_flCritBucket = F::critHack.m_flCritBucketDefault;
+        m_flCritBucket = CVars::tf_weapon_criticals_bucket_default;
     
     // if weapon same as last tick then no worry
     if (pWeapon == m_pWeapon && pWeapon->GetWeaponDefinitionID() == m_iWeaponID)
@@ -940,12 +910,12 @@ bool WeaponCritData_t::UpdateStats(baseWeapon* pWeapon)
         m_flCritCostBase = m_flDamagePerShot * m_flBulletsShotDuringCrit;
 
         // Cap CRIT damage to bucket cap
-        if (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER > F::critHack.m_flCritBucketCap)
-            m_flCritCostBase = F::critHack.m_flCritBucketCap / TF_DAMAGE_CRIT_MULTIPLIER;
+        if (m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER > CVars::tf_weapon_criticals_bucket_cap)
+            m_flCritCostBase = CVars::tf_weapon_criticals_bucket_cap / TF_DAMAGE_CRIT_MULTIPLIER;
     }
 
     // reset bucket
-    m_flCritBucket  = F::critHack.m_flCritBucketDefault;
+    m_flCritBucket  = CVars::tf_weapon_criticals_bucket_default;
     m_nCritRequests = 0;
 
     FAIL_LOG("Resetted weapon stats");

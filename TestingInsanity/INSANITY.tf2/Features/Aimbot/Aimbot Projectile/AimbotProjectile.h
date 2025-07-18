@@ -74,12 +74,15 @@ public:
 private:
     BaseEntity* _GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd);
     bool _GetBestHitPointOnTargetHull(BaseEntity* pTarget, const vec& vTargetOrigin, ProjectileInfo_t& projInfo, vec& vBestPointOut, const vec& vProjectileOrigin, const float flProjVelocity, const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon);
+    vec _GetBaseHitPoint(BaseEntity* pTarget, baseWeapon* pActiveWeapon, const vec& vPos, ProjectileInfo_t& projInfo, const vec* vVel) const;
 
     float _GetAngleFromCrosshair(const vec& vTargetPos, const vec& vOrigin, const qangle& qViewAngles);
     bool _ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_t& projInfo);
     bool m_bLastShouldAim = false;
 
     bool _SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut);
+
+    float _GetNetworkDelay();
 
     // This is trajactory's look up table, used to estimate the time to reach for drag VPhyics projectiles ( which are affected by drag ).
     TrajactoryLUT_t m_lutTrajactory;
@@ -89,7 +92,6 @@ private:
     void _DrawTargetPath(const qangle& qNormal, GraphicInfo_t* pGraphicInfo);
     void _DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, const qangle& qProjLauchAngles, GraphicInfo_t* pGraphicInfo) const;
     std::vector<vec> m_vecTargetPathRecord = {};
-
 
     // Target data...
     const qangle _GetTargetAngles(
@@ -101,13 +103,6 @@ private:
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetFuturePos;
     vec         m_vFutureFootPos;
-
-
-    // CVars
-    void  _InitliazeCVars();
-    bool  m_bInitializedCVars = false;
-    int   m_bFlipViewModels   = false;
-    float m_flGravity         = 0.0f;
 };
 DECLARE_FEATURE_OBJECT(aimbotProjectile, AimbotProjectile_t)
 
@@ -184,3 +179,10 @@ DEFINE_FEATURE(CLR4, ColorData_t, Visuals, Aimbot,
 DEFINE_FEATURE(GlowPower, FloatSlider_t, Visuals, Aimbot,
     7, FloatSlider_t(3.0f, 0.0f, 25.0f), FeatureFlag_None,
     "Glow power maybe, IDK")
+
+DEFINE_FEATURE(
+    ProjAimbot_Lerp_comp, bool, Aimbot_Projectile, Aimbot, 8,
+    false)
+DEFINE_FEATURE(
+    ProjAimbot_Ping_comp, bool, Aimbot_Projectile, Aimbot, 9,
+    false)

@@ -41,6 +41,27 @@ private:
 	virtual void* DUMMY_FUNCTION_12() = 0;
 public:
 	virtual global_var_base* GetClientGlobalVars() = 0; // 13th starting from 0
+
+
+	// Wrapper Fns for latency.
+	inline float GetCurrentLatency(int iFlowType)
+	{
+		auto* pNetChannel = GetNetChannel();
+		if (pNetChannel != nullptr)
+		{
+			return pNetChannel->GetLatency(iFlowType);
+		}
+		return 0.0f;
+	}
+	inline float GetAvgLatency(int iFlowType)
+	{
+		auto* pNetChannel = GetNetChannel();
+		if (pNetChannel != nullptr)
+		{
+			return pNetChannel->GetAvgLatency(iFlowType);
+		}
+		return 0.0f;
+	}
 };
 
 MAKE_INTERFACE_VERSION(iEngineClientReplay, "EngineClientReplay001", I_engine_client_replay, ENGINE_DLL);

@@ -24,6 +24,7 @@
 
 // UTILITY
 #include "../../Utility/ConsoleLogging.h"
+#include "../../Utility/CVar Handler/CVarHandler.h"
 #include "../../Extra/math.h"
 
 ProjectileEngine_t::ProjectileEngine_t()
@@ -32,10 +33,6 @@ ProjectileEngine_t::ProjectileEngine_t()
     m_pObj = nullptr;
 
     m_projInfo.Reset();
-
-    m_bCVarsInitialize  = false;
-    m_bFlipViewModels   = false;
-    m_flGravity         = 0.0f;
 }
 
 //=========================================================================
@@ -43,9 +40,6 @@ ProjectileEngine_t::ProjectileEngine_t()
 //=========================================================================
 bool ProjectileEngine_t::Initialize(BaseEntity* pWeaponOwner, baseWeapon* pWeapon, const qangle& qOwnerAngles)
 {
-    // Initializing CVars
-    _InitializeCVars();
-
     // Getting info about this projectile & setup angles & origin
     SetupProjectile(pWeapon, pWeaponOwner, qOwnerAngles);
 
@@ -63,10 +57,6 @@ bool ProjectileEngine_t::Initialize(BaseEntity* pWeaponOwner, baseWeapon* pWeapo
 void ProjectileEngine_t::Reset()
 {
     _DeletePhysicsObjects();
-
-    // This forces refreshing CVars via InitializeCVars();
-    m_bCVarsInitialize = false;
-    
     m_projInfo.Reset();
 }
 
@@ -102,7 +92,7 @@ void ProjectileEngine_t::RunTick(bool bTrace = true, BaseEntity* pIgnoreEnt = nu
 
 ProjectileInfo_t& ProjectileEngine_t::SetupProjectile(baseWeapon* pWeapon, BaseEntity* pWeaponOwner, const qangle& qOwnerAngles)
 {
-    m_projInfo.Initialize(pWeapon, pWeaponOwner->m_fFlags() & FL_DUCKING, m_bFlipViewModels);
+    m_projInfo.Initialize(pWeapon, pWeaponOwner->m_fFlags() & FL_DUCKING, CVars::cl_flipviewmodels != 0);
 
     // Adjusting velocity & gravity for charging weapons
     _AccountForCharge(pWeapon, pWeaponOwner);
@@ -134,7 +124,7 @@ void ProjectileEngine_t::_AccountForCharge(baseWeapon* pWeapon, BaseEntity* pWea
             flCharge = Maths::MIN<float>(flCurTime - pWeapon->m_flChargeBeginTime(), 1.0f);
         }
 
-        m_projInfo.m_flSpeed = Maths::RemapValClamped(flCharge, 0.0f, 1.f, 1800.0f, 2600.0f);
+        m_projInfo.m_flSpeed       = Maths::RemapValClamped(flCharge, 0.0f, 1.f, 1800.0f, 2600.0f);
         m_projInfo.m_flGravityMult = Maths::RemapValClamped(flCharge, 0.0f, 1.f, 0.5, 0.1);
 
         break;
@@ -230,7 +220,7 @@ bool ProjectileEngine_t::_SetupPhysicsObject()
 
     // Env settings
     m_pEnv->SetPerformanceSettings(&envParams);
-    m_pEnv->SetGravity(vec(0.0f, 0.0f, -1.0f * m_flGravity * m_projInfo.m_flGravityMult));
+    m_pEnv->SetGravity(vec(0.0f, 0.0f, -1.0f * CVars::sv_gravity * m_projInfo.m_flGravityMult));
     m_pEnv->SetAirDensity(2.0f); // this is default
     m_pEnv->ResetSimulationClock(); // I think its good to have, spook
 
@@ -271,19 +261,6 @@ void ProjectileEngine_t::_DeletePhysicsObjects()
 }
 
 
-
-void ProjectileEngine_t::_InitializeCVars()
-{
-    if (m_bCVarsInitialize == true)
-        return;
-
-    m_bFlipViewModels  = I::iCvar->FindVar("cl_flipviewmodels")->GetInt();
-    m_flGravity        = I::iCvar->FindVar("sv_gravity")->GetFloat();
-
-    m_bCVarsInitialize = true;
-}
-
-
 //=========================================================================
 //                     PROJECTILE INFO METHODS
 //=========================================================================
@@ -307,7 +284,7 @@ void ProjectileInfo_t::SetProjectileAngle(const vec& vOwnerEyePos, const qangle&
     // Angles
     vec vOwnerAngles;
     Maths::AngleVectors(qOwnerAngles, &vOwnerAngles);
-    Maths::VectorAnglesFromSDK((vOwnerEyePos + (vOwnerAngles * 2000.0f)) - vOwnerEyePos, m_qAngles);
+    Maths::VectorAnglesFromSDK(vOwnerAngles * 2000.0f, m_qAngles);
 
     // Origin
     vec vForward, vRight, vUp;

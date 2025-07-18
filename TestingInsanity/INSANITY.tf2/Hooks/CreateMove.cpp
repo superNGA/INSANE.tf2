@@ -9,6 +9,7 @@
 #include "../Utility/ConsoleLogging.h"
 #include "../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../Utility/CVar Handler/CVarHandler.h"
 #include "../SDK/TF object manager/TFOjectManager.h"
 #include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 
@@ -40,8 +41,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 		return result;
 
 	PROFILE_THREAD();
-
-	F::classIDHandler.Initialize();
 
 	// Getting Local Player
 	BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
@@ -91,7 +90,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 	F::esp.Run(pLocalPlayer, cmd);
-
 
 	// Delete this
 	// Testing Strafe prediction
