@@ -122,22 +122,18 @@ void Movement_t::_AutoStrafer(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
 	if (Features::Movement::Movement::DirectionStrafe.IsActive() == false)
 		return;
 
-	// Users on ground.
+	// is in air ?
 	if (pLocalPlayer->m_fFlags() & FL_ONGROUND)
 		return;
 
-	// User doesn't wanna move.
+	// Does user wanna strafe ?
 	if (pCmd->forwardmove == 0.0f && pCmd->sidemove == 0.0f)
 		return;
 
 	vec vVelocity = pLocalPlayer->m_vecVelocity();
 	vVelocity.z   = 0.0f;
 
-	float flSpeed = vVelocity.Length();
-	if (flSpeed <= 0.0f)
-		return;
-
-	// Getting the angles where user wants to go. [ WORKING ]
+	// Getting the angles where user wants to strafe to.
 	qangle qFinalAngles;
 	{
 		vec vMoves(pCmd->forwardmove, pCmd->sidemove, 0.0f);
@@ -146,46 +142,28 @@ void Movement_t::_AutoStrafer(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
 
 		qMoves.yaw *= -1.0f;
 		Maths::WrapYaw(qMoves);
-		//printf("DESIRED YAW : %.2f | ", qMoves.yaw);
 
 		qFinalAngles.yaw = pCmd->viewangles.yaw + qMoves.yaw;
 		Maths::WrapYaw(qFinalAngles);
 	}
-	I::IDebugOverlay->AddAngleOverlay(qFinalAngles, pLocalPlayer->GetAbsOrigin(), 100.0f, 0, 255, 0, 255, 1.0f);
 
-
-	qangle qVelocity;
-	Maths::VectorAnglesFromSDK(vVelocity, qVelocity);
-	Maths::WrapYaw(qVelocity);
-
-	// Strafing done ?
-	if (fabs(Maths::DeltaAngle(qVelocity.yaw, qFinalAngles.yaw)) < 5.0f)
+	// Current Velocity angles.
+	qangle qVelocity;  Maths::VectorAnglesFromSDK(vVelocity, qVelocity); Maths::WrapYaw(qVelocity);
+	
+	// Angle from Current Velocity to "Where we wanna go" ( signed )
+	float flDelta = Maths::DeltaAngle(qVelocity.yaw, qFinalAngles.yaw);
+	if (fabs(flDelta) <= 5.0f)
 		return;
 
-	// Rotating
-	float flDeltaYaw	  = Maths::DeltaAngle(qVelocity.yaw, qFinalAngles.yaw);
-	float flAngleStepSize = Features::Movement::Movement::AutoStrafe_Agression.GetData().m_flVal;
-	float flAngleOffset   = flDeltaYaw >= 0.0f ? flAngleStepSize : -flAngleStepSize;
-	qVelocity.yaw		 += flAngleOffset;
-	I::IDebugOverlay->AddAngleOverlay(qVelocity, pLocalPlayer->GetAbsOrigin(), 100.0f, 255, 0, 0, 255, 1.0f);
-	//printf("[ %s ] gonna add-> %.2f | angle between velocity & where we wanna go : %.2f\n", flAngleOffset >= 0.0f ? "RIGHT" : "LEFT", flAngleOffset, flDeltaYaw);
-	
-	// Getting Forward & side move values for desired strafe.
-	{
-		float flWishDirDelta = Maths::DeltaAngle(pCmd->viewangles.yaw, qVelocity.yaw);
-		//printf("Angle between view & velocity + strafe : %.2f  |  ", flWishDirDelta);
+	// Constructing Wish Direction ( 90 degrees more than velocity direction, in the side where we wanna go. )
+	float flWishDirYaw = qVelocity.yaw;
+	flWishDirYaw      += (flDelta >= 0.0f ? 90.0f : -90.0f) + (flDelta * Features::Movement::Movement::AutoStrafe_Agression.GetData().m_flVal);
+	flWishDirYaw	   = Maths::DeltaAngle(pCmd->viewangles.yaw, flWishDirYaw);
 
-		constexpr float flMaxMoveMagnitude = MAX_MOVE_USERCMD * 1.41421356237f;
-		pCmd->sidemove	  = flMaxMoveMagnitude * cosf(DEG2RAD(flWishDirDelta)) * (flDeltaYaw >= 0.0f ? -1.0f : 1.0f);
-		pCmd->forwardmove = flMaxMoveMagnitude * sinf(DEG2RAD(flWishDirDelta)) * (flDeltaYaw >= 0.0f ? -1.0f : 1.0f);
-
-		//printf("SideMove : cos(%.2f) | FwdMove : sin(%.2f) | ", flWishDirDelta, flWishDirDelta);
-	}
-
-	pCmd->forwardmove = std::clamp<float>(pCmd->forwardmove, -450.0f, 450.0f);
-	pCmd->sidemove	  = std::clamp<float>(pCmd->sidemove,	 -450.0f, 450.0f);
-
-	//printf("F : %.2f , S : %.2f\n", pCmd->forwardmove, pCmd->sidemove);
+	// Converting Wish direction to appropriate Forward & Side move.
+	constexpr float flMaxMoveMagnitude = MAX_MOVE_USERCMD * 1.41421356237f;
+	pCmd->forwardmove = std::clamp<float>(cosf(DEG2RAD(flWishDirYaw)) * flMaxMoveMagnitude, -450.0f, 450.0f);
+	pCmd->sidemove    = std::clamp<float>(sinf(DEG2RAD(flWishDirYaw)) * flMaxMoveMagnitude, -450.0f, 450.0f) * -1.0f; // SIDE MOVE IS FUCKING INVERTED. WHO THE FUCK MADE THIS FUCKING SOURCE ENGINE! WHY DOES IT USE SO FUCKED UP ANGLES! WHY IS THE FUCKING PITCH INVERTED! WHY IS EVERYTHING OPPOSITE OF WHAT IT SHOULD BE!!!!!!!!
 }
 
 

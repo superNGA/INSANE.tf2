@@ -39,4 +39,5 @@ DEFINE_FEATURE(AutoRocketJump, bool, Movement, Movement, 2, false, FeatureFlag_S
 DEFINE_FEATURE(ThirdPerson,    bool, Movement, Movement, 3, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
 DEFINE_FEATURE(DirectionStrafe,bool, Movement, Movement, 4, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
 DEFINE_FEATURE(AutoStrafe_Agression, FloatSlider_t, Movement, Movement, 5, 
-    FloatSlider_t(2.0f, 0.0f, 90.0f))
+    FloatSlider_t(0.05f, 0.0f, 0.5f), FeatureFlag_None,
+    "Smaller agression is recommended ( Default is pretty good )")

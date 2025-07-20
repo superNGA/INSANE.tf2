@@ -44,6 +44,10 @@ namespace Maths
     {
         qAngleIn.yaw = std::remainderf(qAngleIn.yaw, 360.0f);
     }
+    __forceinline float WrapYaw(const float flAngleIn)
+    {
+        return std::remainderf(flAngleIn, 360.0f);
+    }
 
     //---------------------------------------------------------------------------------------
     // PURPOSE : Handles source engine angle subtractions. ex : going from -179 to 179 is 2
