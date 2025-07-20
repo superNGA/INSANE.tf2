@@ -8,9 +8,8 @@
 
 #include "../Features/Anti Aim/AntiAim.h"
 #include "../Features/FeatureHandler.h"
+#include "../Features/Aimbot/AimbotHelper.h"
 
-DEFINE_SECTION(View, "Misc", 2)
-DEFINE_FEATURE(FOV, FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
 
 MAKE_HOOK(OverrideView, "48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, int64_t, 
 	void* pVTable, CViewSetup* pViewSetup)

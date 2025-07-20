@@ -91,6 +91,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 	F::esp.Run(pLocalPlayer, cmd);
 
+
 	// Delete this
 	// Testing Strafe prediction
 	//{

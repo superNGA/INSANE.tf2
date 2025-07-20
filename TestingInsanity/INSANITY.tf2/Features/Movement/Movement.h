@@ -18,6 +18,7 @@ private:
     void _Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
     void _RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWeapon, BaseEntity* pLocalPlayer);
     void _ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
+    void _AutoStrafer(BaseEntity* pLocalPlayer, CUserCmd* pCmd);
 
     void _InitializeKeyCodes();
 
@@ -36,3 +37,6 @@ DEFINE_SECTION(Movement, "Movement", 1)
 DEFINE_FEATURE(Bhop,           bool, Movement, Movement, 1, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)
 DEFINE_FEATURE(AutoRocketJump, bool, Movement, Movement, 2, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind | FeatureFlag_DisableWhileMenuOpen)
 DEFINE_FEATURE(ThirdPerson,    bool, Movement, Movement, 3, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
+DEFINE_FEATURE(DirectionStrafe,bool, Movement, Movement, 4, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
+DEFINE_FEATURE(AutoStrafe_Agression, FloatSlider_t, Movement, Movement, 5, 
+    FloatSlider_t(2.0f, 0.0f, 90.0f))

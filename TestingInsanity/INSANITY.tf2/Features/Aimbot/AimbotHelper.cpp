@@ -4,6 +4,7 @@
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/class/IVEngineClient.h"
+#include "../../SDK/class/IVDebugOverlay.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 
 // AIMBOTS
@@ -21,17 +22,19 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
 
-    auto iProjectileType = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_iProjectile;
-
+    auto  iProjectileType = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_iProjectile;
+    float flAimbotFOV     = 0.0f;
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
         F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        flAimbotFOV = Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal;
     }
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
         // surface-to-air freedom dilivery system :)
         F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
     }
     else
     {

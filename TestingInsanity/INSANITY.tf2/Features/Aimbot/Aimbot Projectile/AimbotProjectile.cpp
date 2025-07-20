@@ -1,3 +1,11 @@
+//=========================================================================
+//                      PROJECTILE AIMBOT
+//=========================================================================
+// by      : INSANE
+// created : 21/06/2025
+// 
+// purpose : Aimbots projectiles :)
+//-------------------------------------------------------------------------
 #include "AimbotProjectile.h"
 
 // SDK
@@ -30,6 +38,7 @@ DONE :
     -> Misses on targets flying / moving fast ( like rocket jumping niggas. )
     -> Reaches too late on surfing entis.
     -> Works like shit with high ping.
+    -> Arrows have timming error. it won't set angles at the correct tick.
 */
 
 /*
@@ -37,7 +46,6 @@ TODO :
     -> Sometimes doesn't simulate at all & just shoots at current position.
 
     -> Arrows ain't hitting head all the time, most of the time.
-    -> Arrows have timming error. it won't set angles at the correct tick.
 
     -> Visibility checks are not robust.
     -> Visibility checks are too expensive & taking too much performance.
@@ -45,8 +53,6 @@ TODO :
     -> Doesn't work with stickies, as its too expensive. and I won't be doing that fucking binary search method.
 
     -> No splash damage n shit at all
-
-    -> Very cluttered file.
 */
 
 
@@ -64,8 +70,8 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     }
 
     // Return if disabled. 
-    // ( NOTE : Running for 1 extra tick is intentional. Thats helps when user has aimbot bind to mouse1 & is using compound bow
-    //          , so aimbot doesn't turn off on the exact tick when we aim. )
+    // ( NOTE : Running for 1 extra tick is intentional. Thats helps when user has aimbot bind to mouse1 & is using compound bow,
+    //          so aimbot doesn't turn off on the exact tick when we aim. )
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false && pCmd->tick_count > m_iLastAimbotTick + 1)
         return;
 

@@ -88,8 +88,8 @@ void MovementSimulation_t::RunTick()
     tfObject.pGlobalVar->frametime        = I::cPrediction->m_bEnginePaused == true ? 0 : tfObject.pGlobalVar->interval_per_tick;
 
     // strafin' Predicsha'
-    if(Features::Aimbot::MovementSim::Enable_Strafe_Prediction.IsActive() == true)
-        _ApplyStrafe(m_iTick);
+    _ApplyStrafe(m_iTick);
+        
 
     Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &m_moveData);
     m_iLastFlags = m_pPlayer->m_fFlags();

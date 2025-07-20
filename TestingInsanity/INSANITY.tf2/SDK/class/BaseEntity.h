@@ -11,6 +11,7 @@ NETVAR(m_lifeState,				 DT_BasePlayer)
 NETVAR(m_iHealth,				 DT_BasePlayer)
 NETVAR(m_fFlags,				 DT_BasePlayer)
 NETVAR(m_flMaxspeed,			 DT_BasePlayer)
+NETVAR(m_iFOV,					 DT_BasePlayer)
 								 
 								 
 // BaseEntity					 
@@ -89,6 +90,7 @@ public:
 	NETVAR_GETTER(m_iHealth, DT_BasePlayer, int32_t)
 	NETVAR_GETTER(m_fFlags, DT_BasePlayer, int32_t)
 	NETVAR_SETTER(m_fFlags, DT_BasePlayer, int32_t)
+	NETVAR_GETTER(m_iFOV, DT_BasePlayer,   int32_t)
 	
 	NETVAR_GETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)

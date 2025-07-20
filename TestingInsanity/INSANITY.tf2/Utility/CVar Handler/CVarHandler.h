@@ -54,6 +54,7 @@ REGISTER_CVAR_FLOAT(sv_gravity)
 REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_bottom)
 REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_cap)
 REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_default)
+REGISTER_CVAR_FLOAT(sv_airaccelerate)
 
 REGISTER_CVAR_FLOAT(cl_interp)
 REGISTER_CVAR_FLOAT(cl_interp_ratio)

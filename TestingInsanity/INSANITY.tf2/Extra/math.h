@@ -37,19 +37,25 @@ namespace Maths
     }
 
 
+    //-------------------------------------------------------------------------
+    // PURPOSE : If yaw exceds the -180 to 180 range, this fn wraps it around to get proper yaw.
+    //-------------------------------------------------------------------------
+    __forceinline void WrapYaw(qangle& qAngleIn)
+    {
+        qAngleIn.yaw = std::remainderf(qAngleIn.yaw, 360.0f);
+    }
+
     //---------------------------------------------------------------------------------------
     // PURPOSE : Handles source engine angle subtractions. ex : going from -179 to 179 is 2
     //---------------------------------------------------------------------------------------
-    __forceinline float DeltaAngle(const float flSubFrom, const float flSubThis)
+    __forceinline float DeltaAngle(const float flStart, const float flEnd)
     {
-        if (fabs(flSubFrom - flSubThis) > 180.0f)
+        if (flStart * flEnd < 0.0f && fabs(flEnd - flStart) > 180.0f)
         {
-            return std::remainderf(360.0f, flSubFrom - flSubThis) * -1.0f;
+            return (360.0f - (fabs(flStart) + fabs(flEnd))) * (flStart >= 0.0f ? 1.0f : -1.0f);
         }
-        else
-        {
-            return flSubFrom - flSubThis;
-        }
+        
+        return flEnd - flStart;
     }
 
 //=========================================================================

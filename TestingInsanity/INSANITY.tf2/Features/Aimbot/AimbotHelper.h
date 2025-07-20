@@ -57,7 +57,12 @@ private:
 
     void _ConstructAimbotTargetData();
     void _ClearAimbotData();
+
+    void _DrawFOVCircle(const float FOV);
 };
 DECLARE_FEATURE_OBJECT(aimbotHelper, AimbotHelper_t)
 
 DEFINE_TAB(Aimbot, 6)
+
+DEFINE_SECTION(View, "Misc", 2)
+DEFINE_FEATURE(FOV, FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
