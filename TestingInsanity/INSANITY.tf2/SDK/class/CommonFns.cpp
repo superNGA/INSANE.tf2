@@ -14,7 +14,7 @@ bool SDK::InAttack(BaseEntity* pPlayer, baseWeapon* pWeapon, CUserCmd* pCmd)
 }
 
 
-bool SDK::CanAttack(BaseEntity* pPlayer, baseWeapon* pWeapon, CUserCmd* pCmd)
+bool SDK::CanAttack(BaseEntity* pPlayer, baseWeapon* pWeapon)
 {    
     // We got ammo ?
     if (pWeapon->getSlot() != WPN_SLOT_MELLE && pWeapon->m_iClip1() == 0)

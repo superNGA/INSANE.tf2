@@ -79,7 +79,7 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     auto& projInfo = F::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
 
     // Scanning for target
-    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == true)
+    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true)
     {
         m_pBestTarget = _GetBestTarget(projInfo, pLocalPlayer, pActiveWeapon, pCmd);
     }
@@ -475,7 +475,7 @@ float AimbotProjectile_t::_GetAngleFromCrosshair(const vec& vTargetPos, const ve
 bool AimbotProjectile_t::_ShouldAim(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, ProjectileInfo_t& projInfo)
 {
     // can we even attack this tick?
-    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == false)
+    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
         return false;
 
     float flCurTime  = TICK_TO_TIME(pLocalPlayer->m_nTickBase());

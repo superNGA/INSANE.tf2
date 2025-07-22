@@ -50,7 +50,7 @@ public:
     MovementSimulation_t() { Reset(); }
     void Reset();
 
-    bool Initialize(BaseEntity* pEnt);
+    bool Initialize(BaseEntity* pEnt, bool bStrafePrediction = true);
     void RunTick();
     void Restore();
 
@@ -65,6 +65,7 @@ public:
 
 private:
     bool     m_bInitialized           = false;
+    bool     m_bUseStrafePrediction   = false;
     bool     m_bOldInPrediction       = false;
     bool     m_bOldFirstTimePredicted = false;
     float    m_flOldFrameTime         = 0.0f;

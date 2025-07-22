@@ -117,6 +117,7 @@ void Movement_t::_ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPl
 }
 
 
+// It took me shamefully long to make this :(. But its done now :)
 void Movement_t::_AutoStrafer(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
 {
 	if (Features::Movement::Movement::DirectionStrafe.IsActive() == false)

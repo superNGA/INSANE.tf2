@@ -26,6 +26,7 @@ void MovementSimulation_t::Reset()
 
     m_bOldInPrediction       = false;
     m_bOldFirstTimePredicted = false;
+    m_bUseStrafePrediction   = false;
     m_flOldFrameTime         = 0.0f;
 
     m_pPlayer                = nullptr;
@@ -37,13 +38,15 @@ void MovementSimulation_t::Reset()
     memset(&m_dummyCmd,         0, sizeof(CUserCmd));
 }
 
-bool MovementSimulation_t::Initialize(BaseEntity* pEnt)
+bool MovementSimulation_t::Initialize(BaseEntity* pEnt, bool bStrafePrediction)
 {
     if (m_bSimulationRunning == true)
     {
         FAIL_LOG("SIMULATION ALREADY RUNNING !!!! STUPID ASS MONKEY !!! SKILL ISSUES !!!");
         return false;
     }
+
+    m_bUseStrafePrediction = bStrafePrediction;
 
     // Storing strafing data for this target
     bool bLocalPlayer = pEnt->entindex() == I::iEngine->GetLocalPlayer();
@@ -88,8 +91,8 @@ void MovementSimulation_t::RunTick()
     tfObject.pGlobalVar->frametime        = I::cPrediction->m_bEnginePaused == true ? 0 : tfObject.pGlobalVar->interval_per_tick;
 
     // strafin' Predicsha'
-    _ApplyStrafe(m_iTick);
-        
+    if(m_bUseStrafePrediction == true)
+        _ApplyStrafe(m_iTick);
 
     Sig::CTFGameMovement_ProcessMovement(I::iGameMovement, m_pPlayer, &m_moveData);
     m_iLastFlags = m_pPlayer->m_fFlags();
@@ -119,8 +122,9 @@ void MovementSimulation_t::Restore()
     m_playerDataBackup.Restore(m_pPlayer);
 
     // set movement simulator as free :)
-    m_bSimulationRunning = false;
-    m_bInitialized       = false;
+    m_bSimulationRunning   = false;
+    m_bInitialized         = false;
+    m_bUseStrafePrediction = true;
 
     m_iTick = 0;
 

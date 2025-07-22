@@ -24,6 +24,7 @@
 #include "../../../SDK/class/CommonFns.h"
 
 // UTILITY
+#include "../../../Utility/CVar Handler/CVarHandler.h"
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
@@ -70,7 +71,7 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         return;
 
     // HANDLING AUTO FIRE
-    if (m_pBestTarget != nullptr && SDK::CanAttack(pLocalPlayer, pActiveWeapon, pCmd) == true &&
+    if (m_pBestTarget != nullptr && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true &&
         Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true)
     {
         pCmd->buttons |= IN_ATTACK;
@@ -104,7 +105,7 @@ bool AimbotMelee_t::_ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon,
 
     // If we are spy & trying to backstab, Aiming & Firing must be done on the same tick.
     // You will get a backstab as long as the angles are right.
-    return SDK::CanAttack(pAttacker, pActiveWeapon, pCmd);
+    return SDK::CanAttack(pAttacker, pActiveWeapon);
 }
 
 
@@ -176,7 +177,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
     // Attacker's future position
     if (bShouldSimulate == true)
     {
-        F::movementSimulation.Initialize(pAttacker);
+        F::movementSimulation.Initialize(pAttacker, false);
         for (int i = 0; i < nTicksToSimulate; i++)
             F::movementSimulation.RunTick();
 
@@ -185,7 +186,16 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
     }
     else
     {
-        m_vAttackerFutureEyePos = pAttacker->GetEyePos();
+        // Simulating only by Lerp time.
+        nTicksToSimulate = TIME_TO_TICK(Maths::MAX<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate)));
+
+        F::movementSimulation.Initialize(pAttacker, false);
+        for (int i = 0; i < nTicksToSimulate; i++)
+            F::movementSimulation.RunTick();
+
+        m_vAttackerFutureEyePos = F::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
+        F::movementSimulation.Restore();
+        // m_vAttackerFutureEyePos = pAttacker->GetEyePos();
     }
 
     BaseEntity* pBestTarget     = nullptr;
@@ -197,7 +207,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
         vec vTargetFuturePos;
         if (bShouldSimulate == true)
         {
-            F::movementSimulation.Initialize(pTarget);
+            F::movementSimulation.Initialize(pTarget, false);
             for (int i = 0; i < nTicksToSimulate; i++)
                 F::movementSimulation.RunTick();
 
@@ -207,7 +217,16 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
         }
         else
         {
-            vTargetFuturePos = pTarget->GetAbsOrigin();
+            // We already set nTicksToSimulate to Lerp ammount of ticks. 
+            // We are simulating target by lerp ammount of ticks.
+            F::movementSimulation.Initialize(pTarget, false);
+            for (int i = 0; i < nTicksToSimulate; i++)
+                F::movementSimulation.RunTick();
+
+            vTargetFuturePos = F::movementSimulation.GetSimulationPos();
+            F::movementSimulation.Restore();
+
+            // vTargetFuturePos = pTarget->GetAbsOrigin();
         }
 
         // FOV check
@@ -390,7 +409,8 @@ bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
 
     float flDotProduct = vAttackerToTarget.x * vTargetViewAngles.x + vAttackerToTarget.y * vTargetViewAngles.y;
 
-    return flDotProduct > 0.0f;
+    // return flDotProduct > 0.0f; // Ideally it should be just greater than 0.0 for a backstab, but to be on the safer side, it shall be more than 0.05f
+    return flDotProduct > 0.05f;
 }
 
 bool AimbotMelee_t::_IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, const vec& vTargetPos, float FOV)

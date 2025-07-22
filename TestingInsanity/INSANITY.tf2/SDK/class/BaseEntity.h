@@ -13,6 +13,7 @@ NETVAR(m_fFlags,				 DT_BasePlayer)
 NETVAR(m_flMaxspeed,			 DT_BasePlayer)
 NETVAR(m_iFOV,					 DT_BasePlayer)
 								 
+NETVAR(m_nHitboxSet,			 DT_BaseAnimating)
 								 
 // BaseEntity					 
 NETVAR(m_iTeamNum,				 DT_BaseEntity)
@@ -142,6 +143,8 @@ public:
 	NETVAR_SETTER(m_bDucked,		DT_Local, bool)
 	NETVAR_SETTER(m_bDucking,		DT_Local, bool)
 	NETVAR_SETTER(m_bInDuckJump,	DT_Local, bool)
+
+	NETVAR_GETTER(m_nHitboxSet, DT_BaseAnimating, int)
 
 	bool			IsEnemy();
 	int32_t			GetWeaponIndex();

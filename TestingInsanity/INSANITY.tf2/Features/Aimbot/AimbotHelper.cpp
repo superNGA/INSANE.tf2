@@ -38,7 +38,7 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     }
     else
     {
-        // Hitscan aimbot
+        F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
     }
 
     // Whenever you decide to make a FOV circle use this formula
