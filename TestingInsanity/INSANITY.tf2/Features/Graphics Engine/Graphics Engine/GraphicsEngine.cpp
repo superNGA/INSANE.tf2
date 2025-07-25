@@ -40,6 +40,9 @@ BaseDrawObj_t* GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, con
     if (it == m_triList.m_mapIDToObj.end())
     {
         RectDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<RectDrawObj_t>(szID, m_triList);
+        if (pDrawObj == nullptr)
+            return nullptr;
+
         pDrawObj->Set(vMin, vMax, qNormal);
         pDrawObj->SetLife(flLife);
 
@@ -47,6 +50,9 @@ BaseDrawObj_t* GraphicsEngine_t::DrawRect(std::string szID, const vec& vMin, con
 
         return pDrawObj;
     }
+
+    if (m_triList.m_bBeingDrawn.load() == true)
+        return nullptr;
 
     if (it->second->IsLocked() == true)
         return it->second;
@@ -64,10 +70,16 @@ BaseDrawObj_t* GraphicsEngine_t::DrawBox(std::string szID, const vec& vMin, cons
     if (it == m_triList.m_mapIDToObj.end())
     {
         CuboidDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<CuboidDrawObj_t>(szID, m_triList);
+        if (pDrawObj == nullptr)
+            return nullptr;
+
         pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
         pDrawObj->SetLife(flLife);
         return pDrawObj;
     }
+
+    if (m_triList.m_bBeingDrawn.load() == true)
+        return nullptr;
 
     if (it->second->IsLocked() == true)
         return it->second;
@@ -84,10 +96,16 @@ BaseDrawObj_t* GraphicsEngine_t::DrawLine(std::string szID, const vec& vMin, con
     if (it == m_triList.m_mapIDToObj.end())
     {
         LineDrawObj_t* pDrawObj = CreateAndRegisterDrawObj<LineDrawObj_t>(szID, m_triList);
+        if (pDrawObj == nullptr)
+            return nullptr;
+
         pDrawObj->Set(vMin, vMax, qNormal, pGraphicInfo);
         pDrawObj->SetLife(flLife);
         return pDrawObj;
     }
+
+    if (m_triList.m_bBeingDrawn.load() == true)
+        return nullptr;
 
     if (it->second->IsLocked() == true)
         return it->second;

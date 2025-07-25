@@ -6,7 +6,7 @@
 #include "CUserCmd.h"
 #include "../TF object manager/TFOjectManager.h"
 
-bool SDK::InAttack(BaseEntity* pPlayer, baseWeapon* pWeapon, CUserCmd* pCmd)
+bool SDK::InAttack(BaseEntity* pPlayer, baseWeapon* pWeapon)
 {
     float flCurTime = TICK_TO_TIME(pPlayer->m_nTickBase());
     

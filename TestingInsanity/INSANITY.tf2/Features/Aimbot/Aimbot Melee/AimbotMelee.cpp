@@ -47,15 +47,12 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return;
 
-    bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon, pCmd);
+    bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon);
     
     // FINDING TARGET
     if (bInAttack == false)
     {
-        BaseEntity* pTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon);
-
-        if (pTarget != nullptr)
-            m_pBestTarget = pTarget;
+        m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon);
     }
     else if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_DebugPrediction.IsActive() == true && m_pBestTarget != nullptr)
     {
@@ -71,8 +68,7 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         return;
 
     // HANDLING AUTO FIRE
-    if (m_pBestTarget != nullptr && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true &&
-        Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true)
+    if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true)
     {
         pCmd->buttons |= IN_ATTACK;
     }
@@ -101,7 +97,7 @@ bool AimbotMelee_t::_ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon,
     
     // If not spy, we can just use the netvar :)
     if (pAttacker->m_iClass() != TF_SPY)
-        return SDK::InAttack(pAttacker, pActiveWeapon, pCmd) == true && flCurTime >= pActiveWeapon->m_flSmackTime();
+        return SDK::InAttack(pAttacker, pActiveWeapon) == true && flCurTime >= pActiveWeapon->m_flSmackTime();
 
     // If we are spy & trying to backstab, Aiming & Firing must be done on the same tick.
     // You will get a backstab as long as the angles are right.
@@ -136,21 +132,21 @@ BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, baseWeapon* pAct
     if (pBestTarget != nullptr)
         return pBestTarget;
 
-    // if no enemy player found, try to find building next
-    // SENTRY GUNS
-    pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemySentry, flSmackDelay, flSwingRange, false);
-    if (pBestTarget != nullptr)
-        return pBestTarget;
+    //// if no enemy player found, try to find building next
+    //// SENTRY GUNS
+    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemySentry, flSmackDelay, flSwingRange, false);
+    //if (pBestTarget != nullptr)
+    //    return pBestTarget;
 
-    // DISPENSERS
-    pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyDispensers, flSmackDelay, flSwingRange, false);
-    if (pBestTarget != nullptr)
-        return pBestTarget;
+    //// DISPENSERS
+    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyDispensers, flSmackDelay, flSwingRange, false);
+    //if (pBestTarget != nullptr)
+    //    return pBestTarget;
 
-    // TELEPORTERS
-    pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyTeleporters, flSmackDelay, flSwingRange, false);
-    if (pBestTarget != nullptr)
-        return pBestTarget;
+    //// TELEPORTERS
+    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyTeleporters, flSmackDelay, flSwingRange, false);
+    //if (pBestTarget != nullptr)
+    //    return pBestTarget;
 
     // TODO : Make this dynamic
     bool bIsDisciplinaryAction = (pActiveWeapon->GetWeaponDefinitionID() == 447);
@@ -242,9 +238,9 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
 
         if (flDist < flBestDistance)
         {
-            flBestDistance = flDist;
+            flBestDistance       = flDist;
             vBestTargetFuturePos = vTargetFuturePos;
-            pBestTarget = pTarget;
+            pBestTarget          = pTarget;
         }
     }
 

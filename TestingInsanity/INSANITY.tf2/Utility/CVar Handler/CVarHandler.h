@@ -59,5 +59,6 @@ REGISTER_CVAR_FLOAT(sv_airaccelerate)
 REGISTER_CVAR_FLOAT(cl_interp)
 REGISTER_CVAR_FLOAT(cl_interp_ratio)
 REGISTER_CVAR_INT(cl_updaterate)
+REGISTER_CVAR_INT(sv_maxusrcmdprocessticks)
 
 REGISTER_CVAR_INT(cl_flipviewmodels)

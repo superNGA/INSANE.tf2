@@ -22,6 +22,7 @@
 #include "../Features/Aimbot/AimbotHelper.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
 #include "../Features/ESP/ESP.h"
+#include "../Features/Tick Shifting/TickShifting.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -86,34 +87,36 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
 	F::fakeLag.Run(bSendPacket, cmd);
 	F::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
-	F::noSpread.Run(cmd, result); // incomplete, not working
+	//F::noSpread.Run(cmd, result); // incomplete, not working
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 	F::esp.Run(pLocalPlayer, cmd);
+	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
 
 
 	// Delete this
 	// Testing Strafe prediction
-	//{
-	//	PROFILE_FUNCTION("Strafe_Pred_Test");
-	//
-	//	F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
-	//	if (F::movementSimulation.Initialize(pLocalPlayer) == true)
-	//	{
-	//		vec vLastPos(0.0f);
-	//		for(int iTick = 0; iTick < TIME_TO_TICK(1.0f); iTick++)
-	//		{
-	//			F::movementSimulation.RunTick();
-	//			vec vPos = F::movementSimulation.GetSimulationPos();
-	//			if (vLastPos.IsEmpty() == false)
-	//			{
-	//				F::graphicsEngine.DrawLine(std::format("SIMTEST_{}", iTick), vLastPos, vPos, cmd->viewangles);
-	//			}
-	//			vLastPos = vPos;
-	//		}
-	//		F::movementSimulation.Restore();
-	//	}
-	//}
+	if(false)
+	{
+		PROFILE_FUNCTION("Strafe_Pred_Test");
+	
+		F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
+		if (F::movementSimulation.Initialize(pLocalPlayer) == true)
+		{
+			vec vLastPos(0.0f);
+			for(int iTick = 0; iTick < 25; iTick++)
+			{
+				F::movementSimulation.RunTick();
+				vec vPos = F::movementSimulation.GetSimulationPos();
+				if (vLastPos.IsEmpty() == false)
+				{
+					F::graphicsEngine.DrawLine(std::format("SIMTEST_{}", iTick), vLastPos, vPos, cmd->viewangles);
+				}
+				vLastPos = vPos;
+			}
+			F::movementSimulation.Restore();
+		}
+	}
 
 
 	return result;

@@ -46,6 +46,7 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt, bool bStrafePrediction)
         return false;
     }
 
+    // Storing Strafe Prediction preference.
     m_bUseStrafePrediction = bStrafePrediction;
 
     // Storing strafing data for this target

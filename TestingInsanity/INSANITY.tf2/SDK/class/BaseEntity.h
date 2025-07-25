@@ -21,6 +21,7 @@ NETVAR(m_vecOrigin,				 DT_BaseEntity)
 NETVAR(m_hOwnerEntity,			 DT_BaseEntity)
 NETVAR(m_hEffectEntity,			 DT_BaseEntity)
 NETVAR(m_angRotation,			 DT_BaseEntity)
+NETVAR(m_flSimulationTime,		 DT_BaseEntity)
 								 
 // Base Animating				 
 NETVAR(m_flModelScale,			 DT_BaseAnimating)
@@ -97,10 +98,14 @@ public:
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_iTeamNum, DT_BaseEntity, int32_t)
 
+	// Simulation Time
+	NETVAR_GETTER(m_flSimulationTime, DT_BaseEntity, float)
+	NETVAR_SETTER(m_flSimulationTime, DT_BaseEntity, float)
+
 	NETVAR_GETTER(m_flNextAttack, DT_BCCLocalPlayerExclusive, float)
 	
-	// Local Player Exclusive
 	NETVAR_GETTER(m_nTickBase, DT_LocalPlayerExclusive, uint32_t)
+	NETVAR_SETTER(m_nTickBase, DT_LocalPlayerExclusive, uint32_t)
 
 	// Ground Entity
 	NETVAR_GETTER(m_hGroundEntity, DT_LocalPlayerExclusive, uint32_t)

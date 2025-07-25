@@ -26,7 +26,7 @@ void AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         return;
 
     // Getting Target.
-    bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon, pCmd);
+    bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon);
     if (bInAttack == false)
     {
         m_pBestTarget = _GetBestTarget(pLocalPlayer, pCmd);

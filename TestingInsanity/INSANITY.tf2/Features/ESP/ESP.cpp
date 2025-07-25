@@ -58,13 +58,16 @@ void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
         if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
             continue;
 
-        bool bEnemy = (pEnt->m_iTeamNum() != iFriendlyTeam);
-        if (bEnemy == false)
+        // don't want team-mates
+        if (pEnt->m_iTeamNum() == iFriendlyTeam)
             continue;
 
         if (pEnt->GetClientClass()->m_ClassID == ClassID::CTFPlayer)
         {
             auto* pEntCollidable = pEnt->GetCollideable();
+            if (pEntCollidable == nullptr)
+                continue;
+
             const vec& vOrigin = pEntCollidable->GetCollisionOrigin();
             const vec& vMin = pEntCollidable->OBBMins();
             const vec& vMax = pEntCollidable->OBBMaxs();

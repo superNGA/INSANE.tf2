@@ -401,7 +401,7 @@ void AimbotProjectile_t::Reset()
 
 void AimbotProjectile_t::_DrawTargetFuturePos(GraphicInfo_t* pGraphicInfo, const qangle& qNormal)
 {
-    auto* pDrawObj = F::graphicsEngine.DrawBox(
+    F::graphicsEngine.DrawBox(
         "Target",
         m_vFutureFootPos + m_pBestTarget->GetCollideable()->OBBMins(),
         m_vFutureFootPos + m_pBestTarget->GetCollideable()->OBBMaxs(),

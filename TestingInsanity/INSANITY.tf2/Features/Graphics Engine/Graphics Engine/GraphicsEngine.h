@@ -10,6 +10,7 @@
 #include "../Draw Objects/DrawObj.h"
 #include "../../FeatureHandler.h"
 #include "../../../SDK/class/Basic Structures.h"
+#include "../../../Utility/ConsoleLogging.h"
 
 
 struct DrawObjList_t
@@ -84,11 +85,6 @@ public:
         const float flLife = DEFAULT_LIFE_IN_MS,
         GraphicInfo_t* pGraphicInfo = nullptr);
 
-    void DrawLineList(std::string szID,
-        const std::vector<vec&>& vecPoints,
-        const qangle& qNormal, const bool bLock,
-        const float flLife = DEFAULT_LIFE_IN_MS, GraphicInfo_t* pGraphicInfo = nullptr);
-
     // Deleting stuff
     void FreeAllDrawObjs();
     void FindAndDelete(std::string szID);
@@ -97,6 +93,12 @@ private:
     template <typename T>
     inline T* CreateAndRegisterDrawObj(std::string& szID, DrawObjList_t& drawObjList)
     {
+        if (drawObjList.m_bBeingDrawn.load() == true)
+        {
+            FAIL_LOG("DrawObjList currently in use. fuck off.");
+            return nullptr;
+        }
+
         T* pNewDrawObj = new T;
         drawObjList.m_mapIDToObj.insert({ szID, pNewDrawObj });
         drawObjList.m_nVertcies += reinterpret_cast<BaseDrawObj_t*>(pNewDrawObj)->GetVertexCount();
