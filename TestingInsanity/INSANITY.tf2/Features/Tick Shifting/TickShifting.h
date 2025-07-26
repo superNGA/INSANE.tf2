@@ -15,34 +15,32 @@ public:
 
     void HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSample, bool bOriginalFinalTick);
 
-//private:
+private:
+    bool m_bInitialized = false;    
+
     // Charging status...
     bool _ConsumeTickForCharge();
     int  m_iChargeLevel  = 0;
     bool m_bTickShifting = false;
 
     // Shifting Ticks...
-    void _SpoofCmd(BaseEntity* pLocalPlayer, CUserCmd* pCmd, bool* pSendPacket);
+    void _SpoofCmd(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket) const;
     int  _DetermineShiftGoal();
-    bool _CanDumpCharge() const;
+    bool _ShouldDumpCharge() const;
     void _DumpCharge(int nTicks, void* pOriginalCLMove, float flAccumulatedExtraSample);
-    bool m_bShooting = false;
+    bool m_bDoubleTap = false;
 
     std::chrono::high_resolution_clock::time_point m_lastChargeDumpTime;
-    uint32_t m_iDumpTick = 0;
-
-    bool m_bFinalTick = false;
-    int   m_iTickBaseBackup = 0;
-    float m_flSimTimeBackup = 0.0f;
-    float m_flRateOfFire    = 0.0f;
-
-    int m_nShiftedTicks     = 0;
-    int m_nShiftedTickIndex = 0;
-    int m_nShiftGoal = 0;
+    
+    bool  m_bFirstTick           = false;
+    bool  m_bFinalTickThisPacket = false;
+    float m_flRateOfFire         = 0.0f;
+    int   m_nShiftGoal           = 0;
 
     // Drawing 
     void _Draw();
 };
+
 DECLARE_FEATURE_OBJECT(tickShifter, TickShifter_t)
 
 DEFINE_TAB(TickShifter, 1919)

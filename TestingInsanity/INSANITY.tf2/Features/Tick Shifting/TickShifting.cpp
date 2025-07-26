@@ -21,54 +21,69 @@
 
 #define DEBUG_TICK_SHIFTING false
 
+constexpr int MAX_NEW_COMMANDS = 15;
 typedef void(__fastcall* T_CL_Move)(float flAccumuatedExtraSample,  int64_t bFinalTick);
 
 
 void TickShifter_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
+    m_bInitialized = true;
+
     if (m_bTickShifting == false)
     {
-        m_iTickBaseBackup = pLocalPlayer->m_nTickBase(); m_flSimTimeBackup = pLocalPlayer->m_flSimulationTime();
-        m_bShooting       = SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true && (pCmd->buttons & IN_ATTACK);
-        m_flRateOfFire    = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flTimeFireDelay;
+        bool bCanAttack = SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true;
+
+        // if we just ended tick shifting for DT. hold attack button for 1 extra tick, 
+        // in order to try n get that DT if it fails in tick shifting.
+        if (m_bFinalTickThisPacket == true)
+        {
+            if (m_bDoubleTap == true)
+                pCmd->buttons |= IN_ATTACK;
+
+            *pSendPacket   = true;
+            m_bFinalTickThisPacket   = false;
+            m_bDoubleTap   = false;
+            WIN_LOG("Fired second double tap shot.");
+            return;
+        }
+
+        // Detecting double tap intruction from user.
+        m_bDoubleTap = bCanAttack == true && (pCmd->buttons & IN_ATTACK) && Features::TickShifter::TickShifter::DoubleTap.IsActive() == true;
+
+        // Don't send data if user wants to doubletap.
+        if (m_bDoubleTap == true)
+        {
+            LOG("Detected double tap. not sending shit\n");
+            *pSendPacket = false;
+        }
+
+        // Fire Rate ( with attributes )
+        m_flRateOfFire = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flTimeFireDelay;
         pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(m_flRateOfFire, "mult_postfiredelay");
 
         _Draw();
-
-        if (m_bFinalTick == true)
-        {
-            std::cout << "shot firred111111111111111111111111111111111\n";
-            pCmd->buttons |= IN_ATTACK;
-            m_bFinalTick = false;
-        }
     }
-    else { _SpoofCmd(pLocalPlayer, pCmd, pSendPacket); }
+    else { _SpoofCmd(pLocalPlayer, pActiveWeapon, pCmd, pSendPacket); }
 }
 
 
 
 void TickShifter_t::Reset()
 {
-    m_iTickBaseBackup = 0; m_flSimTimeBackup = 0.0f;
-    m_bShooting         = false;
-    m_bFinalTick        = false;
-    m_flRateOfFire      = 0.0f;
-    m_iDumpTick         = 0;
-
-    m_nShiftedTickIndex = 0;
-    m_nShiftGoal        = 0;
-    m_nShiftedTicks     = 0;
-
-    m_iChargeLevel = 0; m_bTickShifting = false;
+    m_bInitialized          = false;
+    m_bDoubleTap            = false;
+    m_bFinalTickThisPacket  = false; 
+    m_flRateOfFire          = 0.0f;
+    m_nShiftGoal            = 0;
+    m_iChargeLevel          = 0; 
+    m_bTickShifting         = false;
 }
 
 
 void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSample, bool bOriginalFinalTick)
 {
-    static int iShiftGoal = 0;
-
     // Consume this tick for charging & don't call the original.
-    if (_ConsumeTickForCharge() == true && iShiftGoal <= 0)
+    if (_ConsumeTickForCharge() == true && m_nShiftGoal <= 0 && m_bInitialized == true)
     {
         m_iChargeLevel++;
         return;
@@ -77,30 +92,37 @@ void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSa
     // Call the original.
     reinterpret_cast<T_CL_Move>(pOriginalCLMove)(flAccumulatedExtraSample, bOriginalFinalTick);
 
-
-    if (_CanDumpCharge() == false && iShiftGoal <= 0)
+    // If we have non-zero charge & want to dump.
+    if (_ShouldDumpCharge() == false)
         return;
 
-    if (iShiftGoal <= 0)
+    // Get our shift goal.
+    if (m_nShiftGoal <= 0 && m_bTickShifting == false)
     {
-        iShiftGoal = _DetermineShiftGoal();
-        printf("Shift goal set to [ %d ]\n", iShiftGoal);
+        m_nShiftGoal = _DetermineShiftGoal();
+        LOG("Shift Goal -> [ %d ]", m_nShiftGoal);
     }
 
-    if (iShiftGoal > 0)
+    // Got enough charge for the shift goal. ( if not then skip, we will charge next tick )
+    if (m_nShiftGoal > m_iChargeLevel)
+    {
+        m_nShiftGoal = 0;
+        return;
+    }
+
+
+    if (m_nShiftGoal > 0)
     {
         m_bTickShifting = true;
         
-        m_nShiftedTicks = iShiftGoal; //m_nShiftedTicks = Maths::MIN<int>(iShiftGoal, 7); 
-        _DumpCharge(m_nShiftedTicks, pOriginalCLMove, flAccumulatedExtraSample);
-        iShiftGoal -= m_nShiftedTicks; //Maths::MAX<int>(iShiftGoal - m_nShiftedTicks, 0); // compensate what we have done form the goal ( not like it's gonna fail or anything :| )
-
-        m_bTickShifting = false;
+        // Dumping ticks.
+        _DumpCharge(m_nShiftGoal, pOriginalCLMove, flAccumulatedExtraSample);
+        m_nShiftGoal = 0;
         
-        if (iShiftGoal <= 0)
+        if (m_nShiftGoal <= 0)
         {
-            m_bShooting          = false;
-            m_iDumpTick          = GLOBAL_TICKCOUNT;
+            m_bTickShifting      = false;
+            m_nShiftGoal         = 0;
             m_lastChargeDumpTime = std::chrono::high_resolution_clock::now();
 
             // Delete this
@@ -123,54 +145,70 @@ bool TickShifter_t::_ConsumeTickForCharge()
     if (Features::TickShifter::TickShifter::ForceCharge.IsActive() == true)
         return true;
 
-    // Has wait-delay ammount of time passed since we last dumped charge?
-    uint64_t iDeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_lastChargeDumpTime).count();
-    if (iDeltaTime < static_cast<uint64_t>(fabs(Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal) * 1000.0f))
+    // check if wait-delay ammount of time passed since we last dumped charge.
+    uint64_t iTimeSinceDumpInMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_lastChargeDumpTime).count();
+    if (iTimeSinceDumpInMs < static_cast<uint64_t>(fabs(Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal) * 1000.0f))
         return false;
 
-    // Recharging according to aggesion prefrences. ( ex. every 7th tick or every other tick )
-    if ((m_iDumpTick - GLOBAL_TICKCOUNT) % Features::TickShifter::TickShifter::Recharge_Aggression.GetData().m_iVal == 0)
+    // Recharging according to aggression prefrences. ( ex. every 7th tick or every other tick )
+    int iRechargeAggression = Features::TickShifter::TickShifter::Recharge_Aggression.GetData().m_iVal;
+    int iTicksSinceDump     = TIME_TO_TICK(static_cast<float>(iTimeSinceDumpInMs) / 1000.0f);
+    if (iTicksSinceDump % iRechargeAggression == 0)
         return true;
 
 }
 
 
-void TickShifter_t::_SpoofCmd(BaseEntity* pLocalPlayer, CUserCmd* pCmd, bool* pSendPacket)
+void TickShifter_t::_SpoofCmd(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket) const
 {
-    *pSendPacket = m_bFinalTick == true || I::cClientState->chokedcommands >= 21;
+    // don't send anything until the last tick of the packet.
+    *pSendPacket = m_bFinalTickThisPacket;
 
-    if (m_bShooting == true)
+    if (m_bDoubleTap == true)
     {
-        pCmd->forwardmove = 0.0f; pCmd->sidemove = 0.0f;
+        if (m_bFinalTickThisPacket == true)
+        {
+            pCmd->buttons |= IN_ATTACK;
+        }
+        else
+        {
+            pCmd->buttons &= ~IN_ATTACK;
+        }
+
+        // Trying to prevent teleport while DT-ing.
+        if (m_bFirstTick == true)
+        {
+            pCmd->forwardmove *= -1.0f; pCmd->sidemove *= -1.0f;
+        }
+        else
+        {
+            pCmd->forwardmove = 0.0f; pCmd->sidemove = 0.0f;
+        }
     }
 }
 
 
 int TickShifter_t::_DetermineShiftGoal()
 {
-    int iRateOfFireInTicks = static_cast<int>(0.5f + (m_flRateOfFire / TICK_INTERVAL));
+    int iRateOfFireInTicks = static_cast<int>(0.5f + (m_flRateOfFire / TICK_INTERVAL)) + 1;
 
     // DT
-    if (m_bShooting == true && m_flRateOfFire > 0.0f)
-        return iRateOfFireInTicks > CVars::sv_maxusrcmdprocessticks ? CVars::sv_maxusrcmdprocessticks : iRateOfFireInTicks;
+    if (m_bDoubleTap == true && m_flRateOfFire > 0.0f)
+        return std::clamp<int>(iRateOfFireInTicks, 0, CVars::sv_maxusrcmdprocessticks);
 
     // not DT
     return m_iChargeLevel;
 }
 
 
-bool TickShifter_t::_CanDumpCharge() const
+bool TickShifter_t::_ShouldDumpCharge() const
 {
     // Got any charge ?
     if (m_iChargeLevel <= 0)
         return false;
 
     // Dump regardless ? 
-    if (Features::TickShifter::TickShifter::Force_ChargeDump.IsActive() == true)
-        return true;
-
-    // Double Tapin ?
-    if (Features::TickShifter::TickShifter::DoubleTap.IsActive() == true && m_bShooting == true)
+    if (Features::TickShifter::TickShifter::Force_ChargeDump.IsActive() == true || m_bDoubleTap == true)
         return true;
 
     return false;
@@ -181,11 +219,17 @@ void TickShifter_t::_DumpCharge(int nTicks, void* pOriginalCLMove, float flAccum
 {
     // Fn cast the original CLMove poitner.
     T_CL_Move pCLMove = reinterpret_cast<T_CL_Move>(pOriginalCLMove);
+    
+    // we can only do 15 commands in 1 packet. so we shall split it by sending 1 packet after 15 commands.
+    bool bShouldSplitPacket = nTicks > MAX_NEW_COMMANDS - 1;
 
     for (int iTick = 0; iTick < nTicks; iTick++)
-    {
-        m_bFinalTick = (iTick == nTicks - 1);
-        pCLMove(flAccumulatedExtraSample, iTick == nTicks - 1 ? 1LL : 0LL);
+    {   
+        m_bFirstTick           = iTick == 0;
+        m_bFinalTickThisPacket = (iTick == nTicks - 1) || (bShouldSplitPacket == true && iTick == nTicks / 2);
+
+        // I actually don't know why I have placed a fucking 0 for the accumulatedExtraSample but it seems to work.
+        pCLMove(flAccumulatedExtraSample, m_bFinalTickThisPacket);
     }
 
     // Deducting shifted ticks from charge.
@@ -218,10 +262,10 @@ MAKE_HOOK(CPlayerMove_RunCommand, "48 89 5C 24 ? 48 89 74 24 ? 57 41 54 41 55 41
 
     int& nShiftableTicks = *reinterpret_cast<int*>(reinterpret_cast<int*>(pPlayer) + 0x282);
     Render::InfoWindow.AddToCenterConsole("Server_Ticks_DT", std::format("ServerCharge : {}", nShiftableTicks), nShiftableTicks < CVars::sv_maxusrcmdprocessticks ? RED : GREEN);
+    
+    int iTickBase = *reinterpret_cast<int*>(reinterpret_cast<char*>(pPlayer) + (0x45D * 4));
 
-    printf("[ SERVER ] CMD Tick count -> [ %d ] | TickBase -> [ %d ]\n", 
-        pCmd->tick_count, 
-        *reinterpret_cast<int*>(reinterpret_cast<char*>(pPlayer) + (0x45D * 4)));
+    printf("[ SERVER ] CMD->Shooting : [ %s ] | TickBase [ %d ]\n", (pCmd->buttons & IN_ATTACK) ? "TRUE" : "false", iTickBase);
 
     return Hook::CPlayerMove_RunCommand::O_CPlayerMove_RunCommand(pVTable, pPlayer, pCmd, pMoveHelper);
 

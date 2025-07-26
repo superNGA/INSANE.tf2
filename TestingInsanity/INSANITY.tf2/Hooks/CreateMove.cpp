@@ -78,7 +78,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	pStackFrameStart_ClientModeShared_Createmove += 0x40; // 0x40 bytes for local variables allocated on stack
 
 	bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
-	
+
 	// TODO : Make proper function rich drawing mechanism to we don't have to relly on this dog shit.
 	//		  This also slows down own stuff & not as functional.
 	I::IDebugOverlay->ClearAllOverlays();

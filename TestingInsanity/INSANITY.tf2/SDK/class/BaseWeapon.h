@@ -72,6 +72,7 @@ public:
 	NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
 
 	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
+	NETVAR_SETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
 	NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife, float)
 
 	NETVAR_GETTER(m_hLauncher, DT_TFProjectile_Pipebomb, int)
