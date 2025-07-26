@@ -1,3 +1,11 @@
+//=========================================================================
+//                      TICK SHIFTER
+//=========================================================================
+// by      : INSANE
+// created : 26/07/2025
+// 
+// purpose : Revinds tick base ( Used for DT, Speed HX & more )
+//-------------------------------------------------------------------------
 #include "TickShifting.h"
 
 #include <algorithm>
@@ -20,6 +28,29 @@
 #include "../../Extra/math.h"
 
 #define DEBUG_TICK_SHIFTING false
+
+
+/*
+THEORY : 
+    TF2 servers try to keep our tickbase and the server clock in sync.
+    We are allowed to send up to 15 ticks at once in a packet ( originally intended for chocked ticks )
+    so the server will simulate all the ticks as long as we have sufficient balance. 
+        BALANCE : there is a variable in tf2 servers which keep a track of chocked ticks and we can only send in 
+                    that many ticks that have been chocked. ( Forgive my english ) We can increase our balance by 
+                    not sending in ticks ( make sure they are not even created, else they will be send in as chocked ticks later )
+    
+    So lets say we send in x ammount of ticks, the server will revind our tick base x - 1 ticks back so when its finished simulating
+        all those ticks, our tick base & server's clock is in sync.
+    
+    In order to DoubleTap, we need to fire & dump ticks at the same time ( frame ) so that server revinds our tickbase before simulating
+        our tick where we fired our shot. So technically we shot in the past. And by the time the server is finished simulating all the ticks
+        we dumped our time is FireDelay is already over. So now we can either shoot on the last tick of our dump or in the next packet we send. 
+
+    NOTE : Since we are only allowed to send in 15 ticks in a packet and some weapons requrie more than that like Force-a-Nature with 21 ticks
+           . We can send in 2 packets, and if we do it in the same frame, we can effectivly revind our tick base using 2 packet and upto whatever
+           the max charge limit is on that server.
+*/
+
 
 constexpr int MAX_NEW_COMMANDS = 15;
 typedef void(__fastcall* T_CL_Move)(float flAccumuatedExtraSample,  int64_t bFinalTick);

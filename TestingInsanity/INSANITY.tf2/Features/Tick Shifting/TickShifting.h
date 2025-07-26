@@ -1,12 +1,23 @@
+//=========================================================================
+//                      TICK SHIFTER
+//=========================================================================
+// by      : INSANE
+// created : 26/07/2025
+// 
+// purpose : Revinds tick base ( Used for DT, Speed HX & more )
+//-------------------------------------------------------------------------
 #pragma once
 
 #include "../FeatureHandler.h"
 #include "../../Utility/CVar Handler/CVarHandler.h"
 
+
 class BaseEntity;
 class baseWeapon;
 class CUserCmd;
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 class TickShifter_t
 {
 public:
@@ -18,20 +29,20 @@ public:
 private:
     bool m_bInitialized = false;    
 
-    // Charging status...
+    // Charging...
     bool _ConsumeTickForCharge();
     int  m_iChargeLevel  = 0;
     bool m_bTickShifting = false;
 
-    // Shifting Ticks...
     void _SpoofCmd(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket) const;
+    
+    // Shifting Ticks...
     int  _DetermineShiftGoal();
     bool _ShouldDumpCharge() const;
     void _DumpCharge(int nTicks, void* pOriginalCLMove, float flAccumulatedExtraSample);
     bool m_bDoubleTap = false;
 
     std::chrono::high_resolution_clock::time_point m_lastChargeDumpTime;
-    
     bool  m_bFirstTick           = false;
     bool  m_bFinalTickThisPacket = false;
     float m_flRateOfFire         = 0.0f;
@@ -40,6 +51,8 @@ private:
     // Drawing 
     void _Draw();
 };
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 DECLARE_FEATURE_OBJECT(tickShifter, TickShifter_t)
 
