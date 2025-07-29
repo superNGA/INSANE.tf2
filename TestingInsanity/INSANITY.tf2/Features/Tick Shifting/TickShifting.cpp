@@ -27,6 +27,7 @@
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Extra/math.h"
 
+
 #define DEBUG_TICK_SHIFTING false
 
 
@@ -278,6 +279,26 @@ void TickShifter_t::_Draw()
     Render::InfoWindow.AddToCenterConsole("TS_ChargeWait", std::format("waiting {:.2}", 
         Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))));
 }
+
+
+
+//=========================================================================
+//                     API-ish functions
+//=========================================================================
+bool TickShifter_t::CanShiftThisTick() const
+{
+    return m_bTickShifting == false && m_iChargeLevel > 0 && m_bInitialized == true;
+}
+
+bool TickShifter_t::ForceDumpCharge(int iTicks)
+{
+    if (CanShiftThisTick() == false)
+        return false;
+
+    m_bDoubleTap = false; m_nShiftGoal = iTicks;
+    return true;
+}
+
 
 
 //=========================================================================

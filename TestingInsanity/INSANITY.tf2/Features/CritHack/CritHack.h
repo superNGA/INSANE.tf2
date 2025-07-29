@@ -100,7 +100,7 @@ private:
         CRITHACK_INACTIVE,     // Turned on, but user DOESN'T want to crit
         CRITHACK_ACTIVE        // Turned on, and user WANTS to crit
     };
-    CritHackStatus_t _GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey);
+    CritHackStatus_t _GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData);
     
     // Crit seed search & confirmation...
     int  _GetCritSeed(CUserCmd* pCmd, WeaponCritData_t* pWeaponCritData, BaseEntity* pLocalPlayer);

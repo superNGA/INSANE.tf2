@@ -26,6 +26,12 @@ public:
 
     void HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSample, bool bOriginalFinalTick);
 
+    inline int  GetMaxCharge()  const { return CVars::sv_maxusrcmdprocessticks; }
+    inline int  GetCharge()     const { return m_iChargeLevel; }
+    inline bool ShiftingTicks() const { return m_bTickShifting; }
+    bool CanShiftThisTick() const;
+    bool ForceDumpCharge(int iTicks);
+
 private:
     bool m_bInitialized = false;    
 
@@ -56,7 +62,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(tickShifter, TickShifter_t)
 
-DEFINE_TAB(TickShifter, 1919)
+DEFINE_TAB(TickShifter, 8)
 DEFINE_SECTION(TickShifter, "TickShifter", 1)
 
 DEFINE_FEATURE(ForceCharge, bool, TickShifter, TickShifter, 1, false, 

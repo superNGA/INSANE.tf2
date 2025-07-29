@@ -60,5 +60,6 @@ REGISTER_CVAR_FLOAT(cl_interp)
 REGISTER_CVAR_FLOAT(cl_interp_ratio)
 REGISTER_CVAR_INT(cl_updaterate)
 REGISTER_CVAR_INT(sv_maxusrcmdprocessticks)
+REGISTER_CVAR_INT(sv_usercmd_custom_random_seed)
 
 REGISTER_CVAR_INT(cl_flipviewmodels)

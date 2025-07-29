@@ -15,6 +15,7 @@
 
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
+#include "../Features/NoSpread/NoSpreadV2.h" // VENGENCE !
 #include "../Features/NoSpread/NoSpread.h"
 #include "../Features/Anti Aim/AntiAim.h"
 #include "../Features/Fake Lag/FakeLag.h"
@@ -81,7 +82,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	// TODO : Make proper function rich drawing mechanism to we don't have to relly on this dog shit.
 	//		  This also slows down own stuff & not as functional.
-	I::IDebugOverlay->ClearAllOverlays();
+	//I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
 	F::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
@@ -91,6 +92,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
 	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
 	F::esp.Run(pLocalPlayer, cmd);
+	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, cmd, &result, bSendPacket);
 	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
 
 

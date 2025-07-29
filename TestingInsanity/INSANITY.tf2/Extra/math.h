@@ -62,6 +62,14 @@ namespace Maths
         return flEnd - flStart;
     }
 
+    //-------------------------------------------------------------------------
+    // PURPOSE : Rounds a double to another double, u feelin me.
+    //-------------------------------------------------------------------------
+    __forceinline double Round(const double input, const double roundTo)
+    {
+        return std::round(input / roundTo) * roundTo;
+    }
+
 
     inline void MatrixAngles(const matrix3x4_t& matrix, qangle& qAngleOut)
     {

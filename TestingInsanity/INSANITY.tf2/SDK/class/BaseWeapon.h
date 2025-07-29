@@ -18,6 +18,8 @@ NETVAR(m_flObservedCritChance,	DT_LocalTFWeaponData)
 NETVAR(m_flLastCritCheckTime,	DT_LocalTFWeaponData)
 NETVAR(m_flNextPrimaryAttack,	DT_LocalActiveWeaponData)
 
+NETVAR(m_flLastFireTime, DT_LocalTFWeaponData)
+
 // This is charge time for both stickies and sniper's arrows.
 NETVAR(m_flChargeBeginTime,		DT_PipebombLauncherLocalData)
 
@@ -71,9 +73,10 @@ public:
 	NETVAR_GETTER(m_flObservedCritChance, DT_LocalTFWeaponData, float)
 	NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
 
-	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
-	NETVAR_SETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData, float)
-	NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife, float)
+	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
+	NETVAR_SETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
+	NETVAR_GETTER(m_flLastFireTime,		 DT_LocalTFWeaponData,		float)
+	NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife,			float)
 
 	NETVAR_GETTER(m_hLauncher, DT_TFProjectile_Pipebomb, int)
 

@@ -18,7 +18,7 @@ struct global_var_base;
 enum renderGroup_t;
 
 // Delete this
-#define TICK_TO_TIME(x) ((x) * tfObject.pGlobalVar->interval_per_tick)
+#define TICK_TO_TIME(x) (static_cast<float>(x) * tfObject.pGlobalVar->interval_per_tick)
 #define TIME_TO_TICK(x) (static_cast<uint32_t>(static_cast<float>(x) / tfObject.pGlobalVar->interval_per_tick))
 #define TICK_INTERVAL	(tfObject.pGlobalVar->interval_per_tick)
 #define CUR_TIME		(tfObject.pGlobalVar->curtime)

@@ -64,10 +64,12 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     PROFILE_FUNCTION("ProjAimbot::Run");
 
     // Constructing LUT ( only for pipes )
-    if(pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
+    if (pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
     {
         m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
     }
+    else if (pActiveWeapon->getSlot() == WPN_SLOT_SECONDARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
+        return;
 
     // Return if disabled. 
     // ( NOTE : Running for 1 extra tick is intentional. Thats helps when user has aimbot bind to mouse1 & is using compound bow,

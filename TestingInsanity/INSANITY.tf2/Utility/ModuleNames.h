@@ -10,3 +10,4 @@
 #define STUDIORENDER_DLL		"studiorender.dll"
 #define VSTDLIB_DLL				"vstdlib.dll"
 #define SERVER_DLL				"server.dll"
+#define TIER0_DLL               "tier0.dll"

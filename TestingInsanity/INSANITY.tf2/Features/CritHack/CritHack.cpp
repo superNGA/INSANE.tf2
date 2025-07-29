@@ -115,7 +115,7 @@ void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pAc
     float flCurTime      = static_cast<float>(pLocalPlayer->m_nTickBase()) * tfObject.pGlobalVar->interval_per_tick;
     bool  bShotFired     = (pCmd->buttons & IN_ATTACK) == true && flCurTime >= flNextFireTime/* && flNextFireTime > m_flLastFireTime*/;
 
-    CritHackStatus_t iCritHackStatus = _GetCritHackStatus(pLocalPlayer, pWeaponCritData, VK_LSHIFT);
+    CritHackStatus_t iCritHackStatus = _GetCritHackStatus(pLocalPlayer, pWeaponCritData);
     if(bShotFired == true)
     {
         // Will this bullet be considered for Rapid-Fire crit check on the server.
@@ -327,7 +327,7 @@ void CritHack_t::_ForceCritV2(int iWishSeed, CUserCmd* pCmd, CritBanStatus_t iCr
     *I::p_iPredictionSeed = pCmd->random_seed;
 }
 
-CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData, byte iKey)
+CritHack_t::CritHackStatus_t CritHack_t::_GetCritHackStatus(BaseEntity* pLocalPlayer, WeaponCritData_t* pWeaponCritData)
 {
     // If not turned ON
     if (Features::CritHack::CritHack::CritHack.IsDisabled() == true)
