@@ -14,39 +14,47 @@ public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreateMoveResult, bool* pSendPacket);
     void Reset();
 
-    bool ExtractTime(std::string & szPlayerPerf);
-    bool ExtractTimeV2(std::string& szPlayerPerf);
+    bool VerifyServerClientDelta(std::string & szPlayerPerf);
+    bool ExtractTimeStamps(std::string& szPlayerPerf);
+
+    inline bool IsSynced() const { return m_bSynced; }
 
 private:
+    
     // Time syncing logic
+    void  _Sync(bool* pSendPacket);
     bool  _ShouldCreateTimeStamps() const;
     void  _CreateTimeStamps(bool* pSendPacket);
-    static constexpr int MAX_TIME_STAMP_COUNT = 5;
+    void  _VerifySync();
+    
+    const int MAX_TIME_STAMP_COUNT = 5;
+    const int TIME_STAMP_FREQUENCY = 2;
+    const int CHOCK_SIZE           = 1;
     std::deque<double> m_qTimeStamps = {};
+        
+    bool m_bSendTimeStamps = false;
+    bool m_bSynced         = false;
+    double m_dServerClientDelta = 0.0;
+    int m_iFailSyncCounter = 0;
 
     void  _AskPlayerPerf();
+    double m_dPerfRequestTime    = 0.0;
+    double m_dRequestLatency     = 0.0;
+    bool   m_bPerfRequestPending = false;
+
 
     // Actual spread removal logic.
     void  _FixSpread(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreateMoveResult);
     bool  _IsShotPerfect(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     
+
     // Maths related functions.
     int   _GetSeed(CUserCmd* pCmd) const;
     float _GetMantissaStep(float x);
     float _GetLeastCount(float x);
     
+
     void  _Draw();
-
-    bool   m_bPerfRequestPending = false;
-    double m_dServerTimeDelta    = 0.0;
-    double m_dRequestSendTime    = 0.0;
-    double m_dOutgoingLatency    = 0.0;
-    double m_dCorrectionOffset   = 0.0;
-
-    bool m_bSynced = false;
-
-    static constexpr int MAX_TIME_DELTA_SAMPLE = 32;
-    std::deque<double> m_qTimeDeltaSamples  = {};
 };
 
 DECLARE_FEATURE_OBJECT(noSpreadV2, NoSpreadV2_t)

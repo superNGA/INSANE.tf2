@@ -65,9 +65,14 @@ namespace Maths
     //-------------------------------------------------------------------------
     // PURPOSE : Rounds a double to another double, u feelin me.
     //-------------------------------------------------------------------------
-    __forceinline double Round(const double input, const double roundTo)
+    __forceinline double RoundToFloor(const double input, const double roundTo)
     {
         return std::round(input / roundTo) * roundTo;
+    }
+
+    __forceinline double RoundToCeil(const double input, const double roundto)
+    {
+        return std::ceil(input / roundto) * roundto;
     }
 
 

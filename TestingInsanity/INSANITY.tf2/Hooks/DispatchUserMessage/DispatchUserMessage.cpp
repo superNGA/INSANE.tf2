@@ -23,12 +23,21 @@ MAKE_HOOK(DispatchUserMsg, "40 56 48 83 EC ? 49 8B F0", __fastcall, CLIENT_DLL, 
 {
     if (iDataType == 5)
     {
-        char rawMsg[256]; msg->ReadString(rawMsg, sizeof(rawMsg), true);
+        char rawMsg[256]; msg->ReadString(rawMsg, sizeof(rawMsg), false);
         msg->Seek(0);
         std::string szMsg = rawMsg;
-        
-        //if (F::noSpreadV2.ExtractTime(szMsg) == true)
-        F::noSpreadV2.ExtractTime(szMsg);
+
+        bool bNoPrint = false;
+        if (F::noSpreadV2.IsSynced() == true)
+        {
+            bNoPrint = F::noSpreadV2.VerifyServerClientDelta(szMsg);
+        }
+        else
+        {
+            bNoPrint = F::noSpreadV2.ExtractTimeStamps(szMsg);
+        }
+
+        return true;
     }
     //printf("data type recieved : %d -> [ %s ]\n", iDataType, GetMsgName(pVTable, iDataType));
 
