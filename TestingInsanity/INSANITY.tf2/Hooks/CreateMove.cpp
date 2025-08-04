@@ -32,6 +32,7 @@
 #include "../SDK/class/CommonFns.h"
 #include "../SDK/class/IVEngineClient.h"
 #include "../SDK/class/IVDebugOverlay.h"
+#include "../SDK/class/ISurface.h"
 
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
@@ -120,6 +121,11 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 		}
 	}
 
+
+	{
+		I::iSurface->DrawSetint(0, 0, 0, 255);
+		I::iSurface->DrawFilledRect(0, 0, 800, 800);
+	}
 
 	return result;
 }

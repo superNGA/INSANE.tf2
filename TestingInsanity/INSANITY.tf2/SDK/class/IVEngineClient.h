@@ -54,7 +54,7 @@ public:
 	virtual int					GetLocalPlayer(void) = 0;
 
 	// Client DLL is hooking a model, loads the model into memory and returns  pointer to the model_t
-	virtual const model_t* LoadModel(const char* pName, bool bProp = false) = 0;
+	virtual model_t* LoadModel(const char* pName, bool bProp = false) = 0;
 
 	// Get accurate, sub-frame clock ( profiling use )
 	virtual float				Time(void) = 0;

@@ -7,6 +7,7 @@
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
+#include "../../Features/ModelPreview/ModelPreview.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 
@@ -151,6 +152,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui::NewFrame();
 
     F::graphicsEngine.Run(P_DEVICE);
+    F::modelPreview.Run();
     Render::InfoWindow.Draw();
     Render::uiMenu.Draw();
     insaneProfiler.Render();

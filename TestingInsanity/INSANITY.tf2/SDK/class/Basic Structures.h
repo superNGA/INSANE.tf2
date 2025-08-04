@@ -77,6 +77,12 @@
 #define DISPSURF_FLAG_SURFPROP1		(1<<3)
 #define DISPSURF_FLAG_SURFPROP2		(1<<4)
 
+namespace vgui 
+{ 
+	typedef uintptr_t VPANEL; 
+	typedef unsigned long HPANEL; 
+}
+
 enum renderGroup_t
 {
 	RENDER_GROUP_OPAQUE_STATIC_HUGE = 0,		

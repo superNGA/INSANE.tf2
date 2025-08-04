@@ -42,6 +42,17 @@ bool Interface_t::Initialize()
     if (pInterface == NULL)
         return false;
 
+    LOG("Target instruction found @ [ %p ]", (void*)pInterface);
+
+    // This is done to prevent unflowing int when adding an negative offset to adrs ( unsigned 8 byte int )
+    int64_t pTargetSafe = static_cast<int64_t>(pInterface);
+
+    // Add offset to the base adrs, i.e. fn adrs.
+    int64_t iAdrsOffset = static_cast<int64_t>(*reinterpret_cast<int32_t*>(pTargetSafe + static_cast<int64_t>(m_iOffset)));
+    int64_t iAdrsBase   = pTargetSafe + static_cast<int64_t>(m_iCurInstrutionSize);
+    *m_pDestination     = reinterpret_cast<void*>(iAdrsBase + iAdrsOffset);
+    return true;
+
     // this is custom made for extracting adresses form lea instruction ( load effective adrs ), if required we shall expand it much more.
     *m_pDestination = reinterpret_cast<void*>((pInterface + m_iCurInstrutionSize) + (*reinterpret_cast<int32_t*>(pInterface + m_iOffset)));
     return true;

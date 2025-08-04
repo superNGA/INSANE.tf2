@@ -1,6 +1,17 @@
 #pragma once
+
 #include "Basic Structures.h"
+#include "viewSetup.h"
+
 #include "../../Utility/Interface Handler/Interface.h"
+
+struct VPlane
+{
+	vec   m_vIDK1;
+	float m_flIDK2;
+};
+
+typedef VPlane Frustum[6];
 
 class IVRenderView
 {
@@ -99,7 +110,39 @@ public:
 
 	virtual bool			DoesBoxIntersectWaterVolume(const vec& mins, const vec& maxs, int leafWaterDataID) = 0;
 
-	// I Yanked the rest, cause no use.
+	virtual void			SetAreaState() = 0;
+
+	// See i
+	virtual void			VGui_Paint(int mode) = 0;
+
+	// Push, pop views (see PushViewFlags_t above for flags)
+	virtual void			Push3DView(CViewSetup* view, int nFlags, void* pRenderTarget, Frustum frustumPlanes) = 0;
+	virtual void			Push2DView(const CViewSetup& view, int nFlags, void* pRenderTarget, Frustum frustumPlanes) = 0;
+	virtual void			PopView(Frustum frustumPlanes) = 0;
+
+	// Sets the main view
+	virtual void			SetMainView(const vec& vecOrigin, const qangle& angles) = 0;
+
+	enum
+	{
+		VIEW_SETUP_VIS_EX_RETURN_FLAGS_USES_RADIAL_VIS = 0x00000001
+	};
+
+	// Wraps view render sequence, sets up a view
+	virtual void			ViewSetupVisEx(bool novis, int numorigins, const vec origin[], unsigned int& returnFlags) = 0;
+
+	//replaces the current view frustum with a rhyming replacement of your choice
+	virtual void			OverrideViewFrustum(Frustum custom) = 0;
+
+	virtual void			DrawBrushModelShadowDepth(void* baseentity, model_t* model, const vec& origin, const qangle& angles, int DepthMode) = 0;
+	virtual void			UpdateBrushModelLightmap(model_t* model, void* pRenderable) = 0;
+	virtual void			BeginUpdateLightmaps(void) = 0;
+	virtual void			EndUpdateLightmaps(void) = 0;
+	virtual void			OLD_SetOffCenterProjectionMatrix(float fov, float zNear, float zFar, float flAspectRatio, float flBottom, float flTop, float flLeft, float flRight) = 0;
+	virtual void			OLD_SetProjectionMatrixOrtho(float left, float top, float right, float bottom, float zNear, float zFar) = 0;
+	virtual void			Push3DView(const CViewSetup& view, int nFlags, void* pRenderTarget, Frustum frustumPlanes, void* pDepthTexture) = 0;
+	virtual void			GetMatricesForView(const CViewSetup& view, void* pWorldToView, void* pViewToProjection, void* pWorldToProjection, void* pWorldToPixels) = 0;
+	virtual void			DrawBrushModelEx(void* baseentity, model_t* model, const vec& origin, const qangle& angles, int mode) = 0;
 };
 
 MAKE_INTERFACE_VERSION(iVRenderView, "VEngineRenderView014", IVRenderView, ENGINE_DLL)
