@@ -16,12 +16,12 @@ public:
     inline void* GetOriginalPaintFn() const { return m_pOriginalPaint; }
 private:
     bool   _InitializePanel();
-    inline void _FreePanel() { if (m_pPanel != nullptr) free(m_pPanel); }
+    void   _FreePanel();
     Panel* m_pPanel           = nullptr;
     bool   m_bPanelInitilized = false;
 
     bool   _SpoofVTable();
-    inline void _FreeVTable() { if (m_pSpoofedVTable != nullptr) free(m_pSpoofedVTable); }
+    void   _FreeVTable();
     void*  m_pSpoofedVTable   = nullptr;
     void*  m_pOriginalPaint   = nullptr;
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Utility/Interface Handler/Interface.h"
 #include "IBaseInterface.h"
+#include "VPanel.h"
 
 class IPanel : public IBaseInterface
 {
@@ -26,9 +27,9 @@ public:
 	virtual bool IsVisible(vgui::VPANEL vguiPanel) = 0;
 	virtual void SetParent(vgui::VPANEL vguiPanel, vgui::VPANEL newParent) = 0;
 	virtual int GetChildCount(vgui::VPANEL vguiPanel) = 0;
-	virtual int GetChild(vgui::VPANEL vguiPanel, int index) = 0;
+	virtual vgui::VPANEL GetChild(vgui::VPANEL vguiPanel, int index) = 0;
 	virtual void GetChildren(vgui::VPANEL vguiPanel) = 0;
-	virtual int GetParent(vgui::VPANEL vguiPanel) = 0;
+	virtual vgui::VPANEL GetParent(vgui::VPANEL vguiPanel) = 0;
 	virtual void MoveToFront(vgui::VPANEL vguiPanel) = 0;
 	virtual void MoveToBack(vgui::VPANEL vguiPanel) = 0;
 	virtual bool HasParent(vgui::VPANEL vguiPanel, int potentialParent) = 0;
@@ -96,6 +97,12 @@ public:
 
 	// sibling pins
 	virtual void SetSiblingPin(vgui::VPANEL vguiPanel, int newSibling, byte iMyCornerToPin = 0, byte iSiblingCornerToPinTo = 0) = 0;
+
+
+	inline Panel* Client(const vgui::VPANEL vguiPanel)
+	{
+		return reinterpret_cast<VPanel*>(vguiPanel)->Client();
+	}
 };
 
 MAKE_INTERFACE_VERSION(iPanel, "VGUI_Panel009", IPanel, VGUI2_DLL)
