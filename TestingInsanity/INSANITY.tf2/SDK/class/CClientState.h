@@ -85,5 +85,4 @@ public:
 };
 
 
-MAKE_INTERFACE_SIGNATURE(cClientState, "48 8D 0D ? ? ? ? 48 8B 5C 24 ? 48 83 C4 ? 5F E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 6C 24", 
-    CClientState, ENGINE_DLL, 3, 7)
+MAKE_INTERFACE_SIGNATURE(cClientState, "48 8D 0D ? ? ? ? E8 ? ? ? ? F3 0F 5E 05", CClientState, ENGINE_DLL, 3, 7)

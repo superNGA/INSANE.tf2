@@ -1,11 +1,31 @@
 #pragma once
+
 #include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/Signature Handler/signatures.h"
+
 #include "IAppSystem.h"
 #include "Basic Structures.h"
+
+
+MAKE_SIG(IMatSystemSurface_Begin3DPaint, "48 89 5C 24 ? 48 89 6C 24 ? 56 57 41 54 41 56 41 57 48 83 EC ? 41 8B F1", VGUIMATSURFACE_DLL, void,
+	void*, int, int, int, int, bool)
+MAKE_SIG(IMatSystemSurface_End3DPaint, "40 53 55 56 57 41 54 41 55", VGUIMATSURFACE_DLL, void*, void*)
+
 
 class ISurface : public IAppSystem
 {
 public:
+	inline void Begin3DPaint_Sig(int iLeft, int iTop, int iRight, int iBottom, bool bRenderToTexture)
+	{
+		Sig::IMatSystemSurface_Begin3DPaint(this, iLeft, iTop, iRight, iBottom, bRenderToTexture);
+	}
+	
+	inline void End3DPaint_Sig()
+	{
+		Sig::IMatSystemSurface_End3DPaint(this);
+	}
+
+
 	// call to Shutdown surface; surface can no longer be used after this is called
 	virtual void Shutdown() = 0;
 

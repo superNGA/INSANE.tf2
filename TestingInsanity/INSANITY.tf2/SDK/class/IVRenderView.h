@@ -41,7 +41,7 @@ public:
 	virtual float			GetBlend(void) = 0;
 
 	// Sets global color modulation
-	virtual void			SetColorModulation(float const* blend) = 0;
+	virtual void			SetColorModulation(vec* blend) = 0;
 	virtual void			GetColorModulation(float* blend) = 0;
 
 	// Wrap entire scene drawing

@@ -16,6 +16,10 @@ MAKE_SIG(CMaterialSystem_GetRenderContext, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83
 MAKE_SIG(CMaterialSystem_ClearBuffer, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 41 0F B6 F9", MATERIALSYSTEM_DLL, void*,
 	void*, bool, bool, bool)
 
+MAKE_SIG(CMaterialSystem_GetBackBufferFormat, "48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 83 EC", MATERIALSYSTEM_DLL, int64_t, int)
+
+//																		    Return, this,  name,		type,        complain, flags
+MAKE_SIG(CMateiralSystem_FindTexture, "40 55 57 41 55", MATERIALSYSTEM_DLL, void*,	void*, const char*, const char*, bool,     int)
 
 
 class IMaterialSystem
@@ -26,9 +30,13 @@ public:
 		return Sig::CMaterialSystem_ClearBuffer(this, bClearColor, bClearDepth, bClearStencil);
 	}
 
+	inline void* FindTexture(const char* szTextureName, const char* szType, bool bComplain = true, int iAdditionalFlags = 0)
+	{
+		return Sig::CMateiralSystem_FindTexture(this, szTextureName, szType, bComplain, iAdditionalFlags);
+	}
 	
 	inline IMatRenderContext* GetRenderContext() { return Sig::CMaterialSystem_GetRenderContext(this); }
-
+	inline int GetBackBufferFormat() { return static_cast<int>(((int64_t(*)())(Sig::CMaterialSystem_GetBackBufferFormat.m_ullAdrs))()); }
 
 	inline void* CreateRenderTarget(
 		int w,

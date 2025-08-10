@@ -31,8 +31,15 @@ HookInfo_t::HookInfo_t(const char* szInterfaceVersion, int iIndex, const char* s
     // Getting the interface
     int   iReturnCode = 0;
     void* pInterface  = reinterpret_cast<void*>(util.GetInterface(szInterfaceVersion, szDll, &iReturnCode));
-    if (iReturnCode != 0 || pInterface == nullptr)
+    if (iReturnCode != 0 || pInterface == nullptr) // Invalid interface ?
+    {
+        m_pHook      = nullptr; 
+        m_ppOriginal = nullptr;
+        m_pTarget    = NULL;
+        hook_t.AddHook(this); // Add this anyways, so "Hook_t::Initialize" Will notify us about failed hook.
         return;
+    }
+
     m_pTarget    = reinterpret_cast<uintptr_t>(util.GetVirtualTable(pInterface)[iIndex]);
 
     m_szDll      = szDll;

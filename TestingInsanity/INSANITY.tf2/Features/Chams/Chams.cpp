@@ -291,7 +291,7 @@ bool Chams_t::_ApplyChams(DrawModelState_t* pModelState, IMaterial* pChamMateria
     case 2 :
     case 3 : 
         Sig::ForcedMaterialOverride(I::iStudioRender, pChamMaterial, OverrideType_t::OVERRIDE_NORMAL);
-        I::iVRenderView->SetColorModulation(pChamClrs);
+        //I::iVRenderView->SetColorModulation(pChamClrs);
         I::iVRenderView->SetBlend(flAlpha);
         return true;
 

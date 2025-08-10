@@ -20,8 +20,8 @@ public:
 	virtual void				DepthRange(float zNear, float zFar) = 0;
 	virtual void				ClearBuffers(int bClearColor, int bClearDepth, int bClearStencil = 0) = 0;
 	virtual void				ReadPixels(int x, int y, int width, int height, unsigned char* data, int dstFormat) = 0;
-	virtual void unk124() = 0;
-	virtual void unk125() = 0;
+	/*virtual void unk124() = 0;
+	virtual void unk125() = 0;*/
 	virtual void				SetAmbientLight(float r, float g, float b) = 0;
 	virtual void				SetLight(int lightNum, const int& desc) = 0;
 	virtual void				SetAmbientLightCube(int cube[6]) = 0;
@@ -166,7 +166,7 @@ public:
 	virtual vec				GetToneMappingScaleLinear(void) = 0;
 	virtual void				SetShadowDepthBiasFactors(float fSlopeScaleDepthBias, float fDepthBias) = 0;
 	virtual void				PerformFullScreenStencilOperation(void) = 0;
-	virtual void				SetLightingOrigin(/*vec vLightingOrigin*/float x, float y, float z) = 0;																		//158
+	virtual void				SetLightingOrigin(vec vLightingOrigin) = 0;																		//158
 	virtual void				SetScissorRect(const int nLeft, const int nTop, const int nRight, const int nBottom, const bool bEnableScissor) = 0;
 	virtual void				BeginMorphAccumulation() = 0;
 	virtual void				EndMorphAccumulation() = 0;
