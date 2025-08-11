@@ -21,6 +21,7 @@
 #include "../../SDK/class/CClientState.h"
 
 // UTILITY
+#include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Extra/math.h"
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
@@ -56,24 +57,29 @@ THEORY :
            Panel::PaintTraverse() --> CMDLPanel::Paint() --> PotteryWheel::Paint() -->
            IMatSystemSurface::Begin3DPaint() --> CMDLPaint::OnPaint3D() --> IMatSystemSurface::End3DPaint()
 
+    Crash is occuring at "CBaseAnimating::SetupBones()" and its calling a fn exclusive to it & noone else calls that funciton.
+    DAYEM!, now I gotta rename the entire fucking SetupBones.
 */
 
 MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENGINE_DLL, 3, 7)
 
-
-MAKE_HOOK(GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int a2)
-{
-    auto result = Hook::GetModel::O_GetModel(a1, a2);
-    if (result == nullptr)
-    {
-        WIN_LOG("returned ( %p ) for index %d", F::modelPreview.m_pModel, a2);
-        __debugbreak();
-
-        return F::modelPreview.m_pModel;
-    }
-
-    return result;
-}
+static bool m_bNigger = false;
+//MAKE_HOOK(GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int iModelIndex)
+//{
+//    auto result = Hook::GetModel::O_GetModel(a1, iModelIndex);
+//    
+//    LOG("Drawing model index : %d", iModelIndex);
+//    return F::modelPreview.m_pModel;
+//
+//    //// Don't return altered model unless our entity is initialized
+//    //if (F::modelPreview.m_bEntInit == false)
+//    //    return result;
+//
+//    //if (m_bNigger == true)
+//    //    return F::modelPreview.m_pModel;
+//
+//    return result;
+//}
 
 
 //=========================================================================
@@ -162,7 +168,6 @@ bool ModelPreview_t::_InitializeEntity()
             return false;
         }
 
-        pTable->AddString(false, "models/player/soldier.mdl");
         pTable->AddString(false, "models/player/scout.mdl");
         *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::cClientState) + 0x8EA8ull)  = pTable;
         *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::CGameServer)  + 0x54298ull) = pTable;
@@ -170,7 +175,7 @@ bool ModelPreview_t::_InitializeEntity()
     }
 
 
-    uint64_t iEntSize = 0x400ull * 10ull;
+    constexpr uint64_t iEntSize = 0x400ull * 10ull;
     if (m_pEnt == nullptr)
     {
         m_pEnt = malloc(iEntSize);
@@ -179,6 +184,8 @@ bool ModelPreview_t::_InitializeEntity()
             FAIL_LOG("Bad malloc");
             return false;
         }
+        memset(m_pEnt, 0, iEntSize);
+        WIN_LOG("Allocated ourselves a nigga @ %p", m_pEnt);
     }
 
     if (m_pModel == nullptr)
@@ -190,10 +197,9 @@ bool ModelPreview_t::_InitializeEntity()
             return false;
         }
 
-        WIN_LOG("Found model @ %p", m_pModel);
+        WIN_LOG("Found model @ %p | original model type : %d", m_pModel, reinterpret_cast<model_t*>(m_pModel)->type);
     }
 
-    memset(m_pEnt, 0, iEntSize);
     Sig::CBaseFlex_Constructor(m_pEnt);
     if (Sig::InitializeAsClientEntity(m_pEnt, "models/player/scout.mdl", RENDER_GROUP_OPAQUE_ENTITY) == false)
     {
@@ -201,7 +207,29 @@ bool ModelPreview_t::_InitializeEntity()
         return false;
     }
 
+    if (m_pBones == nullptr)
+    {
+        constexpr uint64_t iBoneMatrixSize = /*0x400ull * 10ull*/ 48ull * MAX_STUDIO_BONES;
+        m_pBones = malloc(iBoneMatrixSize);
+        if (m_pBones == nullptr)
+        {
+            FAIL_LOG("Allocation failed for bone matrix");
+            return false;
+        }
+
+        memset(m_pBones, 0, iBoneMatrixSize);
+
+        // Setting bone matrix pointer of our entity
+        *reinterpret_cast<void**>(reinterpret_cast<uintptr_t>(reinterpret_cast<BaseEntity*>(m_pEnt)->GetClientRenderable()) + 2112ull) = m_pBones;
+        WIN_LOG("Allocated bone matix for our nigga :)");
+    }
+
     *reinterpret_cast<model_t**>(reinterpret_cast<uintptr_t>(m_pEnt) + 152ull) = reinterpret_cast<model_t*>(m_pModel);
+    *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(m_pEnt) + 102ull) = 1;
+    
+    int* iSequence = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(reinterpret_cast<BaseEntity*>(m_pEnt)->GetClientRenderable()) + 2816ull);
+    *iSequence = 1;
+
     m_bEntInit = true;
     return true;
 }
@@ -264,7 +292,7 @@ void __fastcall PaintHijack(Panel* a1)
         pRenderCtx->ClearBuffers(true, false);
 
         printf("Gonna draw\n");
-        reinterpret_cast<BaseEntity*>(F::modelPreview.m_pEnt)->DrawModel(STUDIO_RENDER);    
+        reinterpret_cast<BaseEntity*>(F::modelPreview.m_pEnt)->DrawModel(STUDIO_RENDER);
         printf("Done draw\n");
         
         I::iVRenderView->PopView(dummyFrustum);
@@ -390,13 +418,68 @@ void ModelPreview_t::_FreeVTable()
 //=========================================================================
 //                     DEBUGGING
 //=========================================================================
-
-MAKE_HOOK(CTraceEngine_GetBrushInfo, "4C 8B DC 57 41 54", __fastcall, ENGINE_DLL, bool,
-    void* pThis, int iBrush, void* a1, void* a2)
-{
-    LOG("Calling CTraceEngine_GetBrushInfo");
-    bool bResult = Hook::CTraceEngine_GetBrushInfo::O_CTraceEngine_GetBrushInfo(pThis, iBrush, a1, a2);
-    LOG("Brush info : %d", bResult);
-
-    return bResult;
-}
+//MAKE_HOOK(BuildBoneChain, "48 8B C4 48 89 58 ? 4C 89 40 ? 48 89 50 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D A8", __fastcall, CLIENT_DLL, void*,
+//    void* a1, void* a2, void* a3, void* a4, void* a5)
+//{
+//    // printf("%p | %p | %p | %p | %p\n", a1, a2, a3, a4, a5);
+//
+//    return Hook::BuildBoneChain::O_BuildBoneChain(a1, a2, a3, a4, a5);
+//}
+//
+//MAKE_HOOK(BaseAnimating_SetupBones, "48 8B C4 44 89 40 ? 48 89 50 ? 55 53", __fastcall, CLIENT_DLL, void*,
+//    void* pEnt, void* a1, int a2, int a3, int a4)
+//{
+//    printf("Entity -> %p\n", pEnt);
+//    return Hook::BaseAnimating_SetupBones::O_BaseAnimating_SetupBones(pEnt, a1, a2, a3, a4);
+//}
+//
+//MAKE_HOOK(Map_LoadMap, "48 8B C4 48 89 58 ? 48 89 50 ? 48 89 48 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? FF 05", __fastcall, ENGINE_DLL, model_t*,
+//    const char* pThis, void* pModel)
+//{
+//    FAIL_LOG("Attempting to load map");
+//
+//    return Hook::Map_LoadMap::O_Map_LoadMap(pThis, pModel);
+//}
+//
+//
+//MAKE_HOOK(CM_LoadMap, "48 89 5C 24 ? 57 48 83 EC ? 48 8D 05 ? ? ? ? 4C 8B D9", __fastcall, ENGINE_DLL, model_t*,
+//    const char* szMapName, bool bAllowReusePrev, void* a1)
+//{
+//    LOG("Trying to load map \"%s\"", szMapName);
+//
+//    return Hook::CM_LoadMap::O_CM_LoadMap(szMapName, bAllowReusePrev, a1);
+//}
+//
+//MAKE_HOOK(CModelInfoClient_GetModelMaterialAndLighting, "48 8B C4 55 53 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 8B 4A", __fastcall, ENGINE_DLL, void*,
+//    void* pThis, model_t* pModel, vec* origin, qangle* angles, void* pTrace, vec* lighting, vec* matColor)
+//{
+//    LOG("Gettign model material n shit for model ( %s )", pModel->strName);
+//    return Hook::CModelInfoClient_GetModelMaterialAndLighting::O_CModelInfoClient_GetModelMaterialAndLighting(
+//        pThis, pModel, origin, angles, pTrace, lighting, matColor);
+//}
+//
+//
+//struct LightingState_t
+//{
+//    vec         r_boxcolor[6];		// ambient, and lights that aren't in locallight[]
+//    int			numlights;
+//    void*       locallight[4];
+//};
+//
+//MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05", __fastcall, ENGINE_DLL,
+//    void*, void* pThis, vec* vOrigin, LightingState_t* pLightState, void* s2, int a1, bool a2)
+//{
+//    WIN_LOG("Returned spoofed light state for Origin { %.2f %.2f %.2f }", vOrigin->x, vOrigin->y, vOrigin->z);
+//    for (int i = 0; i < 6; i++)
+//    {
+//        pLightState->r_boxcolor[i] = vec(0.5f, 0.5f, 0.5f);
+//        
+//        if (i < 4)
+//            pLightState->locallight[i] = nullptr;
+//    }
+//    pLightState->numlights = 0;
+//    return nullptr;
+//
+//
+//    return Hook::LightcacheGetDynamic::O_LightcacheGetDynamic(pThis, vOrigin, pLightState, s2, a1, a2);
+//}
