@@ -153,6 +153,12 @@ enum renderGroup_t
 	RENDER_GROUP_COUNT
 };
 
+// used in some places.
+struct Vec4_t
+{
+	float x, y, z, w;
+};
+
 struct qangle
 {
 	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
@@ -466,6 +472,15 @@ public:
 	/* gets the bone's world coordinates */
 	vec GetWorldPos(){
 		return vec(m[0][3], m[1][3], m[2][3]);
+	}
+
+	const matrix3x4_t& operator=(const matrix3x4_t& other)
+	{
+		m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
+		m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
+		m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
+
+		return *this;
 	}
 };
 

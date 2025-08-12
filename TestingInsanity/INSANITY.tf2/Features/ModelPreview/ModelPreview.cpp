@@ -19,6 +19,7 @@
 #include "../../SDK/class/CMDL.h"
 #include "../../SDK/class/IStudioRender.h"
 #include "../../SDK/class/CClientState.h"
+#include "../../SDK/class/IVModelInfo.h"
 
 // UTILITY
 #include "../../SDK/TF object manager/TFOjectManager.h"
@@ -30,26 +31,13 @@
 
 // Debugging macros
 #define ENABLE_DEBUGGING_HOOKS false
+#define DISABLE_ESSENTIAL_HOOKS false
 
 // FUNCTIONS
 MAKE_SIG(VGui_Panel_Constructor, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F2 48 8B D9 45 85 C0", CLIENT_DLL, void*, Panel*, void*, const char*) // arguments : VTable, parent panel pointer ( Get form engineVGui ), name.
-MAKE_SIG(SetModelAnglePos, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 49 8B D8 48 8B FA 48 8B F1 E8 ? ? ? ? 8B 03", CLIENT_DLL, void*, void*, qangle, vec)
-MAKE_SIG(SetClr, "8B 02 89 81 ? ? ? ? C3 CC CC CC CC CC CC CC F3 0F 11 89", CLIENT_DLL, void*, void*, uint32_t*)
-MAKE_SIG(CTFPlayerModelPanel_Constructor, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F9 45 85 C9 74 ? 48 8D 05 ? ? ? ? 48 89 41 ? 45 33 C9 E8 ? ? ? ? 48 8D 05 ? ? ? ? 48 89 07 48 8D 35 ? ? ? ? 48 8D 05", CLIENT_DLL, void*, Panel*, Panel*, const char*, int)
-MAKE_SIG(CTFPlayerModelPanel_SetPlayerClass, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 83 EC ? 44 8B F2", CLIENT_DLL, void*, Panel*, int, bool, bool)
-MAKE_SIG(CTFPlayerModelPanel_ClearCarriedItem, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 48 8B 0D ? ? ? ? 4C 8D 83", CLIENT_DLL, void*, Panel*)
-MAKE_SIG(CTFPlayerModelPanel_UpdatePreviewVisuals, "40 53 57 41 54 41 56 48 81 EC ? ? ? ? 45 33 E4", CLIENT_DLL, void*, Panel*)
-
 MAKE_SIG(InitializeAsClientEntity, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 41 8B F0 48 8B D9 48 85 D2", CLIENT_DLL, bool, void*, const char*, int)
 MAKE_SIG(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 33 ED", CLIENT_DLL, void*, void*)
 
-class IViewPortPanel;
-MAKE_SIG(VGui_Panel_FindChildByName, "48 8B C4 53 48 81 EC ? ? ? ? 48 89 70 ? 33 F6", CLIENT_DLL, Panel*, Panel*, const char*, bool)
-MAKE_SIG(IViewPort_GetPanelByName, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 56 48 83 EC ? 48 63 71 ? 33 FF", CLIENT_DLL, IViewPortPanel*, void*, const char*)
-MAKE_SIG(GetClientModeNormal, "40 53 48 83 EC ? 8B 05 ? ? ? ? A8 ? 0F 85 ? ? ? ? 83 C8 ? 48 8D 1D ? ? ? ? 48 8B CB 89 05 ? ? ? ? E8 ? ? ? ? 33 C9", CLIENT_DLL, void*, bool)
-
-MAKE_SIG(CClassLoadoutPanel_UpdateModelPanels, "40 53 48 83 EC ? 48 89 74 24 ? 48 8B D9 8B 89", CLIENT_DLL, void*, void*)
-MAKE_SIG(CMDLPanel_Paint, "40 55 48 81 EC ? ? ? ? 48 8B E9 E8 ? ? ? ? F6 85", CLIENT_DLL, void*, Panel*)
 
 /*
 THEORY :
@@ -63,76 +51,34 @@ THEORY :
 
 MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENGINE_DLL, 3, 7)
 
-static bool m_bNigger = false;
-//MAKE_HOOK(GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int iModelIndex)
-//{
-//    auto result = Hook::GetModel::O_GetModel(a1, iModelIndex);
-//    
-//    LOG("Drawing model index : %d", iModelIndex);
-//    return F::modelPreview.m_pModel;
-//
-//    //// Don't return altered model unless our entity is initialized
-//    //if (F::modelPreview.m_bEntInit == false)
-//    //    return result;
-//
-//    //if (m_bNigger == true)
-//    //    return F::modelPreview.m_pModel;
-//
-//    return result;
-//}
+
+static bool m_bOurEntityIncoming = false;
+#if (DISABLE_ESSENTIAL_HOOKS == false)
+
+
+MAKE_HOOK(GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int iModelIndex)
+{
+    auto result = Hook::GetModel::O_GetModel(a1, iModelIndex);
+    
+    // If in main menu, then just always return. it doesn't matter, nothing's gonna call that shit.
+    if (I::iEngine->IsConnected() == false)
+        return F::modelPreview.m_pModel;
+
+    // return result;
+
+    //If in game, don't return our model until entity fully initialized.
+    if (F::modelPreview.m_bEntInit == false || m_bOurEntityIncoming == false)
+        return result;
+
+    WIN_LOG("Returned our special model :)");
+    return F::modelPreview.m_pModel;
+}
+#endif
 
 
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-
-vgui::VPANEL FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse)
-{
-    // Sanity checks
-    if (parent == NULL)
-        return NULL;
-
-    // parent is child ? ( LMAO )
-    if (std::string(I::iPanel->GetName(parent)) == szChildName)
-        return parent;
-
-    // Child count
-    int nChildren = I::iPanel->GetChildCount(parent);
-
-    // No children ?
-    if (nChildren == 0)
-        return NULL;
-
-    // Check all children for a match
-    for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
-    {
-        vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
-
-        // match found
-        if (std::string(I::iPanel->GetName(child)) == szChildName)
-            return child;
-    }
-
-
-    if (bRecurse == true)
-    {
-        for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
-        {
-            vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
-
-            // recurse till we found match
-            vgui::VPANEL childMatch = FindChildByName(child, szChildName, bRecurse);
-
-            // if match found
-            if (childMatch != NULL)
-                return childMatch;
-        }
-    }
-
-    return NULL;
-}
-
-
 void ModelPreview_t::Run()
 {
     if (Features::ModelPreview::ModelPreview::Enable.IsActive() == false)
@@ -143,6 +89,27 @@ void ModelPreview_t::Run()
 
     if (_InitializePanel() == false)
         return;
+}
+
+
+inline void ConcatTransform(const matrix3x4_t& parent, const matrix3x4_t& child, matrix3x4_t& out)
+{
+    for (int iRow = 0; iRow < 3; iRow++)
+    {
+        for (int iCol = 0; iCol < 3; iCol++)
+        {
+            out.m[iRow][iCol] =
+                parent.m[iRow][0] * child.m[0][iCol] +
+                parent.m[iRow][1] * child.m[1][iCol] +
+                parent.m[iRow][2] * child.m[2][iCol];
+        }
+
+        out.m[iRow][3] =
+            parent.m[iRow][0] * child.m[0][3] +
+            parent.m[iRow][1] * child.m[1][3] +
+            parent.m[iRow][2] * child.m[2][3] +
+            parent.m[iRow][3];
+    }
 }
 
 
@@ -168,7 +135,7 @@ bool ModelPreview_t::_InitializeEntity()
             return false;
         }
 
-        pTable->AddString(false, "models/player/scout.mdl");
+        pTable->AddString(false, "models/player/spy.mdl");
         *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::cClientState) + 0x8EA8ull)  = pTable;
         *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::CGameServer)  + 0x54298ull) = pTable;
         WIN_LOG("Create table successfully @ { %p }", pTable);
@@ -188,9 +155,11 @@ bool ModelPreview_t::_InitializeEntity()
         WIN_LOG("Allocated ourselves a nigga @ %p", m_pEnt);
     }
 
+
+
     if (m_pModel == nullptr)
     {
-        m_pModel = I::iModelLoader->GetModelForName("models/player/scout.mdl", IModelLoader::FMODELLOADER_CLIENT);
+        m_pModel = I::iModelLoader->GetModelForName("models/player/spy.mdl", IModelLoader::FMODELLOADER_CLIENT);
         if (m_pModel == nullptr)
         {
             FAIL_LOG("Failed to find model");
@@ -201,15 +170,16 @@ bool ModelPreview_t::_InitializeEntity()
     }
 
     Sig::CBaseFlex_Constructor(m_pEnt);
-    if (Sig::InitializeAsClientEntity(m_pEnt, "models/player/scout.mdl", RENDER_GROUP_OPAQUE_ENTITY) == false)
+    if (Sig::InitializeAsClientEntity(m_pEnt, "models/player/spy.mdl", RENDER_GROUP_OPAQUE_ENTITY) == false)
     {
         FAIL_LOG("Failed to create entity");
         return false;
     }
 
-    if (m_pBones == nullptr)
+
+    if(false)//if (m_pBones == nullptr)
     {
-        constexpr uint64_t iBoneMatrixSize = /*0x400ull * 10ull*/ 48ull * MAX_STUDIO_BONES;
+        constexpr uint64_t iBoneMatrixSize = /*0x400ull * 10ull*/ sizeof(matrix3x4_t) * MAX_STUDIO_BONES;
         m_pBones = malloc(iBoneMatrixSize);
         if (m_pBones == nullptr)
         {
@@ -224,8 +194,8 @@ bool ModelPreview_t::_InitializeEntity()
         WIN_LOG("Allocated bone matix for our nigga :)");
     }
 
-    *reinterpret_cast<model_t**>(reinterpret_cast<uintptr_t>(m_pEnt) + 152ull) = reinterpret_cast<model_t*>(m_pModel);
-    *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(m_pEnt) + 102ull) = 1;
+    *reinterpret_cast<model_t**>(reinterpret_cast<uintptr_t>(m_pEnt) + 152ull)       = reinterpret_cast<model_t*>(m_pModel); // Setting model pointer
+    *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(m_pEnt) + 102ull) = 1; // Setting model index.
     
     int* iSequence = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(reinterpret_cast<BaseEntity*>(m_pEnt)->GetClientRenderable()) + 2816ull);
     *iSequence = 1;
@@ -244,6 +214,7 @@ static vec white[6] =
     vec(0.4, 0.4, 0.4),
     vec(0.4, 0.4, 0.4),
 };
+
 
 void __fastcall PaintHijack(Panel* a1)
 {
@@ -279,7 +250,7 @@ void __fastcall PaintHijack(Panel* a1)
         
         // Fix lighting n shit.
         vec vLightOrigin(0.0f); (*(void(__fastcall**)(void*, vec*))(*reinterpret_cast<uintptr_t*>(pRenderCtx) + 0x4E8ull))(pRenderCtx, &vLightOrigin);
-        pRenderCtx->SetAmbientLight(0.0f, 1.0f, 0.0f);
+        pRenderCtx->SetAmbientLight(1.0f, 1.0f, 1.0f);
         I::iStudioRender->SetAmbientLightColors(white);
         I::iStudioRender->SetLocalLights(0, nullptr);
 
@@ -291,8 +262,11 @@ void __fastcall PaintHijack(Panel* a1)
         
         pRenderCtx->ClearBuffers(true, false);
 
+        // NOTE : After somewhere the call to Draw function, the bones gets setup & positioned nicely.
         printf("Gonna draw\n");
+        m_bOurEntityIncoming = true;
         reinterpret_cast<BaseEntity*>(F::modelPreview.m_pEnt)->DrawModel(STUDIO_RENDER);
+        m_bOurEntityIncoming = false;
         printf("Done draw\n");
         
         I::iVRenderView->PopView(dummyFrustum);
@@ -418,38 +392,22 @@ void ModelPreview_t::_FreeVTable()
 //=========================================================================
 //                     DEBUGGING
 //=========================================================================
-//MAKE_HOOK(BuildBoneChain, "48 8B C4 48 89 58 ? 4C 89 40 ? 48 89 50 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D A8", __fastcall, CLIENT_DLL, void*,
-//    void* a1, void* a2, void* a3, void* a4, void* a5)
-//{
-//    // printf("%p | %p | %p | %p | %p\n", a1, a2, a3, a4, a5);
-//
-//    return Hook::BuildBoneChain::O_BuildBoneChain(a1, a2, a3, a4, a5);
-//}
-//
-//MAKE_HOOK(BaseAnimating_SetupBones, "48 8B C4 44 89 40 ? 48 89 50 ? 55 53", __fastcall, CLIENT_DLL, void*,
-//    void* pEnt, void* a1, int a2, int a3, int a4)
-//{
-//    printf("Entity -> %p\n", pEnt);
-//    return Hook::BaseAnimating_SetupBones::O_BaseAnimating_SetupBones(pEnt, a1, a2, a3, a4);
-//}
-//
-//MAKE_HOOK(Map_LoadMap, "48 8B C4 48 89 58 ? 48 89 50 ? 48 89 48 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? FF 05", __fastcall, ENGINE_DLL, model_t*,
-//    const char* pThis, void* pModel)
-//{
-//    FAIL_LOG("Attempting to load map");
-//
-//    return Hook::Map_LoadMap::O_Map_LoadMap(pThis, pModel);
-//}
-//
-//
-//MAKE_HOOK(CM_LoadMap, "48 89 5C 24 ? 57 48 83 EC ? 48 8D 05 ? ? ? ? 4C 8B D9", __fastcall, ENGINE_DLL, model_t*,
-//    const char* szMapName, bool bAllowReusePrev, void* a1)
-//{
-//    LOG("Trying to load map \"%s\"", szMapName);
-//
-//    return Hook::CM_LoadMap::O_CM_LoadMap(szMapName, bAllowReusePrev, a1);
-//}
-//
+
+#if (DISABLE_ESSENTIAL_HOOKS == false)
+MAKE_HOOK(BaseAnimating_SetupBones, "48 8B C4 44 89 40 ? 48 89 50 ? 55 53", __fastcall, CLIENT_DLL, int64_t,
+    void* pEnt, void* a1, int a2, int a3, int a4)
+{
+    auto result = Hook::BaseAnimating_SetupBones::O_BaseAnimating_SetupBones(pEnt, a1, a2, a3, a4);
+    
+    if (result != 0)
+        WIN_LOG("Setupbones SUCCEDDED");
+    else
+        FAIL_LOG("Setupbones FAILED");
+
+    return result;
+}
+
+
 //MAKE_HOOK(CModelInfoClient_GetModelMaterialAndLighting, "48 8B C4 55 53 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 8B 4A", __fastcall, ENGINE_DLL, void*,
 //    void* pThis, model_t* pModel, vec* origin, qangle* angles, void* pTrace, vec* lighting, vec* matColor)
 //{
@@ -457,29 +415,63 @@ void ModelPreview_t::_FreeVTable()
 //    return Hook::CModelInfoClient_GetModelMaterialAndLighting::O_CModelInfoClient_GetModelMaterialAndLighting(
 //        pThis, pModel, origin, angles, pTrace, lighting, matColor);
 //}
-//
-//
-//struct LightingState_t
-//{
-//    vec         r_boxcolor[6];		// ambient, and lights that aren't in locallight[]
-//    int			numlights;
-//    void*       locallight[4];
-//};
-//
-//MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05", __fastcall, ENGINE_DLL,
-//    void*, void* pThis, vec* vOrigin, LightingState_t* pLightState, void* s2, int a1, bool a2)
-//{
-//    WIN_LOG("Returned spoofed light state for Origin { %.2f %.2f %.2f }", vOrigin->x, vOrigin->y, vOrigin->z);
-//    for (int i = 0; i < 6; i++)
-//    {
-//        pLightState->r_boxcolor[i] = vec(0.5f, 0.5f, 0.5f);
-//        
-//        if (i < 4)
-//            pLightState->locallight[i] = nullptr;
-//    }
-//    pLightState->numlights = 0;
-//    return nullptr;
-//
-//
-//    return Hook::LightcacheGetDynamic::O_LightcacheGetDynamic(pThis, vOrigin, pLightState, s2, a1, a2);
-//}
+
+
+
+struct LightingState_t
+{
+    vec         r_boxcolor[6];		// ambient, and lights that aren't in locallight[]
+    int			numlights;
+    void*       locallight[4];
+};
+
+MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05", __fastcall, ENGINE_DLL,
+    void*, void* pThis, vec* vOrigin, LightingState_t* pLightState, void* a1, int a2, bool a3)
+{
+    if (I::iEngine->IsConnected() == true)
+        return Hook::LightcacheGetDynamic::O_LightcacheGetDynamic(pThis, vOrigin, pLightState, a1, a2, a3);
+
+
+    WIN_LOG("Returned spoofed light state for Origin { %.2f %.2f %.2f }", vOrigin->x, vOrigin->y, vOrigin->z);
+    for (int i = 0; i < 6; i++)
+    {
+        pLightState->r_boxcolor[i] = vec(0.5f, 0.5f, 0.5f);
+        
+        if (i < 4)
+            pLightState->locallight[i] = nullptr;
+    }
+    pLightState->numlights = 0;
+    return nullptr;
+}
+
+
+MAKE_HOOK(CModelRender_DrawModelSetup, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 4C 24", __fastcall, ENGINE_DLL, bool,
+    void* pThis, void* a1, void* a2, void* a3, void* a4)
+{
+    if(F::modelPreview.m_bEntInit == false || m_bOurEntityIncoming == false)
+        return Hook::CModelRender_DrawModelSetup::O_CModelRender_DrawModelSetup(pThis, a1, a2, a3, a4);
+
+
+    /*matrix3x4_t* pBoneMatrix = *reinterpret_cast<matrix3x4_t**>(reinterpret_cast<uintptr_t>(reinterpret_cast<BaseEntity*>(F::modelPreview.m_pEnt)->GetClientRenderable()) + 2112ull);
+    for (int iBone = 0; iBone < 78; iBone++)
+    {
+        printf("# %d | %.2f %.2f %.2f\n", iBone, pBoneMatrix[iBone].m[0][3], pBoneMatrix[iBone].m[1][3], pBoneMatrix[iBone].m[2][3]);
+    }*/
+
+    bool bResult = Hook::CModelRender_DrawModelSetup::O_CModelRender_DrawModelSetup(pThis, a1, a2, a3, a4);
+    
+    matrix3x4_t* pBoneMatrix = reinterpret_cast<matrix3x4_t*>(a4);
+    for (int iBone = 0; iBone < 78; iBone++)
+    {
+        printf("# %d | %.2f %.2f %.2f\n", iBone, pBoneMatrix[iBone].m[0][3], pBoneMatrix[iBone].m[1][3], pBoneMatrix[iBone].m[2][3]);
+    }
+
+    /*if(bResult == true)
+        WIN_LOG("DRAW MODEL SETUP : SUCCEEDED :)");
+    else
+        FAIL_LOG("DRAW MODEL SETUP : failed :(");*/
+    
+    return bResult;
+}
+
+#endif

@@ -22,6 +22,35 @@ struct mstudiobbox_t
 	}
 };
 
+struct mstudiobone_t
+{
+	int					sznameindex;
+	inline char* const pszName(void) const { return ((char*)this) + sznameindex; }
+	int		 			parent;		// parent bone
+	int					bonecontroller[6];	// bone controller index, -1 == none
+
+	// default values
+	vec					pos;
+	Vec4_t				quat;
+	vec					rot;
+	// compression scale
+	vec					posscale;
+	vec					rotscale;
+
+	matrix3x4_t			poseToBone;
+	Vec4_t				qAlignment;
+	int					flags;
+	int					proctype;
+	int					procindex;		// procedural rule
+	mutable int			physicsbone;	// index into physically simulated bone
+	inline void* pProcedure() const { if (procindex == 0) return NULL; else return  (void*)(((byte*)this) + procindex); };
+	int					surfacepropidx;	// index into string tablefor property name
+	inline char* const pszSurfaceProp(void) const { return ((char*)this) + surfacepropidx; }
+	int					contents;		// See BSPFlags.h for the contents flags
+
+	int					unused[8];		// remove as appropriate
+};
+
 struct mstudiohitboxset_t
 {
 	int					sznameindex;
@@ -58,7 +87,7 @@ struct StudioHdr_t
 
 	int					numbones;			// bones
 	int					boneindex;
-	//inline mstudiobone_t* pBone(int i) const { Assert(i >= 0 && i < numbones); return (mstudiobone_t*)(((byte*)this) + boneindex) + i; };
+	inline mstudiobone_t* pBone(int i) const { return (mstudiobone_t*)(((byte*)this) + boneindex) + i; };
 	//int					RemapSeqBone(int iSequence, int iLocalBone) const;	// maps local sequence bone to global bone
 	//int					RemapAnimBone(int iAnim, int iLocalBone) const;		// maps local animations bone to global bone
 

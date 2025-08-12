@@ -18,7 +18,7 @@ public:
     const int m_iWidth  = 800;
 
     bool _InitializeEntity();
-    void* m_pBones = nullptr; // Yea I have do it myself, tf2 else setupbones will fail in mainmenu.
+    void* m_pBones = nullptr; // Yea I have do it myself, else setupbones will fail in mainmenu.
     void* m_pEnt = nullptr;
     void* m_pModel = nullptr;
     bool m_bEntInit = false;
