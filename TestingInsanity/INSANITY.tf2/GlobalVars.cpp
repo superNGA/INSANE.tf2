@@ -2,7 +2,7 @@
 
 namespace global
 {
-	vec2 window_size;
+	Vec2 window_size;
 	const char* target_window_name = "Team Fortress 2 - Direct3D 9 - 64 Bit";
 	const char* target_proc_name   = "tf win64.exe";
 	HWND target_hwnd               = nullptr;

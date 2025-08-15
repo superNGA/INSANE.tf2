@@ -12,11 +12,7 @@
 #include "SDK/class/IVEngineClient.h"
 #include "SDK/class/I_EngineClientReplay.h"
 #include "SDK/class/GlowManager.h"
-//#include "SDK/class/IEngineTrace.h"
 #include "SDK/class/IVDebugOverlay.h"
-
-/* entity information template struct */
-#include "SDK/entInfo_t.h"
 
 // Forward Declares
 class baseWeapon;
@@ -63,7 +59,7 @@ enum cur_window
 /*this holds imformation about the target process*/
 namespace global
 {
-	extern vec2		   window_size;
+	extern Vec2		   window_size;
 
 	extern const char* target_window_name;
 	extern const char* target_proc_name;

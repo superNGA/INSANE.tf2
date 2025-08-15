@@ -14,6 +14,7 @@ NETVAR(m_flMaxspeed,			 DT_BasePlayer)
 NETVAR(m_iFOV,					 DT_BasePlayer)
 								 
 NETVAR(m_nHitboxSet,			 DT_BaseAnimating)
+NETVAR(m_nSequence,				DT_BaseAnimating)
 								 
 // BaseEntity					 
 NETVAR(m_iTeamNum,				 DT_BaseEntity)
@@ -64,6 +65,9 @@ NETVAR(m_AttributeManager,	     DT_EconEntity)
 NETVAR(m_Item,				     DT_AttributeContainer)
 NETVAR(m_iItemDefinitionIndex,   DT_ScriptCreatedItem)
 
+NETVAR(m_flAnimTime,			 DT_AnimTimeMustBeFirst)
+NETVAR(m_flCycle, DT_ServerAnimationData)
+
 // Offset Netvars
 NETVAR_OFFSET(m_vecAbsVelocity,  m_Collision,		DT_BaseEntity,		-120)
 NETVAR_OFFSET(m_vecVelocity,	 m_Collision,		DT_BaseEntity,		-120 -80 -12 -4)
@@ -93,6 +97,11 @@ public:
 	NETVAR_GETTER(m_fFlags, DT_BasePlayer, int32_t)
 	NETVAR_SETTER(m_fFlags, DT_BasePlayer, int32_t)
 	NETVAR_GETTER(m_iFOV, DT_BasePlayer,   int32_t)
+	
+	NETVAR_GETTER(m_flAnimTime, DT_AnimTimeMustBeFirst, float)
+	NETVAR_SETTER(m_flAnimTime, DT_AnimTimeMustBeFirst, float)
+	NETVAR_GETTER(m_flCycle, DT_ServerAnimationData, float)
+	NETVAR_SETTER(m_flCycle, DT_ServerAnimationData, float)
 	
 	NETVAR_GETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)
@@ -150,6 +159,8 @@ public:
 	NETVAR_SETTER(m_bInDuckJump,	DT_Local, bool)
 
 	NETVAR_GETTER(m_nHitboxSet, DT_BaseAnimating, int)
+	NETVAR_GETTER(m_nSequence, DT_BaseAnimating, int)
+	NETVAR_SETTER(m_nSequence, DT_BaseAnimating, int)
 
 	bool			IsEnemy();
 	int32_t			GetWeaponIndex();

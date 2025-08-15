@@ -399,16 +399,49 @@ __declspec(align(16)) struct vecAligned : public vec {
 
 
 /* most used to store screen coordinates in this software, nothing too big */
-struct vec2
+struct Vec2
 {
-	/* constructor maxing :) */
-	vec2() : x(0.0f), y(0.0f){}
-	vec2(float X, float Y)	: x(X), y(Y){}
+	constexpr Vec2()                 : x(0.0f), y(0.0f){}
+	constexpr Vec2(float X, float Y) : x(X), y(Y){}
+	
 	float x, y;
-
-	qangle to_qangle()
+	
+	const Vec2& operator=(Vec2 other)
 	{
-		return qangle(x, y, 0.0f);
+		x = other.x; y = other.y;
+		return *this;
+	}
+
+	bool operator==(Vec2 other) const
+	{
+		return x == other.x && y == other.y;
+	}
+
+	bool IsEmpty() const
+	{
+		return fabsf(x) < 0.0001f && fabsf(y) < 0.0001f;
+	}
+
+	Vec2 operator+(Vec2 other) const
+	{
+		return Vec2(x + other.x, y + other.y);
+	}
+
+	Vec2& operator+=(Vec2 other) 
+	{
+		x += other.x; y += other.y;
+		return *this;
+	}
+
+	Vec2 operator-(Vec2 other) const
+	{
+		return Vec2(x - other.x, y - other.y);
+	}
+
+	Vec2& operator-=(Vec2 other) 
+	{
+		x -= other.x; y -= other.y;
+		return *this;
 	}
 };
 

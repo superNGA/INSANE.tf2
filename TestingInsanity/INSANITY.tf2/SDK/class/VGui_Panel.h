@@ -39,9 +39,4 @@ public:
     {
         Sig::VGui_Panel_MakeReadyToUse(this);
     }
-
-    inline unsigned short GetMDLHandle()
-    {
-        return *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(this) + 1456ULL);
-    }
 };

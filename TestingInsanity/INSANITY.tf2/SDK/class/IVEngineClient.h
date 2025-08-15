@@ -92,7 +92,7 @@ public:
 	// Returns true if the player is fully connected and active in game (i.e, not still loading)
 	virtual bool				IsInGame(void) = 0; //27th Function
 	// Returns true if the player is connected, but not necessarily active in game (could still be loading)
-	virtual bool				IsConnected(void) = 0;
+	virtual bool				IsConnected(void) const = 0;
 	// Returns true if the loading plaque should be drawn
 	virtual bool				IsDrawingLoadingImage(void) = 0;
 

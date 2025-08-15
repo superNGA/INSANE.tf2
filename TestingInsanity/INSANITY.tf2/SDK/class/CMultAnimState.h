@@ -112,7 +112,7 @@ struct DebugPlayerAnimData_t
 	float		m_flAimPitch;
 	float		m_flAimYaw;
 	float		m_flBodyHeight;
-	vec2	m_vecMoveYaw;
+	Vec2	m_vecMoveYaw;
 };
 
 struct MultiPlayerMovementData_t

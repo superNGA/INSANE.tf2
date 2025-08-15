@@ -10,6 +10,7 @@
 #define SOUND_PRECACHE_TABLENAME	"soundprecache"
 #define DECAL_PRECACHE_TABLENAME	"decalprecache"
 
+constexpr int INVALID_TABLE_INDEX = UINT16_MAX;
 
 class INetworkStringTable
 {

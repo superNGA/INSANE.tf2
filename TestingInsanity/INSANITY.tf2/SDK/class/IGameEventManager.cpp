@@ -43,6 +43,7 @@ bool IGameEventListener2::Initialize()
     return bSuccess;
 }
 
+
 void IGameEventListener2::FireGameEvent(IGameEvent* event)
 {
     // Hashing event name, so we can easily campare it with others

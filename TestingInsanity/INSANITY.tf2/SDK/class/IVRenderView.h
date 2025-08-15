@@ -62,7 +62,7 @@ public:
 
 	// Optimization for top view
 	virtual void			DrawTopView(bool enable) = 0;
-	virtual void			TopViewBounds(vec2 const& mins, vec2 const& maxs) = 0;
+	virtual void			TopViewBounds(Vec2 const& mins, Vec2 const& maxs) = 0;
 
 	// Draw lights
 	virtual void			DrawLights(void) = 0;
