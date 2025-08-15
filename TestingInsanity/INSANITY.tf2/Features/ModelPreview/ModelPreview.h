@@ -56,7 +56,9 @@ private:
     bool     m_bModelPrecached   = false;
     std::vector<std::string> m_vecModels = 
     {
-        "models/player/spy.mdl"
+        "models/player/spy.mdl",
+        "models/player/heavy.mdl",
+        "custom/CustomModels/models/johny.mdl"
     };
 
 

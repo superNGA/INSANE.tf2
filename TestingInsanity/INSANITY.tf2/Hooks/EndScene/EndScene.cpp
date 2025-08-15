@@ -156,7 +156,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         F::graphicsEngine.Run(P_DEVICE);
         
         F::modelPreview.Run();
-        F::modelPreview.SetActiveModel(0);
+        F::modelPreview.SetActiveModel(1);
         F::modelPreview.SetPanelSize(400, 400);      F::modelPreview.SetPanelPos(0, 0);
         F::modelPreview.SetRenderViewSize(400, 400); F::modelPreview.SetRenderViewPos(10, 10);
         

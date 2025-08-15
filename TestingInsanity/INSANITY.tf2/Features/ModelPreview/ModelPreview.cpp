@@ -166,6 +166,12 @@ void ModelPreview_t::SetActiveModel(int iIndex)
 
     m_iActiveModelIndex = iIndex;
     m_pActiveModel      = I::iModelLoader->GetModelForName(m_vecModels[iIndex].c_str(), IModelLoader::FMODELLOADER_CLIENT);
+    
+    if (m_pActiveModel == nullptr)
+    {
+        FAIL_LOG("Failed to load model \"%s\". Setting model to default ( %s )", m_vecModels[iIndex].c_str(), m_vecModels[0].c_str());
+        SetActiveModel(0);
+    }
 
     WIN_LOG("Set active model to \"%s\" @ index : %d. [ %p ]", m_vecModels[m_iActiveModelIndex].c_str(), m_iActiveModelIndex, m_pActiveModel);
 }
@@ -207,7 +213,6 @@ bool ModelPreview_t::_InitializeEntity()
         FAIL_LOG("Failed to register entity as non_networked entity");
         return false;
     }
-
 
     m_bEntInit = true;
     return true;
@@ -276,8 +281,8 @@ void __fastcall PaintHijack(Panel* a1)
     // Animation fix
     {
         pEnt->m_flAnimTime(pEnt->m_flAnimTime() + tfObject.pGlobalVar->frametime / 2.0f);
-        pEnt->m_flCycle(pEnt->m_flCycle() + 0.01f);
-        pEnt->m_nSequence(86);
+        pEnt->m_flCycle(pEnt->m_flCycle() + 0.002f);
+        pEnt->m_nSequence(0);
     }
 
 
@@ -511,26 +516,6 @@ void ModelPreview_t::_FreeVTable()
 
 #if (DISABLE_ESSENTIAL_HOOKS == false)
 
-//MAKE_HOOK(CNetworkStringTableContainer_CreateStringTableEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 7C 24 ? 41 56 48 83 EC ? 80 79", __fastcall, ENGINE_DLL, bool,
-//    void* pThis, const char* szTableName, int nMaxEntries, int iUserDataFixedSize, int iUserDataNetworkBits, bool bIsFile)
-//{
-//    // Checking if this string table already exists.
-//    INetworkStringTable* pModelPrecacheTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-//    if (pModelPrecacheTable != nullptr && std::string(szTableName) == std::string(MODEL_PRECACHE_TABLENAME)) // if table already exists, return the existing one.
-//    {
-//        WIN_LOG("Stopped engine from making \"%s\" string table again", szTableName);
-//        return pModelPrecacheTable;
-//    }
-//
-//
-//    // Let engine create its tables.
-//    LOG("Letting engine create network string table \"%s\"", szTableName);
-//
-//    return Hook::CNetworkStringTableContainer_CreateStringTableEx::O_CNetworkStringTableContainer_CreateStringTableEx(
-//        pThis, szTableName, nMaxEntries, iUserDataFixedSize, iUserDataNetworkBits, bIsFile);
-//}
-
-
 struct LightingState_t
 {
     vec         r_boxcolor[6];		// ambient, and lights that aren't in locallight[]
@@ -541,7 +526,7 @@ struct LightingState_t
 MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05", __fastcall, ENGINE_DLL,
     void*, void* pThis, vec* vOrigin, LightingState_t* pLightState, void* a1, int a2, bool a3)
 {
-    if (I::iEngine->IsConnected() == true)
+    if (I::iEngine->IsInGame() == true)
         return Hook::LightcacheGetDynamic::O_LightcacheGetDynamic(pThis, vOrigin, pLightState, a1, a2, a3);
 
 
@@ -612,9 +597,42 @@ MAKE_HOOK(CBaseClientState_ProcessCreateStringTable, "48 89 5C 24 ? 48 89 4C 24 
 
 #endif
 
-MAKE_HOOK(CClientLeafSystem_AddRenderable, "48 89 5C 24 ? 57 48 83 EC ? 45 33 C9", __fastcall, CLIENT_DLL, void*,
-    void* pThis, void* pEnt, int iRenderGroup)
+
+MAKE_HOOK(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8D 05 ? ? ? ? 48 8B F9 48 89 01 8B F2", __fastcall, CLIENT_DLL, void*,
+    void* pEnt, bool bSomething)
 {
-    WIN_LOG("Entity : %p ^^^ Render group : %d", pEnt, iRenderGroup);
-    return Hook::CClientLeafSystem_AddRenderable::O_CClientLeafSystem_AddRenderable(pThis, pEnt, iRenderGroup);
+    if (pEnt == F::modelPreview.GetModelEntity())
+    {
+        WIN_LOG("Skipped wannabe_constructor call for Entity model");
+        return nullptr;
+    }
+
+    return Hook::CBaseFlex_Constructor::O_CBaseFlex_Constructor(pEnt, bSomething);
 }
+
+
+//MAKE_HOOK(AddNonNetworkedEnity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, void*,
+//    void* a1, void* a2, int a3)
+//{
+//    printf("In!\n");
+//
+//    if(g_bOurNiggaIncoming == true)
+//    {
+//        uintptr_t iEnt = reinterpret_cast<uintptr_t>(F::modelPreview.GetModelEntity());
+//        LOG("our HDL : %p | Arg HDL : %p", (**(__int64(__fastcall***)(__int64))(iEnt + 8))(iEnt + 8), a3);
+//        return nullptr;
+//    }
+//    
+//    FAIL_LOG("Entity not recognized. HDL : %p", a3);
+//    auto result = Hook::AddNonNetworkedEnity::O_AddNonNetworkedEnity(a1, a2, a3);
+//    WIN_LOG("registering done ");
+//    return result;
+//}
+
+
+//MAKE_HOOK(CClientLeafSystem_AddRenderable, "48 89 5C 24 ? 57 48 83 EC ? 45 33 C9", __fastcall, CLIENT_DLL, void*,
+//    void* pThis, void* pEnt, int iRenderGroup)
+//{
+//    WIN_LOG("Entity : %p ^^^ Render group : %d", pEnt, iRenderGroup);
+//    return Hook::CClientLeafSystem_AddRenderable::O_CClientLeafSystem_AddRenderable(pThis, pEnt, iRenderGroup);
+//}
