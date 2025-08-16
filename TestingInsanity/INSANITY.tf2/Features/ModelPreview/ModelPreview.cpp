@@ -41,6 +41,10 @@ MAKE_SIG(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41
 
 MAKE_SIG(CClientState_SetModel, "48 89 5C 24 ? 56 48 83 EC ? 48 8B F1 48 63 DA 48 8B 89 ? ? ? ? 48 85 C9 0F 84 ? ? ? ? 81 FB ? ? ? ? 0F 87 ? ? ? ? 48 8B 01 FF 50 ? 3B D8 0F 8D ? ? ? ? 48 8B 8E ? ? ? ? 8B D3 48 89 6C 24 ? 4C 89 74 24",
     ENGINE_DLL, void, void*, int)
+MAKE_SIG(CBaseEntity_SetModelByIndex, "48 89 5C 24 ? 57 48 83 EC ? 66 89 91", CLIENT_DLL, void*, BaseEntity*, unsigned short)
+
+MAKE_SIG(AddNonNetworkedEntity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", CLIENT_DLL, void*, void*, void*, int);
+MAKE_INTERFACE_SIGNATURE(iBaseEntityList, "48 8B 0D ? ? ? ? 48 8D 54 24 ? 4C 8B C0 E8 ? ? ? ? 48 8B 0D", void*, CLIENT_DLL, 3, 7)
 
 
 MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENGINE_DLL, 3, 7)
@@ -48,13 +52,13 @@ MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENG
 
 #if (DISABLE_ESSENTIAL_HOOKS == false)
 
-MAKE_HOOK(GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int iModelIndex)
+MAKE_HOOK(CModelInfoClient_GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 ? ? ? ? CC CC CC CC CC CC CC CC CC CC CC 48 89 5C 24", __fastcall, ENGINE_DLL, void*, void* a1, int iModelIndex)
 {
     // If in main menu, then just always return. it doesn't matter, nothing's gonna call that shit.
     if (I::iEngine->IsConnected() == false)
         return F::modelPreview.GetActiveModel();
 
-    return Hook::GetModel::O_GetModel(a1, iModelIndex);
+    return Hook::CModelInfoClient_GetModel::O_CModelInfoClient_GetModel(a1, iModelIndex);
 }
 #endif
 
@@ -83,14 +87,29 @@ void ModelPreview_t::Run()
     if (_Initialize() == false)
         return;
 
-    if (I::iEngine->IsInGame() == true && Features::ModelPreview::ModelPreview::HardRespawn.IsActive() == true)
+    // Updating model whenever joining a match.
+    unsigned short hRender = *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(m_pEnt) + 190ull);
+    if (hRender == (unsigned short)(0xFFFF))
     {
-        static bool bHardRespawnDone = false;
-        if (bHardRespawnDone == false)
+        static bool bNoUpdate = false;
+        if (I::iEngine->IsInGame() == true)
         {
-            bHardRespawnDone = true;
-            Sig::InitializeAsClientEntity(m_pEnt, m_vecModels[m_iActiveModelIndex].c_str(), RENDER_GROUP_OPAQUE_ENTITY);
-            WIN_LOG("Hard Respawn done");
+            if (bNoUpdate == false)
+            {
+                auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+                if (pTable)
+                {
+                    int iIndex = pTable->FindStringIndex(m_vecModels[m_iActiveModelIndex].c_str());
+                    Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
+                }
+                LOG("Updated model info for our model entity. Set to \"%s\"", m_vecModels[m_iActiveModelIndex].c_str());
+            }
+
+            bNoUpdate = true;
+        }
+        else
+        {
+            bNoUpdate = false;
         }
     }
 }
@@ -208,10 +227,17 @@ bool ModelPreview_t::_InitializeEntity()
     Sig::CBaseFlex_Constructor(m_pEnt);
 
     // Model name set here doesn't matter, We can change it later.
-    if (Sig::InitializeAsClientEntity(m_pEnt, m_vecModels[0].c_str(), RENDER_GROUP_OPAQUE_ENTITY) == false)
+    /*if (Sig::InitializeAsClientEntity(m_pEnt, m_vecModels[0].c_str(), RENDER_GROUP_OPAQUE_ENTITY) == false)
     {
         FAIL_LOG("Failed to register entity as non_networked entity");
         return false;
+    }*/
+    auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+    if(pTable)
+    {
+        int iIndex = pTable->FindStringIndex(m_vecModels[0].c_str());
+        Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
+        LOG("Set default model to \"%s\" @ index [ %d ]", m_vecModels[0].c_str(), 0);
     }
 
     m_bEntInit = true;
@@ -483,7 +509,7 @@ bool ModelPreview_t::_SpoofVTable()
 void ModelPreview_t::Free()
 {
     _FreePanel();
-    _FreeVTable();
+    //_FreeVTable();
 }
 
 
@@ -494,8 +520,11 @@ void ModelPreview_t::_FreePanel()
     if (m_pPanel == nullptr)
         return;
 
-    free(m_pPanel);
+    I::iPanel->DeletePanel(m_pPanel->GetVPanel()); // this does the "delete this" for us. Maybe this is safer? IDK
+    //I::iPanel->SetVisible(m_pPanel->GetVPanel(), false);
     m_bPanelInitilized = false;
+
+    WIN_LOG("Free'ed panel \"%s\"", m_szPanelName);
 }
 
 
@@ -611,28 +640,46 @@ MAKE_HOOK(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 4
 }
 
 
+MAKE_HOOK(RemoveEntity, "8B 02 BA ? ? ? ? 83 F8", __fastcall, CLIENT_DLL, void*,
+    void* pEntList, int* iSlot)
+{
+    LOG("Trying to remove entity at index : %d", *iSlot);
+    return Hook::RemoveEntity::O_RemoveEntity(pEntList, iSlot);
+}
+
+
+MAKE_HOOK(CBaseEntity_UpdateVisibility, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 48 8B 0D", __fastcall, CLIENT_DLL, void*,
+    void* pEnt)
+{
+    if (pEnt == F::modelPreview.GetModelEntity())
+    {
+        FAIL_LOG("Skipped visibility update for ModelEntity.");
+        return nullptr;
+    }
+
+    return Hook::CBaseEntity_UpdateVisibility::O_CBaseEntity_UpdateVisibility(pEnt);
+}
+
+
 //MAKE_HOOK(AddNonNetworkedEnity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, void*,
 //    void* a1, void* a2, int a3)
 //{
-//    printf("In!\n");
-//
-//    if(g_bOurNiggaIncoming == true)
-//    {
-//        uintptr_t iEnt = reinterpret_cast<uintptr_t>(F::modelPreview.GetModelEntity());
-//        LOG("our HDL : %p | Arg HDL : %p", (**(__int64(__fastcall***)(__int64))(iEnt + 8))(iEnt + 8), a3);
-//        return nullptr;
-//    }
-//    
-//    FAIL_LOG("Entity not recognized. HDL : %p", a3);
-//    auto result = Hook::AddNonNetworkedEnity::O_AddNonNetworkedEnity(a1, a2, a3);
-//    WIN_LOG("registering done ");
-//    return result;
+//    FAIL_LOG("Skipped entity registeration");
+//    return nullptr;
 //}
-
-
+//
+//
 //MAKE_HOOK(CClientLeafSystem_AddRenderable, "48 89 5C 24 ? 57 48 83 EC ? 45 33 C9", __fastcall, CLIENT_DLL, void*,
 //    void* pThis, void* pEnt, int iRenderGroup)
 //{
-//    WIN_LOG("Entity : %p ^^^ Render group : %d", pEnt, iRenderGroup);
-//    return Hook::CClientLeafSystem_AddRenderable::O_CClientLeafSystem_AddRenderable(pThis, pEnt, iRenderGroup);
+//    FAIL_LOG("Skipped leaf system registeratoin");
+//    return nullptr;
+//}
+//
+//
+//MAKE_HOOK(CClientLeafSystem_EnableAlternateSorting, "0F B7 C2 4C 8D 0C 40 49 C1 E1 ? 4C 03 49", __fastcall, CLIENT_DLL, void*,
+//    void* pThis, unsigned short hRender, bool bEnable)
+//{
+//    FAIL_LOG("Skipped EnableAlternateSorting call. desired sorting [ %s ]", bEnable == true ? "True" : "False");
+//    return nullptr;
 //}

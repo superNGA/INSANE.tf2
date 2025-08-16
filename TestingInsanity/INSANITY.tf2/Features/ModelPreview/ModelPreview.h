@@ -58,7 +58,9 @@ private:
     {
         "models/player/spy.mdl",
         "models/player/heavy.mdl",
-        "custom/CustomModels/models/johny.mdl"
+        "custom/CustomModels/models/johny.mdl",
+        "models/weapons/w_models/w_toolbox.mdl",
+        "models/props_island/crocodile/crocodile.mdl"
     };
 
 

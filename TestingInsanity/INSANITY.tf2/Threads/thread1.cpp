@@ -34,6 +34,7 @@
 #include "../Features/Projectile Engine/ProjectileEngine.h"
 #include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
+#include "../Features/ModelPreview/ModelPreview.h"
 
 Utility util;
 
@@ -178,7 +179,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 	// just exit thread and free library
 	if (_hooksEnabled == false) 
 	{
-		FAIL_LOG("thread 1", "terminating without hooking (early exit) something went wrong");
+		FAIL_LOG("terminating without hooking (early exit) something went wrong");
 		UNINITIALIZE_CONSOLE();
 		FreeLibraryAndExitThread(instance, 0);
 		F::graphicsEngine.FreeAllDrawObjs();
@@ -212,9 +213,10 @@ void thread1_t::_terminate(HINSTANCE instance)
 		}
 
 		chams.FreeAllMaterial();
+		F::modelPreview.Free();
 
 		// freeing terminal..
-		LOG("thread 1", "uninitiazed everything, teminated software gracefully");
+		LOG("uninitiazed everything, teminated software gracefully");
 		UNINITIALIZE_CONSOLE();
 		FreeLibraryAndExitThread(instance, 0);
 		return;
