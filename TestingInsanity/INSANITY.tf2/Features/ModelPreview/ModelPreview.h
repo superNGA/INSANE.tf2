@@ -26,8 +26,9 @@ public:
     // Models
     void SetActiveModel(int iIndex);
     inline model_t*    GetActiveModel() const { return m_pActiveModel; }
-
     inline BaseEntity* GetModelEntity() const { return m_pEnt; }
+
+    void SetVisible(bool bVisible);
 
     // Panel Pos & size
     inline void SetPanelSize(int  iHeight, int  iWidth)       { m_iPanelHeight = iHeight; m_iPanelWidth = iWidth; }
@@ -69,12 +70,12 @@ private:
 
     // Entity init...
     bool _InitializeEntity();    
+    void _FreeEntity();
     BaseEntity* m_pEnt      = nullptr;
     bool        m_bEntInit  = false;
 
     // Panel init...
     bool _InitializePanel();
-    void _FreePanel();
     Panel*      m_pPanel           = nullptr;
     bool        m_bPanelInitilized = false;
     const char* m_szPanelName      = "INSANE.TF2 Showcase Panel";
@@ -88,10 +89,12 @@ private:
     int m_iRenderViewX = 0, m_iRenderViewY = 0;
 
     // Vtable for panel object
-    bool  _SpoofVTable();
-    void  _FreeVTable();
-    void* m_pSpoofedVTable = nullptr;
-    void* m_pOriginalPaint = nullptr;
+    uint64_t _FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse);
+    bool     _SpoofVTable();
+    void     _FreeVTable();
+    void* m_pSpoofedVTable  = nullptr;
+    void* m_pOriginalVTable = nullptr;
+    void* m_pOriginalPaint  = nullptr;
 };
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
 

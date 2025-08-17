@@ -3,6 +3,7 @@
 // SDK
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/IModelLoader.h"
+#include "../../SDK/class/IVModelRender.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IMaterialSystem.h"
 #include "../../SDK/class/IVRenderView.h"
@@ -29,6 +30,7 @@
 #include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/PullFromAssembly.h"
 
 // Debugging macros
 #define ENABLE_DEBUGGING_HOOKS  false
@@ -42,10 +44,14 @@ MAKE_SIG(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41
 MAKE_SIG(CClientState_SetModel, "48 89 5C 24 ? 56 48 83 EC ? 48 8B F1 48 63 DA 48 8B 89 ? ? ? ? 48 85 C9 0F 84 ? ? ? ? 81 FB ? ? ? ? 0F 87 ? ? ? ? 48 8B 01 FF 50 ? 3B D8 0F 8D ? ? ? ? 48 8B 8E ? ? ? ? 8B D3 48 89 6C 24 ? 4C 89 74 24",
     ENGINE_DLL, void, void*, int)
 MAKE_SIG(CBaseEntity_SetModelByIndex, "48 89 5C 24 ? 57 48 83 EC ? 66 89 91", CLIENT_DLL, void*, BaseEntity*, unsigned short)
+MAKE_SIG(CMatRenderContext_SetLightingOrigin, "48 83 EC ? 8B 42 ? F2 0F 10 02", MATERIALSYSTEM_DLL, void*, void*, vec*)
 
 MAKE_SIG(AddNonNetworkedEntity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", CLIENT_DLL, void*, void*, void*, int);
 MAKE_INTERFACE_SIGNATURE(iBaseEntityList, "48 8B 0D ? ? ? ? 48 8D 54 24 ? 4C 8B C0 E8 ? ? ? ? 48 8B 0D", void*, CLIENT_DLL, 3, 7)
 
+// Should be 0x410.
+GET_ADRS_FROM_ASSEMBLY(PaintFnOffset,            int, "FF 90 ? ? ? ? 48 8B 0D ? ? ? ? 49 8B D7 48 8B 01 FF 50 ? 48 8B 0D ? ? ? ? 49 8B D7", 2, 6, CLIENT_DLL)
+GET_ADRS_FROM_ASSEMBLY(ModelPrecacheTableOffset, int, "48 89 BB ? ? ? ? 48 89 BB ? ? ? ? 48 89 BB ? ? ? ? 8D 57", 3, 7, ENGINE_DLL)
 
 MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENGINE_DLL, 3, 7)
 
@@ -68,7 +74,10 @@ MAKE_HOOK(CModelInfoClient_GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 
 //=========================================================================
 void ModelPreview_t::Run()
 {
-    if (Features::ModelPreview::ModelPreview::Enable.IsActive() == false)
+    /*if (Features::ModelPreview::ModelPreview::Enable.IsActive() == false)
+        return;*/
+
+    if (directX::UI::UI_visble == false)
         return;
 
     // Make sure to not create string tables while in game or loading in a game.
@@ -198,6 +207,17 @@ void ModelPreview_t::SetActiveModel(int iIndex)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetVisible(bool bVisible)
+{
+    if (m_pPanel == nullptr)
+        return;
+
+    I::iPanel->SetVisible(m_pPanel->GetVPanel(), bVisible);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::_InitializeEntity()
 {
     assert(m_bEntInit == false);
@@ -227,11 +247,6 @@ bool ModelPreview_t::_InitializeEntity()
     Sig::CBaseFlex_Constructor(m_pEnt);
 
     // Model name set here doesn't matter, We can change it later.
-    /*if (Sig::InitializeAsClientEntity(m_pEnt, m_vecModels[0].c_str(), RENDER_GROUP_OPAQUE_ENTITY) == false)
-    {
-        FAIL_LOG("Failed to register entity as non_networked entity");
-        return false;
-    }*/
     auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
     if(pTable)
     {
@@ -247,12 +262,32 @@ bool ModelPreview_t::_InitializeEntity()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_FreeEntity()
+{
+    if (m_pEnt == nullptr || m_bEntInit == false)
+        return;
+
+    free(m_pEnt);
+    m_pEnt     = nullptr;
+    m_bEntInit = false;
+    LOG("Free entity successfully");
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void __fastcall PaintHijack(Panel* a1)
 {
-    I::iSurface->DrawSetint(255, 255, 255, 255);
+    // Setting panel's size
     int iWidth = 0, iHeight = 0;
     F::modelPreview.GetPanelSize(iHeight, iWidth);
+    I::iPanel->SetSize(a1->GetVPanel(), iWidth, iHeight);
+    I::iSurface->DrawSetint(255, 255, 255, 255);
     I::iSurface->DrawFilledRect(0, 0, iWidth, iHeight);
+    
+    // Setting panel's pos
+    int x = 0, y = 0; F::modelPreview.GetPanelPos(x, y);
+    I::iPanel->SetPos(a1->GetVPanel(), x, y);
 
     BaseEntity* pEnt = F::modelPreview.GetModelEntity();
     
@@ -279,7 +314,7 @@ void __fastcall PaintHijack(Panel* a1)
         bViewInit = true; 
         memset(&view, 0, sizeof(CViewSetup)); 
 
-        view.fov = 20.0f; view.m_bOrtho = false; view.zFar = 1000; view.zNear = 7;
+        view.fov = 30.0f; view.m_bOrtho = false; view.zFar = 1000; view.zNear = 7;
         view.x      = 100; view.y     = 100;
         view.height = 100; view.width = 100;
 
@@ -314,11 +349,11 @@ void __fastcall PaintHijack(Panel* a1)
 
     // Rendering model
     {
-        auto* pRenderCtx = I::iMaterialSystem->GetRenderContext();
+        IMatRenderContext* pRenderCtx = I::iMaterialSystem->GetRenderContext();
         pRenderCtx->BindLocalCubemap(pCubeMap);
-        
+
         // Fix lighting n shit.
-        vec vLightOrigin(0.0f); (*(void(__fastcall**)(void*, vec*))(*reinterpret_cast<uintptr_t*>(pRenderCtx) + 0x4E8ull))(pRenderCtx, &vLightOrigin);
+        vec vLightOrigin(0.0f); pRenderCtx->SetLightingOrigin(&vLightOrigin); // We also have signature for this function.
         pRenderCtx->SetAmbientLight(1.0f, 1.0f, 1.0f);
         I::iStudioRender->SetAmbientLightColors(white);
         I::iStudioRender->SetLocalLights(0, nullptr);
@@ -331,9 +366,9 @@ void __fastcall PaintHijack(Panel* a1)
         
         pRenderCtx->ClearBuffers(true, false);
 
-        // NOTE : After somewhere the call to Draw function, the bones gets setup & positioned nicely.
+        I::iVModelRender->SuppressEngineLighting(true);
         pEnt->DrawModel(STUDIO_RENDER);
-        printf("Model drawing done\n");
+        I::iVModelRender->SuppressEngineLighting(false);
         
         I::iVRenderView->PopView(dummyFrustum);
 
@@ -350,8 +385,8 @@ void __fastcall PaintHijack(Panel* a1)
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::_SetTablePointer(INetworkStringTable* pTable) const
 {
-    *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::cClientState) + 0x08EA8LLU) = pTable;
-    *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::CGameServer) + 0x54298LLU)  = pTable;
+    *reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::cClientState) + static_cast<uint64_t>(*ASM::ModelPrecacheTableOffset)) = pTable;
+    //*reinterpret_cast<INetworkStringTable**>(reinterpret_cast<uintptr_t>(I::CGameServer) + 0x54298LLU)  = pTable;
 }
 
 
@@ -418,10 +453,86 @@ bool ModelPreview_t::_PrecacheModels() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+uint64_t ModelPreview_t::_FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse)
+{
+    // Sanity checks
+    if (parent == NULL)
+        return NULL;
+
+    // parent is child ? ( LMAO )
+    if (std::string(I::iPanel->GetName(parent)) == szChildName)
+        return parent;
+
+    // Child count
+    int nChildren = I::iPanel->GetChildCount(parent);
+
+    // No children ?
+    if (nChildren == 0)
+        return NULL;
+
+    // Check all children for a match
+    for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
+    {
+        vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
+
+        // match found
+        if (std::string(I::iPanel->GetName(child)) == szChildName)
+            return child;
+    }
+
+
+    if (bRecurse == true)
+    {
+        for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
+        {
+            vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
+
+            // recurse till we found match
+            vgui::VPANEL childMatch = _FindChildByName(child, szChildName, bRecurse);
+
+            // if match found
+            if (childMatch != NULL)
+                return childMatch;
+        }
+    }
+
+    return NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::_InitializePanel()
 {
     if (m_bPanelInitilized == true)
         return true;
+
+    assert(m_pSpoofedVTable == nullptr && m_pOriginalPaint == nullptr && m_pOriginalVTable == nullptr && "Trying to reinitialize panel object.");
+
+    // Checking if the panel already exists. ( i.e. if we are injecting. )
+    // EDIT : It seems like the panel gets auto deleted, cause I am unable to find it in reinjection. I'm just gonna leave it here.
+    vgui::VPANEL vDesiredPanel = _FindChildByName(I::iSurface->GetEmbeddedPanel(), std::string(m_szPanelName), true);
+    if (vDesiredPanel != NULL)
+    {
+        if (_SpoofVTable() == false)
+        {
+            FAIL_LOG("Failed to spoof VTable");
+            return false;
+        }
+
+        I::iPanel->SetParent(vDesiredPanel, I::iSurface->GetEmbeddedPanel());
+        I::iPanel->SetEnabled(m_pPanel->GetVPanel(), true);
+        I::iPanel->SetVisible(m_pPanel->GetVPanel(), true);
+        I::iPanel->SetPos(m_pPanel->GetVPanel(), 0, 0);
+        I::iPanel->SetSize(m_pPanel->GetVPanel(), m_iPanelWidth, m_iPanelHeight);
+
+        LOG("Panel \"%s\" already exists, reusing it.", m_szPanelName);
+
+        m_bPanelInitilized = true;
+        return true;
+    }
+    LOG("Panel \"%s\" doesn't exist yet. Creating one.", m_szPanelName);
+
 
     // Allocate our panel object some memory.
     if (m_pPanel == nullptr)
@@ -490,17 +601,24 @@ bool ModelPreview_t::_SpoofVTable()
         return false;
     }
 
+    // just to be safe, check if paint fn index gets changed.
+    if (*ASM::PaintFnOffset != 0x410)
+        FAIL_LOG("Panel::Paint fn index has been modified by devs. We are using index : %d offset : 0x%X", *ASM::PaintFnOffset / 8, *ASM::PaintFnOffset);
+
     // copy original vtable to our memory.
-    memcpy(m_pSpoofedVTable, *reinterpret_cast<void**>(m_pPanel), iVTableSize);
+    m_pOriginalVTable = *reinterpret_cast<void***>(m_pPanel);
+    memcpy(m_pSpoofedVTable, m_pOriginalVTable, iVTableSize);
 
-    // Change Paint function ( via index ) with our Paint function & store the original fn adrs.
-    uintptr_t pTargetFn = reinterpret_cast<uintptr_t>(m_pSpoofedVTable) + 0x410;
-    m_pOriginalPaint    = *reinterpret_cast<void**>(pTargetFn); // 0x410 is pointer to fn pointer. de-ref it.
+    // Store the original paint fn adrs.
+    m_pOriginalPaint = *reinterpret_cast<void**>(reinterpret_cast<uintptr_t>(m_pOriginalVTable) + *ASM::PaintFnOffset);
 
-    *reinterpret_cast<uintptr_t*>(pTargetFn) = reinterpret_cast<uintptr_t>(PaintHijack);
+    // Sawp out the paint function.
+    *reinterpret_cast<uintptr_t*>(reinterpret_cast<uintptr_t>(m_pSpoofedVTable) + *ASM::PaintFnOffset) = reinterpret_cast<uintptr_t>(PaintHijack);
 
-    // Replace our panel object's VTable with the spoofed VTable ( we just created above )
+    // Swap out the VTable with our modified VTable.
     *reinterpret_cast<void**>(m_pPanel) = m_pSpoofedVTable;
+
+    WIN_LOG("Spoofed VTable successfully");
 }
 
 
@@ -508,23 +626,8 @@ bool ModelPreview_t::_SpoofVTable()
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::Free()
 {
-    _FreePanel();
-    //_FreeVTable();
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void ModelPreview_t::_FreePanel()
-{
-    if (m_pPanel == nullptr)
-        return;
-
-    I::iPanel->DeletePanel(m_pPanel->GetVPanel()); // this does the "delete this" for us. Maybe this is safer? IDK
-    //I::iPanel->SetVisible(m_pPanel->GetVPanel(), false);
-    m_bPanelInitilized = false;
-
-    WIN_LOG("Free'ed panel \"%s\"", m_szPanelName);
+    _FreeVTable();
+    _FreeEntity();
 }
 
 
@@ -532,17 +635,20 @@ void ModelPreview_t::_FreePanel()
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::_FreeVTable()
 {
-    if (m_pSpoofedVTable == nullptr)
+    if (m_pSpoofedVTable == nullptr || m_pOriginalVTable == nullptr)
         return;
 
+    // Restore the original VTable for our panel object.
+    *reinterpret_cast<uintptr_t*>(m_pPanel) = reinterpret_cast<uintptr_t>(m_pOriginalVTable);
+
     free(m_pSpoofedVTable);
+    WIN_LOG("Freed & restored VTable succesfully");
 }
 
 
 //=========================================================================
 //                     DEBUGGING
 //=========================================================================
-
 #if (DISABLE_ESSENTIAL_HOOKS == false)
 
 struct LightingState_t
@@ -571,82 +677,6 @@ MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56
     return nullptr;
 }
 
-#endif
-
-
-
-#if (ENABLE_DEBUGGING_HOOKS == true)
-
-MAKE_HOOK(CGameServer_CreateEngineStringTables, "48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 55 48 8D AC 24 ? ? ? ? 48 81 EC", __fastcall, ENGINE_DLL, void*,
-    void* a1)
-{
-    // Before engine creates its string tables, remove all tables.
-    I::iNetworkStringTableContainer->RemoveAllTables();
-    F::modelPreview.SetModelPrecacheTable(nullptr);
-    WIN_LOG("Cleared out table pointers from ClientClass & CGameServer objects");
-
-    return Hook::CGameServer_CreateEngineStringTables::O_CGameServer_CreateEngineStringTables(a1);
-}
-
-
-// Call once when starting a server.
-MAKE_HOOK(CGameServer_SpawnServer, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 49 8B F1", __fastcall, ENGINE_DLL, bool,
-    void* pThis, const char* szMapName, const char* szMapFile, const char* startSpot)
-{
-    LOG("Map Name : %s, Map File : %s, startSpot : %s", szMapName, szMapFile, startSpot);
-    return Hook::CGameServer_SpawnServer::O_CGameServer_SpawnServer(pThis, szMapName, szMapFile, startSpot);
-}
-
-
-// Call once for each table. ( in 2nd table generation sprint )
-MAKE_HOOK(CClientState_HookClientStringTable, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F2 48 8B D9 E8 ? ? ? ? 48 8B F8", __fastcall, ENGINE_DLL, bool,
-    void* pThis, const char* szTableName)
-{
-    LOG("Setting Client Table \"%s\"", szTableName);
-    return Hook::CClientState_HookClientStringTable::O_CClientState_HookClientStringTable(pThis, szTableName);
-}
-
-
-// Call once for each table. ( after the 2nd table generation sprint )
-MAKE_HOOK(CClientState_InstallEngineStringTableCallback, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B FA 48 8B F1 E8 ? ? ? ? 48 8B D8", __fastcall, ENGINE_DLL, bool,
-    void* pThis, const char* szTableName)
-{
-    FAIL_LOG("StringTable -> \"%s\"", szTableName);
-    return Hook::CClientState_InstallEngineStringTableCallback::O_CClientState_InstallEngineStringTableCallback(pThis, szTableName);
-}
-
-
-// Call once for each table. ( in the 2nd table generation sprint, this is the first call for each table. )
-MAKE_HOOK(CBaseClientState_ProcessCreateStringTable, "48 89 5C 24 ? 48 89 4C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ? 48 8B FA", __fastcall, ENGINE_DLL, bool,
-    void* pThis, void* a1, void* a2)
-{
-    WIN_LOG("BaseClient creating string tables!!!");
-    return Hook::CBaseClientState_ProcessCreateStringTable::O_CBaseClientState_ProcessCreateStringTable(pThis, a1, a2);
-}
-
-#endif
-
-
-MAKE_HOOK(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8D 05 ? ? ? ? 48 8B F9 48 89 01 8B F2", __fastcall, CLIENT_DLL, void*,
-    void* pEnt, bool bSomething)
-{
-    if (pEnt == F::modelPreview.GetModelEntity())
-    {
-        WIN_LOG("Skipped wannabe_constructor call for Entity model");
-        return nullptr;
-    }
-
-    return Hook::CBaseFlex_Constructor::O_CBaseFlex_Constructor(pEnt, bSomething);
-}
-
-
-MAKE_HOOK(RemoveEntity, "8B 02 BA ? ? ? ? 83 F8", __fastcall, CLIENT_DLL, void*,
-    void* pEntList, int* iSlot)
-{
-    LOG("Trying to remove entity at index : %d", *iSlot);
-    return Hook::RemoveEntity::O_RemoveEntity(pEntList, iSlot);
-}
-
 
 MAKE_HOOK(CBaseEntity_UpdateVisibility, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 48 8B 0D", __fastcall, CLIENT_DLL, void*,
     void* pEnt)
@@ -660,26 +690,10 @@ MAKE_HOOK(CBaseEntity_UpdateVisibility, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC
     return Hook::CBaseEntity_UpdateVisibility::O_CBaseEntity_UpdateVisibility(pEnt);
 }
 
+#endif
 
-//MAKE_HOOK(AddNonNetworkedEnity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", __fastcall, CLIENT_DLL, void*,
-//    void* a1, void* a2, int a3)
-//{
-//    FAIL_LOG("Skipped entity registeration");
-//    return nullptr;
-//}
-//
-//
-//MAKE_HOOK(CClientLeafSystem_AddRenderable, "48 89 5C 24 ? 57 48 83 EC ? 45 33 C9", __fastcall, CLIENT_DLL, void*,
-//    void* pThis, void* pEnt, int iRenderGroup)
-//{
-//    FAIL_LOG("Skipped leaf system registeratoin");
-//    return nullptr;
-//}
-//
-//
-//MAKE_HOOK(CClientLeafSystem_EnableAlternateSorting, "0F B7 C2 4C 8D 0C 40 49 C1 E1 ? 4C 03 49", __fastcall, CLIENT_DLL, void*,
-//    void* pThis, unsigned short hRender, bool bEnable)
-//{
-//    FAIL_LOG("Skipped EnableAlternateSorting call. desired sorting [ %s ]", bEnable == true ? "True" : "False");
-//    return nullptr;
-//}
+/*
+TODO : ( global )
+-> 
+
+*/

@@ -398,7 +398,6 @@ __declspec(align(16)) struct vecAligned : public vec {
 };
 
 
-/* most used to store screen coordinates in this software, nothing too big */
 struct Vec2
 {
 	constexpr Vec2()                 : x(0.0f), y(0.0f){}

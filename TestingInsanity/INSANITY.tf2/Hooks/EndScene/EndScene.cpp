@@ -154,15 +154,24 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     // Drawing graphics features.
     {
         F::graphicsEngine.Run(P_DEVICE);
-        
-        F::modelPreview.Run();
-        F::modelPreview.SetActiveModel(1);
-        F::modelPreview.SetPanelSize(400, 400);      F::modelPreview.SetPanelPos(0, 0);
-        F::modelPreview.SetRenderViewSize(400, 400); F::modelPreview.SetRenderViewPos(10, 10);
-        
+
         Render::InfoWindow.Draw();
         Render::uiMenu.Draw();
         insaneProfiler.Render();
+        
+        F::modelPreview.Run();
+        F::modelPreview.SetVisible(UI::UI_visble);
+        F::modelPreview.SetActiveModel(1);
+        
+        float flHeight = 0.0f, flWidth = 0.0f; Render::uiMenu.GetWindowSize(flHeight, flWidth);
+        F::modelPreview.SetPanelSize(     static_cast<int>(flHeight), static_cast<int>(flWidth));
+        F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
+
+        float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y); 
+        x += flWidth;
+        F::modelPreview.SetPanelPos(static_cast<int>(x), static_cast<int>(y));
+        F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
+
     }
 
     /* Frame end */

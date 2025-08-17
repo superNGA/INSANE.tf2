@@ -7,7 +7,6 @@ class IMatRenderContext
 public:
     virtual void AddRef() = 0;
     virtual void Release() = 0;
-
 	virtual void				BeginRender() = 0;
 	virtual void				EndRender() = 0;
 	virtual void				Flush(bool flushHardware = false) = 0;
@@ -20,8 +19,6 @@ public:
 	virtual void				DepthRange(float zNear, float zFar) = 0;
 	virtual void				ClearBuffers(int bClearColor, int bClearDepth, int bClearStencil = 0) = 0;
 	virtual void				ReadPixels(int x, int y, int width, int height, unsigned char* data, int dstFormat) = 0;
-	/*virtual void unk124() = 0;
-	virtual void unk125() = 0;*/
 	virtual void				SetAmbientLight(float r, float g, float b) = 0;
 	virtual void				SetLight(int lightNum, const int& desc) = 0;
 	virtual void				SetAmbientLightCube(int cube[6]) = 0;
@@ -80,8 +77,6 @@ public:
 	virtual void LoadSelectionName(int name) = 0;
 	virtual void PushSelectionName(int name) = 0;
 	virtual void PopSelectionName() = 0;
-	/*virtual void		ClearColor3ub(unsigned char r, unsigned char g, unsigned char b) = 0;
-	virtual void		ClearColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a) = 0;*/
 	virtual void	OverrideDepthEnable(bool bEnable, bool bDepthEnable) = 0;
 	virtual void	DrawScreenSpaceQuad(IMaterial* pMaterial) = 0;
 	virtual void	SyncToken(const char* pToken) = 0;
@@ -110,6 +105,7 @@ public:
 	virtual void Unused5() {};
 	virtual void Unused6() {};
 	virtual void Unused7() {};
+	virtual void Unused8() {}; // extra.
 	virtual void ReadPixelsAndStretch(void* pSrcRect, void* pDstRect, unsigned char* pBuffer, int dstFormat, int nDstStride) = 0;
 	virtual void GetWindowSize(int& width, int& height) const = 0;
 	virtual void DrawScreenSpaceRectangle(IMaterial* pMaterial, int destx, int desty, int width, int height, float src_texture_x0, float src_texture_y0, float src_texture_x1, float src_texture_y1, int src_texture_width, int src_texture_height, void* pClientRenderable = NULL, int nXDice = 1, int nYDice = 1) = 0;
@@ -166,7 +162,7 @@ public:
 	virtual vec				GetToneMappingScaleLinear(void) = 0;
 	virtual void				SetShadowDepthBiasFactors(float fSlopeScaleDepthBias, float fDepthBias) = 0;
 	virtual void				PerformFullScreenStencilOperation(void) = 0;
-	virtual void				SetLightingOrigin(vec vLightingOrigin) = 0;																		//158
+	virtual void				SetLightingOrigin(vec* vLightingOrigin) = 0;																		//158
 	virtual void				SetScissorRect(const int nLeft, const int nTop, const int nRight, const int nBottom, const bool bEnableScissor) = 0;
 	virtual void				BeginMorphAccumulation() = 0;
 	virtual void				EndMorphAccumulation() = 0;

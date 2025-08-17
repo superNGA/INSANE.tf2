@@ -15,6 +15,9 @@ public:
     bool    m_bRecordingKey = false;
     int64_t m_iRecordedKey  = 0;
 
+    void GetWindowSize(float& flHeight, float& flWidth) const;
+    void GetWindowPos(float& x, float& y) const;
+
 private:
     void _DrawSection(Tab_t* pTab);
     void _DrawFeature(IFeature* pFeature, bool bOverride);
@@ -28,6 +31,9 @@ private:
     void _DrawFeatureOptionPopup(IFeature* pFeature);
     
     void _DrawConfigView();
+
+    const char* m_szMenuWindowName = "INSANE.tf2";
+    Vec2 m_vLastWindowPos = { 0.0f, 0.0f };
     
     enum class UIViewState : int8_t
     {
@@ -36,4 +42,4 @@ private:
     UIViewState m_iViewState      = UIViewState::TAB_VIEW;
     int         m_iActiveTabIndex = 0;
 };
-DECLARE_CUSTOM_OBJECT(uiMenu, UIMenu, Render);
+DECLARE_CUSTOM_OBJECT(uiMenu, UIMenu, Render)

@@ -10,6 +10,7 @@
 
 // GUI library
 #include "../../../External Libraries/ImGui/imgui.h"
+#include "../../../External Libraries/ImGui/imgui_internal.h"
 
 #include "../../../Utility/ConsoleLogging.h"
 
@@ -24,7 +25,9 @@ void UIMenu::Draw()
 
     // Begin Menu
     ImGui::SetNextWindowSize(MENU_DIMENSIONS);
-    ImGui::Begin("INSANE.tf2", &directX::UI::UI_visble, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin(m_szMenuWindowName, &directX::UI::UI_visble, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
+
+    m_vLastWindowPos = { ImGui::GetWindowPos().x, ImGui::GetWindowPos().y };
 
     // Aquiring Feature map
     const auto& vecFeatureMap = featureHandler.GetFeatureMap();
@@ -73,6 +76,22 @@ void UIMenu::Draw()
 
     // End Menu
     ImGui::End();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void UIMenu::GetWindowSize(float& flHeight, float& flWidth) const
+{
+    flWidth = MENU_DIMENSIONS.x; flHeight = MENU_DIMENSIONS.y;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void UIMenu::GetWindowPos(float& x, float& y) const
+{
+    x = m_vLastWindowPos.x; y = m_vLastWindowPos.y;
 }
 
 
