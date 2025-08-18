@@ -78,11 +78,11 @@ public:
 	virtual void PushSelectionName(int name) = 0;
 	virtual void PopSelectionName() = 0;
 	virtual void	OverrideDepthEnable(bool bEnable, bool bDepthEnable) = 0;
-	virtual void	DrawScreenSpaceQuad(IMaterial* pMaterial) = 0;
+	virtual void		ClearColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a) = 0; //virtual void	DrawScreenSpaceQuad(IMaterial* pMaterial) = 0;
 	virtual void	SyncToken(const char* pToken) = 0;
 	virtual float	ComputePixelWidthOfSphere(const vec& origin, float flRadius) = 0;
 	virtual void		ClearColor3ub(unsigned char r, unsigned char g, unsigned char b) = 0;
-	virtual void		ClearColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a) = 0;
+	virtual void		ClearColor4ub_2(unsigned char r, unsigned char g, unsigned char b, unsigned char a) = 0;
 	virtual int CreateOcclusionQueryObject(void) = 0;
 	virtual void DestroyOcclusionQueryObject(int) = 0;
 	virtual void BeginOcclusionQueryDrawing(int) = 0;

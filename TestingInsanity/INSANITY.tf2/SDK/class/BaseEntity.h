@@ -73,6 +73,7 @@ NETVAR_OFFSET(m_vecAbsVelocity,  m_Collision,		DT_BaseEntity,		-120)
 NETVAR_OFFSET(m_vecVelocity,	 m_Collision,		DT_BaseEntity,		-120 -80 -12 -4)
 NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed,		DT_BasePlayer,		-0x60)
 NETVAR_OFFSET(m_RefEHandle,		 m_PredictableID,	DT_PredictableId,	0x18)
+NETVAR_OFFSET(m_hRender,		 m_nRenderMode,		DT_BaseEntity,		0x2)
 
 class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
@@ -106,6 +107,8 @@ public:
 	NETVAR_GETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_iTeamNum, DT_BaseEntity, int32_t)
+
+	NETVAR_GETTER(m_hRender, DT_BaseEntity, unsigned short)
 
 	// Simulation Time
 	NETVAR_GETTER(m_flSimulationTime, DT_BaseEntity, float)

@@ -1,3 +1,11 @@
+//=========================================================================
+//                      MODEL PREVIEW
+//=========================================================================
+// by      : INSANE
+// created : 31/07/2025
+// 
+// purpose : Renders any model. Anywhere.
+//-------------------------------------------------------------------------
 #include "ModelPreview.h"
 
 // SDK
@@ -37,23 +45,14 @@
 #define DISABLE_ESSENTIAL_HOOKS false
 
 // FUNCTIONS
-MAKE_SIG(VGui_Panel_Constructor, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F2 48 8B D9 45 85 C0", CLIENT_DLL, void*, Panel*, void*, const char*) // arguments : VTable, parent panel pointer ( Get form engineVGui ), name.
-MAKE_SIG(InitializeAsClientEntity, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 41 8B F0 48 8B D9 48 85 D2", CLIENT_DLL, bool, void*, const char*, int)
-MAKE_SIG(CBaseFlex_Constructor, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 33 ED", CLIENT_DLL, void*, void*)
-
-MAKE_SIG(CClientState_SetModel, "48 89 5C 24 ? 56 48 83 EC ? 48 8B F1 48 63 DA 48 8B 89 ? ? ? ? 48 85 C9 0F 84 ? ? ? ? 81 FB ? ? ? ? 0F 87 ? ? ? ? 48 8B 01 FF 50 ? 3B D8 0F 8D ? ? ? ? 48 8B 8E ? ? ? ? 8B D3 48 89 6C 24 ? 4C 89 74 24",
-    ENGINE_DLL, void, void*, int)
-MAKE_SIG(CBaseEntity_SetModelByIndex, "48 89 5C 24 ? 57 48 83 EC ? 66 89 91", CLIENT_DLL, void*, BaseEntity*, unsigned short)
-MAKE_SIG(CMatRenderContext_SetLightingOrigin, "48 83 EC ? 8B 42 ? F2 0F 10 02", MATERIALSYSTEM_DLL, void*, void*, vec*)
-
-MAKE_SIG(AddNonNetworkedEntity, "40 53 48 83 EC ? 4C 8B 89 ? ? ? ? 48 8B DA", CLIENT_DLL, void*, void*, void*, int);
-MAKE_INTERFACE_SIGNATURE(iBaseEntityList, "48 8B 0D ? ? ? ? 48 8D 54 24 ? 4C 8B C0 E8 ? ? ? ? 48 8B 0D", void*, CLIENT_DLL, 3, 7)
+MAKE_SIG(VGui_Panel_Constructor,      "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F2 48 8B D9 45 85 C0",                          CLIENT_DLL, void*, Panel*, void*, const char*) // arguments : VTable, parent panel pointer ( Get form engineVGui ), name.
+MAKE_SIG(CBaseFlex_Constructor,       "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 48 8B D9 E8 ? ? ? ? 33 ED", CLIENT_DLL, void*, void*)
+MAKE_SIG(CBaseEntity_SetModelByIndex, "48 89 5C 24 ? 57 48 83 EC ? 66 89 91",                                                          CLIENT_DLL, void*, BaseEntity*, unsigned short)
+//MAKE_SIG(CMatRenderContext_SetLightingOrigin, "48 83 EC ? 8B 42 ? F2 0F 10 02", MATERIALSYSTEM_DLL, void*, void*, vec*)
 
 // Should be 0x410.
 GET_ADRS_FROM_ASSEMBLY(PaintFnOffset,            int, "FF 90 ? ? ? ? 48 8B 0D ? ? ? ? 49 8B D7 48 8B 01 FF 50 ? 48 8B 0D ? ? ? ? 49 8B D7", 2, 6, CLIENT_DLL)
 GET_ADRS_FROM_ASSEMBLY(ModelPrecacheTableOffset, int, "48 89 BB ? ? ? ? 48 89 BB ? ? ? ? 48 89 BB ? ? ? ? 8D 57", 3, 7, ENGINE_DLL)
-
-MAKE_INTERFACE_SIGNATURE(CGameServer, "48 8D 0D ? ? ? ? F3 0F 10 3D", void*, ENGINE_DLL, 3, 7)
 
 
 #if (DISABLE_ESSENTIAL_HOOKS == false)
@@ -74,10 +73,7 @@ MAKE_HOOK(CModelInfoClient_GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 
 //=========================================================================
 void ModelPreview_t::Run()
 {
-    /*if (Features::ModelPreview::ModelPreview::Enable.IsActive() == false)
-        return;*/
-
-    if (directX::UI::UI_visble == false)
+    if (m_bVisible == false)
         return;
 
     // Make sure to not create string tables while in game or loading in a game.
@@ -95,32 +91,6 @@ void ModelPreview_t::Run()
     // Inititalize entity & panel object
     if (_Initialize() == false)
         return;
-
-    // Updating model whenever joining a match.
-    unsigned short hRender = *reinterpret_cast<unsigned short*>(reinterpret_cast<uintptr_t>(m_pEnt) + 190ull);
-    if (hRender == (unsigned short)(0xFFFF))
-    {
-        static bool bNoUpdate = false;
-        if (I::iEngine->IsInGame() == true)
-        {
-            if (bNoUpdate == false)
-            {
-                auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-                if (pTable)
-                {
-                    int iIndex = pTable->FindStringIndex(m_vecModels[m_iActiveModelIndex].c_str());
-                    Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
-                }
-                LOG("Updated model info for our model entity. Set to \"%s\"", m_vecModels[m_iActiveModelIndex].c_str());
-            }
-
-            bNoUpdate = true;
-        }
-        else
-        {
-            bNoUpdate = false;
-        }
-    }
 }
 
 
@@ -137,7 +107,7 @@ bool ModelPreview_t::_Initialize()
         }
     }
 
-    
+
     if (m_bEntInit == false)
     {
         if (_InitializeEntity() == false)
@@ -182,8 +152,6 @@ void ModelPreview_t::SetActiveModel(int iIndex)
 {
     if (m_bModelPrecached == false)
     {
-        if (Features::ModelPreview::ModelPreview::Enable.IsActive() == true)
-            FAIL_LOG("Models are not precached yet.");
         return;
     }
 
@@ -193,8 +161,8 @@ void ModelPreview_t::SetActiveModel(int iIndex)
     iIndex = std::clamp<int>(iIndex, 0, m_vecModels.size() - 1);
 
     m_iActiveModelIndex = iIndex;
-    m_pActiveModel      = I::iModelLoader->GetModelForName(m_vecModels[iIndex].c_str(), IModelLoader::FMODELLOADER_CLIENT);
-    
+    m_pActiveModel = I::iModelLoader->GetModelForName(m_vecModels[iIndex].c_str(), IModelLoader::FMODELLOADER_CLIENT);
+
     if (m_pActiveModel == nullptr)
     {
         FAIL_LOG("Failed to load model \"%s\". Setting model to default ( %s )", m_vecModels[iIndex].c_str(), m_vecModels[0].c_str());
@@ -202,17 +170,6 @@ void ModelPreview_t::SetActiveModel(int iIndex)
     }
 
     WIN_LOG("Set active model to \"%s\" @ index : %d. [ %p ]", m_vecModels[m_iActiveModelIndex].c_str(), m_iActiveModelIndex, m_pActiveModel);
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void ModelPreview_t::SetVisible(bool bVisible)
-{
-    if (m_pPanel == nullptr)
-        return;
-
-    I::iPanel->SetVisible(m_pPanel->GetVPanel(), bVisible);
 }
 
 
@@ -248,7 +205,7 @@ bool ModelPreview_t::_InitializeEntity()
 
     // Model name set here doesn't matter, We can change it later.
     auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-    if(pTable)
+    if (pTable)
     {
         int iIndex = pTable->FindStringIndex(m_vecModels[0].c_str());
         Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
@@ -268,7 +225,7 @@ void ModelPreview_t::_FreeEntity()
         return;
 
     free(m_pEnt);
-    m_pEnt     = nullptr;
+    m_pEnt = nullptr;
     m_bEntInit = false;
     LOG("Free entity successfully");
 }
@@ -282,22 +239,22 @@ void __fastcall PaintHijack(Panel* a1)
     int iWidth = 0, iHeight = 0;
     F::modelPreview.GetPanelSize(iHeight, iWidth);
     I::iPanel->SetSize(a1->GetVPanel(), iWidth, iHeight);
-    I::iSurface->DrawSetint(255, 255, 255, 255);
+    RGBA_t panelClr = F::modelPreview.GetPanelClr(); I::iSurface->DrawSetint(panelClr.r, panelClr.g, panelClr.b, panelClr.a);
     I::iSurface->DrawFilledRect(0, 0, iWidth, iHeight);
-    
+
     // Setting panel's pos
     int x = 0, y = 0; F::modelPreview.GetPanelPos(x, y);
     I::iPanel->SetPos(a1->GetVPanel(), x, y);
 
     BaseEntity* pEnt = F::modelPreview.GetModelEntity();
-    
+
     // if model entity not initialized call original & leave.
-    if(pEnt == nullptr) 
+    if (pEnt == nullptr)
     {
         ((void(__fastcall*)(Panel*))(F::modelPreview.GetOriginalPaintFn()))(a1);
         return;
     }
-    
+
 
     static void* pCubeMap{ nullptr };
     if (pCubeMap == nullptr)
@@ -311,21 +268,24 @@ void __fastcall PaintHijack(Panel* a1)
     static CViewSetup view; static bool bViewInit = false;
     if (bViewInit == false)
     {
-        bViewInit = true; 
-        memset(&view, 0, sizeof(CViewSetup)); 
+        bViewInit = true;
+        memset(&view, 0, sizeof(CViewSetup));
 
         view.fov = 30.0f; view.m_bOrtho = false; view.zFar = 1000; view.zNear = 7;
-        view.x      = 100; view.y     = 100;
+        view.x = 100; view.y = 100;
         view.height = 100; view.width = 100;
 
         view.origin = vec(-220.0f, -4.0f, 35.0f); view.angles.Init();
         WIN_LOG("View good");
     }
 
+    // View setup origin
+    view.origin = F::modelPreview.GetCameraPos();
+
     // Setting view setup pos & size.
     int iRenderViewHeight = 0, iRenderViewWidth = 0; F::modelPreview.GetRenderViewSize(iRenderViewHeight, iRenderViewWidth);
-    int iRenderViewX      = 0,  iRenderViewY    = 0; F::modelPreview.GetRenderViewPos(iRenderViewX, iRenderViewY);
-    
+    int iRenderViewX      = 0, iRenderViewY     = 0; F::modelPreview.GetRenderViewPos(iRenderViewX, iRenderViewY);
+
     view.x      = iRenderViewX;      view.y     = iRenderViewY;
     view.height = iRenderViewHeight; view.width = iRenderViewWidth;
 
@@ -359,22 +319,23 @@ void __fastcall PaintHijack(Panel* a1)
         I::iStudioRender->SetLocalLights(0, nullptr);
 
 
-        Frustum dummyFrustum; 
+        Frustum dummyFrustum;
         I::iVRenderView->Push3DView(&view, 1 | 2 | 32, NULL, dummyFrustum);
         vec vClrModulation(1.0f); I::iVRenderView->SetColorModulation(&vClrModulation);
         I::iVRenderView->SetBlend(1.0f);
-        
+
         pRenderCtx->ClearBuffers(true, false);
+        RGBA_t clr = F::modelPreview.GetRenderViewClr(); pRenderCtx->ClearColor4ub(clr.r, clr.g, clr.b, clr.a);
 
         I::iVModelRender->SuppressEngineLighting(true);
         pEnt->DrawModel(STUDIO_RENDER);
         I::iVModelRender->SuppressEngineLighting(false);
-        
+
         I::iVRenderView->PopView(dummyFrustum);
 
         pRenderCtx->BindLocalCubemap(nullptr);
     }
-    
+
 
     // calling original paint.
     ((void(__fastcall*)(Panel*))(F::modelPreview.GetOriginalPaintFn()))(a1);
@@ -398,6 +359,7 @@ void ModelPreview_t::_VerifyOrCreateStringTable() const
     if (I::iEngine->IsInGame() == true)
         return;
 
+    // already made
     INetworkStringTable* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
     if (pTable != nullptr)
         return;
@@ -411,7 +373,7 @@ void ModelPreview_t::_VerifyOrCreateStringTable() const
     if (pTable == nullptr)
         FAIL_LOG("Failed to create string table");
 
-    WIN_LOG("Create string successfully");
+    WIN_LOG("Created \"%s\" string table successfully", MODEL_PRECACHE_TABLENAME);
 }
 
 
@@ -430,7 +392,7 @@ bool ModelPreview_t::_PrecacheModels() const
     for (const std::string& szModelname : m_vecModels)
     {
         int iMDLIndex = pTable->FindStringIndex(szModelname.c_str());
-        
+
         // already added to table
         if (iMDLIndex != INVALID_TABLE_INDEX)
         {
@@ -441,7 +403,6 @@ bool ModelPreview_t::_PrecacheModels() const
         pTable->AddString(false, szModelname.c_str());
 
         int iModelIndex = pTable->FindStringIndex(szModelname.c_str());
-        //Sig::CClientState_SetModel(I::cClientState, iModelIndex); // Causing crashing? IDK
 
         LOG("Precached model \"%s\" @ index : %d", szModelname.c_str(), iModelIndex);
     }
@@ -646,6 +607,189 @@ void ModelPreview_t::_FreeVTable()
 }
 
 
+/////////////////////// GETTERS & SETTERS /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetPanelClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+{
+    m_panelClr.r = r; m_panelClr.g = g; m_panelClr.b = b; m_panelClr.a = a;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+RGBA_t ModelPreview_t::GetPanelClr() const
+{
+    return m_panelClr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetRenderViewClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+{
+    m_renderViewClr.r = r; m_renderViewClr.g = g; m_renderViewClr.b = b; m_renderViewClr.a = a;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+RGBA_t ModelPreview_t::GetRenderViewClr() const
+{
+    return m_renderViewClr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetCameraPos(const vec& vCameraPos)
+{
+    m_vCameraPos = vCameraPos;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+vec ModelPreview_t::GetCameraPos() const
+{
+    return m_vCameraPos;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::InvalidateModelPrecache()
+{
+    m_bModelPrecached = false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::JoiningMatch(bool bJoining)
+{
+    m_bJoiningMatch = bJoining;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+model_t* ModelPreview_t::GetActiveModel() const
+{
+    return m_pActiveModel;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+BaseEntity* ModelPreview_t::GetModelEntity() const
+{
+    return m_pEnt;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetVisible(bool bVisible)
+{
+    // Change panel visibility
+    if (m_pPanel != nullptr)
+    {
+        I::iPanel->SetVisible(m_pPanel->GetVPanel(), bVisible);
+    }
+
+    bool bRefreshModel = bVisible == true && bVisible != m_bVisible;
+    m_bVisible = bVisible;
+
+    if (m_pEnt == nullptr)
+        return;
+
+    // Refresh model once if opened ( to prevent bullshit )
+    if (bRefreshModel == true)
+    {
+        INetworkStringTable* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+        if (pTable == nullptr)
+        {
+            FAIL_LOG("String table not found!");
+        }
+        else
+        {
+            int iIndex = pTable->FindStringIndex(m_vecModels[m_iActiveModelIndex].c_str());
+            Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
+            LOG("Updated model info for our model entity. Set to \"%s\"", m_vecModels[m_iActiveModelIndex].c_str());
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetPanelSize(int iHeight, int iWidth)
+{
+    m_iPanelHeight = iHeight;
+    m_iPanelWidth  = iWidth;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::GetPanelSize(int& iHeight, int& iWidth) const
+{
+    iHeight = m_iPanelHeight; 
+    iWidth  = m_iPanelWidth;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetPanelPos(int x, int y)
+{
+    m_iPanelX = x; m_iPanelY = y;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::GetPanelPos(int& x, int& y) const
+{
+    x = m_iPanelX; y = m_iPanelY;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetRenderViewSize(int iHeight, int iWidth)
+{
+    m_iRenderViewHeight = iHeight; 
+    m_iRenderViewWidth  = iWidth;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::GetRenderViewSize(int& iHeight, int& iWidth) const
+{
+    iHeight = m_iRenderViewHeight; 
+    iWidth  = m_iRenderViewWidth;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetRenderViewPos(int x, int y)
+{
+    m_iRenderViewX = x; m_iRenderViewY = y;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::GetRenderViewPos(int& x, int& y) const
+{
+    x = m_iRenderViewX; y = m_iRenderViewY;
+}
+
+
+
 //=========================================================================
 //                     DEBUGGING
 //=========================================================================
@@ -655,7 +799,7 @@ struct LightingState_t
 {
     vec         r_boxcolor[6];		// ambient, and lights that aren't in locallight[]
     int			numlights;
-    void*       locallight[4];
+    void* locallight[4];
 };
 
 MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 48 8B 05", __fastcall, ENGINE_DLL,
@@ -669,7 +813,7 @@ MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56
     for (int i = 0; i < 6; i++)
     {
         pLightState->r_boxcolor[i] = vec(0.5f, 0.5f, 0.5f);
-        
+
         if (i < 4)
             pLightState->locallight[i] = nullptr;
     }
@@ -691,9 +835,3 @@ MAKE_HOOK(CBaseEntity_UpdateVisibility, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC
 }
 
 #endif
-
-/*
-TODO : ( global )
--> 
-
-*/

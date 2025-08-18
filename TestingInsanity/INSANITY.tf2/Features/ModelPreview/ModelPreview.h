@@ -1,3 +1,11 @@
+//=========================================================================
+//                      MODEL PREVIEW
+//=========================================================================
+// by      : INSANE
+// created : 31/07/2025
+// 
+// purpose : Renders any model. Anywhere.
+//-------------------------------------------------------------------------
 #pragma once
 
 #include <string>
@@ -17,32 +25,42 @@ public:
     void Free();
 
     inline void* GetOriginalPaintFn() const { return m_pOriginalPaint; }
-    
+
     // String table
-    void        DiscardStringTables() const;
-    inline void InvalidateModelPrecache() { m_bModelPrecached = false; }
-    inline void JoiningMatch(bool bJoining) { m_bJoiningMatch = bJoining; }
+    void DiscardStringTables() const;
+    void InvalidateModelPrecache();
+    void JoiningMatch(bool bJoining);
 
     // Models
-    void SetActiveModel(int iIndex);
-    inline model_t*    GetActiveModel() const { return m_pActiveModel; }
-    inline BaseEntity* GetModelEntity() const { return m_pEnt; }
+    void        SetActiveModel(int iIndex);
+    model_t*    GetActiveModel() const;
+    BaseEntity* GetModelEntity() const;
 
     void SetVisible(bool bVisible);
 
     // Panel Pos & size
-    inline void SetPanelSize(int  iHeight, int  iWidth)       { m_iPanelHeight = iHeight; m_iPanelWidth = iWidth; }
-    inline void GetPanelSize(int& iHeight, int& iWidth) const { iHeight = m_iPanelHeight; iWidth = m_iPanelWidth; }
+    void SetPanelSize(int  iHeight, int  iWidth);
+    void GetPanelSize(int& iHeight, int& iWidth) const;
 
-    inline void SetPanelPos(int  x, int  y)       { m_iPanelX = x; m_iPanelY = y; }
-    inline void GetPanelPos(int& x, int& y) const { x = m_iPanelX; y = m_iPanelY; }
+    void SetPanelPos(int  x, int  y);
+    void GetPanelPos(int& x, int& y) const;
+
+    void SetPanelClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    RGBA_t GetPanelClr() const;
 
     // Render View Pos & Size
-    inline void SetRenderViewSize(int  iHeight, int  iWidth)       { m_iRenderViewHeight = iHeight; m_iRenderViewWidth = iWidth; }
-    inline void GetRenderViewSize(int& iHeight, int& iWidth) const { iHeight = m_iRenderViewHeight; iWidth = m_iRenderViewWidth; }
+    void SetRenderViewSize(int  iHeight, int  iWidth);
+    void GetRenderViewSize(int& iHeight, int& iWidth) const;
 
-    inline void SetRenderViewPos(int  x, int  y)       { m_iRenderViewX = x; m_iRenderViewY = y; }
-    inline void GetRenderViewPos(int& x, int& y) const { x = m_iRenderViewX; y = m_iRenderViewY; }
+    void SetRenderViewPos(int  x, int  y);
+    void GetRenderViewPos(int& x, int& y) const;
+
+    void SetRenderViewClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    RGBA_t GetRenderViewClr() const;
+
+    // Camera
+    void SetCameraPos(const vec& vCameraPos);
+    vec GetCameraPos() const;
 
 private:
     bool _ShouldCreateStringTable();
@@ -51,11 +69,11 @@ private:
     void _SetTablePointer(INetworkStringTable* pTable) const;
     void _VerifyOrCreateStringTable()                  const;
     bool _PrecacheModels()                             const;
-    
+
     int      m_iActiveModelIndex = -1;
     model_t* m_pActiveModel      = nullptr;
     bool     m_bModelPrecached   = false;
-    std::vector<std::string> m_vecModels = 
+    std::vector<std::string> m_vecModels =
     {
         "models/player/spy.mdl",
         "models/player/heavy.mdl",
@@ -67,26 +85,31 @@ private:
 
     // init wrapper for Entity & panel.
     bool _Initialize();
+    bool m_bVisible = true;
 
     // Entity init...
-    bool _InitializeEntity();    
+    bool _InitializeEntity();
     void _FreeEntity();
-    BaseEntity* m_pEnt      = nullptr;
-    bool        m_bEntInit  = false;
+    BaseEntity* m_pEnt     = nullptr;
+    bool        m_bEntInit = false;
 
     // Panel init...
     bool _InitializePanel();
     Panel*      m_pPanel           = nullptr;
     bool        m_bPanelInitilized = false;
-    const char* m_szPanelName      = "INSANE.TF2 Showcase Panel";
+    const char* m_szPanelName      = "INSANE.tf2 Showcase Panel";
+
+    vec m_vCameraPos = { -180.0f, 0.0f, 75.0f };
 
     int m_iPanelHeight = 800;
     int m_iPanelWidth  = 800;
     int m_iPanelX = 0, m_iPanelY = 0;
+    RGBA_t m_panelClr;
 
     int m_iRenderViewHeight = 700;
     int m_iRenderViewWidth  = 700;
     int m_iRenderViewX = 0, m_iRenderViewY = 0;
+    RGBA_t m_renderViewClr;
 
     // Vtable for panel object
     uint64_t _FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse);
@@ -97,10 +120,3 @@ private:
     void* m_pOriginalPaint  = nullptr;
 };
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
-
-
-DEFINE_TAB(ModelPreview, 11)
-DEFINE_SECTION(ModelPreview, "ModelPreview", 1)
-
-DEFINE_FEATURE(Enable, bool, ModelPreview, ModelPreview, 1, false)
-DEFINE_FEATURE(HardRespawn, bool, ModelPreview, ModelPreview, 2, false)

@@ -8,6 +8,7 @@
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Features/ModelPreview/ModelPreview.h"
+#include "../../Features/Material Gen/MaterialGen.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 
@@ -58,27 +59,6 @@ namespace directX {
         bool time_noted = false;
         ImFont* shutdown_anim_font = nullptr; // <- intialized in load_all_fonts() cause initalizing it here will just fill current values, which are all nullptrs :(
     };
-
-    //namespace textures
-    //{
-    //    bool are_textures_initialized = false;
-
-    //    texture_data logo(nullptr, "Logo", 0, 0, 1,0.2f);
-    //    texture_data aimbot(nullptr, "aimbot scope");
-    //    texture_data folder(nullptr, "config folder");
-    //    texture_data left_wing(nullptr, "left wing image");
-    //    texture_data right_wing(nullptr, "right wing image");
-    //    texture_data planet(nullptr, "planet");
-    //    texture_data player(nullptr, "player");
-    //    texture_data setting(nullptr, "setting");
-    //    texture_data stars(nullptr, "stars");
-    //    texture_data view(nullptr, "view");
-    //    texture_data misc(nullptr, "miscellaneous");
-    //    texture_data antiaim(nullptr, "anti aim");
-
-    //    /* background */
-    //    texture_data background(nullptr, "background image");
-    //};
 
     namespace fonts
     {
@@ -154,29 +134,39 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     // Drawing graphics features.
     {
         F::graphicsEngine.Run(P_DEVICE);
+        F::materialGen.Run();
 
         Render::InfoWindow.Draw();
         Render::uiMenu.Draw();
         insaneProfiler.Render();
         
-        F::modelPreview.Run();
-        F::modelPreview.SetVisible(UI::UI_visble);
-        F::modelPreview.SetActiveModel(1);
-        
-        float flHeight = 0.0f, flWidth = 0.0f; Render::uiMenu.GetWindowSize(flHeight, flWidth);
-        F::modelPreview.SetPanelSize(     static_cast<int>(flHeight), static_cast<int>(flWidth));
-        F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
+        // Model Rendering.
+        {
+            F::modelPreview.Run();
+            F::modelPreview.SetVisible(UI::UI_visble);
+            F::modelPreview.SetActiveModel(1);
 
-        float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y); 
-        x += flWidth;
-        F::modelPreview.SetPanelPos(static_cast<int>(x), static_cast<int>(y));
-        F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
+            if(Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
+            {
+                F::modelPreview.SetPanelClr(255, 255, 255, 255);
+                F::modelPreview.SetRenderViewClr(0, 0, 0, 255);
+
+                float flHeight = 0.0f, flWidth = 0.0f; Render::uiMenu.GetWindowSize(flHeight, flWidth);
+                F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
+                F::modelPreview.SetPanelSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
+
+                float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y); x += flWidth;
+                F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
+                F::modelPreview.SetPanelPos(static_cast<int>(x), static_cast<int>(y));
+            }
+        }
 
     }
 
     /* Frame end */
     ImGui::EndFrame();
     ImGui::Render();
+
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
     if (UI::UI_visble)

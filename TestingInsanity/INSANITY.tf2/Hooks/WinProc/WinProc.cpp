@@ -42,7 +42,7 @@ bool winproc::hook_winproc() {
     O_winproc = (WNDPROC)SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)H_winproc);
 
     #ifdef _DEBUG
-    FAIL_LOG("initiatlizing", "Hooking WinProc");
+    LOG("Hooking WinProc");
     #endif
     return true;
 }
@@ -52,13 +52,13 @@ void winproc::unhook_winproc()
     if (target_window_handle && O_winproc) {
         SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)O_winproc);
         #ifdef _DEBUG
-        WIN_LOG("termination", "Unhooked ImGui");
+        WIN_LOG("Unhooked ImGui");
         #endif
         return;
     }
 
     #ifdef _DEBUG
-    FAIL_LOG("ERROR", "Failed UnHooking WinProc");
+    FAIL_LOG("Failed UnHooking WinProc");
     #endif // _DEBUG
 
 }

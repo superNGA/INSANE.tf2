@@ -5,9 +5,10 @@
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
 
+class ITexture;
 
 // Functions
-MAKE_SIG(CMaterialSystem_CreateNamedRenderTargetTextureEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 8B 9C 24", MATERIALSYSTEM_DLL, void*,
+MAKE_SIG(CMaterialSystem_CreateNamedRenderTargetTextureEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 8B 9C 24", MATERIALSYSTEM_DLL, ITexture*,
 	void*, const char*, int, int, int, int, int, int, int)
 
 MAKE_SIG(CMaterialSystem_GetRenderContext, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F9 48 81 C1", MATERIALSYSTEM_DLL, IMatRenderContext*,
@@ -52,7 +53,7 @@ public:
 			/*TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT*/4 | 8, 0);
 	}
 
-	inline void* CreateRenderTarget(
+	inline ITexture* CreateRenderTarget(
 		const char* szTargetName,
 		int w,
 		int h,
