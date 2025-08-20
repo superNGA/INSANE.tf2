@@ -142,7 +142,7 @@ void ModelPreview_t::DiscardStringTables() const
     I::iNetworkStringTableContainer->RemoveAllTables();
     _SetTablePointer(nullptr);
 
-    FAIL_LOG("removed & cleaned up model precache string tables.");
+    FAIL_LOG("Deleted MODEL_PRECACHE_TABLE and cleanup refrences.");
 }
 
 
@@ -150,6 +150,7 @@ void ModelPreview_t::DiscardStringTables() const
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::SetActiveModel(int iIndex)
 {
+    // Don't set model pointer if model name not added to string table.
     if (m_bModelPrecached == false)
     {
         return;
@@ -203,7 +204,7 @@ bool ModelPreview_t::_InitializeEntity()
 
     Sig::CBaseFlex_Constructor(m_pEnt);
 
-    // Model name set here doesn't matter, We can change it later.
+    // Model we set here doesn't matter, We can change it later.
     auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
     if (pTable)
     {
@@ -249,7 +250,7 @@ void __fastcall PaintHijack(Panel* a1)
     BaseEntity* pEnt = F::modelPreview.GetModelEntity();
 
     // if model entity not initialized call original & leave.
-    if (pEnt == nullptr)
+    if (pEnt == nullptr || F::modelPreview.GetActiveModel() == nullptr || F::modelPreview.GetActiveModelIndex() == -1)
     {
         ((void(__fastcall*)(Panel*))(F::modelPreview.GetOriginalPaintFn()))(a1);
         return;
@@ -279,6 +280,8 @@ void __fastcall PaintHijack(Panel* a1)
         WIN_LOG("View good");
     }
 
+    view.fov = F::modelPreview.GetBaseCameraFOV();
+
     // View setup origin
     view.origin = F::modelPreview.GetCameraPos();
 
@@ -288,16 +291,6 @@ void __fastcall PaintHijack(Panel* a1)
 
     view.x      = iRenderViewX;      view.y     = iRenderViewY;
     view.height = iRenderViewHeight; view.width = iRenderViewWidth;
-
-    static vec white[6] =
-    {
-        vec(0.4, 0.4, 0.4),
-        vec(0.4, 0.4, 0.4),
-        vec(0.4, 0.4, 0.4),
-        vec(0.4, 0.4, 0.4),
-        vec(0.4, 0.4, 0.4),
-        vec(0.4, 0.4, 0.4),
-    };
 
     // Animation fix
     {
@@ -315,7 +308,7 @@ void __fastcall PaintHijack(Panel* a1)
         // Fix lighting n shit.
         vec vLightOrigin(0.0f); pRenderCtx->SetLightingOrigin(&vLightOrigin); // We also have signature for this function.
         pRenderCtx->SetAmbientLight(1.0f, 1.0f, 1.0f);
-        I::iStudioRender->SetAmbientLightColors(white);
+        I::iStudioRender->SetAmbientLightColors(F::modelPreview.GetAmbientLighting());
         I::iStudioRender->SetLocalLights(0, nullptr);
 
 
@@ -414,55 +407,6 @@ bool ModelPreview_t::_PrecacheModels() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-uint64_t ModelPreview_t::_FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse)
-{
-    // Sanity checks
-    if (parent == NULL)
-        return NULL;
-
-    // parent is child ? ( LMAO )
-    if (std::string(I::iPanel->GetName(parent)) == szChildName)
-        return parent;
-
-    // Child count
-    int nChildren = I::iPanel->GetChildCount(parent);
-
-    // No children ?
-    if (nChildren == 0)
-        return NULL;
-
-    // Check all children for a match
-    for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
-    {
-        vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
-
-        // match found
-        if (std::string(I::iPanel->GetName(child)) == szChildName)
-            return child;
-    }
-
-
-    if (bRecurse == true)
-    {
-        for (int iChildIndex = 0; iChildIndex < nChildren; iChildIndex++)
-        {
-            vgui::VPANEL child = I::iPanel->GetChild(parent, iChildIndex);
-
-            // recurse till we found match
-            vgui::VPANEL childMatch = _FindChildByName(child, szChildName, bRecurse);
-
-            // if match found
-            if (childMatch != NULL)
-                return childMatch;
-        }
-    }
-
-    return NULL;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::_InitializePanel()
 {
     if (m_bPanelInitilized == true)
@@ -472,7 +416,7 @@ bool ModelPreview_t::_InitializePanel()
 
     // Checking if the panel already exists. ( i.e. if we are injecting. )
     // EDIT : It seems like the panel gets auto deleted, cause I am unable to find it in reinjection. I'm just gonna leave it here.
-    vgui::VPANEL vDesiredPanel = _FindChildByName(I::iSurface->GetEmbeddedPanel(), std::string(m_szPanelName), true);
+    vgui::VPANEL vDesiredPanel = I::iPanel->FindChildByName(I::iSurface->GetEmbeddedPanel(), std::string(m_szPanelName), true);
     if (vDesiredPanel != NULL)
     {
         if (_SpoofVTable() == false)
@@ -587,6 +531,13 @@ bool ModelPreview_t::_SpoofVTable()
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::Free()
 {
+    if(m_pPanel != nullptr)
+    {
+        I::iPanel->SetVisible(m_pPanel->GetVPanel(), false);
+        I::iPanel->SetEnabled(m_pPanel->GetVPanel(), false);
+        I::iPanel->SetSize(m_pPanel->GetVPanel(), 1, 1); // This seems to fix it.
+    }
+
     _FreeVTable();
     _FreeEntity();
 }
@@ -598,7 +549,7 @@ void ModelPreview_t::_FreeVTable()
 {
     if (m_pSpoofedVTable == nullptr || m_pOriginalVTable == nullptr)
         return;
-
+    
     // Restore the original VTable for our panel object.
     *reinterpret_cast<uintptr_t*>(m_pPanel) = reinterpret_cast<uintptr_t>(m_pOriginalVTable);
 
@@ -657,6 +608,61 @@ vec ModelPreview_t::GetCameraPos() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+float ModelPreview_t::GetBaseCameraFOV() const
+{
+    return m_flCameraFOV;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float ModelPreview_t::GetVerticalFOV() const
+{
+    int iHeight = 0, iWidth = 0; GetRenderViewSize(iHeight, iWidth);
+
+    float flScale = static_cast<float>(iHeight) / static_cast<float>(iWidth);
+
+    float flHorizontalFOV = DEG2RAD(GetBaseCameraFOV());
+    
+    // Frustum width at 1 unit from camera. with correct horizontal FOV ofcourse.
+    float flFrustumWidth = 2.0f * (tanf(flHorizontalFOV / 2.0f) * 1.0f);
+
+    // Size the height according to how much bigger the height is from the width.
+    float flFrustumHeight = flFrustumWidth * flScale;
+
+    return RAD2DEG(2.0f * atanf((flFrustumHeight / 2.0f) / 1.0f));
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float ModelPreview_t::GetHorizontalFOV() const
+{
+    float flBaseFOV = DEG2RAD(GetBaseCameraFOV());
+
+    int iHeight = 0, iWidth = 0; GetRenderViewSize(iHeight, iWidth);
+    float flWidthCorrect = static_cast<float>(iHeight) * (4.0f / 3.0f);
+    
+    // This is the distance at which the frustum width will be equal to 4:3 of the height.
+    // cause that is what the FOV is correct for.
+    float flDist = (static_cast<float>(flWidthCorrect) / 2.0f) / tanf(flBaseFOV / 2.0f);
+
+    // at the same distance ( flDist ) what angle will result in the frustum being equal to 
+    // our renderview's size ( i.e. custom width )
+    return RAD2DEG(2.0f * atanf((static_cast<float>(iWidth) / 2.0f) / flDist));
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetCameraFOV(const float flCameraFOV)
+{
+    m_flCameraFOV = flCameraFOV;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::InvalidateModelPrecache()
 {
     m_bModelPrecached = false;
@@ -681,6 +687,14 @@ model_t* ModelPreview_t::GetActiveModel() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+int ModelPreview_t::GetActiveModelIndex() const
+{
+    return m_iActiveModelIndex;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 BaseEntity* ModelPreview_t::GetModelEntity() const
 {
     return m_pEnt;
@@ -700,7 +714,7 @@ void ModelPreview_t::SetVisible(bool bVisible)
     bool bRefreshModel = bVisible == true && bVisible != m_bVisible;
     m_bVisible = bVisible;
 
-    if (m_pEnt == nullptr)
+    if (m_pEnt == nullptr || m_iActiveModelIndex == -1 || m_pActiveModel == nullptr)
         return;
 
     // Refresh model once if opened ( to prevent bullshit )
@@ -789,6 +803,38 @@ void ModelPreview_t::GetRenderViewPos(int& x, int& y) const
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+vec* ModelPreview_t::GetAmbientLighting()
+{
+    return m_vAmbientLight;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetAmbientLight(const vec& vLight, AmbientLight_t iLightIndex)
+{
+    m_vAmbientLight[iLightIndex] = vLight;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetDefaultLight()
+{
+    vec vDefaultLight(0.4f, 0.4f, 0.4f);
+
+    m_vAmbientLight[AmbientLight_t::LIGHT_TOP]    = vDefaultLight;
+    m_vAmbientLight[AmbientLight_t::LIGHT_BOTTON] = vDefaultLight;
+    m_vAmbientLight[AmbientLight_t::LIGHT_BACK]   = vDefaultLight;
+    m_vAmbientLight[AmbientLight_t::LIGHT_FRONT]  = vDefaultLight;
+    m_vAmbientLight[AmbientLight_t::LIGHT_RIGHT]  = vDefaultLight;
+    m_vAmbientLight[AmbientLight_t::LIGHT_LEFT]   = vDefaultLight;
+}
+
+
+
 
 //=========================================================================
 //                     DEBUGGING
@@ -812,7 +858,7 @@ MAKE_HOOK(LightcacheGetDynamic, "48 89 5C 24 ? 44 89 4C 24 ? 4C 89 44 24 ? 55 56
     //WIN_LOG("Returned spoofed light state for Origin { %.2f %.2f %.2f }", vOrigin->x, vOrigin->y, vOrigin->z);
     for (int i = 0; i < 6; i++)
     {
-        pLightState->r_boxcolor[i] = vec(0.5f, 0.5f, 0.5f);
+        pLightState->r_boxcolor[i] = vec(1.0f, 1.0f, 1.0f);
 
         if (i < 4)
             pLightState->locallight[i] = nullptr;

@@ -103,6 +103,8 @@ public:
 	{
 		return reinterpret_cast<VPanel*>(vguiPanel)->Client();
 	}
+
+	vgui::VPANEL FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse);
 };
 
 MAKE_INTERFACE_VERSION(iPanel, "VGUI_Panel009", IPanel, VGUI2_DLL)

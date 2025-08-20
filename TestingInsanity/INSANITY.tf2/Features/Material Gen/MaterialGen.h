@@ -10,6 +10,8 @@ public:
     void Run();
 
 private:
+    void _DisableGameConsole();
+    void _AdjustCamera();
 
 };
 
@@ -19,6 +21,8 @@ DEFINE_TAB(MaterialGen, 11)
 DEFINE_SECTION(MaterialGen, "MaterialGen", 1)
 DEFINE_FEATURE(Enable, bool, MaterialGen, MaterialGen, 1, false)
 
-DEFINE_FEATURE(X, FloatSlider_t, MaterialGen, MaterialGen, 2, FloatSlider_t(0.0f, -500.0f, 500.0f));
-DEFINE_FEATURE(Y, FloatSlider_t, MaterialGen, MaterialGen, 3, FloatSlider_t(0.0f, -500.0f, 500.0f));
-DEFINE_FEATURE(Z, FloatSlider_t, MaterialGen, MaterialGen, 4, FloatSlider_t(0.0f, -500.0f, 500.0f));
+DEFINE_FEATURE(z, FloatSlider_t, MaterialGen, MaterialGen, 2, 
+    FloatSlider_t(0.0f, -200.0f, 200.0f))
+
+DEFINE_FEATURE(Model, IntSlider_t, MaterialGen, MaterialGen, 3, 
+    IntSlider_t(0, 0, 6))

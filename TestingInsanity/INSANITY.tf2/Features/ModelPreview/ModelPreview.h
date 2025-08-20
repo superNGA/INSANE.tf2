@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "../FeatureHandler.h"
+#include "../../SDK/class/Basic Structures.h"
 
 class BaseEntity;
 class Panel;
@@ -34,6 +35,7 @@ public:
     // Models
     void        SetActiveModel(int iIndex);
     model_t*    GetActiveModel() const;
+    int         GetActiveModelIndex() const;
     BaseEntity* GetModelEntity() const;
 
     void SetVisible(bool bVisible);
@@ -61,6 +63,22 @@ public:
     // Camera
     void SetCameraPos(const vec& vCameraPos);
     vec GetCameraPos() const;
+    
+    float GetBaseCameraFOV() const;
+    float GetVerticalFOV()   const;
+    float GetHorizontalFOV() const;
+    void SetCameraFOV(const float flCameraFOV);
+
+    // Lighting
+    enum AmbientLight_t : int32_t
+    {
+        LIGHT_BACK = 0, LIGHT_FRONT,
+        LIGHT_LEFT,     LIGHT_RIGHT,
+        LIGHT_TOP,      LIGHT_BOTTON
+    };
+    vec* GetAmbientLighting();
+    void SetAmbientLight(const vec& vLight, AmbientLight_t iLightIndex);
+    void SetDefaultLight();
 
 private:
     bool _ShouldCreateStringTable();
@@ -77,9 +95,11 @@ private:
     {
         "models/player/spy.mdl",
         "models/player/heavy.mdl",
-        "custom/CustomModels/models/johny.mdl",
         "models/weapons/w_models/w_toolbox.mdl",
-        "models/props_island/crocodile/crocodile.mdl"
+        "models/props_gameplay/tombstone_specialdelivery.mdl",
+        "models/props_gameplay/tombstone_crocostyle.mdl",
+        "models/props_gameplay/tombstone_tankbuster.mdl",
+        "models/props_gameplay/tombstone_gasjockey.mdl"
     };
 
 
@@ -99,8 +119,11 @@ private:
     bool        m_bPanelInitilized = false;
     const char* m_szPanelName      = "INSANE.tf2 Showcase Panel";
 
+    // Camera...
     vec m_vCameraPos = { -180.0f, 0.0f, 75.0f };
+    float m_flCameraFOV = 20.0f; // This most likely won't change ever.
 
+    // Panel...
     int m_iPanelHeight = 800;
     int m_iPanelWidth  = 800;
     int m_iPanelX = 0, m_iPanelY = 0;
@@ -112,11 +135,22 @@ private:
     RGBA_t m_renderViewClr;
 
     // Vtable for panel object
-    uint64_t _FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse);
     bool     _SpoofVTable();
     void     _FreeVTable();
     void* m_pSpoofedVTable  = nullptr;
     void* m_pOriginalVTable = nullptr;
     void* m_pOriginalPaint  = nullptr;
+
+
+    vec m_vAmbientLight[6] =
+    {
+        vec(0.4f, 0.4f, 0.4f),
+        vec(0.4f, 0.4f, 0.4f),
+        vec(0.4f, 0.4f, 0.4f),
+        vec(0.4f, 0.4f, 0.4f),
+        vec(0.4f, 0.4f, 0.4f),
+        vec(0.4f, 0.4f, 0.4f),
+    };
 };
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
+DEFINE_SECTION(ModelPreview, "MaterialGen", 2)

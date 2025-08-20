@@ -74,13 +74,15 @@ NETVAR_OFFSET(m_vecVelocity,	 m_Collision,		DT_BaseEntity,		-120 -80 -12 -4)
 NETVAR_OFFSET(m_pCurrentCommand, m_flMaxspeed,		DT_BasePlayer,		-0x60)
 NETVAR_OFFSET(m_RefEHandle,		 m_PredictableID,	DT_PredictableId,	0x18)
 NETVAR_OFFSET(m_hRender,		 m_nRenderMode,		DT_BaseEntity,		0x2)
+NETVAR_OFFSET(m_vecAbsOrigin,    m_flElasticity,	DT_BaseEntity,		0x18)
+NETVAR_OFFSET(m_angAbsAngles,    m_flElasticity,	DT_BaseEntity,		0x24)
 
 class BaseEntity : public I_client_unknown, public I_client_renderable, public I_client_networkable, public I_client_thinkable
 {
 public:
 	virtual void		Release(void) = 0;
-	virtual const		vec& GetAbsOrigin(void) const = 0;
-	virtual const		qangle& GetAbsAngles(void) const = 0;
+	virtual vec&		GetAbsOrigin(void) const = 0;
+	virtual qangle&		GetAbsAngles(void) const = 0;
 	virtual CMouthInfo* GetMouth(void) = 0;
 	virtual bool		GetSoundSpatialization(SpatializationInfo_t& info) = 0;
 
@@ -109,6 +111,12 @@ public:
 	NETVAR_GETTER(m_iTeamNum, DT_BaseEntity, int32_t)
 
 	NETVAR_GETTER(m_hRender, DT_BaseEntity, unsigned short)
+	
+	NETVAR_GETTER(m_vecAbsOrigin, DT_BaseEntity, vec)
+	NETVAR_SETTER(m_vecAbsOrigin, DT_BaseEntity, vec)
+	
+	NETVAR_GETTER(m_angAbsAngles, DT_BaseEntity, qangle)
+	NETVAR_SETTER(m_angAbsAngles, DT_BaseEntity, qangle)
 
 	// Simulation Time
 	NETVAR_GETTER(m_flSimulationTime, DT_BaseEntity, float)

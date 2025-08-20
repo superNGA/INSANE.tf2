@@ -143,11 +143,11 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         // Model Rendering.
         {
             F::modelPreview.Run();
-            F::modelPreview.SetVisible(UI::UI_visble);
-            F::modelPreview.SetActiveModel(1);
 
             if(Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
             {
+                //F::modelPreview.SetActiveModel(3);
+                F::modelPreview.SetVisible(UI::UI_visble);
                 F::modelPreview.SetPanelClr(255, 255, 255, 255);
                 F::modelPreview.SetRenderViewClr(0, 0, 0, 255);
 
@@ -158,6 +158,10 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
                 float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y); x += flWidth;
                 F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
                 F::modelPreview.SetPanelPos(static_cast<int>(x), static_cast<int>(y));
+            }
+            else
+            {
+                F::modelPreview.SetVisible(true);
             }
         }
 
