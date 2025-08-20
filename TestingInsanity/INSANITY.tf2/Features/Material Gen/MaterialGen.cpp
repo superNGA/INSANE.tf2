@@ -20,6 +20,16 @@
 #include "../../External Libraries/ImGui/imgui.h"
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+MaterialGen_t::MaterialGen_t()
+{
+    m_lastUpdateTime = std::chrono::high_resolution_clock::now();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::Run()
 {
     if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
@@ -27,6 +37,7 @@ void MaterialGen_t::Run()
 
     _DisableGameConsole();
     _AdjustCamera();
+    _AdjustModel();
     F::modelPreview.SetActiveModel(Features::MaterialGen::MaterialGen::Model.GetData().m_iVal);
 
     // clr
@@ -41,9 +52,6 @@ void MaterialGen_t::Run()
     // size
     F::modelPreview.SetPanelSize(iHeight, iWidth);
     F::modelPreview.SetRenderViewSize(iHeight, static_cast<int>((1.0f / 3.0f) * static_cast<float>(iWidth)));
-
-    auto* pEnt = F::modelPreview.GetModelEntity();
-    pEnt->GetAbsAngles().yaw = 180.0f;
 }
 
 
@@ -138,22 +146,46 @@ void MaterialGen_t::_AdjustCamera()
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_AdjustModel()
+{
+    BaseEntity* pEnt = F::modelPreview.GetModelEntity();
+    if (pEnt == nullptr)
+        return;
+
+    // Calculate time since last rotating model & set last update time to current time.
+    auto now                    = std::chrono::high_resolution_clock::now();
+    int64_t iTimeSinceStartInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastUpdateTime).count();
+    m_lastUpdateTime = now;
+
+    float flTimeSinceLastUpdateInSec = static_cast<float>(iTimeSinceStartInMs) / 1000.0f;
+    pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * Features::MaterialGen::MaterialGen::RotationSpeed.GetData().m_flVal;
+}
+
+
+/*
+TODO : 
+-> Make models rotate. ( with time )
+*/
+
+
 //=========================================================================
 //                     HOOKS
 //=========================================================================
-MAKE_HOOK(INetworkStringTable_AddString, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 41 8B E9 49 8B F0", __fastcall, ENGINE_DLL, void*,
-    void* pThis, bool bIsServer, const char* szInput, int iLength, void* pUserData)
-{
-    static void* pDesiredTable = nullptr;
-    if (pDesiredTable == nullptr)
-    {
-        pDesiredTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-    }
-
-    if (pThis == pDesiredTable)
-    {
-        LOG("Adding string  \"%s\"", szInput);
-    }
-
-    return Hook::INetworkStringTable_AddString::O_INetworkStringTable_AddString(pThis, bIsServer, szInput, iLength, pUserData);
-}
+//MAKE_HOOK(INetworkStringTable_AddString, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 41 8B E9 49 8B F0", __fastcall, ENGINE_DLL, void*,
+//    void* pThis, bool bIsServer, const char* szInput, int iLength, void* pUserData)
+//{
+//    static void* pDesiredTable = nullptr;
+//    if (pDesiredTable == nullptr)
+//    {
+//        pDesiredTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+//    }
+//
+//    if (pThis == pDesiredTable)
+//    {
+//        LOG("Adding string  \"%s\"", szInput);
+//    }
+//
+//    return Hook::INetworkStringTable_AddString::O_INetworkStringTable_AddString(pThis, bIsServer, szInput, iLength, pUserData);
+//}

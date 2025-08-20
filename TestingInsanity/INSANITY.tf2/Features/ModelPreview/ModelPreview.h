@@ -87,6 +87,7 @@ private:
     void _SetTablePointer(INetworkStringTable* pTable) const;
     void _VerifyOrCreateStringTable()                  const;
     bool _PrecacheModels()                             const;
+    void _UpdateEntityModel(int iIndex);
 
     int      m_iActiveModelIndex = -1;
     model_t* m_pActiveModel      = nullptr;

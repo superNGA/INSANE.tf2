@@ -152,17 +152,16 @@ void ModelPreview_t::SetActiveModel(int iIndex)
 {
     // Don't set model pointer if model name not added to string table.
     if (m_bModelPrecached == false)
-    {
         return;
-    }
 
+    // If this model is the current model.
     if (iIndex == m_iActiveModelIndex)
         return;
 
     iIndex = std::clamp<int>(iIndex, 0, m_vecModels.size() - 1);
 
     m_iActiveModelIndex = iIndex;
-    m_pActiveModel = I::iModelLoader->GetModelForName(m_vecModels[iIndex].c_str(), IModelLoader::FMODELLOADER_CLIENT);
+    m_pActiveModel      = I::iModelLoader->GetModelForName(m_vecModels[iIndex].c_str(), IModelLoader::FMODELLOADER_CLIENT);
 
     if (m_pActiveModel == nullptr)
     {
@@ -170,6 +169,7 @@ void ModelPreview_t::SetActiveModel(int iIndex)
         SetActiveModel(0);
     }
 
+    _UpdateEntityModel(m_iActiveModelIndex);
     WIN_LOG("Set active model to \"%s\" @ index : %d. [ %p ]", m_vecModels[m_iActiveModelIndex].c_str(), m_iActiveModelIndex, m_pActiveModel);
 }
 
@@ -317,8 +317,8 @@ void __fastcall PaintHijack(Panel* a1)
         vec vClrModulation(1.0f); I::iVRenderView->SetColorModulation(&vClrModulation);
         I::iVRenderView->SetBlend(1.0f);
 
-        pRenderCtx->ClearBuffers(true, false);
         RGBA_t clr = F::modelPreview.GetRenderViewClr(); pRenderCtx->ClearColor4ub(clr.r, clr.g, clr.b, clr.a);
+        pRenderCtx->ClearBuffers(true, false);
 
         I::iVModelRender->SuppressEngineLighting(true);
         pEnt->DrawModel(STUDIO_RENDER);
@@ -402,6 +402,22 @@ bool ModelPreview_t::_PrecacheModels() const
 
     WIN_LOG("Model Precache done!");
     return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_UpdateEntityModel(int iIndex)
+{
+    // Does table even exist yet?
+    auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+    if (pTable == nullptr)
+        return;
+
+    iIndex = std::clamp<int>(iIndex, 0, m_vecModels.size() - 1);
+    int iModelIndex = pTable->FindStringIndex(m_vecModels[iIndex].c_str());
+
+    Sig::CBaseEntity_SetModelByIndex(m_pEnt, iModelIndex);
 }
 
 
@@ -711,27 +727,19 @@ void ModelPreview_t::SetVisible(bool bVisible)
         I::iPanel->SetVisible(m_pPanel->GetVPanel(), bVisible);
     }
 
-    bool bRefreshModel = bVisible == true && bVisible != m_bVisible;
-    m_bVisible = bVisible;
-
+    // Make sure initialization is done.
     if (m_pEnt == nullptr || m_iActiveModelIndex == -1 || m_pActiveModel == nullptr)
         return;
 
+    bool bRefreshModel = bVisible == true && bVisible != m_bVisible;
+    m_bVisible = bVisible;
+
+    if (bRefreshModel == false)
+        return;
+
     // Refresh model once if opened ( to prevent bullshit )
-    if (bRefreshModel == true)
-    {
-        INetworkStringTable* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-        if (pTable == nullptr)
-        {
-            FAIL_LOG("String table not found!");
-        }
-        else
-        {
-            int iIndex = pTable->FindStringIndex(m_vecModels[m_iActiveModelIndex].c_str());
-            Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
-            LOG("Updated model info for our model entity. Set to \"%s\"", m_vecModels[m_iActiveModelIndex].c_str());
-        }
-    }
+    _UpdateEntityModel(m_iActiveModelIndex);
+    LOG("Refreshed entity model to \"%s\"", m_vecModels[m_iActiveModelIndex].c_str());
 }
 
 
