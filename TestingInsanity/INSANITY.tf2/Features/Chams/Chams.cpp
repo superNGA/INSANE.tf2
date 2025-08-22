@@ -22,6 +22,7 @@ Chams_t chams;
 #include "../../SDK/class/IVRenderView.h"
 #include "../../SDK/class/IStudioRender.h"
 #include "../../SDK/class/IMaterialSystem.h"
+#include "../../SDK/class/IVEngineClient.h"
 
 #include "../ImGui/InfoWindow/InfoWindow_t.h"
 #include "../Anti Aim/AntiAim.h"

@@ -58,14 +58,11 @@ void InfoWindow_t::_DrawInfoWindow()
     ImGui::Begin("Performance", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
 
-    ImGui::PushFont(directX::fonts::roboto); // <- gonna change it to something like JetBrains mono semi-bold.
-
     for (auto& data : m_mapAllDataInfoWindow)
     {
         ImGui::Text(data.second.c_str());
     }
 
-    ImGui::PopFont();
     ImGui::End();
 }
 
@@ -83,14 +80,12 @@ void InfoWindow_t::_DrawCenterWindow()
     ImGui::Begin("CenterConsole", nullptr,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-    ImGui::PushFont(directX::fonts::roboto); // <- gonna change it to something like JetBrains mono semi-bold.
 
     for (auto& data : m_mapAllDataCenterWindow)
     {
         ImGui::TextColored(_GetTextClr(data.second.m_clr), data.second.m_sTextMsg.c_str());
     }
 
-    ImGui::PopFont();
     ImGui::End();
 }
 

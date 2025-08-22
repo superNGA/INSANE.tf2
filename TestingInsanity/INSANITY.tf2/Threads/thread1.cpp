@@ -26,6 +26,7 @@
 #include "../SDK/class/IGameEventManager.h"
 #include "../SDK/class/ISurface.h"
 #include "../SDK/Entity Manager/entityManager.h"
+#include "../SDK/class/IVEngineClient.h"
 
 // FEATURES
 #include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
@@ -109,7 +110,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	LOG("thread 1", "initialized thread 1");
 	while (!directX::UI::UI_has_been_shutdown)
 	{
-		thread_termination_status::thread1_primed = true;
 		tfObject.update();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -127,9 +127,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 			F::movementSimulation.ClearStrafeData();
 			entityManager.Reset();
 		}
-
-		Render::InfoWindow.AddToInfoWindow("connection status", std::format("{}", I::iEngine->IsConnected() ?
-			( bInGame ? "Connected and in-game" : "Connected but not in-game") : "Not Connected"));
 	}
 
 	_terminate(instance);
@@ -155,7 +152,6 @@ bool thread1_t::_initializeHooks()
 
 	/* hooking FNs */
 	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene);
-	MH_CreateHook((LPVOID*)GetBeginScene(), (LPVOID)directX::H_BeginScene, (LPVOID*)&directX::O_BeginScene);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc();

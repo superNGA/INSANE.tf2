@@ -11,6 +11,9 @@
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/INetworkStringTable.h"
 
+// Fonts n shits
+#include "../../Resources/Fonts/FontManager.h"
+
 // UTILITY
 #include "../../Extra/math.h"
 #include "../../Utility/ConsoleLogging.h"
@@ -18,13 +21,14 @@
 
 // External Dependencies
 #include "../../External Libraries/ImGui/imgui.h"
+#include "../../External Libraries/ImGui/imgui_internal.h"
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 MaterialGen_t::MaterialGen_t()
 {
-    m_lastUpdateTime = std::chrono::high_resolution_clock::now();
+    m_lastModelRotateTime = std::chrono::high_resolution_clock::now();
 }
 
 
@@ -32,13 +36,9 @@ MaterialGen_t::MaterialGen_t()
 ///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::Run()
 {
-    if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
+    m_bVisible = Features::MaterialGen::MaterialGen::Enable.IsActive();
+    if (m_bVisible == false)
         return;
-
-    _DisableGameConsole();
-    _AdjustCamera();
-    _AdjustModel();
-    F::modelPreview.SetActiveModel(Features::MaterialGen::MaterialGen::Model.GetData().m_iVal);
 
     // clr
     F::modelPreview.SetRenderViewClr(40, 40, 40, 255);
@@ -52,6 +52,12 @@ void MaterialGen_t::Run()
     // size
     F::modelPreview.SetPanelSize(iHeight, iWidth);
     F::modelPreview.SetRenderViewSize(iHeight, static_cast<int>((1.0f / 3.0f) * static_cast<float>(iWidth)));
+
+    _DisableGameConsole();
+    _AdjustCamera();
+    _RotateModel();
+    _DrawImGui();
+    F::modelPreview.SetActiveModel(Features::MaterialGen::MaterialGen::Model.GetData().m_iVal);
 }
 
 
@@ -148,7 +154,7 @@ void MaterialGen_t::_AdjustCamera()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_AdjustModel()
+void MaterialGen_t::_RotateModel()
 {
     BaseEntity* pEnt = F::modelPreview.GetModelEntity();
     if (pEnt == nullptr)
@@ -156,36 +162,317 @@ void MaterialGen_t::_AdjustModel()
 
     // Calculate time since last rotating model & set last update time to current time.
     auto now                    = std::chrono::high_resolution_clock::now();
-    int64_t iTimeSinceStartInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastUpdateTime).count();
-    m_lastUpdateTime = now;
+    int64_t iTimeSinceStartInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastModelRotateTime).count();
+    m_lastModelRotateTime = now;
 
     float flTimeSinceLastUpdateInSec = static_cast<float>(iTimeSinceStartInMs) / 1000.0f;
     pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * Features::MaterialGen::MaterialGen::RotationSpeed.GetData().m_flVal;
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DrawImGui()
+{
+    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
+
+    int iHeight = 0, iWidth = 0; F::modelPreview.GetPanelSize(iHeight, iWidth);
+    ImVec2 vWindowSize(iWidth / 2, iHeight);
+
+    // Styling
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(6.0f / 255.0f, 6.0f / 255.0f, 6.0f / 255.0f, 1.0f)); // This is causing the text editor color
+        ImGui::PushStyleColor(ImGuiCol_Border,  ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    }
+
+    ImGui::SetNextWindowSize(vWindowSize);
+    ImGui::SetNextWindowPos({ 0.0f, 0.0f });
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    bool bOpen        = true;
+    int  iWindowFlags = 
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+    if (ImGui::Begin("MaterialGen", &bOpen, iWindowFlags) == true)
+    {
+
+        constexpr float flTextEditorScale = 0.9f;
+        ImVec2 vTextEditorSize(vWindowSize.x * flTextEditorScale, vWindowSize.y * flTextEditorScale);
+        ImVec2 vTextEditorPos(vWindowSize.x * (1.0f - flTextEditorScale) * 0.5f, vWindowSize.y * (1.0f - flTextEditorScale) * 0.5f);
+
+        // Rounding text editor size to line height multiple. We the line count stays in sync nicely.
+        vTextEditorSize.y = Maths::RoundToFloor(vTextEditorSize.y, ImGui::GetTextLineHeight());
+
+        ImGui::SetCursorPos(vTextEditorPos);
+        static float s_flScrollInPixels = 0.0f;
+
+        // Drawing line count on the left side.
+        {
+            ImVec2      vCursorPos   = ImGui::GetCursorPos(); vCursorPos.x = 0.0f;
+            ImDrawList* pDrawList    = ImGui::GetWindowDrawList();
+            float       flLineHeight = ImGui::GetTextLineHeight();
+
+            pDrawList->AddRectFilled(vCursorPos, ImVec2(vTextEditorPos.x, vTextEditorPos.y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
+
+            int nLines = vWindowSize.y / flLineHeight;
+            int nScrolledLines = static_cast<int>(s_flScrollInPixels / flLineHeight);
+            for (int iLineIndex = nScrolledLines; iLineIndex < nLines + nScrolledLines; iLineIndex++)
+            {
+                pDrawList->AddText(vCursorPos, ImColor(255, 255, 255, 255), std::format("{}", iLineIndex + 1).c_str());
+                vCursorPos.y += flLineHeight;
+
+                if (vCursorPos.y >= vTextEditorSize.y + vTextEditorPos.y)
+                    break;
+            }
+        }
+
+        static char szTextBuffer[4096] = "";
+        
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        if (ImGui::InputTextMultiline("##MaterialGen_TextEditor", szTextBuffer, sizeof(szTextBuffer), vTextEditorSize))
+        {
+            _ProcessBuffer(szTextBuffer, sizeof(szTextBuffer));
+        }
+        ImGui::PopStyleColor();
+
+        // Getting scroll ammount in pixel. NOTE: The child name must be the same as the textInput widget.
+        ImGui::BeginChild("##MaterialGen_TextEditor");
+        s_flScrollInPixels = ImGui::GetScrollY();
+        ImGui::EndChild();
+
+        // Drawing highlighted syntax
+        {
+            ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
+            int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
+            int nMaxLines      = static_cast<int>(vTextEditorSize.y  / ImGui::GetTextLineHeight());
+
+            //float flEmptySpaceSize = ImGui::CalcTextSize("a").x;
+            //float flEmptySpaceSize = directX::fonts::pJetBrainsMono->GetCharAdvance('A'); // calctextSize ain't working with custom font.
+            float flEmptySpaceSize = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
+            for (const auto& token : m_listTokens)
+            {
+                int iLineIndex = token.m_iLine - nLinesScrolled;
+                if (iLineIndex < 0 || iLineIndex >= nMaxLines)
+                    continue;
+
+                ImVec2 vPos(vTextEditorPos.x + (static_cast<float>(token.m_iCol) * flEmptySpaceSize), vTextEditorPos.y + (iLineIndex * ImGui::GetTextLineHeight()));
+
+                ImColor clr(255, 255, 255, 255);
+                switch (token.m_iTokenType)
+                {
+                case TokenType_t::TOKEN_COMMENT:
+                    clr = ImColor(255, 182, 193, 255); break;
+                case TokenType_t::TOKEN_KEYWORD:
+                    clr = ImColor(31, 191, 186, 255); break;
+                case TokenType_t::TOKEN_VALUE:
+                    clr = ImColor(255, 255, 255, 255); break;
+                case TokenType_t::TOKEN_PARENT:
+                    clr = ImColor(255, 255, 0, 255);   break;
+                default:
+                    break;
+                }
+
+                pDrawList->AddText(vPos, clr, token.m_szToken.c_str());
+            }
+        }
+
+
+        ImGui::End();
+    }
+
+    // Removing style vars
+    {
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
+{
+    if (szBuffer == NULL)
+        return;
+
+    std::list<TokenInfo_t> listTokens; 
+    listTokens.clear();
+
+    // cut up the buffer at each ' ' and '\n' and keeping quoted & comments intact.
+    _SplitBuffer(listTokens, szBuffer, iBufferSize);
+
+    // Iterator over all tokens & determine what catagory they fall into.
+    _ProcessTokens(listTokens);
+
+    m_listTokens = std::move(listTokens);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const
+{
+    TokenInfo_t token;
+    bool bTokenActive = false;
+    bool bQuoteActive = false;
+    bool bCommentActive = false;
+    bool bTokenBreakOverride = false;
+
+    int iLine = 0, iCol = 0;
+
+    for (int i = 0; i < iBufferSize; i++)
+    {
+        char c = szBuffer[i];
+
+        if (c == '\0')
+            break;
+
+        // if line changes, reset col counter & increment line counter. ( these are used for drawing later on )
+        iCol++;
+        if (c == '\n')
+        {
+            iLine++; iCol = 0;
+            bCommentActive = false;
+        }
+
+        if (c == '"')
+            bQuoteActive = !bQuoteActive;
+
+        if (c == '/' && i + 1 < iBufferSize && szBuffer[i + 1] == '/')
+            bCommentActive = true;
+
+        bTokenBreakOverride = bQuoteActive == true || bCommentActive == true;
+
+        bool bShouldBreakToken = c == ' ' || c == '\n';
+        if (bShouldBreakToken == true && bTokenBreakOverride == false)
+        {
+            if (bTokenActive == true)
+            {
+                // if somethings written in token, then store it.
+                if (token.m_szToken.size() > 0)
+                {
+                    listTokensOut.push_back(token);
+                    token.Reset();
+                }
+
+                bTokenActive = false;
+            }
+        }
+        else // Store this character.
+        {
+            if (bTokenActive == false)
+            {
+                token.m_iLine = iLine;
+                token.m_iCol = iCol - 1;
+            }
+            token.m_szToken.push_back(c);
+            bTokenActive = true;
+        }
+    }
+
+    // Clear out if something is remaining.
+    if (token.m_szToken.size() > 0)
+    {
+        listTokensOut.push_back(token);
+        token.Reset();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
+{
+    int iLastCommentLine = -1;
+    bool bExpectingValue = false;
+    bool bMateiralStarted = false;
+
+    for (TokenInfo_t& token : listTokenOut)
+    {
+        // Comments
+        if (token.m_szToken.size() > 2 && token.m_szToken[0] == '/' && token.m_szToken[1] == '/')
+        {
+            iLastCommentLine   = token.m_iLine;
+            token.m_iTokenType = TokenType_t::TOKEN_COMMENT;
+            continue;
+        }
+        // Bracket open
+        else if (token.m_szToken == "{")
+        {
+            bMateiralStarted = true;
+            bExpectingValue  = false;
+        }
+        // Bracket close
+        else if (token.m_szToken == "}")
+        {
+            bMateiralStarted = false;
+        }
+        // Parameters & Values
+        else if (token.m_szToken[0] == '"' && token.m_szToken[token.m_szToken.size() - 1] == '"')
+        {
+            if (bMateiralStarted == false)
+            {
+                token.m_iTokenType = TokenType_t::TOKEN_PARENT;
+            }
+            else if (token.m_szToken[1] == '$') // All keywords start with a $ sign ( except for maybe the proxy ones )
+            {
+                // Checking if its a valid .vmt keyword or not.
+                bool bValidKeyword = false;
+                for (const std::string& szValidKeyword : g_vecVMTKeyWords) // Yea its a fucking linear search, and no I don't need to make a fucking OS or a fucking game engine in O(-1) time. Its not required, this check is only done once per change.
+                {
+                    if (token.m_szToken == szValidKeyword)
+                    {
+                        bValidKeyword = true;
+                        break;
+                    }
+                }
+
+                if (bValidKeyword == false)
+                    continue;
+
+                token.m_iTokenType = TokenType_t::TOKEN_KEYWORD;
+                bExpectingValue    = true;
+            }
+            else if(bExpectingValue == true)
+            {
+                token.m_iTokenType = TokenType_t::TOKEN_VALUE;
+            }
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::SetVisible(bool bVisible)
+{
+    m_bVisible = bVisible;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MaterialGen_t::IsVisible() const
+{
+    return m_bVisible;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::TokenInfo_t::Reset()
+{
+    m_iLine = 0; m_iCol = 0;
+    m_szToken    = "";
+    m_iTokenType = TokenType_t::TOKEN_UNDEFINED;
+}
+
 /*
 TODO : 
--> Make models rotate. ( with time )
+-> Auto complete quotes & brackets.
+-> Suggestions for keywords. ( prefix match )
+-> Fonts a little bit.
+-> now actually apply this Material.
 */
-
-
-//=========================================================================
-//                     HOOKS
-//=========================================================================
-//MAKE_HOOK(INetworkStringTable_AddString, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 41 8B E9 49 8B F0", __fastcall, ENGINE_DLL, void*,
-//    void* pThis, bool bIsServer, const char* szInput, int iLength, void* pUserData)
-//{
-//    static void* pDesiredTable = nullptr;
-//    if (pDesiredTable == nullptr)
-//    {
-//        pDesiredTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-//    }
-//
-//    if (pThis == pDesiredTable)
-//    {
-//        LOG("Adding string  \"%s\"", szInput);
-//    }
-//
-//    return Hook::INetworkStringTable_AddString::O_INetworkStringTable_AddString(pThis, bIsServer, szInput, iLength, pUserData);
-//}

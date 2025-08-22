@@ -1,7 +1,9 @@
 #include "WinProc.h"
 #include "../../Features/ImGui/Menu/Menu.h"
+#include "../../Features/Material Gen/MaterialGen.h"
 
 // Utility
+#include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Libraries/Utility/Utility.h"
@@ -18,21 +20,15 @@ bool winproc::hook_winproc() {
     target_window_handle = FindWindow(nullptr, global::target_window_name); // Replace with your game's window title
     if (!target_window_handle)
     {
-        #ifdef _DEBUG
         FAIL_LOG("Failed to get window HWND");
-        #endif 
         return false;
     }
 
     global::target_hwnd = target_window_handle;
-    #ifdef _DEBUG
     WIN_LOG("found target window");
-    printf("window handle -> 0x%p\n", target_window_handle);
-    #endif
+    LOG("window handle -> 0x%p\n", target_window_handle);
 
-    #ifdef _DEBUG
     LOG("wating for win32 implimentation to be initialized");
-    #endif // _DEBUG
 
     while (!directX::UI::WIN32_initialized)
     {
@@ -41,26 +37,21 @@ bool winproc::hook_winproc() {
 
     O_winproc = (WNDPROC)SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)H_winproc);
 
-    #ifdef _DEBUG
     LOG("Hooking WinProc");
-    #endif
     return true;
 }
 
 void winproc::unhook_winproc()
 {
-    if (target_window_handle && O_winproc) {
+    if (target_window_handle && O_winproc) 
+    {
         SetWindowLongPtr(target_window_handle, GWLP_WNDPROC, (LONG_PTR)O_winproc);
-        #ifdef _DEBUG
+        
         WIN_LOG("Unhooked ImGui");
-        #endif
         return;
     }
 
-    #ifdef _DEBUG
     FAIL_LOG("Failed UnHooking WinProc");
-    #endif // _DEBUG
-
 }
 
 // NOTE : gets called once for each input, not in batch.
@@ -114,7 +105,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     }
 
     // No inputs to game if menu OPEN
-    if (directX::UI::UI_visble == true) 
+    if (directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
     {
         ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
 

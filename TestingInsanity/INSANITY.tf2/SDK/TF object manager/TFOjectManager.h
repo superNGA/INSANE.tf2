@@ -13,6 +13,7 @@
 // SDK
 #include "../../GlobalVars.h"
 #include "../class/IVRenderView.h"
+#include "../class/I_EngineClientReplay.h" // This has the GlobalVar struct.
 
 struct global_var_base;
 enum renderGroup_t;

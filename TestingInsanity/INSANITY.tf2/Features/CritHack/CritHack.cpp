@@ -20,6 +20,7 @@
 #include "../../SDK/class/IGameEventManager.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../SDK/class/CPrediction.h"
+#include "../../SDK/class/IVEngineClient.h"
 
 // DEUBG related
 #include "../ImGui/InfoWindow/InfoWindow_t.h"

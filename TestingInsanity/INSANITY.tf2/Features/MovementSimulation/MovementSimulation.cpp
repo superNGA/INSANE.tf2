@@ -12,6 +12,8 @@
 
 //SDK
 #include "../../SDK/class/CUserCmd.h"
+#include "../../SDK/class/IVEngineClient.h"
+#include "../../SDK/class/IVDebugOverlay.h"
 
 #define DEBUG_MOVEMENT_SIM_HOOKS false
 

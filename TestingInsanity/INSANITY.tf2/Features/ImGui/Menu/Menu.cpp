@@ -25,57 +25,59 @@ void UIMenu::Draw()
 
     // Begin Menu
     ImGui::SetNextWindowSize(MENU_DIMENSIONS);
-    ImGui::Begin(m_szMenuWindowName, &directX::UI::UI_visble, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize);
-
-    m_vLastWindowPos = { ImGui::GetWindowPos().x, ImGui::GetWindowPos().y };
-
-    // Aquiring Feature map
-    const auto& vecFeatureMap = featureHandler.GetFeatureMap();
-    
-    // Drawing Tabs
-    if (m_iViewState == UIViewState::TAB_VIEW)
+    if (ImGui::Begin(m_szMenuWindowName, &directX::UI::UI_visble, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize) == true)
     {
-        constexpr ImVec2 TAB_BUTTON_DIMENSIONS(280.0f, 30.0f);
-        for (const auto* tab : vecFeatureMap)
-        {    
-            if (ImGui::Button((tab->m_szTabDisplayName + "##Tab").c_str(), TAB_BUTTON_DIMENSIONS) == true)
-            {
-                m_iViewState      = UIViewState::FEATURE_VIEW;
-                m_iActiveTabIndex = tab->m_iIndex - 1;
 
-                // Clamping so out-of-index doesn't cause crash
-                m_iActiveTabIndex = std::clamp(m_iActiveTabIndex, 0, static_cast<int>(vecFeatureMap.size() - 1));
+        m_vLastWindowPos = { ImGui::GetWindowPos().x, ImGui::GetWindowPos().y };
+
+        // Aquiring Feature map
+        const auto& vecFeatureMap = featureHandler.GetFeatureMap();
+
+        // Drawing Tabs
+        if (m_iViewState == UIViewState::TAB_VIEW)
+        {
+            constexpr ImVec2 TAB_BUTTON_DIMENSIONS(280.0f, 30.0f);
+            for (const auto* tab : vecFeatureMap)
+            {
+                if (ImGui::Button((tab->m_szTabDisplayName + "##Tab").c_str(), TAB_BUTTON_DIMENSIONS) == true)
+                {
+                    m_iViewState = UIViewState::FEATURE_VIEW;
+                    m_iActiveTabIndex = tab->m_iIndex - 1;
+
+                    // Clamping so out-of-index doesn't cause crash
+                    m_iActiveTabIndex = std::clamp(m_iActiveTabIndex, 0, static_cast<int>(vecFeatureMap.size() - 1));
+                }
             }
+
+            if (ImGui::Button("Config", TAB_BUTTON_DIMENSIONS))
+                m_iViewState = UIViewState::CONFIG_VIEW;
+        }
+        else if (m_iViewState == UIViewState::CONFIG_VIEW)
+        {
+            _DrawConfigView();
+        }
+        else
+        {
+            _DrawSection(vecFeatureMap[m_iActiveTabIndex]);
         }
 
-        if (ImGui::Button("Config", TAB_BUTTON_DIMENSIONS))
-            m_iViewState = UIViewState::CONFIG_VIEW;
-    }
-    else if (m_iViewState == UIViewState::CONFIG_VIEW)
-    {
-        _DrawConfigView();
-    }
-    else
-    {
-        _DrawSection(vecFeatureMap[m_iActiveTabIndex]);
-    }
 
+        // Drawing Unload button only if in TabView
+        if (m_iViewState == UIViewState::TAB_VIEW)
+        {
+            if (ImGui::Button("UnLoad", BACK_BUTTON_DIMENSIONS) == true)
+                directX::UI::shutdown_UI = true;
+        }
+        // Else drawing "Back-To-TabView" button
+        else
+        {
+            if (ImGui::Button("Back", BACK_BUTTON_DIMENSIONS) == true)
+                m_iViewState = UIViewState::TAB_VIEW;
+        }
 
-    // Drawing Unload button only if in TabView
-    if(m_iViewState == UIViewState::TAB_VIEW)
-    {
-        if (ImGui::Button("UnLoad", BACK_BUTTON_DIMENSIONS) == true)
-            directX::UI::shutdown_UI = true;
+        // End Menu
+        ImGui::End();
     }
-    // Else drawing "Back-To-TabView" button
-    else
-    {
-        if (ImGui::Button("Back", BACK_BUTTON_DIMENSIONS) == true)
-            m_iViewState = UIViewState::TAB_VIEW;
-    }
-
-    // End Menu
-    ImGui::End();
 }
 
 
