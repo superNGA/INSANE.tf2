@@ -107,7 +107,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 	}
 
 	//=======================MAIN CHEAT LOOP=======================
-	LOG("thread 1", "initialized thread 1");
+	LOG("Initialized MainLoop Thread");
 	while (!directX::UI::UI_has_been_shutdown)
 	{
 		tfObject.update();

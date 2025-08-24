@@ -29,6 +29,7 @@
 MaterialGen_t::MaterialGen_t()
 {
     m_lastModelRotateTime = std::chrono::high_resolution_clock::now();
+    m_iActiveMatBundleIndex.store(-1);
 }
 
 
@@ -177,7 +178,9 @@ void MaterialGen_t::_DrawImGui()
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
 
     int iHeight = 0, iWidth = 0; F::modelPreview.GetPanelSize(iHeight, iWidth);
-    ImVec2 vWindowSize(iWidth / 2, iHeight);
+    float flScreenWidth  = static_cast<float>(iWidth);
+    float flScreenHeight = static_cast<float>(iHeight);
+    ImVec2 vWindowSize(flScreenWidth * (2.0f / 3.0f), flScreenHeight); // 2 / 3 of the total screen goes to this.
 
     // Styling
     {
@@ -195,87 +198,14 @@ void MaterialGen_t::_DrawImGui()
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
     if (ImGui::Begin("MaterialGen", &bOpen, iWindowFlags) == true)
     {
+        // Drawing Text Editor.
+        constexpr float flTEWidthFraction = 0.5f, flTELineCounterWidthFraction = 0.02f;
+        constexpr float flTEHeightFraction = 0.9f;
+        ImVec2 vTESize(flScreenWidth * (flTEWidthFraction - flTELineCounterWidthFraction), flScreenHeight * flTEHeightFraction);
+        ImVec2 vTEPos(flScreenWidth  * flTELineCounterWidthFraction, flScreenHeight * (1.0f - flTEHeightFraction) * 0.5f);
+        _DrawTextEditor(vTESize.x, vTESize.y, vTEPos.x, vTEPos.y);
 
-        constexpr float flTextEditorScale = 0.9f;
-        ImVec2 vTextEditorSize(vWindowSize.x * flTextEditorScale, vWindowSize.y * flTextEditorScale);
-        ImVec2 vTextEditorPos(vWindowSize.x * (1.0f - flTextEditorScale) * 0.5f, vWindowSize.y * (1.0f - flTextEditorScale) * 0.5f);
-
-        // Rounding text editor size to line height multiple. We the line count stays in sync nicely.
-        vTextEditorSize.y = Maths::RoundToFloor(vTextEditorSize.y, ImGui::GetTextLineHeight());
-
-        ImGui::SetCursorPos(vTextEditorPos);
-        static float s_flScrollInPixels = 0.0f;
-
-        // Drawing line count on the left side.
-        {
-            ImVec2      vCursorPos   = ImGui::GetCursorPos(); vCursorPos.x = 0.0f;
-            ImDrawList* pDrawList    = ImGui::GetWindowDrawList();
-            float       flLineHeight = ImGui::GetTextLineHeight();
-
-            pDrawList->AddRectFilled(vCursorPos, ImVec2(vTextEditorPos.x, vTextEditorPos.y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
-
-            int nLines = vWindowSize.y / flLineHeight;
-            int nScrolledLines = static_cast<int>(s_flScrollInPixels / flLineHeight);
-            for (int iLineIndex = nScrolledLines; iLineIndex < nLines + nScrolledLines; iLineIndex++)
-            {
-                pDrawList->AddText(vCursorPos, ImColor(255, 255, 255, 255), std::format("{}", iLineIndex + 1).c_str());
-                vCursorPos.y += flLineHeight;
-
-                if (vCursorPos.y >= vTextEditorSize.y + vTextEditorPos.y)
-                    break;
-            }
-        }
-
-        static char szTextBuffer[4096] = "";
-        
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        if (ImGui::InputTextMultiline("##MaterialGen_TextEditor", szTextBuffer, sizeof(szTextBuffer), vTextEditorSize))
-        {
-            _ProcessBuffer(szTextBuffer, sizeof(szTextBuffer));
-        }
-        ImGui::PopStyleColor();
-
-        // Getting scroll ammount in pixel. NOTE: The child name must be the same as the textInput widget.
-        ImGui::BeginChild("##MaterialGen_TextEditor");
-        s_flScrollInPixels = ImGui::GetScrollY();
-        ImGui::EndChild();
-
-        // Drawing highlighted syntax
-        {
-            ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
-            int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
-            int nMaxLines      = static_cast<int>(vTextEditorSize.y  / ImGui::GetTextLineHeight());
-
-            //float flEmptySpaceSize = ImGui::CalcTextSize("a").x;
-            //float flEmptySpaceSize = directX::fonts::pJetBrainsMono->GetCharAdvance('A'); // calctextSize ain't working with custom font.
-            float flEmptySpaceSize = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
-            for (const auto& token : m_listTokens)
-            {
-                int iLineIndex = token.m_iLine - nLinesScrolled;
-                if (iLineIndex < 0 || iLineIndex >= nMaxLines)
-                    continue;
-
-                ImVec2 vPos(vTextEditorPos.x + (static_cast<float>(token.m_iCol) * flEmptySpaceSize), vTextEditorPos.y + (iLineIndex * ImGui::GetTextLineHeight()));
-
-                ImColor clr(255, 255, 255, 255);
-                switch (token.m_iTokenType)
-                {
-                case TokenType_t::TOKEN_COMMENT:
-                    clr = ImColor(255, 182, 193, 255); break;
-                case TokenType_t::TOKEN_KEYWORD:
-                    clr = ImColor(31, 191, 186, 255); break;
-                case TokenType_t::TOKEN_VALUE:
-                    clr = ImColor(255, 255, 255, 255); break;
-                case TokenType_t::TOKEN_PARENT:
-                    clr = ImColor(255, 255, 0, 255);   break;
-                default:
-                    break;
-                }
-
-                pDrawList->AddText(vPos, clr, token.m_szToken.c_str());
-            }
-        }
-
+        _DrawMaterialList(flScreenWidth * (2.0f / 3.0f - 0.5f), flScreenHeight, flScreenWidth * 0.5f, 0.0f);
 
         ImGui::End();
     }
@@ -287,6 +217,311 @@ void MaterialGen_t::_DrawImGui()
     }
 
     ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, float y)
+{
+    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
+
+    // Text editor size & pos.
+    ImVec2 vTextEditorSize(flWidth, flHeight);
+    ImVec2 vTextEditorPos(x, y);
+
+    // Rounding text editor size to line height multiple. We the line count stays in sync nicely.
+    vTextEditorSize.y = Maths::RoundToFloor(vTextEditorSize.y, ImGui::GetTextLineHeight());
+
+    ImGui::SetCursorPos(vTextEditorPos);
+    static float s_flScrollInPixels = 0.0f;
+
+    // Drawing line count on the left side.
+    {
+        ImVec2      vCursorPos = ImGui::GetCursorPos(); vCursorPos.x = 0.0f;
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        float       flLineHeight = ImGui::GetTextLineHeight();
+
+        pDrawList->AddRectFilled(vCursorPos, ImVec2(vTextEditorPos.x, vTextEditorPos.y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
+
+        int nLines = vTextEditorSize.y / flLineHeight;
+        int nScrolledLines = static_cast<int>(s_flScrollInPixels / flLineHeight);
+        for (int iLineIndex = nScrolledLines; iLineIndex < nLines + nScrolledLines; iLineIndex++)
+        {
+            pDrawList->AddText(vCursorPos, ImColor(255, 255, 255, 255), std::format("{}", iLineIndex + 1).c_str());
+            vCursorPos.y += flLineHeight;
+
+            if (vCursorPos.y >= vTextEditorSize.y + vTextEditorPos.y)
+                break;
+        }
+    }
+
+    
+    if(m_pActiveTEMaterial != nullptr)
+    {
+        // Text editor input widget.
+        if (ImGui::InputTextMultiline("MaterialGen_TextEditor", m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData), vTextEditorSize))
+        {
+            _ProcessBuffer(m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData));
+        }
+
+        // Getting scroll ammount in pixel. NOTE: The child name must be the same as the textInput widget.
+        ImGui::BeginChild("##MaterialGen_TextEditor");
+        s_flScrollInPixels = ImGui::GetScrollY();
+        ImGui::EndChild();
+
+        // Drawing highlighted syntax
+        {
+            ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
+            int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
+            int nMaxLines = static_cast<int>(vTextEditorSize.y / ImGui::GetTextLineHeight());
+
+            float flEmptySpaceSize = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
+            for (const auto& token : m_pActiveTEMaterial->m_listTokens)
+            {
+                // Calculating text X & Y coordinates ( compensating for scroll & spaces )
+                ImVec2 vPos(
+                    vTextEditorPos.x + (static_cast<float>(token.m_iCol) * flEmptySpaceSize),
+                    vTextEditorPos.y + (token.m_iLine * ImGui::GetTextLineHeight()) - s_flScrollInPixels);
+
+                // Checking if it has gone out of text input area.
+                if (vPos.y + ImGui::GetTextLineHeight() > vTextEditorPos.y + vTextEditorSize.y || vPos.y < vTextEditorPos.y)
+                    continue;
+
+                ImColor clr(255, 255, 255, 255);
+                switch (token.m_iTokenType)
+                {
+                case TokenType_t::TOKEN_COMMENT:
+                    clr = ImColor(83, 252, 165, 255);  break;
+                case TokenType_t::TOKEN_KEYWORD:
+                    clr = ImColor(31, 191, 186, 255);  break;
+                case TokenType_t::TOKEN_VALUE:
+                    clr = ImColor(255, 255, 255, 255); break;
+                case TokenType_t::TOKEN_PARENT:
+                    clr = ImColor(255, 255, 0, 255); break;
+                default:
+                    break;
+                }
+
+                pDrawList->AddText(vPos, clr, token.m_szToken.c_str());
+            }
+        }
+    }
+    else
+    {
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 125));
+        static const char* szMsg = "No material selected";
+        ImVec2 vMsgSize = ImGui::CalcTextSize(szMsg);
+        ImVec2 vMsgPos(x + (flWidth / 2.0f) - (vMsgSize.x / 2.0f), y + (flHeight / 2.0f) - (vMsgSize.y / 2.0f));
+        pDrawList->AddText(vMsgPos, ImColor(255, 255, 255, 255), szMsg);
+    }
+
+    ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, float y)
+{
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 255));
+
+    ImGui::SetNextWindowPos(ImVec2(x, y));
+    ImGui::BeginChild("##MaterialList", ImVec2(flWidth, flHeight));
+
+    // Styling
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    }
+
+
+
+    ImVec2 vTopButtonSize(Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance('+') * 4.0f, 20.0f);
+    if (ImGui::Button("+", vTopButtonSize) == true)
+    {
+        _CreateMaterialBundle();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("save") == true)
+    {
+        LOG("Saved all material to file.");
+    }
+
+    ImGui::SetCursorPosY(20.0f);
+    int nMatBundles = m_vecMatBundles.size();
+    for (int iMatBundleIndex = 0; iMatBundleIndex < nMatBundles; iMatBundleIndex++)
+    {
+        MaterialBundle_t& matBundle = m_vecMatBundles[iMatBundleIndex];
+
+        ImVec2 vBundlePos = ImGui::GetCursorPos();
+        if (ImGui::Selectable(matBundle.m_szMatBundleName.c_str(), &matBundle.m_bExpanded, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(flWidth, 20.0f)) == true)
+        {   
+            // This is now the active material.
+            m_iActiveMatBundleIndex.store(iMatBundleIndex);
+
+            LOG("Set active material as \"%s\"", matBundle.m_szMatBundleName.c_str());
+        }
+
+        
+        // Drawing buttons for this mat bundle
+        ImGui::SameLine(flWidth - (vTopButtonSize.x * 2.0f));
+        std::string szAddButtonID = "+##" + matBundle.m_szMatBundleName;
+        if (ImGui::Button(szAddButtonID.c_str(), vTopButtonSize) == true)
+        {
+            _AddMaterialToBundle(matBundle);
+        }
+        ImGui::SameLine(flWidth - vTopButtonSize.x);
+        std::string szDeleteButtonID = "x##" + matBundle.m_szMatBundleName;
+        if (ImGui::Button(szDeleteButtonID.c_str(), vTopButtonSize) == true)
+        {
+            _DeleteMaterialBundle(matBundle);
+        }
+
+
+        // Drawing all of its materials for this material bundle.
+        if(matBundle.m_bExpanded == true)
+        {
+            for (Material_t* mat : matBundle.m_vecMaterials)
+            {
+                if (ImGui::Button(std::string(mat->m_szMatName + "##" + matBundle.m_szMatBundleName).c_str(), ImVec2(flWidth, 20.0f)) == true)
+                {
+                    m_pActiveTEMaterial = mat;
+                }
+            }
+        }
+    }
+
+    // Removing style
+    {
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::EndChild();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_CreateMaterialBundle()
+{
+    MaterialBundle_t mat;
+    mat.m_bRenameActive = true; // Rename flag, this will put a text input panel so we change change name.
+    mat.m_bExpanded     = false;
+
+    static const char s_szDefaultMatBundleName[] = "NewMaterial";
+    std::string szNameToTest = s_szDefaultMatBundleName;
+
+    for (int iOffset = 0; iOffset < 10; iOffset++)
+    {
+        szNameToTest = s_szDefaultMatBundleName;
+
+        // Adding offset to name
+        if (iOffset > 0)
+            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
+
+        bool bDuplicateFound = false;
+        for (const MaterialBundle_t& matBundle : m_vecMatBundles)
+        {
+            // if we got a unique name, we are done
+            if (matBundle.m_szMatBundleName == szNameToTest)
+            {
+                bDuplicateFound = true;
+                break;
+            }
+        }
+
+        // No duplicates found.
+        if (bDuplicateFound == false)
+            break;
+    }
+
+    mat.m_szMatBundleName = szNameToTest;
+
+    m_vecMatBundles.push_back(mat);
+
+    LOG("Added material bundle \"%s\"", mat.m_szMatBundleName.c_str());
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
+{
+    // Creating new material
+    Material_t* pMat = new Material_t;
+    if (pMat == nullptr)
+    {
+        FAIL_LOG("Failed to allocate material");
+        return;
+    }
+
+    memset(pMat->m_materialData, 0, sizeof(pMat->m_materialData));
+    pMat->m_materialData[0] = '\0';
+    pMat->m_szParentName = matBundle.m_szMatBundleName;
+
+    // Finding a unique name for our newly created material
+    static const char s_szDefaultMatBundleName[] = "NewMaterial";
+    std::string szNameToTest = s_szDefaultMatBundleName;
+
+    for (int iOffset = 0; iOffset < 10; iOffset++)
+    {
+        szNameToTest = s_szDefaultMatBundleName;
+
+        // Adding offset to name
+        if (iOffset > 0)
+            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
+
+        bool bDuplicateFound = false;
+        for (const Material_t* pMat : matBundle.m_vecMaterials)
+        {
+            // if we got a unique name, we are done
+            if (pMat->m_szMatName == szNameToTest)
+            {
+                bDuplicateFound = true;
+                break;
+            }
+        }
+
+        // No duplicates found.
+        if (bDuplicateFound == false)
+            break;
+    }
+
+    pMat->m_szMatName = szNameToTest;
+
+    matBundle.m_vecMaterials.push_back(pMat);
+    LOG("Created new mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
+{
+    // First deleting all materials in this Material bundle
+    for (Material_t* pMat : matBundle.m_vecMaterials)
+    {
+        // Sanity checks
+        if (pMat == nullptr)
+            continue;
+
+        LOG("Deleted mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+        
+        // if we happen to remove the current Text Editor material, we must mark it as null ( else the Text Editor will try to load it & crash )
+        if (pMat == m_pActiveTEMaterial)
+            m_pActiveTEMaterial = nullptr;
+
+        delete pMat;
+    }
+
+    // Deleting this material bundle from the main list.
+    auto it = std::find(m_vecMatBundles.begin(), m_vecMatBundles.end(), matBundle);
+    if (it != m_vecMatBundles.end())
+        m_vecMatBundles.erase(it);
+
+    LOG("Deleted material bundle \"%s\" and all its materials.", matBundle.m_szMatBundleName.c_str());
 }
 
 
@@ -306,7 +541,7 @@ void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
     // Iterator over all tokens & determine what catagory they fall into.
     _ProcessTokens(listTokens);
 
-    m_listTokens = std::move(listTokens);
+    m_pActiveTEMaterial->m_listTokens = std::move(listTokens);
 }
 
 
@@ -315,9 +550,9 @@ void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
 void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const
 {
     TokenInfo_t token;
-    bool bTokenActive = false;
-    bool bQuoteActive = false;
-    bool bCommentActive = false;
+    bool bTokenActive        = false;
+    bool bQuoteActive        = false;
+    bool bCommentActive      = false;
     bool bTokenBreakOverride = false;
 
     int iLine = 0, iCol = 0;
@@ -385,8 +620,8 @@ void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const ch
 ///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
 {
-    int iLastCommentLine = -1;
-    bool bExpectingValue = false;
+    int  iLastCommentLine = -1;
+    bool bExpectingValue  = false;
     bool bMateiralStarted = false;
 
     for (TokenInfo_t& token : listTokenOut)
@@ -471,8 +706,10 @@ void MaterialGen_t::TokenInfo_t::Reset()
 
 /*
 TODO : 
+-> Material priority change mechanism.
+-> Maybe add a default material bundle & material.
+-> Get these materials to the DME & draw using this mateiral.
+
 -> Auto complete quotes & brackets.
 -> Suggestions for keywords. ( prefix match )
--> Fonts a little bit.
--> now actually apply this Material.
 */

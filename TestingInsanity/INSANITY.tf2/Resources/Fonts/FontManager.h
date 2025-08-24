@@ -52,4 +52,4 @@ namespace Resources::Fonts::Helper{\
 
 ////////////////////////////// REGISTERED FONTS ////////////////////////////////////
 REGISTER_FONT(JetBrains_SemiBold_NL_Small, Resources::Fonts::jetBrainsMono_SemiBoldNL, 16.0f)
-REGISTER_FONT(JetBrains_SemiBold_NL_Mid,   Resources::Fonts::jetBrainsMono_SemiBoldNL, 24.0f)
+REGISTER_FONT(JetBrains_SemiBold_NL_Mid,   Resources::Fonts::jetBrainsMono_SemiBoldNL, 20.0f)

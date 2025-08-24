@@ -89,6 +89,30 @@ enum types_t
 };
 struct KeyValues
 {
+	inline void Init()
+	{
+		m_iKeyName = -1/*INVALID_KEY_SYMBOL*/;
+		m_iDataType = TYPE_NONE;
+
+		m_pSub    = NULL;
+		m_pPeer   = NULL;
+		m_pChain  = NULL;
+
+		m_sValue  = NULL;
+		m_wsValue = NULL;
+		m_pValue  = NULL;
+
+		m_bHasEscapeSequences = false;
+		m_bEvaluateConditionals = true;
+		
+		unused[0] = 0;
+		
+		/* Future proofing my ass.
+		// for future proof
+		memset( unused, 0, sizeof(unused) );
+		*/
+	}
+
 	int m_iKeyName;	// keyname is a symbol defined in KeyValuesSystem
 
 	// These are needed out of the union because the API returns string pointers

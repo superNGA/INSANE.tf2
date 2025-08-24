@@ -650,9 +650,8 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     strncpy(newMat->szMatName, szMatName.c_str(), MAX_MATERIAL_NAME_SIZE-1);
     newMat->szMatName[MAX_MATERIAL_NAME_SIZE - 1] = '\0';
     UM_materials.insert({ szMatName, newMat });
-    #ifdef _DEBUG
+
     WIN_LOG("DME", "Successfully Created Material [ %s ]", newMat->szMatName);
-    #endif 
     return true;
 }
 

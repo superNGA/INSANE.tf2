@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <list>
+#include <atomic>
 #include "../FeatureHandler.h"
 
 
@@ -67,7 +68,8 @@ public:
 private:
     bool m_bVisible = false;
     void _DrawImGui();
-    
+    void _DrawTextEditor(float flWidth, float flHeight, float x, float y);
+    void _DrawMaterialList(float flWidth, float flHeight, float x, float y);
 
     enum TokenType_t : int
     {
@@ -84,20 +86,47 @@ private:
 
         void Reset();
     };
-    std::list<TokenInfo_t> m_listTokens;
+
     void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
     void _SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
     void _ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const;
 
+    // It's rendering on top of my MatGen. so I removed it :).
     void _DisableGameConsole();
+    
+    // Handling model.
     void _AdjustCamera();
     void _RotateModel();
 
     std::chrono::high_resolution_clock::time_point m_lastModelRotateTime;
 
-    // Rotation speed is defined as how much angle is covered ( in degrees ) 
-    // in one second.
-    // float m_flRotationSpeed = 45.0f;
+    struct Material_t
+    {
+        char m_materialData[2048];
+        std::list<TokenInfo_t> m_listTokens;
+
+        std::string m_szMatName;
+        std::string m_szParentName;
+    };
+    struct MaterialBundle_t
+    {
+        std::string m_szMatBundleName;
+        std::vector<Material_t*> m_vecMaterials;
+        
+        bool m_bExpanded     = false;
+        bool m_bRenameActive = true;
+        bool operator==(const MaterialBundle_t& other) const
+        {
+            return m_szMatBundleName == other.m_szMatBundleName;
+        }
+    };
+    std::vector<MaterialBundle_t> m_vecMatBundles;
+    std::atomic<int> m_iActiveMatBundleIndex;
+    Material_t* m_pActiveTEMaterial = nullptr; // This is the material drawn to TextEditor
+
+    void _CreateMaterialBundle();
+    void _AddMaterialToBundle(MaterialBundle_t& matBundle);
+    void _DeleteMaterialBundle(MaterialBundle_t& matBundle);
 };
 
 DECLARE_FEATURE_OBJECT(materialGen, MaterialGen_t)
@@ -106,6 +135,8 @@ DEFINE_TAB(MaterialGen, 11)
 DEFINE_SECTION(MaterialGen, "MaterialGen", 1)
 DEFINE_FEATURE(Enable, bool, MaterialGen, MaterialGen, 1, false)
 
+// Rotation speed is defined as how much angle is covered ( in degrees ) 
+// in one second.
 DEFINE_FEATURE(RotationSpeed, FloatSlider_t, MaterialGen, MaterialGen, 2, 
     FloatSlider_t(65.0f, -360.0f, 360.0f))
 
