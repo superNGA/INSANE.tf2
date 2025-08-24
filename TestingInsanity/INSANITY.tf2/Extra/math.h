@@ -67,7 +67,7 @@ namespace Maths
     //-------------------------------------------------------------------------
     __forceinline double RoundToFloor(const double input, const double roundTo)
     {
-        return std::round(input / roundTo) * roundTo;
+        return std::floor(input / roundTo) * roundTo - 1.0;
     }
 
     __forceinline double RoundToCeil(const double input, const double roundto)

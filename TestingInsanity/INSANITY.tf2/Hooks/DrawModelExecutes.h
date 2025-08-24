@@ -71,6 +71,9 @@ MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __f
             {
                 if (modelState->m_pRenderable == pPreviewModelEntity->GetClientRenderable())
                 {
+                    /*if(pMat->GetRefrenceCount() != 0)
+                        pMat->Release();*/
+
                     Sig::ForcedMaterialOverride_NIGGA(I::iStudioRender, pMat, 0);
                     auto result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
                     Sig::ForcedMaterialOverride_NIGGA(I::iStudioRender, nullptr, 0);

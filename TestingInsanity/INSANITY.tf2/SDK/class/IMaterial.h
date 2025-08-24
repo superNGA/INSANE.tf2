@@ -246,7 +246,7 @@ public:
 
 	const int GetRefrenceCount()
 	{
-		// Look up string "Mod_LoadTexinfo: texdata < 0 (index==%i/%i)\n" in [ engine.dll ].
+		// XREF : Look up string "Mod_LoadTexinfo: texdata < 0 (index==%i/%i)\n" in [ engine.dll ].
 		return *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + 0x20); // 0x20
 	}
 

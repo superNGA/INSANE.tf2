@@ -5,6 +5,7 @@
 
 // Fonts
 #include "JetBrains Mono NL/JetBrains Mono NL SemiBold.h"
+#include "JetBrains Mono NL/JetBrains Mono NL Light.h"
 
 class Font_t;
 struct ImFont;
@@ -53,3 +54,4 @@ namespace Resources::Fonts::Helper{\
 ////////////////////////////// REGISTERED FONTS ////////////////////////////////////
 REGISTER_FONT(JetBrains_SemiBold_NL_Small, Resources::Fonts::jetBrainsMono_SemiBoldNL, 16.0f)
 REGISTER_FONT(JetBrains_SemiBold_NL_Mid,   Resources::Fonts::jetBrainsMono_SemiBoldNL, 20.0f)
+REGISTER_FONT(JetBrains_Light_NL_MID,      Resources::Fonts::JetBrainsMono_LightNL,    20.0f)

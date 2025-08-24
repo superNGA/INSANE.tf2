@@ -55,6 +55,7 @@ static std::vector<std::string> g_vecVMTKeyWords =
 };
 
 
+///////////////////////////////////////////////////////////////////////////
 class MaterialGen_t
 {
 public:
@@ -70,6 +71,7 @@ private:
     void _DrawImGui();
     void _DrawTextEditor(float flWidth, float flHeight, float x, float y);
     void _DrawMaterialList(float flWidth, float flHeight, float x, float y);
+    void _DrawTitleBar(float flWidth, float flHeight, float x, float y);
 
     enum TokenType_t : int
     {
@@ -102,17 +104,21 @@ private:
 
     struct Material_t
     {
-        char m_materialData[2048];
+        char m_materialData[2048] = "";
         std::list<TokenInfo_t> m_listTokens;
 
-        std::string m_szMatName;
-        std::string m_szParentName;
+        std::string m_szMatName    = "( null )";
+        std::string m_szParentName = "( null )";
+        
+        char m_szRenameBuffer[128] = "";
+        bool m_bRenameActive = true;
     };
     struct MaterialBundle_t
     {
-        std::string m_szMatBundleName;
+        std::string m_szMatBundleName = "( null )";
         std::vector<Material_t*> m_vecMaterials;
         
+        char m_szRenameBuffer[128] = "";
         bool m_bExpanded     = false;
         bool m_bRenameActive = true;
         bool operator==(const MaterialBundle_t& other) const
@@ -127,7 +133,12 @@ private:
     void _CreateMaterialBundle();
     void _AddMaterialToBundle(MaterialBundle_t& matBundle);
     void _DeleteMaterialBundle(MaterialBundle_t& matBundle);
+
+    void _MakeMaterialNameUnique(std::string& szNameOut, const std::string & szBaseName, MaterialBundle_t& parentBundle) const;
+    void _MakeMaterialBundleNameUnique(std::string& szNameOut, const std::string & szBaseName) const;
 };
+///////////////////////////////////////////////////////////////////////////
+
 
 DECLARE_FEATURE_OBJECT(materialGen, MaterialGen_t)
 

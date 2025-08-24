@@ -199,13 +199,32 @@ void MaterialGen_t::_DrawImGui()
     if (ImGui::Begin("MaterialGen", &bOpen, iWindowFlags) == true)
     {
         // Drawing Text Editor.
+        constexpr float flPaddingFraction = 0.01f;
         constexpr float flTEWidthFraction = 0.5f, flTELineCounterWidthFraction = 0.02f;
         constexpr float flTEHeightFraction = 0.9f;
         ImVec2 vTESize(flScreenWidth * (flTEWidthFraction - flTELineCounterWidthFraction), flScreenHeight * flTEHeightFraction);
         ImVec2 vTEPos(flScreenWidth  * flTELineCounterWidthFraction, flScreenHeight * (1.0f - flTEHeightFraction) * 0.5f);
-        _DrawTextEditor(vTESize.x, vTESize.y, vTEPos.x, vTEPos.y);
+        //_DrawTextEditor(vTESize.x, vTESize.y, vTEPos.x, vTEPos.y);
 
-        _DrawMaterialList(flScreenWidth * (2.0f / 3.0f - 0.5f), flScreenHeight, flScreenWidth * 0.5f, 0.0f);
+        float flTitleHeight = flScreenHeight * 0.03f;
+
+        _DrawTextEditor(
+            flScreenWidth * (0.5f - (flPaddingFraction * 1.25f)), 
+            flScreenHeight - (2.0f * flPaddingFraction * flScreenHeight) - flTitleHeight,
+            flScreenWidth * flPaddingFraction, 
+            flScreenHeight * flPaddingFraction + flTitleHeight);
+
+        _DrawMaterialList(
+            flScreenWidth * (2.0f / 3.0f - 0.5f) - (1.25f * flPaddingFraction * flScreenWidth), 
+            flScreenHeight - (2.0f * flPaddingFraction * flScreenHeight) - flTitleHeight,
+            flScreenWidth * 0.5f + (flPaddingFraction * 0.25f * flScreenWidth), 
+            flScreenHeight * flPaddingFraction + flTitleHeight);
+
+        _DrawTitleBar(
+            flScreenWidth * (2.0f / 3.0f) - (flPaddingFraction * 2.0f * flScreenWidth), 
+            flScreenHeight * 0.03f, 
+            flScreenWidth * flPaddingFraction, 
+            flScreenHeight * flPaddingFraction);
 
         ImGui::End();
     }
@@ -226,25 +245,27 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
 {
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
 
+    // Rounding text editor size to line height multiple. We the line count stays in sync nicely.
+    flHeight = Maths::RoundToFloor(flHeight, ImGui::GetTextLineHeight());
+
     // Text editor size & pos.
     ImVec2 vTextEditorSize(flWidth, flHeight);
     ImVec2 vTextEditorPos(x, y);
 
-    // Rounding text editor size to line height multiple. We the line count stays in sync nicely.
-    vTextEditorSize.y = Maths::RoundToFloor(vTextEditorSize.y, ImGui::GetTextLineHeight());
-
     ImGui::SetCursorPos(vTextEditorPos);
     static float s_flScrollInPixels = 0.0f;
+    float        flLineCounterWidth = 0.0f;
 
     // Drawing line count on the left side.
     {
-        ImVec2      vCursorPos = ImGui::GetCursorPos(); vCursorPos.x = 0.0f;
-        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        ImVec2      vCursorPos   = ImGui::GetCursorPos();
+        ImDrawList* pDrawList    = ImGui::GetWindowDrawList();
         float       flLineHeight = ImGui::GetTextLineHeight();
 
-        pDrawList->AddRectFilled(vCursorPos, ImVec2(vTextEditorPos.x, vTextEditorPos.y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
+        flLineCounterWidth = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance('0') * 4;
+        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
 
-        int nLines = vTextEditorSize.y / flLineHeight;
+        int nLines         = static_cast<int>(Maths::RoundToCeil(vTextEditorSize.y, flLineHeight));
         int nScrolledLines = static_cast<int>(s_flScrollInPixels / flLineHeight);
         for (int iLineIndex = nScrolledLines; iLineIndex < nLines + nScrolledLines; iLineIndex++)
         {
@@ -254,13 +275,19 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
             if (vCursorPos.y >= vTextEditorSize.y + vTextEditorPos.y)
                 break;
         }
+
+        // Move the cursor we Text Editor doesn't get drawn over the line counter.
+        ImGui::SetCursorPos({ x + flLineCounterWidth, y });
+        vTextEditorSize.x -= flLineCounterWidth; // reduce width by "LineCounter"
     }
 
     
     if(m_pActiveTEMaterial != nullptr)
     {
+        ImGui::PushFont(Resources::Fonts::JetBrains_Light_NL_MID);
+
         // Text editor input widget.
-        if (ImGui::InputTextMultiline("MaterialGen_TextEditor", m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData), vTextEditorSize))
+        if (ImGui::InputTextMultiline("##MaterialGen_TextEditor", m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData), vTextEditorSize))
         {
             _ProcessBuffer(m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData));
         }
@@ -274,14 +301,14 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
         {
             ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
             int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
-            int nMaxLines = static_cast<int>(vTextEditorSize.y / ImGui::GetTextLineHeight());
+            int nMaxLines      = static_cast<int>(vTextEditorSize.y  / ImGui::GetTextLineHeight());
 
-            float flEmptySpaceSize = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
+            float flEmptySpaceSize = Resources::Fonts::JetBrains_Light_NL_MID->GetCharAdvance(' ');
             for (const auto& token : m_pActiveTEMaterial->m_listTokens)
             {
                 // Calculating text X & Y coordinates ( compensating for scroll & spaces )
                 ImVec2 vPos(
-                    vTextEditorPos.x + (static_cast<float>(token.m_iCol) * flEmptySpaceSize),
+                    flLineCounterWidth + vTextEditorPos.x + (static_cast<float>(token.m_iCol) * flEmptySpaceSize),
                     vTextEditorPos.y + (token.m_iLine * ImGui::GetTextLineHeight()) - s_flScrollInPixels);
 
                 // Checking if it has gone out of text input area.
@@ -298,7 +325,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
                 case TokenType_t::TOKEN_VALUE:
                     clr = ImColor(255, 255, 255, 255); break;
                 case TokenType_t::TOKEN_PARENT:
-                    clr = ImColor(255, 255, 0, 255); break;
+                    clr = ImColor(255, 255, 0, 255);   break;
                 default:
                     break;
                 }
@@ -306,14 +333,16 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
                 pDrawList->AddText(vPos, clr, token.m_szToken.c_str());
             }
         }
+        ImGui::PopFont();
     }
-    else
+    else // Drawing a simple message when no material is selected.
     {
         ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 125));
+        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + vTextEditorSize.x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(12, 12, 12, 125));
+
         static const char* szMsg = "No material selected";
         ImVec2 vMsgSize = ImGui::CalcTextSize(szMsg);
-        ImVec2 vMsgPos(x + (flWidth / 2.0f) - (vMsgSize.x / 2.0f), y + (flHeight / 2.0f) - (vMsgSize.y / 2.0f));
+        ImVec2 vMsgPos(x + (vTextEditorSize.x / 2.0f) - (vMsgSize.x / 2.0f), y + (vTextEditorSize.y / 2.0f) - (vMsgSize.y / 2.0f));
         pDrawList->AddText(vMsgPos, ImColor(255, 255, 255, 255), szMsg);
     }
 
@@ -325,6 +354,11 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
 ///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, float y)
 {
+    // This needs to be done to match the height of the text editor.
+    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
+    flHeight = Maths::RoundToFloor(flHeight, ImGui::GetTextLineHeight());
+    ImGui::PopFont();
+
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
     pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 255));
 
@@ -356,12 +390,26 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
         MaterialBundle_t& matBundle = m_vecMatBundles[iMatBundleIndex];
 
         ImVec2 vBundlePos = ImGui::GetCursorPos();
-        if (ImGui::Selectable(matBundle.m_szMatBundleName.c_str(), &matBundle.m_bExpanded, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(flWidth, 20.0f)) == true)
+        if (ImGui::Selectable(std::string(matBundle.m_szMatBundleName + "##Parent").c_str(), &matBundle.m_bExpanded, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(flWidth, 20.0f)) == true)
         {   
             // This is now the active material.
             m_iActiveMatBundleIndex.store(iMatBundleIndex);
 
             LOG("Set active material as \"%s\"", matBundle.m_szMatBundleName.c_str());
+        }
+
+        // Rename logic
+        if (matBundle.m_bRenameActive == true)
+        {
+            ImGui::SetCursorPos(vBundlePos);
+            ImGui::SetKeyboardFocusHere();
+            if (ImGui::InputText(std::string("##RenamePanel_" + matBundle.m_szMatBundleName).c_str(), matBundle.m_szRenameBuffer, sizeof(matBundle.m_szRenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue) == true)
+            {
+                _MakeMaterialBundleNameUnique(matBundle.m_szMatBundleName, std::string(matBundle.m_szRenameBuffer));
+                matBundle.m_bRenameActive = false;
+
+                LOG("Renamed material bundle to \"%s\"", matBundle.m_szMatBundleName.c_str());
+            }
         }
 
         
@@ -383,11 +431,26 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
         // Drawing all of its materials for this material bundle.
         if(matBundle.m_bExpanded == true)
         {
-            for (Material_t* mat : matBundle.m_vecMaterials)
+            for (Material_t* pMat : matBundle.m_vecMaterials)
             {
-                if (ImGui::Button(std::string(mat->m_szMatName + "##" + matBundle.m_szMatBundleName).c_str(), ImVec2(flWidth, 20.0f)) == true)
+                ImVec2 vMatPos = ImGui::GetCursorPos();
+                if (ImGui::Button(std::string(pMat->m_szMatName + "##" + matBundle.m_szMatBundleName + "_Child").c_str(), ImVec2(flWidth, 20.0f)) == true)
                 {
-                    m_pActiveTEMaterial = mat;
+                    m_pActiveTEMaterial = pMat;
+                }
+
+                if (pMat->m_bRenameActive == true)
+                {
+                    ImGui::SetCursorPos(vMatPos);
+                    ImGui::SetKeyboardFocusHere();
+                    if (ImGui::InputText(std::string("##RenamePanel_" + pMat->m_szMatName).c_str(), pMat->m_szRenameBuffer, sizeof(pMat->m_szRenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue) == true)
+                    {
+                        _MakeMaterialNameUnique(pMat->m_szMatName, std::string(pMat->m_szRenameBuffer), matBundle);
+
+                        pMat->m_bRenameActive = false;
+
+                        LOG("Renamed material to \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+                    }
                 }
             }
         }
@@ -404,40 +467,22 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float y)
+{
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(45, 45, 45, 255), 5.0f, ImDrawFlags_RoundCornersTop);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_CreateMaterialBundle()
 {
     MaterialBundle_t mat;
     mat.m_bRenameActive = true; // Rename flag, this will put a text input panel so we change change name.
-    mat.m_bExpanded     = false;
+    mat.m_bExpanded     = true;
 
-    static const char s_szDefaultMatBundleName[] = "NewMaterial";
-    std::string szNameToTest = s_szDefaultMatBundleName;
-
-    for (int iOffset = 0; iOffset < 10; iOffset++)
-    {
-        szNameToTest = s_szDefaultMatBundleName;
-
-        // Adding offset to name
-        if (iOffset > 0)
-            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
-
-        bool bDuplicateFound = false;
-        for (const MaterialBundle_t& matBundle : m_vecMatBundles)
-        {
-            // if we got a unique name, we are done
-            if (matBundle.m_szMatBundleName == szNameToTest)
-            {
-                bDuplicateFound = true;
-                break;
-            }
-        }
-
-        // No duplicates found.
-        if (bDuplicateFound == false)
-            break;
-    }
-
-    mat.m_szMatBundleName = szNameToTest;
+    _MakeMaterialBundleNameUnique(mat.m_szMatBundleName, std::string("NewMaterial"));
 
     m_vecMatBundles.push_back(mat);
 
@@ -459,37 +504,10 @@ void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
 
     memset(pMat->m_materialData, 0, sizeof(pMat->m_materialData));
     pMat->m_materialData[0] = '\0';
-    pMat->m_szParentName = matBundle.m_szMatBundleName;
+    pMat->m_szParentName    = matBundle.m_szMatBundleName;
+    pMat->m_bRenameActive   = true;
 
-    // Finding a unique name for our newly created material
-    static const char s_szDefaultMatBundleName[] = "NewMaterial";
-    std::string szNameToTest = s_szDefaultMatBundleName;
-
-    for (int iOffset = 0; iOffset < 10; iOffset++)
-    {
-        szNameToTest = s_szDefaultMatBundleName;
-
-        // Adding offset to name
-        if (iOffset > 0)
-            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
-
-        bool bDuplicateFound = false;
-        for (const Material_t* pMat : matBundle.m_vecMaterials)
-        {
-            // if we got a unique name, we are done
-            if (pMat->m_szMatName == szNameToTest)
-            {
-                bDuplicateFound = true;
-                break;
-            }
-        }
-
-        // No duplicates found.
-        if (bDuplicateFound == false)
-            break;
-    }
-
-    pMat->m_szMatName = szNameToTest;
+    _MakeMaterialNameUnique(pMat->m_szMatName, std::string("NewMat"), matBundle);
 
     matBundle.m_vecMaterials.push_back(pMat);
     LOG("Created new mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
@@ -516,12 +534,80 @@ void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
         delete pMat;
     }
 
+    LOG("Deleted material bundle \"%s\" and all its materials.", matBundle.m_szMatBundleName.c_str());
+
     // Deleting this material bundle from the main list.
     auto it = std::find(m_vecMatBundles.begin(), m_vecMatBundles.end(), matBundle);
     if (it != m_vecMatBundles.end())
         m_vecMatBundles.erase(it);
+}
 
-    LOG("Deleted material bundle \"%s\" and all its materials.", matBundle.m_szMatBundleName.c_str());
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_MakeMaterialNameUnique(std::string& szNameOut, const std::string& szBaseName, MaterialBundle_t& parentBundle) const
+{
+    std::string szNameToTest = szBaseName;
+
+    for (int iOffset = 0; iOffset < 10; iOffset++)
+    {
+        szNameToTest = szBaseName;
+
+        // Adding offset to name
+        if (iOffset > 0)
+            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
+
+        bool bDuplicateFound = false;
+        for (Material_t* pMat : parentBundle.m_vecMaterials)
+        {
+            // if we got a unique name, we are done
+            if (pMat->m_szMatName == szNameToTest)
+            {
+                bDuplicateFound = true;
+                break;
+            }
+        }
+
+        // No duplicates found.
+        if (bDuplicateFound == false)
+            break;
+    }
+
+    szNameOut = szNameToTest;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_MakeMaterialBundleNameUnique(std::string& szNameOut, const std::string& szBaseName) const
+{
+    std::string szNameToTest = szBaseName;
+
+    for (int iOffset = 0; iOffset < 10; iOffset++)
+    {
+        szNameToTest = szBaseName;
+
+        // Adding offset to name
+        if (iOffset > 0)
+            szNameToTest = szNameToTest + "(" + std::to_string(iOffset) + ")";
+
+        bool bDuplicateFound = false;
+        for (const MaterialBundle_t& matBundle : m_vecMatBundles)
+        {
+            // if we got a unique name, we are done
+            if (matBundle.m_szMatBundleName == szNameToTest)
+            {
+                bDuplicateFound = true;
+                break;
+            }
+        }
+
+        // No duplicates found.
+        if (bDuplicateFound == false)
+            break;
+    }
+
+    szNameOut = szNameToTest;
 }
 
 
