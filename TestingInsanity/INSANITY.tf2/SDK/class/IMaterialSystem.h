@@ -6,6 +6,9 @@
 #include "../../Utility/Signature Handler/signatures.h"
 
 class ITexture;
+class KeyValues;
+class IMaterial;
+class IMaterialSystem;
 
 // Functions
 MAKE_SIG(CMaterialSystem_CreateNamedRenderTargetTextureEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 8B 9C 24", MATERIALSYSTEM_DLL, ITexture*,
@@ -22,7 +25,7 @@ MAKE_SIG(CMaterialSystem_GetBackBufferFormat, "48 8B 0D ? ? ? ? 48 8B 01 48 FF 6
 //																		    Return, this,  name,		type,        complain, flags
 MAKE_SIG(CMateiralSystem_FindTexture, "40 55 57 41 55", MATERIALSYSTEM_DLL, void*,	void*, const char*, const char*, bool,     int)
 MAKE_SIG(CMaterialSystem_FindMaterial, "48 83 EC ? 48 8B 44 24 ? 4C 8B 11", MATERIALSYSTEM_DLL, IMaterial*, void*, const char*, const char*, bool, const char*)
-
+MAKE_SIG(CMaterialSystem_CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL, IMaterial*, IMaterialSystem*, const char*, KeyValues*)
 
 class IMaterialSystem
 {
@@ -56,6 +59,11 @@ public:
     inline IMaterial* FindMaterial(const char* szMaterialName, const char* szTextureGroupName, bool bComplain, const char* szCommonPrefix)
     {
         return Sig::CMaterialSystem_FindMaterial(this, szMaterialName, szTextureGroupName, bComplain, szCommonPrefix);
+    }
+
+    inline IMaterial* CreateMaterial(const char* szMaterialName, KeyValues* pKV)
+    {
+        return Sig::CMaterialSystem_CreateMaterial(this, szMaterialName, pKV);
     }
 };
 

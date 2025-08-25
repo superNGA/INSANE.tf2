@@ -36,6 +36,7 @@
 #include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
 #include "../Features/ModelPreview/ModelPreview.h"
+#include "../Features/Material Gen/MaterialGen.h"
 
 Utility util;
 
@@ -210,6 +211,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 
 		chams.FreeAllMaterial();
 		F::modelPreview.Free();
+		F::materialGen.Free();
 
 		// freeing terminal..
 		LOG("uninitiazed everything, teminated software gracefully");

@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <vector>
 #include "../ConsoleLogging.h"
+#include "../ModuleNames.h"
 
 class IExportFnHelper_t
 {

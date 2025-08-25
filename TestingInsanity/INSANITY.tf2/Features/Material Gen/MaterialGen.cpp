@@ -10,6 +10,9 @@
 #include "../../SDK/class/ISurface.h"
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/INetworkStringTable.h"
+#include "../../SDK/class/IMaterial.h"
+#include "../../SDK/class/IMaterialSystem.h"
+#include "../../SDK/class/IKeyValuesSystem.h"
 
 // Fonts n shits
 #include "../../Resources/Fonts/FontManager.h"
@@ -207,24 +210,28 @@ void MaterialGen_t::_DrawImGui()
         //_DrawTextEditor(vTESize.x, vTESize.y, vTEPos.x, vTEPos.y);
 
         float flTitleHeight = flScreenHeight * 0.03f;
+        constexpr float flRouding = 5.0f;
 
         _DrawTextEditor(
-            flScreenWidth * (0.5f - (flPaddingFraction * 1.25f)), 
+            flScreenWidth  * (0.5f - (flPaddingFraction * 1.25f)),
             flScreenHeight - (2.0f * flPaddingFraction * flScreenHeight) - flTitleHeight,
-            flScreenWidth * flPaddingFraction, 
-            flScreenHeight * flPaddingFraction + flTitleHeight);
+            flScreenWidth  * flPaddingFraction,
+            flScreenWidth  * (flPaddingFraction * 1.5f) + flTitleHeight,
+            flRouding);
 
         _DrawMaterialList(
-            flScreenWidth * (2.0f / 3.0f - 0.5f) - (1.25f * flPaddingFraction * flScreenWidth), 
-            flScreenHeight - (2.0f * flPaddingFraction * flScreenHeight) - flTitleHeight,
-            flScreenWidth * 0.5f + (flPaddingFraction * 0.25f * flScreenWidth), 
-            flScreenHeight * flPaddingFraction + flTitleHeight);
+            flScreenWidth  * (2.0f / 3.0f - 0.5f) - (1.25f * flPaddingFraction * flScreenWidth),
+            flScreenHeight - (2.0f * flPaddingFraction * flScreenWidth) - flTitleHeight,
+            flScreenWidth  * 0.5f + (flPaddingFraction * 0.25f * flScreenWidth),
+            flScreenWidth  * (flPaddingFraction * 1.5f) + flTitleHeight,
+            flRouding);
 
         _DrawTitleBar(
-            flScreenWidth * (2.0f / 3.0f) - (flPaddingFraction * 2.0f * flScreenWidth), 
-            flScreenHeight * 0.03f, 
-            flScreenWidth * flPaddingFraction, 
-            flScreenHeight * flPaddingFraction);
+            flScreenWidth  * (2.0f / 3.0f) - (flPaddingFraction * 2.0f * flScreenWidth),
+            flScreenHeight * 0.03f,
+            flScreenWidth  * flPaddingFraction,
+            flScreenWidth  * flPaddingFraction,
+            flRouding);
 
         ImGui::End();
     }
@@ -241,7 +248,7 @@ void MaterialGen_t::_DrawImGui()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, float y)
+void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, float y, float flRounding)
 {
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
 
@@ -263,9 +270,9 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
         float       flLineHeight = ImGui::GetTextLineHeight();
 
         flLineCounterWidth = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance('0') * 4;
-        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(10, 10, 10, 255));
+        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(10, 10, 10, 255), flRounding, ImDrawFlags_RoundCornersBottomLeft);
 
-        int nLines         = static_cast<int>(Maths::RoundToCeil(vTextEditorSize.y, flLineHeight));
+        int nLines = static_cast<int>(Maths::RoundToCeil(vTextEditorSize.y, flLineHeight));
         int nScrolledLines = static_cast<int>(s_flScrollInPixels / flLineHeight);
         for (int iLineIndex = nScrolledLines; iLineIndex < nLines + nScrolledLines; iLineIndex++)
         {
@@ -277,7 +284,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
         }
 
         // Move the cursor we Text Editor doesn't get drawn over the line counter.
-        ImGui::SetCursorPos({ x + flLineCounterWidth, y });
+        ImGui::SetCursorPosX(x + flLineCounterWidth);
         vTextEditorSize.x -= flLineCounterWidth; // reduce width by "LineCounter"
     }
 
@@ -301,7 +308,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
         {
             ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
             int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
-            int nMaxLines      = static_cast<int>(vTextEditorSize.y  / ImGui::GetTextLineHeight());
+            int nMaxLines = static_cast<int>(vTextEditorSize.y / ImGui::GetTextLineHeight());
 
             float flEmptySpaceSize = Resources::Fonts::JetBrains_Light_NL_MID->GetCharAdvance(' ');
             for (const auto& token : m_pActiveTEMaterial->m_listTokens)
@@ -338,7 +345,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
     else // Drawing a simple message when no material is selected.
     {
         ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + vTextEditorSize.x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(12, 12, 12, 125));
+        pDrawList->AddRectFilled(ImVec2(x + flLineCounterWidth, y), ImVec2(x + vTextEditorSize.x + flLineCounterWidth, y + vTextEditorSize.y), ImColor(12, 12, 12, 125));
 
         static const char* szMsg = "No material selected";
         ImVec2 vMsgSize = ImGui::CalcTextSize(szMsg);
@@ -352,7 +359,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, float y)
+void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, float y, float flRounding)
 {
     // This needs to be done to match the height of the text editor.
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
@@ -360,7 +367,7 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
     ImGui::PopFont();
 
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 255));
+    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(12, 12, 12, 255), flRounding, ImDrawFlags_RoundCornersBottomRight);
 
     ImGui::SetNextWindowPos(ImVec2(x, y));
     ImGui::BeginChild("##MaterialList", ImVec2(flWidth, flHeight));
@@ -390,7 +397,7 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
         MaterialBundle_t& matBundle = m_vecMatBundles[iMatBundleIndex];
 
         ImVec2 vBundlePos = ImGui::GetCursorPos();
-        if (ImGui::Selectable(std::string(matBundle.m_szMatBundleName + "##Parent").c_str(), &matBundle.m_bExpanded, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(flWidth, 20.0f)) == true)
+        if (ImGui::Selectable(std::string(" " + matBundle.m_szMatBundleName + "##Parent").c_str(), &matBundle.m_bExpanded, ImGuiSelectableFlags_AllowItemOverlap, ImVec2(flWidth, 20.0f)) == true)
         {   
             // This is now the active material.
             m_iActiveMatBundleIndex.store(iMatBundleIndex);
@@ -467,10 +474,27 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float y)
+void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float y, float flRounding)
 {
+    ImGui::SetCursorScreenPos({ x, y });
+
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(45, 45, 45, 255), 5.0f, ImDrawFlags_RoundCornersTop);
+    pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + flWidth, y + flHeight), ImColor(45, 45, 45, 255), flRounding, ImDrawFlags_RoundCornersTop);
+
+    if(m_pActiveTEMaterial != nullptr)
+    {
+        std::string szActiveFileName = '[' + m_pActiveTEMaterial->m_szParentName + "]->[" + m_pActiveTEMaterial->m_szMatName + ']';
+
+        ImGui::TextColored(
+            m_pActiveTEMaterial->m_bSaved == true ? ImVec4(0.0f, 1.0f, 0.23f, 1.0f) : ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
+            szActiveFileName.c_str());
+
+        ImGui::SameLine();
+        if (ImGui::Button("Reload") == true)
+        {
+            _RefreshMaterial(m_pActiveTEMaterial);
+        }
+    }
 }
 
 
@@ -505,6 +529,11 @@ void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
     memset(pMat->m_materialData, 0, sizeof(pMat->m_materialData));
     pMat->m_materialData[0] = '\0';
     pMat->m_szParentName    = matBundle.m_szMatBundleName;
+    pMat->m_listTokens.clear();
+    pMat->m_bSaved          = true;
+    pMat->m_pKeyValues      = new KeyValues;
+    pMat->m_pMaterial       = nullptr;
+    pMat->m_szRenameBuffer[0] = '\0';
     pMat->m_bRenameActive   = true;
 
     _MakeMaterialNameUnique(pMat->m_szMatName, std::string("NewMat"), matBundle);
@@ -540,6 +569,55 @@ void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
     auto it = std::find(m_vecMatBundles.begin(), m_vecMatBundles.end(), matBundle);
     if (it != m_vecMatBundles.end())
         m_vecMatBundles.erase(it);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_RefreshMaterial(Material_t* pMaterial)
+{
+    if (pMaterial == nullptr)
+        return;
+
+    if (pMaterial->m_bSaved == true)
+        return;
+
+    if (pMaterial->m_pKeyValues == nullptr)
+    {
+        FAIL_LOG("Material has uninitialized keyvalue pair");
+        return;
+    }
+
+    // First we gota free the current KeyValues ( all of them )
+    KeyValues* pFirstparam = pMaterial->m_pKeyValues->m_pSub;
+    while (pFirstparam != nullptr)
+    {
+        KeyValues* pParamToDelete = pFirstparam;
+        pFirstparam = pFirstparam->m_pPeer;
+        
+        int iKeyValueToDelete = pParamToDelete->m_iKeyName;
+        ExportFn::KeyValuesSystem()->FreeKeyValuesMemory(pParamToDelete);
+        LOG("Deleted KeyValue pair : %d", iKeyValueToDelete);
+    }
+    pMaterial->m_pKeyValues->Init();
+
+    // Release the current material to prevent any memory leaks.
+    if (pMaterial->m_pMaterial)
+        pMaterial->m_pMaterial->Release();
+
+    // Setting up the KeyValue pair for new material data.
+    bool bGoodMaterial = pMaterial->m_pKeyValues->LoadFromBuffer(pMaterial->m_szMatName.c_str(), pMaterial->m_materialData);
+    if (bGoodMaterial == false)
+    {
+        FAIL_LOG("You have written a bullshit material my nigga. [ %s ]->[ %s ]", pMaterial->m_szParentName.c_str(), pMaterial->m_szMatName.c_str());
+        return;
+    }
+
+    // Creating new material.
+    pMaterial->m_pMaterial = I::iMaterialSystem->CreateMaterial(pMaterial->m_szMatName.c_str(), pMaterial->m_pKeyValues);
+
+    pMaterial->m_bSaved = true;
+    WIN_LOG("Succesfully refreshed material \"%s\"->\"%s\"", pMaterial->m_szParentName.c_str(), pMaterial->m_szMatName.c_str());
 }
 
 
@@ -628,6 +706,7 @@ void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
     _ProcessTokens(listTokens);
 
     m_pActiveTEMaterial->m_listTokens = std::move(listTokens);
+    m_pActiveTEMaterial->m_bSaved     = false;
 }
 
 
@@ -737,9 +816,8 @@ void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
             {
                 token.m_iTokenType = TokenType_t::TOKEN_PARENT;
             }
-            else if (token.m_szToken[1] == '$') // All keywords start with a $ sign ( except for maybe the proxy ones )
+            else
             {
-                // Checking if its a valid .vmt keyword or not.
                 bool bValidKeyword = false;
                 for (const std::string& szValidKeyword : g_vecVMTKeyWords) // Yea its a fucking linear search, and no I don't need to make a fucking OS or a fucking game engine in O(-1) time. Its not required, this check is only done once per change.
                 {
@@ -754,12 +832,31 @@ void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
                     continue;
 
                 token.m_iTokenType = TokenType_t::TOKEN_KEYWORD;
-                bExpectingValue    = true;
+                bExpectingValue    = !bExpectingValue;
             }
-            else if(bExpectingValue == true)
-            {
-                token.m_iTokenType = TokenType_t::TOKEN_VALUE;
-            }
+            //else if (token.m_szToken[1] == '$') // All keywords start with a $ sign ( except for maybe the proxy ones )
+            //{
+            //    // Checking if its a valid .vmt keyword or not.
+            //    bool bValidKeyword = false;
+            //    for (const std::string& szValidKeyword : g_vecVMTKeyWords) // Yea its a fucking linear search, and no I don't need to make a fucking OS or a fucking game engine in O(-1) time. Its not required, this check is only done once per change.
+            //    {
+            //        if (token.m_szToken == szValidKeyword)
+            //        {
+            //            bValidKeyword = true;
+            //            break;
+            //        }
+            //    }
+
+            //    if (bValidKeyword == false)
+            //        continue;
+
+            //    token.m_iTokenType = TokenType_t::TOKEN_KEYWORD;
+            //    bExpectingValue    = true;
+            //}
+            //else if(bExpectingValue == true)
+            //{
+            //    token.m_iTokenType = TokenType_t::TOKEN_VALUE;
+            //}
         }
     }
 }
@@ -789,6 +886,38 @@ void MaterialGen_t::TokenInfo_t::Reset()
     m_szToken    = "";
     m_iTokenType = TokenType_t::TOKEN_UNDEFINED;
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::Free()
+{
+    for (MaterialBundle_t& matBundle : m_vecMatBundles)
+    {
+        for (Material_t* pMat : matBundle.m_vecMaterials)
+        {
+            LOG("Free'ed Material [ %s ]->[ %s ]", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+
+            if (pMat == nullptr)
+                continue;
+
+            if (pMat->m_pKeyValues != nullptr)
+                delete pMat->m_pKeyValues;
+
+            delete pMat;
+        }
+
+        matBundle.m_vecMaterials.clear();
+        matBundle.m_vecMaterials.shrink_to_fit();
+    }
+
+    // Note that this is not gauranteed to free the heap allocated data. peak stl containers.
+    m_vecMatBundles.clear();
+    m_vecMatBundles.shrink_to_fit();
+
+    LOG("Succesfully Free'ed all material & material bundles");
+}
+
 
 /*
 TODO : 

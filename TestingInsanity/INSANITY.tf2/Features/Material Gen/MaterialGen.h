@@ -9,50 +9,8 @@
 #include "../FeatureHandler.h"
 
 
-// Keyword list for .vmt file format. ( this does not include the proxy material Keywords. )
-static std::vector<std::string> g_vecVMTKeyWords =
-{
-    "\"$additive\"",
-    "\"$allowalphatocoverage\"",
-    "\"$alpha\"",
-    "\"$alphamodifiedbyproxy_do_not_set_in_vmt\"",
-    "\"$alphatest\"",
-    "\"$basealphaenvmapmask\"",
-    "\"$basetexture\"",
-    "\"$basetexturetransform\"",
-    "\"$color\"",
-    "\"$color2\"",
-    "\"$debug\"",
-    "\"$decal\"",
-    "\"$envmapcameraspace\"",
-    "\"$envmapmode\"",
-    "\"$envmapsphere\"",
-    "\"$flat\"",
-    "\"$frame\"",
-    "\"$halflambert\"",
-    "\"$ignorez\"",
-    "\"$model\"",
-    "\"$no_draw\"",
-    "\"$no_fullbright\"",
-    "\"$nocull\"",
-    "\"$nodecal\"",
-    "\"$nofog\"",
-    "\"$normalmapalphaenvmapmask\"",
-    "\"$opaquetexture\"",
-    "\"$selfillum\"",
-    "\"$softwareskin\"",
-    "\"$srgbtint\"",
-    "\"$surfaceprop\"",
-    "\"$translucent\"",
-    "\"$use_in_fillrate_mode\"",
-    "\"$vertexalpha\"",
-    "\"$vertexcolor\"",
-    "\"$vertexfog\"",
-    "\"$wireframe\"",
-    "\"$xxxxxunusedxxxxx\"",
-    "\"$xxxxxxunusedxxxxx\"",
-    "\"$znearer\""                                    
-};
+class IMaterial;
+struct KeyValues;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -66,12 +24,14 @@ public:
     void SetVisible(bool bVisible);
     bool IsVisible() const;
 
+    void Free();
+
 private:
     bool m_bVisible = false;
     void _DrawImGui();
-    void _DrawTextEditor(float flWidth, float flHeight, float x, float y);
-    void _DrawMaterialList(float flWidth, float flHeight, float x, float y);
-    void _DrawTitleBar(float flWidth, float flHeight, float x, float y);
+    void _DrawTextEditor(float flWidth, float flHeight, float x, float y, float flRounding);
+    void _DrawMaterialList(float flWidth, float flHeight, float x, float y, float flRounding);
+    void _DrawTitleBar(float flWidth, float flHeight, float x, float y, float flRounding);
 
     enum TokenType_t : int
     {
@@ -104,14 +64,17 @@ private:
 
     struct Material_t
     {
-        char m_materialData[2048] = "";
+        char m_materialData[2048]  = "";
         std::list<TokenInfo_t> m_listTokens;
+        IMaterial* m_pMaterial     = nullptr;
+        KeyValues* m_pKeyValues    = nullptr;
+        bool m_bSaved              = true;
 
         std::string m_szMatName    = "( null )";
         std::string m_szParentName = "( null )";
         
         char m_szRenameBuffer[128] = "";
-        bool m_bRenameActive = true;
+        bool m_bRenameActive       = true;
     };
     struct MaterialBundle_t
     {
@@ -119,8 +82,8 @@ private:
         std::vector<Material_t*> m_vecMaterials;
         
         char m_szRenameBuffer[128] = "";
-        bool m_bExpanded     = false;
-        bool m_bRenameActive = true;
+        bool m_bExpanded           = false;
+        bool m_bRenameActive       = true;
         bool operator==(const MaterialBundle_t& other) const
         {
             return m_szMatBundleName == other.m_szMatBundleName;
@@ -134,9 +97,200 @@ private:
     void _AddMaterialToBundle(MaterialBundle_t& matBundle);
     void _DeleteMaterialBundle(MaterialBundle_t& matBundle);
 
+    void _RefreshMaterial(Material_t* pMaterial);
+
     void _MakeMaterialNameUnique(std::string& szNameOut, const std::string & szBaseName, MaterialBundle_t& parentBundle) const;
     void _MakeMaterialBundleNameUnique(std::string& szNameOut, const std::string & szBaseName) const;
 };
+///////////////////////////////////////////////////////////////////////////
+
+
+// VMT Keyword
+static std::vector<std::string> g_vecVMTKeyWords = {
+    "\"$basetexture\"",
+    "\"$texture2\"",
+    "\"$basetexture2\"",
+    "\"$basetexturetransform\"",
+    "\"$texture2transform\"",
+    "\"$bumpmap\"",
+    "\"$normalmap\"",
+    "\"$normalmapalphaenvmapmask\"",
+    "\"$basealphaenvmapmask\"",
+    "\"$detail\"",
+    "\"$detailscale\"",
+    "\"$detailblendfactor\"",
+    "\"$detailblendmode\"",
+    "\"$alphatest\"",
+    "\"$alpha\"",
+    "\"$additive\"",
+    "\"$translucent\"",
+    "\"$vertexalpha\"",
+    "\"$vertexcolor\"",
+    "\"$vertexfog\"",
+    "\"$color\"",
+    "\"$color2\"",
+    "\"$cloakcolortint\"",
+    "\"$cloakfactor\"",
+    "\"$frame\"",
+    "\"$frameRate\"",
+    "\"$framecount\"",
+    "\"$model\"",
+    "\"$surfaceprop\"",
+    "\"$decal\"",
+    "\"$ignorez\"",
+    "\"$nofog\"",
+    "\"$flat\"",
+    "\"$wireframe\"",
+    "\"$nocull\"",
+    "\"$nodecal\"",
+    "\"$no_fullbright\"",
+    "\"$no_draw\"",
+    "\"$halflambert\"",
+    "\"$selfillum\"",
+    "\"$selfillumtint\"",
+    "\"$softwareskin\"",
+    "\"$srgbtint\"",
+    "\"$opaquetexture\"",
+    "\"$phong\"",
+    "\"$phongboost\"",
+    "\"$phongexponent\"",
+    "\"$phongexponenttexture\"",
+    "\"$phongalbedotint\"",
+    "\"$envmap\"",
+    "\"$envmapsphere\"",
+    "\"$envmapcameraspace\"",
+    "\"$envmapmode\"",
+    "\"$envmapcontrast\"",
+    "\"$envmapsaturation\"",
+    "\"$envmaptint\"",
+    "\"$reflecttexture\"",
+    "\"$reflectamount\"",
+    "\"$reflecttint\"",
+    "\"$reflectskyboxonly\"",
+    "\"$reflectonlymarkedentities\"",
+    "\"$receiveflashlight\"",
+    "\"$singlepassflashlight\"",
+    "\"$linearwrite\"",
+    "\"$allowalphatocoverage\"",
+    "\"$alphaenvmapmask\"",
+    "\"$basealphaenvmapmask\"",
+    "\"$fogcolor\"",
+    "\"$fogenable\"",
+    "\"$fogstart\"",
+    "\"$fogend\"",
+    "\"$lightmapwaterfog\"",
+    "\"$abovewater\"",
+    "\"$bottommaterial\"",
+    "\"$compilewater\"",
+    "\"%keywords\"",
+    "\"%tooltexture\"",
+    "\"%notooltexture\"",
+    "\"$decalBlendMode\"",
+    "\"$decalblendfactor\"",
+    "\"$readlowres\"",
+    "\"$texturetransform\"",
+    "\"$texoffset\"",
+    "\"$scale\"",
+    "\"$scale2\"",
+    "\"$scale_ofs\"",
+    "\"$midofs\"",
+    "\"$texresolution\"",
+    "\"$surfaceparm\"",
+    "\"$flags\"",
+    "\"$decalorientation\"",
+    "\"$srgb\"",
+    "\"$deferred\"",
+    "\"$detailblendopacity\"",
+    "\"$detailblendpower\"",
+    "\"$detailblendfactor\""
+
+    // Proxy Keywords
+    "\"Sine\"",
+    "\"LinearRamp\"",
+    "\"Add\"",
+    "\"Subtract\"",
+    "\"Multiply\"",
+    "\"Divide\"",
+    "\"TextureTransform\"",
+    "\"TextureScroll\"",
+    "\"TextureScale\"",
+    "\"TextureRotate\"",
+    "\"TextureTransform\"",
+    "\"TextureCrop\"",
+    "\"TextureFlip\"",
+    "\"TextureMask\"",
+    "\"TextureBlend\"",
+    "\"TransformColor\"",
+    "\"Random\"",
+    "\"Time\"",
+    "\"CWave\"",
+    "\"Lightwarp\"",
+    "\"Noise\"",
+    "\"LightmappedGeneric_Ambient\"",
+    "\"Periscope\"",
+    "\"LessThan\"",
+    "\"GreaterThan\"",
+    "\"LessOrEqual\"",
+    "\"GreaterOrEqual\"",
+    "\"Sequence\"",
+    "\"Clamp\"",
+    "\"RemapVal\"",
+    "\"RemapValClamped\"",
+    "\"Switch\"",
+    "\"TextureAtlas\"",
+    "\"ParticleAge\"",
+    "\"PlayerColor\"",
+    "\"EntityColor\"",
+    "\"VMTGlobalVarProxy\"",
+    "\"Skin\"",
+    "\"Fresnel\"",
+    "\"Compare\"",
+    "\"CRC32\"",
+    "\"DivideBy" // (some engine forks have variations)
+
+    // Proxy Parameters ( used inside proxy brakets )
+    "\"resultVar\"",
+    "\"srcVar1\"",
+    "\"srcVar2\"",
+    "\"srcVar3\"",
+    "\"sineperiod\"",
+    "\"sinemin\"",
+    "\"sinemax\"",
+    "\"rate\"",
+    "\"initialValue\"",
+    "\"scaleVar\"",
+    "\"translateVar\"",
+    "\"rotateVar\"",
+    "\"textureVar\"",
+    "\"texture\"",
+    "\"xformVar\"",
+    "\"texture2transform\"",
+    "\"texturetransform\"",
+    "\"resultVarIndex\"",
+    "\"min\"",
+    "\"max\"",
+    "\"lower\"",
+    "\"upper\"",
+    "\"dstVar\"",
+    "\"src\"",
+    "\"dest\"",
+    "\"srcVar\"",
+    "\"dstVar\"",
+    "\"minvar\"",
+    "\"maxvar\"",
+    "\"invert\"",
+    "\"period\"",
+    "\"speed\"",
+    "\"startframe\"",
+    "\"endframe\"",
+    "\"frame\"",
+    "\"tile\"",
+    "\"rows\"",
+    "\"columns\"",
+    "\"src1\"",
+    "\"src2\""
+};
+
 ///////////////////////////////////////////////////////////////////////////
 
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Source Entity.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
+#include "../../Utility/Signature Handler/signatures.h"
 
 enum MaterialVarFlags_t
 {
@@ -78,6 +79,7 @@ enum MaterialVarFlags_t
 // PURPOSE : This KeyValue structure is used to define / Create materials and give 
 //			 them this characteristics.
 //=========================================================================
+MAKE_SIG(KeyValues_LoadFromBuffer, "4C 89 4C 24 ? 48 89 4C 24 ? 55 56 48 81 EC", CLIENT_DLL, bool, void*, const char*, const char*, const char*, const char*)
 enum types_t
 {
 	TYPE_NONE = 0,
@@ -105,12 +107,21 @@ struct KeyValues
 		m_bHasEscapeSequences = false;
 		m_bEvaluateConditionals = true;
 		
+		m_pSub   = nullptr; 
+		m_pPeer  = nullptr; 
+		m_pChain = nullptr;
+
 		unused[0] = 0;
 		
 		/* Future proofing my ass.
 		// for future proof
 		memset( unused, 0, sizeof(unused) );
 		*/
+	}
+
+	inline bool LoadFromBuffer(const char* szMaterialName, const char* szBuffer)
+	{
+		return Sig::KeyValues_LoadFromBuffer(this, szMaterialName, szBuffer, NULL, NULL);
 	}
 
 	int m_iKeyName;	// keyname is a symbol defined in KeyValuesSystem
