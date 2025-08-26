@@ -214,7 +214,7 @@ void MaterialGen_t::_DrawImGui()
 
         _DrawTextEditor(
             flScreenWidth  * (0.5f - (flPaddingFraction * 1.25f)),
-            flScreenHeight - (2.0f * flPaddingFraction * flScreenHeight) - flTitleHeight,
+            flScreenHeight - (2.0f * flPaddingFraction * flScreenWidth) - flTitleHeight,
             flScreenWidth  * flPaddingFraction,
             flScreenWidth  * (flPaddingFraction * 1.5f) + flTitleHeight,
             flRouding);
@@ -560,6 +560,17 @@ void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
         if (pMat == m_pActiveTEMaterial)
             m_pActiveTEMaterial = nullptr;
 
+        // Delete keyvalue pair for this mateiral object too.
+        if(pMat->m_pKeyValues != nullptr)
+        {
+            pMat->m_pKeyValues->DeleteAllChildren();
+            delete pMat->m_pKeyValues;
+        }
+
+        // Release the IMaterial
+        if (pMat->m_pMaterial != nullptr)
+            pMat->m_pMaterial->Release();
+
         delete pMat;
     }
 
@@ -569,6 +580,16 @@ void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
     auto it = std::find(m_vecMatBundles.begin(), m_vecMatBundles.end(), matBundle);
     if (it != m_vecMatBundles.end())
         m_vecMatBundles.erase(it);
+
+    // Adjusting active material bundle.
+    if (m_vecMatBundles.size() <= 0)
+    {
+        m_iActiveMatBundleIndex.store(-1);
+    }
+    else
+    {
+        m_iActiveMatBundleIndex.store(std::clamp<int>(m_iActiveMatBundleIndex.load() - 1, 0, m_vecMatBundles.size() - 1));
+    }
 }
 
 
@@ -589,16 +610,7 @@ void MaterialGen_t::_RefreshMaterial(Material_t* pMaterial)
     }
 
     // First we gota free the current KeyValues ( all of them )
-    KeyValues* pFirstparam = pMaterial->m_pKeyValues->m_pSub;
-    while (pFirstparam != nullptr)
-    {
-        KeyValues* pParamToDelete = pFirstparam;
-        pFirstparam = pFirstparam->m_pPeer;
-        
-        int iKeyValueToDelete = pParamToDelete->m_iKeyName;
-        ExportFn::KeyValuesSystem()->FreeKeyValuesMemory(pParamToDelete);
-        LOG("Deleted KeyValue pair : %d", iKeyValueToDelete);
-    }
+    pMaterial->m_pKeyValues->DeleteAllChildren();
     pMaterial->m_pKeyValues->Init();
 
     // Release the current material to prevent any memory leaks.
@@ -880,7 +892,21 @@ bool MaterialGen_t::IsVisible() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::TokenInfo_t::Reset()
+std::vector<Material_t*>* MaterialGen_t::GetModelMaterials()
+{
+    int iActiveMatBundleIndex = m_iActiveMatBundleIndex.load();
+
+    // Bullshit active material ?
+    if (iActiveMatBundleIndex < 0 || iActiveMatBundleIndex >= m_vecMatBundles.size())
+        return nullptr;
+
+    return &(m_vecMatBundles[iActiveMatBundleIndex].m_vecMaterials);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void TokenInfo_t::Reset()
 {
     m_iLine = 0; m_iCol = 0;
     m_szToken    = "";
@@ -894,24 +920,10 @@ void MaterialGen_t::Free()
 {
     for (MaterialBundle_t& matBundle : m_vecMatBundles)
     {
-        for (Material_t* pMat : matBundle.m_vecMaterials)
-        {
-            LOG("Free'ed Material [ %s ]->[ %s ]", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
-
-            if (pMat == nullptr)
-                continue;
-
-            if (pMat->m_pKeyValues != nullptr)
-                delete pMat->m_pKeyValues;
-
-            delete pMat;
-        }
-
-        matBundle.m_vecMaterials.clear();
-        matBundle.m_vecMaterials.shrink_to_fit();
+        _DeleteMaterialBundle(matBundle);
     }
 
-    // Note that this is not gauranteed to free the heap allocated data. peak stl containers.
+    // Note that this is not gauranteed to free the heap allocated data. peak STL containers.
     m_vecMatBundles.clear();
     m_vecMatBundles.shrink_to_fit();
 

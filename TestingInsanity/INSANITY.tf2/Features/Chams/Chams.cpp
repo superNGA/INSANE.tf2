@@ -618,7 +618,7 @@ bool Chams_t::_CreateMaterial(std::string szMatName, const char* szMaterialVMT)
     #endif
 
     // Creating Material
-    Material_t* newMat = new Material_t;
+    Material_OLD_t* newMat = new Material_OLD_t;
     newMat->pKV        = new KeyValues;
     KeyValues* pInitializedKV = Sig::InitKeyValue(newMat->pKV, vecMaterialVMT[0].szPropName); // 0th index holds the mateiral type
 

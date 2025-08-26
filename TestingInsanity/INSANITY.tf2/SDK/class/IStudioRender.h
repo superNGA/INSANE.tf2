@@ -1,6 +1,13 @@
 #pragma once
 #include "IAppSystem.h"
 #include "../../Utility/Interface Handler/Interface.h"
+#include "../../Utility/Signature Handler/signatures.h"
+
+class IMaterial;
+enum OverrideType_t;
+
+//MAKE_SIG(IStudioRender_ForcedMaterialOverride, "48 89 91 ? ? ? ? 44 89 81", STUDIORENDER_DLL, void, void*, IMaterial*, OverrideType_t)
+
 
 class IStudioRender : public IAppSystem
 {
@@ -109,6 +116,12 @@ public:
 	virtual void DrawModelArray(const void* drawInfo, int arrayCount, void* pInstanceData, int instanceStride, int flags) = 0;
 
 	virtual void GetMaterialOverride(IMaterial** ppOutForcedMaterial, void* pOutOverrideType) = 0;
+
+
+	/*inline void ForcedMaterialOverride(IMaterial* pMat, OverrideType_t iOverrideType)
+	{
+		return Sig::IStudioRender_ForcedMaterialOverride(this, pMat, iOverrideType);
+	}*/
 };
 
 

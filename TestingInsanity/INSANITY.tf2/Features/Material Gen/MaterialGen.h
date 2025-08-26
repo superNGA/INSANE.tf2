@@ -11,6 +11,59 @@
 
 class IMaterial;
 struct KeyValues;
+struct Material_t;
+struct MaterialBundle_t;
+struct TokenInfo_t;
+
+
+///////////////////////////////////////////////////////////////////////////
+enum TokenType_t : int
+{
+    TOKEN_UNDEFINED = -1,
+    TOKEN_KEYWORD = 0, TOKEN_VALUE,
+    TOKEN_COMMENT, TOKEN_PARENT,
+};
+struct TokenInfo_t
+{
+    int         m_iLine = 0;
+    int         m_iCol = 0;
+    TokenType_t m_iTokenType = TokenType_t::TOKEN_UNDEFINED;
+    std::string m_szToken = "";
+
+    void Reset();
+};
+///////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////
+struct Material_t
+{
+    char m_materialData[2048] = "";
+    std::list<TokenInfo_t> m_listTokens;
+    IMaterial* m_pMaterial = nullptr;
+    KeyValues* m_pKeyValues = nullptr;
+    bool m_bSaved = true;
+
+    std::string m_szMatName = "( null )";
+    std::string m_szParentName = "( null )";
+
+    char m_szRenameBuffer[128] = "";
+    bool m_bRenameActive = true;
+};
+struct MaterialBundle_t
+{
+    std::string m_szMatBundleName = "( null )";
+    std::vector<Material_t*> m_vecMaterials;
+
+    char m_szRenameBuffer[128] = "";
+    bool m_bExpanded = false;
+    bool m_bRenameActive = true;
+    bool operator==(const MaterialBundle_t& other) const
+    {
+        return m_szMatBundleName == other.m_szMatBundleName;
+    }
+};
+///////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -20,35 +73,24 @@ public:
     MaterialGen_t();
 
     void Run();
+    void Free();
 
     void SetVisible(bool bVisible);
     bool IsVisible() const;
 
-    void Free();
+    std::vector<Material_t*>* GetModelMaterials();
 
 private:
+
+    // Drawing...
     bool m_bVisible = false;
     void _DrawImGui();
     void _DrawTextEditor(float flWidth, float flHeight, float x, float y, float flRounding);
     void _DrawMaterialList(float flWidth, float flHeight, float x, float y, float flRounding);
     void _DrawTitleBar(float flWidth, float flHeight, float x, float y, float flRounding);
 
-    enum TokenType_t : int
-    {
-        TOKEN_UNDEFINED = -1,
-        TOKEN_KEYWORD = 0, TOKEN_VALUE, 
-        TOKEN_COMMENT,     TOKEN_PARENT,
-    };
-    struct TokenInfo_t
-    {
-        int         m_iLine      = 0;
-        int         m_iCol       = 0;
-        TokenType_t m_iTokenType = TokenType_t::TOKEN_UNDEFINED;
-        std::string m_szToken    = "";
 
-        void Reset();
-    };
-
+    // Hanlding text buffers here...
     void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
     void _SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
     void _ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const;
@@ -62,33 +104,8 @@ private:
 
     std::chrono::high_resolution_clock::time_point m_lastModelRotateTime;
 
-    struct Material_t
-    {
-        char m_materialData[2048]  = "";
-        std::list<TokenInfo_t> m_listTokens;
-        IMaterial* m_pMaterial     = nullptr;
-        KeyValues* m_pKeyValues    = nullptr;
-        bool m_bSaved              = true;
 
-        std::string m_szMatName    = "( null )";
-        std::string m_szParentName = "( null )";
-        
-        char m_szRenameBuffer[128] = "";
-        bool m_bRenameActive       = true;
-    };
-    struct MaterialBundle_t
-    {
-        std::string m_szMatBundleName = "( null )";
-        std::vector<Material_t*> m_vecMaterials;
-        
-        char m_szRenameBuffer[128] = "";
-        bool m_bExpanded           = false;
-        bool m_bRenameActive       = true;
-        bool operator==(const MaterialBundle_t& other) const
-        {
-            return m_szMatBundleName == other.m_szMatBundleName;
-        }
-    };
+    // Handling Materials here...
     std::vector<MaterialBundle_t> m_vecMatBundles;
     std::atomic<int> m_iActiveMatBundleIndex;
     Material_t* m_pActiveTEMaterial = nullptr; // This is the material drawn to TextEditor

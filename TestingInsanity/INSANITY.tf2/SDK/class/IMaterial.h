@@ -3,6 +3,8 @@
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Utility/Signature Handler/signatures.h"
 
+#include "IKeyValuesSystem.h"
+
 enum MaterialVarFlags_t
 {
 	MATERIAL_VAR_DEBUG = (1 << 0),
@@ -122,6 +124,23 @@ struct KeyValues
 	inline bool LoadFromBuffer(const char* szMaterialName, const char* szBuffer)
 	{
 		return Sig::KeyValues_LoadFromBuffer(this, szMaterialName, szBuffer, NULL, NULL);
+	}
+
+	inline void DeleteAllChildren()
+	{
+		KeyValues* pChild = m_pSub;
+		
+		while (pChild != nullptr)
+		{
+			int iChildName = pChild->m_iKeyName;
+
+			KeyValues* pSibling = pChild->m_pPeer;
+			ExportFn::KeyValuesSystem()->FreeKeyValuesMemory(pChild);
+
+			pChild = pSibling;
+
+			LOG("Deleted KeyValue pair [ %d ]", iChildName);
+		}
 	}
 
 	int m_iKeyName;	// keyname is a symbol defined in KeyValuesSystem

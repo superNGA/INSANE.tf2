@@ -54,7 +54,7 @@
 
 #define MAX_MATERIAL_NAME_SIZE 32
 #define MAX_PROP_NAME 32
-struct Material_t
+struct Material_OLD_t
 {
     IMaterial* pMaterial                    = nullptr;
     KeyValues* pKV                          = nullptr;
@@ -101,7 +101,7 @@ private:
     
     // this stores all custom made materials, reason for using a map is so I can 
     // scale is easily in future.
-    std::unordered_map<std::string, Material_t*> UM_materials;
+    std::unordered_map<std::string, Material_OLD_t*> UM_materials;
 
 //=========================================================================
 //                     MATERIALS ( FOR NOW )
