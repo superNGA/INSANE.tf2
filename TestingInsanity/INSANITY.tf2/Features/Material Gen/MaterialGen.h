@@ -30,6 +30,16 @@ struct TokenInfo_t
     TokenType_t m_iTokenType = TokenType_t::TOKEN_UNDEFINED;
     std::string m_szToken = "";
 
+    const TokenInfo_t& operator=(TokenInfo_t& other)
+    {
+        m_szToken    = other.m_szToken;
+        m_iTokenType = other.m_iTokenType;
+        m_iCol       = other.m_iCol;
+        m_iLine      = other.m_iLine;
+
+        return *this;
+    }
+
     void Reset();
 };
 ///////////////////////////////////////////////////////////////////////////
@@ -38,17 +48,17 @@ struct TokenInfo_t
 ///////////////////////////////////////////////////////////////////////////
 struct Material_t
 {
-    char m_materialData[2048] = "";
-    std::list<TokenInfo_t> m_listTokens;
-    IMaterial* m_pMaterial = nullptr;
-    KeyValues* m_pKeyValues = nullptr;
-    bool m_bSaved = true;
+    char m_materialData[2048]   = "";
+    std::vector<TokenInfo_t> m_vecTokens;
+    IMaterial* m_pMaterial      = nullptr;
+    KeyValues* m_pKeyValues     = nullptr;
+    bool       m_bSaved         = true;
 
-    std::string m_szMatName = "( null )";
-    std::string m_szParentName = "( null )";
+    std::string m_szMatName     = "( null )";
+    std::string m_szParentName  = "( null )";
 
-    char m_szRenameBuffer[128] = "";
-    bool m_bRenameActive = true;
+    char m_szRenameBuffer[128]  = "";
+    bool m_bRenameActive        = true;
 };
 struct MaterialBundle_t
 {
@@ -56,8 +66,9 @@ struct MaterialBundle_t
     std::vector<Material_t*> m_vecMaterials;
 
     char m_szRenameBuffer[128] = "";
-    bool m_bExpanded = false;
-    bool m_bRenameActive = true;
+    bool m_bExpanded           = false;
+    bool m_bRenameActive       = true;
+
     bool operator==(const MaterialBundle_t& other) const
     {
         return m_szMatBundleName == other.m_szMatBundleName;
@@ -80,6 +91,9 @@ public:
 
     std::vector<Material_t*>* GetModelMaterials();
 
+    int GetBestKeywordMatch() const;
+    const TokenInfo_t& GetActiveToken() const;
+
 private:
 
     // Drawing...
@@ -92,8 +106,10 @@ private:
 
     // Hanlding text buffers here...
     void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
-    void _SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
-    void _ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const;
+    void _SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
+    void _ProcessTokens(std::vector<TokenInfo_t>& vecTokenOut, TokenInfo_t & activeTokenOut);
+    void _CreateSuggestionList(const std::string& szToken);
+    std::vector<int> m_vecSuggestions;
 
     // It's rendering on top of my MatGen. so I removed it :).
     void _DisableGameConsole();
@@ -108,6 +124,7 @@ private:
     // Handling Materials here...
     std::vector<MaterialBundle_t> m_vecMatBundles;
     std::atomic<int> m_iActiveMatBundleIndex;
+    TokenInfo_t m_activeToken;
     Material_t* m_pActiveTEMaterial = nullptr; // This is the material drawn to TextEditor
 
     void _CreateMaterialBundle();

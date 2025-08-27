@@ -33,6 +33,7 @@ MaterialGen_t::MaterialGen_t()
 {
     m_lastModelRotateTime = std::chrono::high_resolution_clock::now();
     m_iActiveMatBundleIndex.store(-1);
+    m_activeToken.Reset();
 }
 
 
@@ -248,6 +249,64 @@ void MaterialGen_t::_DrawImGui()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+int TextEditorCallback(ImGuiInputTextCallbackData* pData)
+{
+    static bool bCharAdded = false;
+    if (pData->EventFlag == ImGuiInputTextFlags_CallbackCharFilter)
+    {
+        bCharAdded = true;
+        return 0;
+    }
+
+    if (bCharAdded == false)
+        return 0;
+
+    // Only if we have valid buffer and cursor pos.
+    if (pData->BufTextLen > 0 || pData->CursorPos > 0)
+    {
+        char input = pData->Buf[pData->CursorPos - 1];
+
+        switch (input)
+        {
+        case '"': pData->InsertChars(pData->CursorPos, "\""); pData->CursorPos -= 1; break;
+        case '[': pData->InsertChars(pData->CursorPos, "]");  pData->CursorPos -= 1; break;
+        case '(': pData->InsertChars(pData->CursorPos, ")");  pData->CursorPos -= 1; break;
+        case '{': pData->InsertChars(pData->CursorPos, "}");  pData->CursorPos -= 1; break;
+        case '\t':
+        {
+            pData->DeleteChars(pData->CursorPos - 1, 1);
+
+            if (F::materialGen.GetBestKeywordMatch() == -1)
+            {
+                pData->InsertChars(pData->CursorPos, "    ");
+                break;
+            }
+
+            const std::string& szKeyWord     = g_vecVMTKeyWords[F::materialGen.GetBestKeywordMatch()];
+            const std::string& szActiveToken = F::materialGen.GetActiveToken().m_szToken;
+            int                nChars        = szActiveToken.size();
+            int                iChar         = 0;
+            for (iChar = 0; iChar < nChars; iChar++)
+            {
+                if (szKeyWord[iChar] != szActiveToken[iChar])
+                    break;
+            }
+
+            pData->InsertChars(pData->CursorPos, szKeyWord.c_str() + iChar, szKeyWord.c_str() + szKeyWord.size() - 1); // -1 so we don't get that fucking quote character in auto complete.
+
+            break;
+        }
+        default: break;
+        }
+    }
+    bCharAdded = false;
+
+    return 1;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, float y, float flRounding)
 {
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
@@ -293,8 +352,13 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
     {
         ImGui::PushFont(Resources::Fonts::JetBrains_Light_NL_MID);
 
+        ImGuiInputTextFlags iFlags = ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_AllowTabInput;
+
         // Text editor input widget.
-        if (ImGui::InputTextMultiline("##MaterialGen_TextEditor", m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData), vTextEditorSize))
+        if (ImGui::InputTextMultiline(
+            "##MaterialGen_TextEditor", 
+            m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData), 
+            vTextEditorSize, iFlags, TextEditorCallback, nullptr) == true)
         {
             _ProcessBuffer(m_pActiveTEMaterial->m_materialData, sizeof(m_pActiveTEMaterial->m_materialData));
         }
@@ -308,10 +372,10 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
         {
             ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
             int nLinesScrolled = static_cast<int>(s_flScrollInPixels / ImGui::GetTextLineHeight());
-            int nMaxLines = static_cast<int>(vTextEditorSize.y / ImGui::GetTextLineHeight());
+            int nMaxLines      = static_cast<int>(vTextEditorSize.y / ImGui::GetTextLineHeight());
 
             float flEmptySpaceSize = Resources::Fonts::JetBrains_Light_NL_MID->GetCharAdvance(' ');
-            for (const auto& token : m_pActiveTEMaterial->m_listTokens)
+            for (const auto& token : m_pActiveTEMaterial->m_vecTokens)
             {
                 // Calculating text X & Y coordinates ( compensating for scroll & spaces )
                 ImVec2 vPos(
@@ -340,6 +404,42 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
                 pDrawList->AddText(vPos, clr, token.m_szToken.c_str());
             }
         }
+
+
+        // Drawing suggestions...
+        if(m_vecSuggestions.size() > 0/* && m_activeToken.m_iTokenType == TokenType_t::TOKEN_KEYWORD*/)
+        {
+            // Calculating longest suggestion string size so we can size the suggestion box accordingly.
+            int nSuggestions   = m_vecSuggestions.size() > 5 ? 5 : m_vecSuggestions.size();
+            int iMaxStringSize = 0;
+            for (int iSuggestionIndex = 0; iSuggestionIndex < nSuggestions; iSuggestionIndex++)
+            {
+                std::string szSuggestion = g_vecVMTKeyWords[m_vecSuggestions[iSuggestionIndex]];
+                if (szSuggestion.size() > iMaxStringSize)
+                    iMaxStringSize = szSuggestion.size();
+            }
+
+            ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+            float flSpaceWidth = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
+            ImVec2 vSuggestionPos(
+                vTextEditorPos.x + flLineCounterWidth + (m_activeToken.m_iCol * flSpaceWidth),
+                vTextEditorPos.y + (m_activeToken.m_iLine * ImGui::GetTextLineHeight()) - s_flScrollInPixels);
+
+            vSuggestionPos.y += ImGui::GetTextLineHeight(); // Just so we draw it a line below where we are actually writting.
+
+            pDrawList->AddRectFilled(vSuggestionPos, ImVec2(vSuggestionPos.x + (flSpaceWidth * (iMaxStringSize + 2)), vSuggestionPos.y + (ImGui::GetTextLineHeight() * 5.0f)), ImColor(14, 14, 14, 255));
+
+            ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
+            ImVec2 vTextPos = vSuggestionPos;
+            for (int iSuggestionIndex = 0; iSuggestionIndex < nSuggestions; iSuggestionIndex++)
+            {
+                pDrawList->AddText(vTextPos, ImColor(255, 255, 255, 255), g_vecVMTKeyWords[m_vecSuggestions[iSuggestionIndex]].c_str());
+                vTextPos.y += ImGui::GetTextLineHeight();
+            }
+            ImGui::PopFont();
+        }
+
         ImGui::PopFont();
     }
     else // Drawing a simple message when no material is selected.
@@ -529,7 +629,7 @@ void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
     memset(pMat->m_materialData, 0, sizeof(pMat->m_materialData));
     pMat->m_materialData[0] = '\0';
     pMat->m_szParentName    = matBundle.m_szMatBundleName;
-    pMat->m_listTokens.clear();
+    pMat->m_vecTokens.clear();
     pMat->m_bSaved          = true;
     pMat->m_pKeyValues      = new KeyValues;
     pMat->m_pMaterial       = nullptr;
@@ -708,23 +808,33 @@ void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
     if (szBuffer == NULL)
         return;
 
-    std::list<TokenInfo_t> listTokens; 
-    listTokens.clear();
+    std::vector<TokenInfo_t> vecTokens; 
+    vecTokens.clear();
 
     // cut up the buffer at each ' ' and '\n' and keeping quoted & comments intact.
-    _SplitBuffer(listTokens, szBuffer, iBufferSize);
+    _SplitBuffer(vecTokens, szBuffer, iBufferSize);
 
     // Iterator over all tokens & determine what catagory they fall into.
-    _ProcessTokens(listTokens);
+    TokenInfo_t activeToken;
+    // NOTE : if _ProcessToken found a valid active token, then its type will be set to TokenType_t::Token_Keyword. Else no active token has been found.
+    _ProcessTokens(vecTokens, activeToken); 
 
-    m_pActiveTEMaterial->m_listTokens = std::move(listTokens);
-    m_pActiveTEMaterial->m_bSaved     = false;
+    // Prefix matching from all keyword list to find potential matches.
+    m_vecSuggestions.clear();
+    if(activeToken.m_iTokenType == TokenType_t::TOKEN_KEYWORD)
+    {
+        _CreateSuggestionList(activeToken.m_szToken);
+        m_activeToken = activeToken;
+    }
+
+    m_pActiveTEMaterial->m_vecTokens = std::move(vecTokens);
+    m_pActiveTEMaterial->m_bSaved    = false;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const char* szBuffer, uint32_t iBufferSize) const
+void MaterialGen_t::_SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const
 {
     TokenInfo_t token;
     bool bTokenActive        = false;
@@ -765,7 +875,7 @@ void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const ch
                 // if somethings written in token, then store it.
                 if (token.m_szToken.size() > 0)
                 {
-                    listTokensOut.push_back(token);
+                    vecTokensOut.push_back(token);
                     token.Reset();
                 }
 
@@ -787,7 +897,7 @@ void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const ch
     // Clear out if something is remaining.
     if (token.m_szToken.size() > 0)
     {
-        listTokensOut.push_back(token);
+        vecTokensOut.push_back(token);
         token.Reset();
     }
 }
@@ -795,14 +905,19 @@ void MaterialGen_t::_SplitBuffer(std::list<TokenInfo_t>& listTokensOut, const ch
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
+void MaterialGen_t::_ProcessTokens(std::vector<TokenInfo_t>& vecTokenOut, TokenInfo_t& activeTokenOut)
 {
-    int  iLastCommentLine = -1;
-    bool bExpectingValue  = false;
-    bool bMateiralStarted = false;
+    int  iLastCommentLine  = -1;
+    bool bExpectingValue   = false;
+    bool bMateiralStarted  = false;
+    bool bActiveTokenFound = false; // Found the token that the user if currently messing with.
 
-    for (TokenInfo_t& token : listTokenOut)
+    int nTokens = vecTokenOut.size();
+    for (int iTokenIndex = 0; iTokenIndex < nTokens; iTokenIndex++)
     {
+        TokenInfo_t& token = vecTokenOut[iTokenIndex];
+        int          iTokenSize = token.m_szToken.size();
+
         // Comments
         if (token.m_szToken.size() > 2 && token.m_szToken[0] == '/' && token.m_szToken[1] == '/')
         {
@@ -840,8 +955,27 @@ void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
                     }
                 }
 
+                // Only if not a valid keyword, we setup suggestions.
                 if (bValidKeyword == false)
+                {
+                    // Gotta store this for showing suggestions.
+                    if (bActiveTokenFound == false)
+                    {
+                        bool bTokenModified =
+                            m_pActiveTEMaterial->m_vecTokens.size()                 >= vecTokenOut.size() && // Do the old token list even has this many tokens.
+                            m_pActiveTEMaterial->m_vecTokens[iTokenIndex].m_szToken != token.m_szToken;      // has this token been modified.
+
+                        // Found the current active token.
+                        if (bTokenModified == true)
+                        {
+                            bActiveTokenFound = true;
+                            activeTokenOut    = token;
+                            activeTokenOut.m_iTokenType = TokenType_t::TOKEN_KEYWORD; // It might be a keyword.
+                        }
+                    }
+
                     continue;
+                }
 
                 token.m_iTokenType = TokenType_t::TOKEN_KEYWORD;
                 bExpectingValue    = !bExpectingValue;
@@ -870,6 +1004,40 @@ void MaterialGen_t::_ProcessTokens(std::list<TokenInfo_t>& listTokenOut) const
             //    token.m_iTokenType = TokenType_t::TOKEN_VALUE;
             //}
         }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_CreateSuggestionList(const std::string& szToken)
+{
+    int nKeyWords = g_vecVMTKeyWords.size();
+    for (int iIndex = 0; iIndex < nKeyWords; iIndex++)
+    {
+        const std::string& szKeyWord = g_vecVMTKeyWords[iIndex];
+
+        // if keyword size is less than token, then this can't be the match.
+        if (szToken.size() > szKeyWord.size() || szToken.size() <= 2)
+            continue;
+        
+        bool bPrefixMatched = true;
+
+        // Only matching character 1 2 & 3. for efficiency purposes.
+        int nChars = szToken.size();// < 4 ? szToken.size() : 4;
+        for (int iChar = 1; iChar < nChars - 1; iChar++) // NOTE : We are starting form 1 till size - 1 to not consider the quotes at all.
+        {
+            if (szToken[iChar] != szKeyWord[iChar])
+            {
+                bPrefixMatched = false;
+                break;
+            }
+        }
+
+        if (bPrefixMatched == false)
+            continue;
+
+        m_vecSuggestions.push_back(iIndex);
     }
 }
 
@@ -906,6 +1074,25 @@ std::vector<Material_t*>* MaterialGen_t::GetModelMaterials()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+int MaterialGen_t::GetBestKeywordMatch() const
+{
+    if (m_vecSuggestions.size() <= 0)
+        return -1;
+
+    return m_vecSuggestions[0];
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+const TokenInfo_t& MaterialGen_t::GetActiveToken() const
+{
+    return m_activeToken;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TokenInfo_t::Reset()
 {
     m_iLine = 0; m_iCol = 0;
@@ -933,10 +1120,38 @@ void MaterialGen_t::Free()
 
 /*
 TODO : 
--> Material priority change mechanism.
--> Maybe add a default material bundle & material.
--> Get these materials to the DME & draw using this mateiral.
+"VertexLitGeneric"
+{
+"$additive" 1
+"$color2" "[0 0.2 0.2]"
+"$model" 1
+"$envmap" "env_cubemap"
+"$envmaptint" "[0 0.5 0.5]"
+"$envmapsaturation" "0.5"
+"$envmapcontrast" "0.5"
+"$selfillum" 1
 
--> Auto complete quotes & brackets.
--> Suggestions for keywords. ( prefix match )
+"Proxies"
+{
+
+// ENV Map saturation
+"Sine"
+{
+"resultvar" "$envmapsaturation"
+"sineperiod" 1
+"sinemin" 0
+"sinemax" 1
+}
+
+// ENV MAP contrast
+   "Sine"
+{
+"resultvar" "$envmapcontrast"
+"sineperiod" 1
+"sinemin" 0
+"sinemax" 1
+}
+
+}
+}
 */
