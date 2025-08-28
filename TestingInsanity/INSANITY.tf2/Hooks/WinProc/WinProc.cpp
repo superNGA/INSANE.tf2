@@ -60,8 +60,8 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     // Handle custom input
     if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) // TODO : Make this changable from menu!!!
     {
-        LOG("Toggled UI");
         directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
+        LOG("Set UI : [ %s ]", directX::UI::UI_visble == true ? "VISIBLE" : "NOT_VISIBLE");
     }
 
     // Recording key for Key-Bind
@@ -88,20 +88,21 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
     // Checking if menu has been toggled
     static bool bLastMenuVisibility    = true;
-    bool        bToggleMouseVisibility = (bLastMenuVisibility != directX::UI::UI_visble);
-    bLastMenuVisibility                = directX::UI::UI_visble;
+    bool        bNeedMouseVisible      = directX::UI::UI_visble == true || F::materialGen.IsVisible() == true;
+    bool        bToggleMouseVisibility = (bLastMenuVisibility != bNeedMouseVisible);
+    bLastMenuVisibility                = bNeedMouseVisible;
     
     // if toggled, then change mouse's visibility
     if (bToggleMouseVisibility == true)
     {
-        I::iSurface->SetCursorAlwaysVisible(directX::UI::UI_visble);
+        I::iSurface->SetCursorAlwaysVisible(bNeedMouseVisible);
         I::iSurface->ApplyChanges();
 
         // Drawing Cursor using ImGui, 
         // cause TF2 functions will do literally anything except what they are supposed to do!
-        ImGui::GetIO().MouseDrawCursor = directX::UI::UI_visble;
+        ImGui::GetIO().MouseDrawCursor = bNeedMouseVisible;
 
-        //LOG("Toggled mouse visibility to [ %s ]", directX::UI::UI_visble ? "VISIBLE" : "NOT_VISIBLE");
+        //LOG("Toggled mouse visibility to [ %s ]", bNeedMouseVisible ? "VISIBLE" : "NOT_VISIBLE");
     }
 
     // No inputs to game if menu OPEN

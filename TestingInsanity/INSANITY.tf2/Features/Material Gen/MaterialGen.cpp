@@ -294,6 +294,10 @@ int TextEditorCallback(ImGuiInputTextCallbackData* pData)
 
             pData->InsertChars(pData->CursorPos, szKeyWord.c_str() + iChar, szKeyWord.c_str() + szKeyWord.size() - 1); // -1 so we don't get that fucking quote character in auto complete.
 
+            // And we did auto complete and the buffer size allows, move the cursor out of the quotes.
+            if (pData->BufTextLen < pData->BufSize - 2)
+                pData->CursorPos += 1;
+
             break;
         }
         default: break;
@@ -390,7 +394,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
                 switch (token.m_iTokenType)
                 {
                 case TokenType_t::TOKEN_COMMENT:
-                    clr = ImColor(83, 252, 165, 255);  break;
+                    clr = ImColor(105, 105, 105, 255);  break;
                 case TokenType_t::TOKEN_KEYWORD:
                     clr = ImColor(31, 191, 186, 255);  break;
                 case TokenType_t::TOKEN_VALUE:
@@ -419,7 +423,7 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
                     iMaxStringSize = szSuggestion.size();
             }
 
-            ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+            ImDrawList* pDrawList = ImGui::GetForegroundDrawList();
 
             float flSpaceWidth = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
             ImVec2 vSuggestionPos(
@@ -428,13 +432,13 @@ void MaterialGen_t::_DrawTextEditor(float flWidth, float flHeight, float x, floa
 
             vSuggestionPos.y += ImGui::GetTextLineHeight(); // Just so we draw it a line below where we are actually writting.
 
-            pDrawList->AddRectFilled(vSuggestionPos, ImVec2(vSuggestionPos.x + (flSpaceWidth * (iMaxStringSize + 2)), vSuggestionPos.y + (ImGui::GetTextLineHeight() * 5.0f)), ImColor(14, 14, 14, 255));
+            pDrawList->AddRectFilled(vSuggestionPos, ImVec2(vSuggestionPos.x + (flSpaceWidth * (iMaxStringSize + 2)), vSuggestionPos.y + (ImGui::GetTextLineHeight() * static_cast<float>(nSuggestions))), ImColor(14, 14, 14, 255));            
 
             ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
             ImVec2 vTextPos = vSuggestionPos;
             for (int iSuggestionIndex = 0; iSuggestionIndex < nSuggestions; iSuggestionIndex++)
             {
-                pDrawList->AddText(vTextPos, ImColor(255, 255, 255, 255), g_vecVMTKeyWords[m_vecSuggestions[iSuggestionIndex]].c_str());
+                pDrawList->AddText(vTextPos, iSuggestionIndex == 0 ? ImColor(0, 180, 100, 255) : ImColor(255, 255, 255, 255), g_vecVMTKeyWords[m_vecSuggestions[iSuggestionIndex]].c_str());
                 vTextPos.y += ImGui::GetTextLineHeight();
             }
             ImGui::PopFont();
