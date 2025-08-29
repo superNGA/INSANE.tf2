@@ -2,6 +2,7 @@
 #include "../Utility/CVar Handler/CVarHandler.h"
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
 
+#include "../Features/ModelPreview/ModelPreview.h"
 #include "../Features/Tick Shifting/TickShifting.h"
 #include "../Features/NoSpread/NoSpreadV2.h"
 
@@ -9,6 +10,8 @@ MAKE_HOOK(ClientModeShared_LevelInit, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 48 8
     void* pVTable, const char* szMapName)
 {
     auto result = Hook::ClientModeShared_LevelInit::O_ClientModeShared_LevelInit(pVTable, szMapName);
+
+    F::modelPreview.CaptureAllEngineModels();
 
     F::cVarHandler.InvalidateCVars();
     F::cVarHandler.InitializeAllCVars();

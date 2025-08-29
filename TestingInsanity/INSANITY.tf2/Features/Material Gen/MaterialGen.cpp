@@ -34,6 +34,7 @@ MaterialGen_t::MaterialGen_t()
     m_lastModelRotateTime = std::chrono::high_resolution_clock::now();
     m_iActiveMatBundleIndex.store(-1);
     m_activeToken.Reset();
+    m_vecSuggestions.clear(); m_vecModelNameSuggestoins.clear();
 }
 
 
@@ -171,7 +172,7 @@ void MaterialGen_t::_RotateModel()
     m_lastModelRotateTime = now;
 
     float flTimeSinceLastUpdateInSec = static_cast<float>(iTimeSinceStartInMs) / 1000.0f;
-    pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * Features::MaterialGen::MaterialGen::RotationSpeed.GetData().m_flVal;
+    pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * m_flModelRotationSpeed;
 }
 
 
@@ -184,7 +185,6 @@ void MaterialGen_t::_DrawImGui()
     int iHeight = 0, iWidth = 0; F::modelPreview.GetPanelSize(iHeight, iWidth);
     float flScreenWidth  = static_cast<float>(iWidth);
     float flScreenHeight = static_cast<float>(iHeight);
-    ImVec2 vWindowSize(flScreenWidth * (2.0f / 3.0f), flScreenHeight); // 2 / 3 of the total screen goes to this.
 
     // Styling
     {
@@ -194,7 +194,7 @@ void MaterialGen_t::_DrawImGui()
         ImGui::PushStyleColor(ImGuiCol_Border,  ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     }
 
-    ImGui::SetNextWindowSize(vWindowSize);
+    ImGui::SetNextWindowSize(ImVec2(flScreenWidth, flScreenHeight));
     ImGui::SetNextWindowPos({ 0.0f, 0.0f });
     ImGui::SetNextWindowBgAlpha(0.0f);
     bool bOpen        = true;
@@ -204,14 +204,8 @@ void MaterialGen_t::_DrawImGui()
     {
         // Drawing Text Editor.
         constexpr float flPaddingFraction = 0.01f;
-        constexpr float flTEWidthFraction = 0.5f, flTELineCounterWidthFraction = 0.02f;
-        constexpr float flTEHeightFraction = 0.9f;
-        ImVec2 vTESize(flScreenWidth * (flTEWidthFraction - flTELineCounterWidthFraction), flScreenHeight * flTEHeightFraction);
-        ImVec2 vTEPos(flScreenWidth  * flTELineCounterWidthFraction, flScreenHeight * (1.0f - flTEHeightFraction) * 0.5f);
-        //_DrawTextEditor(vTESize.x, vTESize.y, vTEPos.x, vTEPos.y);
-
-        float flTitleHeight = flScreenHeight * 0.03f;
-        constexpr float flRouding = 5.0f;
+        constexpr float flRouding         = 5.0f;
+        float           flTitleHeight     = flScreenHeight * 0.03f;
 
         _DrawTextEditor(
             flScreenWidth  * (0.5f - (flPaddingFraction * 1.25f)),
@@ -233,6 +227,13 @@ void MaterialGen_t::_DrawImGui()
             flScreenWidth  * flPaddingFraction,
             flScreenWidth  * flPaddingFraction,
             flRouding);
+
+        _DrawModelPanelOverlay(
+            flScreenWidth * (1.0f / 3.0f),
+            flScreenHeight,
+            flScreenWidth * (2.0f / 3.0f),
+            0.0f
+        );
 
         ImGui::End();
     }
@@ -525,27 +526,42 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
         
         // Drawing buttons for this mat bundle
-        ImGui::SameLine(flWidth - (vTopButtonSize.x * 2.0f));
-        std::string szAddButtonID = "+##" + matBundle.m_szMatBundleName;
-        if (ImGui::Button(szAddButtonID.c_str(), vTopButtonSize) == true)
+        ImGui::SameLine(flWidth - (Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance('.') * 3.0f));
+        static ImVec2 vPopButtonSize(100.0f, 20.0f);
+        if (ImGui::Button(std::string("...##" + matBundle.m_szMatBundleName).c_str()) == true)
         {
-            _AddMaterialToBundle(matBundle);
-        }
-        ImGui::SameLine(flWidth - vTopButtonSize.x);
-        std::string szDeleteButtonID = "x##" + matBundle.m_szMatBundleName;
-        if (ImGui::Button(szDeleteButtonID.c_str(), vTopButtonSize) == true)
-        {
-            _DeleteMaterialBundle(matBundle);
+            ImGui::OpenPopup(std::string("##MaterialBundleExtraOptions" + matBundle.m_szMatBundleName).c_str());
         }
 
+        if (ImGui::BeginPopup(std::string("##MaterialBundleExtraOptions" + matBundle.m_szMatBundleName).c_str()) == true)
+        {
+            if (ImGui::Button("Add Mateiral", vPopButtonSize) == true)
+            {
+                _AddMaterialToBundle(matBundle);
+            }
+
+            if (ImGui::Button("Rename", vPopButtonSize) == true)
+            {
+                matBundle.m_bRenameActive = true;
+            }
+
+            if (ImGui::Button("Delete", vPopButtonSize) == true)
+            {
+                _DeleteMaterialBundle(matBundle);
+            }
+            
+            ImGui::EndPopup();
+        }
 
         // Drawing all of its materials for this material bundle.
         if(matBundle.m_bExpanded == true)
         {
-            for (Material_t* pMat : matBundle.m_vecMaterials)
+            int nMaterials = matBundle.m_vecMaterials.size();
+            for (int iMatIndex = 0; iMatIndex < nMaterials; iMatIndex++)
             {
-                ImVec2 vMatPos = ImGui::GetCursorPos();
-                if (ImGui::Button(std::string(pMat->m_szMatName + "##" + matBundle.m_szMatBundleName + "_Child").c_str(), ImVec2(flWidth, 20.0f)) == true)
+                Material_t* pMat    = matBundle.m_vecMaterials[iMatIndex];
+                ImVec2      vMatPos = ImGui::GetCursorPos();
+                if (ImGui::Button(std::string(pMat->m_szMatName + "##" + matBundle.m_szMatBundleName + "_Child").c_str(), ImVec2(flWidth - vTopButtonSize.x, 20.0f)) == true)
                 {
                     m_pActiveTEMaterial = pMat;
                 }
@@ -562,6 +578,45 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
                         LOG("Renamed material to \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
                     }
+                }
+
+                ImGui::SameLine(/*flWidth - vTopButtonSize.x*/);
+                if (ImGui::Button(std::string("->##" + pMat->m_szMatName).c_str(), vTopButtonSize) == true)
+                {
+                    ImGui::OpenPopup(std::string("##MaterialExtraOptions" + pMat->m_szMatName).c_str());
+                }
+
+                if (ImGui::BeginPopup(std::string("##MaterialExtraOptions" + pMat->m_szMatName).c_str()) == true)
+                {
+                    if (ImGui::Button("Rename", vPopButtonSize) == true)
+                    {
+                        pMat->m_bRenameActive = true;
+                    }
+
+                    if (ImGui::Button("Move   Up", vPopButtonSize) == true)
+                    {
+                        if (iMatIndex > 0)
+                        {
+                            matBundle.m_vecMaterials[iMatIndex]     = matBundle.m_vecMaterials[iMatIndex - 1];
+                            matBundle.m_vecMaterials[iMatIndex - 1] = pMat;
+                        }
+                    }
+
+                    if (ImGui::Button("Move Down", vPopButtonSize) == true)
+                    {
+                        if (iMatIndex < nMaterials - 1) // Must not be the last element.
+                        {
+                            matBundle.m_vecMaterials[iMatIndex]     = matBundle.m_vecMaterials[iMatIndex + 1];
+                            matBundle.m_vecMaterials[iMatIndex + 1] = pMat;
+                        }
+                    }
+
+                    if (ImGui::Button("Delete", vPopButtonSize) == true)
+                    {
+                        _DeleteMaterial(pMat, matBundle);
+                    }
+
+                    ImGui::EndPopup();
                 }
             }
         }
@@ -588,9 +643,15 @@ void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float 
     if(m_pActiveTEMaterial != nullptr)
     {
         std::string szActiveFileName = '[' + m_pActiveTEMaterial->m_szParentName + "]->[" + m_pActiveTEMaterial->m_szMatName + ']';
+        ImVec2      vFileNameSize    = ImGui::CalcTextSize(szActiveFileName.c_str());
+        vFileNameSize.x += 10.0f;
+
+        pDrawList->AddRectFilled(ImVec2(x, y), ImVec2(x + vFileNameSize.x, y + flHeight), ImColor(6, 6, 6, 255), flRounding, ImDrawFlags_RoundCornersTopRight);
+        pDrawList->AddRectFilled(ImVec2(x + vFileNameSize.x, y + (flHeight / 2.0f)), ImVec2(x + vFileNameSize.x + 20.f, y + flHeight), ImColor(6, 6, 6, 255));
+        pDrawList->AddRectFilled(ImVec2(x + vFileNameSize.x, y + (flHeight / 2.0f)), ImVec2(x + vFileNameSize.x + 20.f, y + flHeight), ImColor(45, 45, 45, 255), flRounding, ImDrawFlags_RoundCornersBottomLeft);
 
         ImGui::TextColored(
-            m_pActiveTEMaterial->m_bSaved == true ? ImVec4(0.0f, 1.0f, 0.23f, 1.0f) : ImVec4(1.0f, 1.0f, 0.0f, 1.0f),
+            m_pActiveTEMaterial->m_bSaved == true ? ImVec4(0.0f, 1.0f, 0.23f, 1.0f) : ImVec4(1.0f, 1.0f, 0.0f, 1.0f), // just colors. magic number colors :)
             szActiveFileName.c_str());
 
         ImGui::SameLine();
@@ -599,6 +660,143 @@ void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float 
             _RefreshMaterial(m_pActiveTEMaterial);
         }
     }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+int SearchBoxCallBack(ImGuiInputTextCallbackData* pData)
+{
+    // Remove tab inputs & process auto complete.
+    // Draw suggestions first.
+    // Take enter / newlines to add new model & set it as active model.
+    // Process properly for ingame and inmenu. ( Don't add while in game, just load it using modelLoader )
+    // construct the avialabe model list if in game. 
+    // if not in game, use from build in list.
+
+
+
+    return 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DrawModelPanelOverlay(float flWidth, float flHeight, float x, float y)
+{
+    // For this part to render, the active model must be initialized properly.
+    if (F::modelPreview.GetActiveModel() == nullptr)
+        return;
+
+    ImGui::SetNextWindowPos(ImVec2(x, y));
+    ImGui::BeginChild("##ModelPanelOverlay", ImVec2(flWidth, flHeight));
+    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
+
+    ImDrawList* pDrawList            = ImGui::GetWindowDrawList();
+    ImVec2      vModelNameStringSize = ImGui::CalcTextSize(F::modelPreview.GetActiveModel()->strName);
+    
+    // Drawing model's name.
+    pDrawList->AddText(
+        ImVec2(x + (flWidth - vModelNameStringSize.x) / 2.0f, flHeight - (20.0f + vModelNameStringSize.y)), 
+        ImColor(255, 255, 255, 255), F::modelPreview.GetActiveModel()->strName);
+
+    float flCharWidth = Resources::Fonts::JetBrains_SemiBold_NL_Mid->GetCharAdvance(' ');
+    static ImVec2 vHelperButtonSize(20.0f, 20.0f);
+    ImGui::SetCursorPos(ImVec2(flWidth - ((vHelperButtonSize.x + flCharWidth) * 2.0f), flCharWidth));
+    { // Model Settings Button
+        if (ImGui::Button("L##ModelOverlaySettings", vHelperButtonSize) == true)
+        {
+            ImGui::OpenPopup("##ModelLightingSettings");
+        }
+
+        if (ImGui::IsItemHovered() == true)
+            ImGui::SetTooltip("Lighting settings");
+
+        if (ImGui::BeginPopup("##ModelLightingSettings") == true)
+        {
+            static float clrUp[3]    = { 0.4f, 0.4f, 0.4f }; static float clrBottom[3] = { 0.4f, 0.4f, 0.4f };
+            static float clrRight[3] = { 0.4f, 0.4f, 0.4f }; static float clrLeft[3]   = { 0.4f, 0.4f, 0.4f };
+            static float clrFront[3] = { 0.4f, 0.4f, 0.4f }; static float clrBack[3]   = { 0.4f, 0.4f, 0.4f };
+            if (ImGui::ColorEdit3("Up", clrUp) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrUp[0], clrUp[1], clrUp[2]), ModelPreview_t::AmbientLight_t::LIGHT_TOP);
+            }
+            if (ImGui::ColorEdit3("Down", clrBottom) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrBottom[0], clrBottom[1], clrBottom[2]), ModelPreview_t::AmbientLight_t::LIGHT_BOTTON);
+            }
+            if (ImGui::ColorEdit3("Right", clrRight) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrRight[0], clrRight[1], clrRight[2]), ModelPreview_t::AmbientLight_t::LIGHT_RIGHT);
+            }
+            if (ImGui::ColorEdit3("Left", clrLeft) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrLeft[0], clrLeft[1], clrLeft[2]), ModelPreview_t::AmbientLight_t::LIGHT_LEFT);
+            }
+            if (ImGui::ColorEdit3("Front", clrFront) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrFront[0], clrFront[1], clrFront[2]), ModelPreview_t::AmbientLight_t::LIGHT_FRONT);
+            }
+            if (ImGui::ColorEdit3("Back", clrBack) == true)
+            {
+                F::modelPreview.SetAmbientLight(vec(clrBack[0], clrBack[1], clrBack[2]), ModelPreview_t::AmbientLight_t::LIGHT_BACK);
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    ImGui::SameLine(flWidth - vHelperButtonSize.x - flCharWidth);
+    { // Model Lighting Settings
+        if (ImGui::Button("?##ModelOverlaySettings", ImVec2(20.0f, 20.0f)) == true)
+        {
+            ImGui::OpenPopup("##ModelSettings");
+        }
+
+        if (ImGui::IsItemHovered() == true)
+            ImGui::SetTooltip("Model settings");
+
+        if (ImGui::BeginPopup("##ModelSettings") == true)
+        {
+            ImGui::SliderFloat("Speed", &m_flModelRotationSpeed, -360.0f, 360.0f, "%.1f");
+
+            ImGui::EndPopup();
+        }
+    }
+
+
+    // Model search box
+    {
+        // Styling.
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(45.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f)); // This is causing the text editor color
+
+        
+        const     float flModelSearchBoxPos = flHeight * 0.12f;
+        constexpr float flSearchBoxRounding = 20.0f;
+        constexpr float flSearchBoxHeight   = 30.0f;
+        pDrawList->AddRectFilled(ImVec2(x + 40.0f, y + flModelSearchBoxPos), ImVec2(x + flWidth - 40.0f, y + flModelSearchBoxPos + flSearchBoxHeight), ImColor(45, 45, 45, 255), flSearchBoxRounding);
+
+        static char szSearchBoxBuffer[512] = "";
+
+        const float flSetToMiddleOffset = (flSearchBoxHeight - ImGui::GetTextLineHeight()) / 2.0f;
+        ImGui::SetCursorPos(ImVec2(40.0f + flSearchBoxRounding, flModelSearchBoxPos + flSetToMiddleOffset));
+        int iSearchBoxFlags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter;
+
+        if (ImGui::InputTextMultiline(
+            "##ModelSearchBar", szSearchBoxBuffer, sizeof(szSearchBoxBuffer),                      // Text input's buffer  n shit.
+            ImVec2(flWidth - ((40.0f + flSearchBoxRounding) * 2.0f), ImGui::GetTextLineHeight()), // Text input's visuals n shit.
+            iSearchBoxFlags, SearchBoxCallBack) == true) 
+        {
+            _ConstuctModelNameSuggestions(szSearchBoxBuffer, sizeof(szSearchBoxBuffer));
+        }
+
+
+        ImGui::PopStyleColor();
+    }
+
+
+    ImGui::PopFont();
+    ImGui::EndChild();
 }
 
 
@@ -649,33 +847,46 @@ void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_DeleteMaterial(Material_t* pMat, MaterialBundle_t& matBundle)
+{
+    // Sanity checks
+    if (pMat == nullptr)
+        return;
+
+    // if we happen to remove the current Text Editor material, we must mark it as null ( else the Text Editor will try to load it & crash )
+    if (pMat == m_pActiveTEMaterial)
+        m_pActiveTEMaterial = nullptr;
+
+    // Delete keyvalue pair for this mateiral object too.
+    if (pMat->m_pKeyValues != nullptr)
+    {
+        pMat->m_pKeyValues->DeleteAllChildren();
+        delete pMat->m_pKeyValues;
+    }
+
+    // Release the IMaterial
+    if (pMat->m_pMaterial != nullptr)
+        pMat->m_pMaterial->Release();
+
+    LOG("Deleted mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+
+    delete pMat;
+
+    // Removing this material from the material bundle.
+    auto it = std::find(matBundle.m_vecMaterials.begin(), matBundle.m_vecMaterials.end(), pMat);
+    if (it != matBundle.m_vecMaterials.end())
+        matBundle.m_vecMaterials.erase(it);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
 {
     // First deleting all materials in this Material bundle
     for (Material_t* pMat : matBundle.m_vecMaterials)
     {
-        // Sanity checks
-        if (pMat == nullptr)
-            continue;
-
-        LOG("Deleted mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
-        
-        // if we happen to remove the current Text Editor material, we must mark it as null ( else the Text Editor will try to load it & crash )
-        if (pMat == m_pActiveTEMaterial)
-            m_pActiveTEMaterial = nullptr;
-
-        // Delete keyvalue pair for this mateiral object too.
-        if(pMat->m_pKeyValues != nullptr)
-        {
-            pMat->m_pKeyValues->DeleteAllChildren();
-            delete pMat->m_pKeyValues;
-        }
-
-        // Release the IMaterial
-        if (pMat->m_pMaterial != nullptr)
-            pMat->m_pMaterial->Release();
-
-        delete pMat;
+        _DeleteMaterial(pMat, matBundle);
     }
 
     LOG("Deleted material bundle \"%s\" and all its materials.", matBundle.m_szMatBundleName.c_str());
@@ -802,6 +1013,43 @@ void MaterialGen_t::_MakeMaterialBundleNameUnique(std::string& szNameOut, const 
     }
 
     szNameOut = szNameToTest;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t iBufferSize)
+{
+    std::vector<std::string>& vecModelNames = F::modelPreview.GetModelNameList();
+
+    m_vecModelNameSuggestoins.clear();
+
+    int nModels = vecModelNames.size();
+    for (int iModelIndex = 0; iModelIndex < nModels; iModelIndex++)
+    {
+        std::string& szModelName = vecModelNames[iModelIndex];
+        
+        bool bPrefixMatched = true;
+        for (int iChar = 0; iChar < iBufferSize; iChar++)
+        {
+            char character = szBuffer[iChar];
+            if (character == '\0' || character == '\n')
+                break;
+
+            bPrefixMatched = character == szModelName[iChar];
+                 
+            if (bPrefixMatched == false)
+                break;
+        }
+
+        if (bPrefixMatched == false)
+            continue;
+
+        m_vecModelNameSuggestoins.push_back(iModelIndex);
+    }
+
+    for (const int iSuggIndex : m_vecModelNameSuggestoins)
+        LOG("%s", vecModelNames[iSuggIndex].c_str());
 }
 
 
@@ -1120,6 +1368,194 @@ void MaterialGen_t::Free()
 
     LOG("Succesfully Free'ed all material & material bundles");
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+std::vector<std::string> g_vecVMTKeyWords = {
+    "\"$basetexture\"",
+    "\"$texture2\"",
+    "\"$basetexture2\"",
+    "\"$basetexturetransform\"",
+    "\"$texture2transform\"",
+    "\"$bumpmap\"",
+    "\"$normalmap\"",
+    "\"$normalmapalphaenvmapmask\"",
+    "\"$basealphaenvmapmask\"",
+    "\"$detail\"",
+    "\"$detailscale\"",
+    "\"$detailblendfactor\"",
+    "\"$detailblendmode\"",
+    "\"$alphatest\"",
+    "\"$alpha\"",
+    "\"$additive\"",
+    "\"$translucent\"",
+    "\"$vertexalpha\"",
+    "\"$vertexcolor\"",
+    "\"$vertexfog\"",
+    "\"$color\"",
+    "\"$color2\"",
+    "\"$cloakcolortint\"",
+    "\"$cloakfactor\"",
+    "\"$frame\"",
+    "\"$frameRate\"",
+    "\"$framecount\"",
+    "\"$model\"",
+    "\"$surfaceprop\"",
+    "\"$decal\"",
+    "\"$ignorez\"",
+    "\"$nofog\"",
+    "\"$flat\"",
+    "\"$wireframe\"",
+    "\"$nocull\"",
+    "\"$nodecal\"",
+    "\"$no_fullbright\"",
+    "\"$no_draw\"",
+    "\"$halflambert\"",
+    "\"$selfillum\"",
+    "\"$selfillumtint\"",
+    "\"$softwareskin\"",
+    "\"$srgbtint\"",
+    "\"$opaquetexture\"",
+    "\"$phong\"",
+    "\"$phongboost\"",
+    "\"$phongexponent\"",
+    "\"$phongexponenttexture\"",
+    "\"$phongalbedotint\"",
+    "\"$envmap\"",
+    "\"$envmapsphere\"",
+    "\"$envmapcameraspace\"",
+    "\"$envmapmode\"",
+    "\"$envmapcontrast\"",
+    "\"$envmapsaturation\"",
+    "\"$envmaptint\"",
+    "\"$reflecttexture\"",
+    "\"$reflectamount\"",
+    "\"$reflecttint\"",
+    "\"$reflectskyboxonly\"",
+    "\"$reflectonlymarkedentities\"",
+    "\"$receiveflashlight\"",
+    "\"$singlepassflashlight\"",
+    "\"$linearwrite\"",
+    "\"$allowalphatocoverage\"",
+    "\"$alphaenvmapmask\"",
+    "\"$basealphaenvmapmask\"",
+    "\"$fogcolor\"",
+    "\"$fogenable\"",
+    "\"$fogstart\"",
+    "\"$fogend\"",
+    "\"$lightmapwaterfog\"",
+    "\"$abovewater\"",
+    "\"$bottommaterial\"",
+    "\"$compilewater\"",
+    "\"%keywords\"",
+    "\"%tooltexture\"",
+    "\"%notooltexture\"",
+    "\"$decalBlendMode\"",
+    "\"$decalblendfactor\"",
+    "\"$readlowres\"",
+    "\"$texturetransform\"",
+    "\"$texoffset\"",
+    "\"$scale\"",
+    "\"$scale2\"",
+    "\"$scale_ofs\"",
+    "\"$midofs\"",
+    "\"$texresolution\"",
+    "\"$surfaceparm\"",
+    "\"$flags\"",
+    "\"$decalorientation\"",
+    "\"$srgb\"",
+    "\"$deferred\"",
+    "\"$detailblendopacity\"",
+    "\"$detailblendpower\"",
+    "\"$detailblendfactor\""
+
+    // Proxy Keywords
+    "\"Sine\"",
+    "\"LinearRamp\"",
+    "\"Add\"",
+    "\"Subtract\"",
+    "\"Multiply\"",
+    "\"Divide\"",
+    "\"TextureTransform\"",
+    "\"TextureScroll\"",
+    "\"TextureScale\"",
+    "\"TextureRotate\"",
+    "\"TextureTransform\"",
+    "\"TextureCrop\"",
+    "\"TextureFlip\"",
+    "\"TextureMask\"",
+    "\"TextureBlend\"",
+    "\"TransformColor\"",
+    "\"Random\"",
+    "\"Time\"",
+    "\"CWave\"",
+    "\"Lightwarp\"",
+    "\"Noise\"",
+    "\"LightmappedGeneric_Ambient\"",
+    "\"Periscope\"",
+    "\"LessThan\"",
+    "\"GreaterThan\"",
+    "\"LessOrEqual\"",
+    "\"GreaterOrEqual\"",
+    "\"Sequence\"",
+    "\"Clamp\"",
+    "\"RemapVal\"",
+    "\"RemapValClamped\"",
+    "\"Switch\"",
+    "\"TextureAtlas\"",
+    "\"ParticleAge\"",
+    "\"PlayerColor\"",
+    "\"EntityColor\"",
+    "\"VMTGlobalVarProxy\"",
+    "\"Skin\"",
+    "\"Fresnel\"",
+    "\"Compare\"",
+    "\"CRC32\"",
+    "\"DivideBy", // (some engine forks have variations)
+
+    // Proxy Parameters ( used inside proxy brakets )
+    "\"resultVar\"",
+    "\"srcVar1\"",
+    "\"srcVar2\"",
+    "\"srcVar3\"",
+    "\"sineperiod\"",
+    "\"sinemin\"",
+    "\"sinemax\"",
+    "\"rate\"",
+    "\"initialValue\"",
+    "\"scaleVar\"",
+    "\"translateVar\"",
+    "\"rotateVar\"",
+    "\"textureVar\"",
+    "\"texture\"",
+    "\"xformVar\"",
+    "\"texture2transform\"",
+    "\"texturetransform\"",
+    "\"resultVarIndex\"",
+    "\"min\"",
+    "\"max\"",
+    "\"lower\"",
+    "\"upper\"",
+    "\"dstVar\"",
+    "\"src\"",
+    "\"dest\"",
+    "\"srcVar\"",
+    "\"dstVar\"",
+    "\"minvar\"",
+    "\"maxvar\"",
+    "\"invert\"",
+    "\"period\"",
+    "\"speed\"",
+    "\"startframe\"",
+    "\"endframe\"",
+    "\"frame\"",
+    "\"tile\"",
+    "\"rows\"",
+    "\"columns\"",
+    "\"src1\"",
+    "\"src2\""
+};
 
 
 /*

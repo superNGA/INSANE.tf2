@@ -11,6 +11,7 @@
 #define DECAL_PRECACHE_TABLENAME	"decalprecache"
 
 constexpr int INVALID_TABLE_INDEX = UINT16_MAX;
+constexpr int INVALID_STRING_INDEX = UINT16_MAX;
 
 class INetworkStringTable
 {

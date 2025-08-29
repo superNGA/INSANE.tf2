@@ -35,8 +35,11 @@ public:
     // Models
     void        SetActiveModel(int iIndex);
     model_t*    GetActiveModel() const;
+    bool        AddModel(std::string& szModelName);
+    void        CaptureAllEngineModels();
     int         GetActiveModelIndex() const;
     BaseEntity* GetModelEntity() const;
+    std::vector<std::string>& GetModelNameList() const;
 
     void SetVisible(bool bVisible);
 
@@ -94,13 +97,7 @@ private:
     bool     m_bModelPrecached   = false;
     std::vector<std::string> m_vecModels =
     {
-        "models/player/spy.mdl",
-        "models/player/heavy.mdl",
-        "models/weapons/w_models/w_toolbox.mdl",
-        "models/props_gameplay/tombstone_specialdelivery.mdl",
-        "models/props_gameplay/tombstone_crocostyle.mdl",
-        "models/props_gameplay/tombstone_tankbuster.mdl",
-        "models/props_gameplay/tombstone_gasjockey.mdl"
+        "models/player/spy.mdl"
     };
 
 
@@ -155,3 +152,8 @@ private:
 };
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
 DEFINE_SECTION(ModelPreview, "MaterialGen", 2)
+
+
+///////////////////////////////////////////////////////////////////////////
+extern std::vector<std::string> g_vecModelNames;       // These are some predefined model names we will let the user use.
+extern std::vector<std::string> g_vecModelNamesInGame; // this is the list of models which are loaded for the current map. we will use these if we are in game.

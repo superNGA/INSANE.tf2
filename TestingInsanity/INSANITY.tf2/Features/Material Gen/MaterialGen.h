@@ -102,9 +102,12 @@ private:
     void _DrawTextEditor(float flWidth, float flHeight, float x, float y, float flRounding);
     void _DrawMaterialList(float flWidth, float flHeight, float x, float y, float flRounding);
     void _DrawTitleBar(float flWidth, float flHeight, float x, float y, float flRounding);
-
+    void _DrawModelPanelOverlay(float flWidth, float flHeight, float x, float y);
 
     // Hanlding text buffers here...
+    void _ConstuctModelNameSuggestions(const char* szBuffer, uint32_t iBufferSize);
+    std::vector<int> m_vecModelNameSuggestoins;
+
     void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
     void _SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
     void _ProcessTokens(std::vector<TokenInfo_t>& vecTokenOut, TokenInfo_t & activeTokenOut);
@@ -119,7 +122,10 @@ private:
     void _RotateModel();
 
     std::chrono::high_resolution_clock::time_point m_lastModelRotateTime;
-
+    
+    // Rotation speed is defined as how much angle is covered ( in degrees ) 
+    // in one second.
+    float m_flModelRotationSpeed = 65.0f;
 
     // Handling Materials here...
     std::vector<MaterialBundle_t> m_vecMatBundles;
@@ -129,6 +135,7 @@ private:
 
     void _CreateMaterialBundle();
     void _AddMaterialToBundle(MaterialBundle_t& matBundle);
+    void _DeleteMaterial(Material_t* pMat, MaterialBundle_t& matBundle);
     void _DeleteMaterialBundle(MaterialBundle_t& matBundle);
 
     void _RefreshMaterial(Material_t* pMaterial);
@@ -140,190 +147,8 @@ private:
 
 
 // VMT Keyword
-static std::vector<std::string> g_vecVMTKeyWords = {
-    "\"$basetexture\"",
-    "\"$texture2\"",
-    "\"$basetexture2\"",
-    "\"$basetexturetransform\"",
-    "\"$texture2transform\"",
-    "\"$bumpmap\"",
-    "\"$normalmap\"",
-    "\"$normalmapalphaenvmapmask\"",
-    "\"$basealphaenvmapmask\"",
-    "\"$detail\"",
-    "\"$detailscale\"",
-    "\"$detailblendfactor\"",
-    "\"$detailblendmode\"",
-    "\"$alphatest\"",
-    "\"$alpha\"",
-    "\"$additive\"",
-    "\"$translucent\"",
-    "\"$vertexalpha\"",
-    "\"$vertexcolor\"",
-    "\"$vertexfog\"",
-    "\"$color\"",
-    "\"$color2\"",
-    "\"$cloakcolortint\"",
-    "\"$cloakfactor\"",
-    "\"$frame\"",
-    "\"$frameRate\"",
-    "\"$framecount\"",
-    "\"$model\"",
-    "\"$surfaceprop\"",
-    "\"$decal\"",
-    "\"$ignorez\"",
-    "\"$nofog\"",
-    "\"$flat\"",
-    "\"$wireframe\"",
-    "\"$nocull\"",
-    "\"$nodecal\"",
-    "\"$no_fullbright\"",
-    "\"$no_draw\"",
-    "\"$halflambert\"",
-    "\"$selfillum\"",
-    "\"$selfillumtint\"",
-    "\"$softwareskin\"",
-    "\"$srgbtint\"",
-    "\"$opaquetexture\"",
-    "\"$phong\"",
-    "\"$phongboost\"",
-    "\"$phongexponent\"",
-    "\"$phongexponenttexture\"",
-    "\"$phongalbedotint\"",
-    "\"$envmap\"",
-    "\"$envmapsphere\"",
-    "\"$envmapcameraspace\"",
-    "\"$envmapmode\"",
-    "\"$envmapcontrast\"",
-    "\"$envmapsaturation\"",
-    "\"$envmaptint\"",
-    "\"$reflecttexture\"",
-    "\"$reflectamount\"",
-    "\"$reflecttint\"",
-    "\"$reflectskyboxonly\"",
-    "\"$reflectonlymarkedentities\"",
-    "\"$receiveflashlight\"",
-    "\"$singlepassflashlight\"",
-    "\"$linearwrite\"",
-    "\"$allowalphatocoverage\"",
-    "\"$alphaenvmapmask\"",
-    "\"$basealphaenvmapmask\"",
-    "\"$fogcolor\"",
-    "\"$fogenable\"",
-    "\"$fogstart\"",
-    "\"$fogend\"",
-    "\"$lightmapwaterfog\"",
-    "\"$abovewater\"",
-    "\"$bottommaterial\"",
-    "\"$compilewater\"",
-    "\"%keywords\"",
-    "\"%tooltexture\"",
-    "\"%notooltexture\"",
-    "\"$decalBlendMode\"",
-    "\"$decalblendfactor\"",
-    "\"$readlowres\"",
-    "\"$texturetransform\"",
-    "\"$texoffset\"",
-    "\"$scale\"",
-    "\"$scale2\"",
-    "\"$scale_ofs\"",
-    "\"$midofs\"",
-    "\"$texresolution\"",
-    "\"$surfaceparm\"",
-    "\"$flags\"",
-    "\"$decalorientation\"",
-    "\"$srgb\"",
-    "\"$deferred\"",
-    "\"$detailblendopacity\"",
-    "\"$detailblendpower\"",
-    "\"$detailblendfactor\""
+extern std::vector<std::string> g_vecVMTKeyWords;
 
-    // Proxy Keywords
-    "\"Sine\"",
-    "\"LinearRamp\"",
-    "\"Add\"",
-    "\"Subtract\"",
-    "\"Multiply\"",
-    "\"Divide\"",
-    "\"TextureTransform\"",
-    "\"TextureScroll\"",
-    "\"TextureScale\"",
-    "\"TextureRotate\"",
-    "\"TextureTransform\"",
-    "\"TextureCrop\"",
-    "\"TextureFlip\"",
-    "\"TextureMask\"",
-    "\"TextureBlend\"",
-    "\"TransformColor\"",
-    "\"Random\"",
-    "\"Time\"",
-    "\"CWave\"",
-    "\"Lightwarp\"",
-    "\"Noise\"",
-    "\"LightmappedGeneric_Ambient\"",
-    "\"Periscope\"",
-    "\"LessThan\"",
-    "\"GreaterThan\"",
-    "\"LessOrEqual\"",
-    "\"GreaterOrEqual\"",
-    "\"Sequence\"",
-    "\"Clamp\"",
-    "\"RemapVal\"",
-    "\"RemapValClamped\"",
-    "\"Switch\"",
-    "\"TextureAtlas\"",
-    "\"ParticleAge\"",
-    "\"PlayerColor\"",
-    "\"EntityColor\"",
-    "\"VMTGlobalVarProxy\"",
-    "\"Skin\"",
-    "\"Fresnel\"",
-    "\"Compare\"",
-    "\"CRC32\"",
-    "\"DivideBy" // (some engine forks have variations)
-
-    // Proxy Parameters ( used inside proxy brakets )
-    "\"resultVar\"",
-    "\"srcVar1\"",
-    "\"srcVar2\"",
-    "\"srcVar3\"",
-    "\"sineperiod\"",
-    "\"sinemin\"",
-    "\"sinemax\"",
-    "\"rate\"",
-    "\"initialValue\"",
-    "\"scaleVar\"",
-    "\"translateVar\"",
-    "\"rotateVar\"",
-    "\"textureVar\"",
-    "\"texture\"",
-    "\"xformVar\"",
-    "\"texture2transform\"",
-    "\"texturetransform\"",
-    "\"resultVarIndex\"",
-    "\"min\"",
-    "\"max\"",
-    "\"lower\"",
-    "\"upper\"",
-    "\"dstVar\"",
-    "\"src\"",
-    "\"dest\"",
-    "\"srcVar\"",
-    "\"dstVar\"",
-    "\"minvar\"",
-    "\"maxvar\"",
-    "\"invert\"",
-    "\"period\"",
-    "\"speed\"",
-    "\"startframe\"",
-    "\"endframe\"",
-    "\"frame\"",
-    "\"tile\"",
-    "\"rows\"",
-    "\"columns\"",
-    "\"src1\"",
-    "\"src2\""
-};
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -333,11 +158,5 @@ DECLARE_FEATURE_OBJECT(materialGen, MaterialGen_t)
 DEFINE_TAB(MaterialGen, 11)
 DEFINE_SECTION(MaterialGen, "MaterialGen", 1)
 DEFINE_FEATURE(Enable, bool, MaterialGen, MaterialGen, 1, false)
-
-// Rotation speed is defined as how much angle is covered ( in degrees ) 
-// in one second.
-DEFINE_FEATURE(RotationSpeed, FloatSlider_t, MaterialGen, MaterialGen, 2, 
-    FloatSlider_t(65.0f, -360.0f, 360.0f))
-
 DEFINE_FEATURE(Model, IntSlider_t, MaterialGen, MaterialGen, 3, 
     IntSlider_t(0, 0, 6))

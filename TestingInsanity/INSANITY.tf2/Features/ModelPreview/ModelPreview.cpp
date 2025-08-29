@@ -126,7 +126,7 @@ bool ModelPreview_t::_Initialize()
 ///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::_ShouldCreateStringTable()
 {
-    // Only when we are joining a match, do we need to create string tables ourselves.
+    // Only when we are in lobby, do we need to create string tables ourselves.
     if (m_bJoiningMatch == false)
         return I::iEngine->IsConnected() == false;
 
@@ -547,12 +547,16 @@ bool ModelPreview_t::_SpoofVTable()
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::Free()
 {
+    // Remove this panel out of the way else it will block mouse clicks
     if(m_pPanel != nullptr)
     {
         I::iPanel->SetVisible(m_pPanel->GetVPanel(), false);
         I::iPanel->SetEnabled(m_pPanel->GetVPanel(), false);
         I::iPanel->SetSize(m_pPanel->GetVPanel(), 1, 1); // This seems to fix it.
     }
+
+    g_vecModelNames.clear();       g_vecModelNames.shrink_to_fit();
+    g_vecModelNamesInGame.clear(); g_vecModelNamesInGame.shrink_to_fit();
 
     _FreeVTable();
     _FreeEntity();
@@ -681,6 +685,7 @@ void ModelPreview_t::SetCameraFOV(const float flCameraFOV)
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::InvalidateModelPrecache()
 {
+    // This will check if model names are in the model precache table or not.
     m_bModelPrecached = false;
 }
 
@@ -703,6 +708,63 @@ model_t* ModelPreview_t::GetActiveModel() const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+bool ModelPreview_t::AddModel(std::string& szModelName)
+{
+    // No bullshiting while in game.
+    if (I::iEngine->IsConnected() == true)
+        return true;
+
+    INetworkStringTable* pModelTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+    if (pModelTable == nullptr)
+    {
+        FAIL_LOG("Model precache table doesn't exist yet.");
+        return false;
+    }
+
+    if (pModelTable->FindStringIndex(szModelName.c_str()) == INVALID_STRING_INDEX)
+    {
+        pModelTable->AddString(false, szModelName.c_str());
+        WIN_LOG("Model name [ %s ] not found in model string table. so I Added it", szModelName.c_str());
+    }
+
+    auto it = std::find(m_vecModels.begin(), m_vecModels.end(), szModelName);
+    if (it == m_vecModels.end())
+    {
+        m_vecModels.push_back(szModelName);
+        WIN_LOG("Model name [ %s ] not found in our model name list. so I Added it", szModelName.c_str());
+    }
+
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::CaptureAllEngineModels()
+{
+    // if in game, get all the names for all the models loaded by the engine.
+    if (I::iEngine->IsConnected() == false)
+        return;
+
+    INetworkStringTable* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
+    if (pTable == nullptr)
+        return;
+
+    g_vecModelNamesInGame.clear();
+
+    int nModels = pTable->GetNumStrings();
+    for (int iModelIndex = 0; iModelIndex < nModels; iModelIndex++)
+    {
+        g_vecModelNamesInGame.push_back(std::string(pTable->GetString(iModelIndex)));
+        LOG("Added model \"%s\"", pTable->GetString(iModelIndex));
+    }
+
+    WIN_LOG("Done capturing [ %d ] models", nModels);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 int ModelPreview_t::GetActiveModelIndex() const
 {
     return m_iActiveModelIndex;
@@ -714,6 +776,19 @@ int ModelPreview_t::GetActiveModelIndex() const
 BaseEntity* ModelPreview_t::GetModelEntity() const
 {
     return m_pEnt;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+std::vector<std::string>& ModelPreview_t::GetModelNameList() const
+{
+    // if not in any game & not trying to join any game, Use the predefined model list.
+    if (m_bJoiningMatch == false && I::iEngine->IsConnected() == false)
+        return g_vecModelNames;
+
+    // else use engine's models. ( se we don't have to load a million more models. )
+    return g_vecModelNamesInGame;
 }
 
 
@@ -889,3 +964,19 @@ MAKE_HOOK(CBaseEntity_UpdateVisibility, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC
 }
 
 #endif
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+std::vector<std::string> g_vecModelNamesInGame = {};
+
+
+std::vector<std::string> g_vecModelNames = {
+    "models/player/spy.mdl",
+    "models/player/heavy.mdl",
+    "models/weapons/w_models/w_toolbox.mdl",
+    "models/props_gameplay/tombstone_specialdelivery.mdl",
+    "models/props_gameplay/tombstone_crocostyle.mdl",
+    "models/props_gameplay/tombstone_tankbuster.mdl",
+    "models/props_gameplay/tombstone_gasjockey.mdl"
+};
