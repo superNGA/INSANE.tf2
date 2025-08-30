@@ -91,8 +91,13 @@ public:
 
     std::vector<Material_t*>* GetModelMaterials();
 
-    int GetBestKeywordMatch() const;
+    int                GetBestKeywordMatch() const;
     const TokenInfo_t& GetActiveToken() const;
+
+    char*              GetModelSearchBuffer();
+    int                GetBestModelName() const;
+    void               MoveBestModelNameSuggIndex(int iOffset);
+    const std::string& GetModelNameAtIndex(int iIndex) const;
 
 private:
 
@@ -106,7 +111,9 @@ private:
 
     // Hanlding text buffers here...
     void _ConstuctModelNameSuggestions(const char* szBuffer, uint32_t iBufferSize);
-    std::vector<int> m_vecModelNameSuggestoins;
+    char m_szSearchBoxBuffer[512] = "";
+    std::vector<int> m_vecModelNameSuggestions;
+    int m_iBestModelNameSuggestion = -1;
 
     void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
     void _SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
@@ -158,5 +165,3 @@ DECLARE_FEATURE_OBJECT(materialGen, MaterialGen_t)
 DEFINE_TAB(MaterialGen, 11)
 DEFINE_SECTION(MaterialGen, "MaterialGen", 1)
 DEFINE_FEATURE(Enable, bool, MaterialGen, MaterialGen, 1, false)
-DEFINE_FEATURE(Model, IntSlider_t, MaterialGen, MaterialGen, 3, 
-    IntSlider_t(0, 0, 6))

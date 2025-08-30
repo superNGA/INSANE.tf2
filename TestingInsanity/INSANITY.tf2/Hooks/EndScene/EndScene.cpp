@@ -81,7 +81,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
             if(Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
             {
-                //F::modelPreview.SetActiveModel(3);
+                F::modelPreview.SetActiveModel(0);
                 F::modelPreview.SetVisible(UI::UI_visble);
                 F::modelPreview.SetPanelClr(255, 255, 255, 255);
                 F::modelPreview.SetRenderViewClr(0, 0, 0, 255);

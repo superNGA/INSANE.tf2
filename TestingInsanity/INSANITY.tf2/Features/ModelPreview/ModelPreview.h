@@ -34,6 +34,7 @@ public:
 
     // Models
     void        SetActiveModel(int iIndex);
+    void        SetActiveModel(std::string& szModelName);
     model_t*    GetActiveModel() const;
     bool        AddModel(std::string& szModelName);
     void        CaptureAllEngineModels();
@@ -97,7 +98,7 @@ private:
     bool     m_bModelPrecached   = false;
     std::vector<std::string> m_vecModels =
     {
-        "models/player/spy.mdl"
+        "models/player/soldier.mdl"
     };
 
 

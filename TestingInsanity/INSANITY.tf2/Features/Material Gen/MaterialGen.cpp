@@ -34,7 +34,7 @@ MaterialGen_t::MaterialGen_t()
     m_lastModelRotateTime = std::chrono::high_resolution_clock::now();
     m_iActiveMatBundleIndex.store(-1);
     m_activeToken.Reset();
-    m_vecSuggestions.clear(); m_vecModelNameSuggestoins.clear();
+    m_vecSuggestions.clear(); m_vecModelNameSuggestions.clear();
 }
 
 
@@ -63,7 +63,6 @@ void MaterialGen_t::Run()
     _AdjustCamera();
     _RotateModel();
     _DrawImGui();
-    F::modelPreview.SetActiveModel(Features::MaterialGen::MaterialGen::Model.GetData().m_iVal);
 }
 
 
@@ -667,14 +666,69 @@ void MaterialGen_t::_DrawTitleBar(float flWidth, float flHeight, float x, float 
 ///////////////////////////////////////////////////////////////////////////
 int SearchBoxCallBack(ImGuiInputTextCallbackData* pData)
 {
-    // Remove tab inputs & process auto complete.
-    // Draw suggestions first.
-    // Take enter / newlines to add new model & set it as active model.
-    // Process properly for ingame and inmenu. ( Don't add while in game, just load it using modelLoader )
-    // construct the avialabe model list if in game. 
-    // if not in game, use from build in list.
+    // TODO : Take enter / newlines to add new model & set it as active model.
 
+    static bool bCharIncoming = false;
+    if(pData->EventFlag == ImGuiInputTextFlags_CallbackCharFilter)
+    {
+        bCharIncoming = true;
+        return 0;
+    }
 
+    if (bCharIncoming == false)
+        return 0;
+
+    // Only if we have valid buffer and cursor pos.
+    if (pData->BufTextLen > 0 || pData->CursorPos > 0)
+    {
+        char input = pData->Buf[pData->CursorPos - 1];
+
+        switch (input)
+        {
+        case '\t':
+        {
+            pData->DeleteChars(pData->CursorPos - 1, 1);
+
+            if (F::materialGen.GetBestModelName() == -1)
+                break;
+
+            const std::string& szKeyWord     = F::materialGen.GetModelNameAtIndex(F::materialGen.GetBestModelName());
+            const std::string& szActiveToken = std::string(F::materialGen.GetModelSearchBuffer());
+            int                nChars        = szActiveToken.size();
+            int                iChar         = 0;
+            for (iChar = 0; iChar < nChars; iChar++)
+            {
+                if (szKeyWord[iChar] != szActiveToken[iChar])
+                    break;
+            }
+
+            pData->InsertChars(pData->CursorPos, szKeyWord.c_str() + iChar);
+
+            // And we did auto complete and the buffer size allows, move the cursor out of the quotes.
+            if (pData->BufTextLen < pData->BufSize - 2)
+                pData->CursorPos += 1;
+
+            break;
+        }
+        case '\n':
+        {
+            // Remove the \n character
+            pData->DeleteChars(pData->CursorPos - 1, 1);
+
+            std::string szWishModelName(F::materialGen.GetModelSearchBuffer());
+            if(F::modelPreview.AddModel(szWishModelName) == true)
+                F::modelPreview.SetActiveModel(szWishModelName);
+
+            // Clear out the search buffer.
+            const char* pSearchBuffer = F::materialGen.GetModelSearchBuffer();
+            pSearchBuffer = "";
+
+            break;
+        }
+        default: break;
+        }
+    }
+    bCharIncoming = false;
 
     return 0;
 }
@@ -774,22 +828,62 @@ void MaterialGen_t::_DrawModelPanelOverlay(float flWidth, float flHeight, float 
         const     float flModelSearchBoxPos = flHeight * 0.12f;
         constexpr float flSearchBoxRounding = 20.0f;
         constexpr float flSearchBoxHeight   = 30.0f;
-        pDrawList->AddRectFilled(ImVec2(x + 40.0f, y + flModelSearchBoxPos), ImVec2(x + flWidth - 40.0f, y + flModelSearchBoxPos + flSearchBoxHeight), ImColor(45, 45, 45, 255), flSearchBoxRounding);
-
-        static char szSearchBoxBuffer[512] = "";
-
+        ImVec2 vModelSearchBarOverlayMin = ImVec2(x + 40.0f, y + flModelSearchBoxPos);
+        ImVec2 vModelSearchBarOverlayMax = ImVec2(x + flWidth - 40.0f, y + flModelSearchBoxPos + flSearchBoxHeight);
+        
         const float flSetToMiddleOffset = (flSearchBoxHeight - ImGui::GetTextLineHeight()) / 2.0f;
-        ImGui::SetCursorPos(ImVec2(40.0f + flSearchBoxRounding, flModelSearchBoxPos + flSetToMiddleOffset));
+        ImVec2 vSearchBoxPos(40.0f + flSearchBoxRounding, flModelSearchBoxPos + flSetToMiddleOffset);
+        ImGui::SetCursorPos(vSearchBoxPos);
         int iSearchBoxFlags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter;
 
         if (ImGui::InputTextMultiline(
-            "##ModelSearchBar", szSearchBoxBuffer, sizeof(szSearchBoxBuffer),                      // Text input's buffer  n shit.
+            "##ModelSearchBar", m_szSearchBoxBuffer, sizeof(m_szSearchBoxBuffer),                      // Text input's buffer  n shit.
             ImVec2(flWidth - ((40.0f + flSearchBoxRounding) * 2.0f), ImGui::GetTextLineHeight()), // Text input's visuals n shit.
             iSearchBoxFlags, SearchBoxCallBack) == true) 
         {
-            _ConstuctModelNameSuggestions(szSearchBoxBuffer, sizeof(szSearchBoxBuffer));
+            _ConstuctModelNameSuggestions(m_szSearchBoxBuffer, sizeof(m_szSearchBoxBuffer));
         }
 
+        // NOTE : its not working in Callback, so I have to do it here.
+        if (ImGui::IsItemActive() == true)
+        {
+            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow) == true)
+            {
+                F::materialGen.MoveBestModelNameSuggIndex(1);
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow) == true)
+            {
+                F::materialGen.MoveBestModelNameSuggIndex(-1);
+            }
+        }
+
+        // Drawing Suggestions.
+        {
+            // This is for the suggestions / dropdown.
+            int    nSuggestions = m_vecModelNameSuggestions.size() >= 5 ? 5 : m_vecModelNameSuggestions.size();
+            constexpr float flGapFromSearchBar = 8.0f;
+            ImVec2 vSuggPos     = ImVec2(x + vSearchBoxPos.x, y + vSearchBoxPos.y + flGapFromSearchBar);
+            
+            if (nSuggestions > 0)
+            {
+                pDrawList->AddRectFilled(
+                    vModelSearchBarOverlayMin,
+                    ImVec2(vModelSearchBarOverlayMax.x, vModelSearchBarOverlayMax.y + flGapFromSearchBar + (ImGui::GetTextLineHeight() * nSuggestions)),
+                    ImColor(20, 20, 20, 255), flSearchBoxRounding);
+
+                vSuggPos.y += ImGui::GetTextLineHeight();
+                for (int iSuggIndex = 0; iSuggIndex < nSuggestions; iSuggIndex++)
+                {
+                    pDrawList->AddText(vSuggPos, 
+                        iSuggIndex == m_iBestModelNameSuggestion ? ImColor(0, 180, 100, 255) : ImColor(255, 255, 255, 255),
+                        F::modelPreview.GetModelNameList()[m_vecModelNameSuggestions[iSuggIndex]].c_str());
+                    vSuggPos.y += ImGui::GetTextLineHeight();
+                }
+            }
+
+            // This is the main box, where the model name is written.
+            pDrawList->AddRectFilled(vModelSearchBarOverlayMin, vModelSearchBarOverlayMax, ImColor(45, 45, 45, 255), flSearchBoxRounding);
+        }
 
         ImGui::PopStyleColor();
     }
@@ -1022,7 +1116,8 @@ void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t
 {
     std::vector<std::string>& vecModelNames = F::modelPreview.GetModelNameList();
 
-    m_vecModelNameSuggestoins.clear();
+    m_iBestModelNameSuggestion = -1;
+    m_vecModelNameSuggestions.clear();
 
     int nModels = vecModelNames.size();
     for (int iModelIndex = 0; iModelIndex < nModels; iModelIndex++)
@@ -1045,10 +1140,13 @@ void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t
         if (bPrefixMatched == false)
             continue;
 
-        m_vecModelNameSuggestoins.push_back(iModelIndex);
+        m_vecModelNameSuggestions.push_back(iModelIndex);
     }
 
-    for (const int iSuggIndex : m_vecModelNameSuggestoins)
+    if (m_vecModelNameSuggestions.size() > 0)
+        m_iBestModelNameSuggestion = 0;
+
+    for (const int iSuggIndex : m_vecModelNameSuggestions)
         LOG("%s", vecModelNames[iSuggIndex].c_str());
 }
 
@@ -1340,6 +1438,44 @@ int MaterialGen_t::GetBestKeywordMatch() const
 const TokenInfo_t& MaterialGen_t::GetActiveToken() const
 {
     return m_activeToken;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+char* MaterialGen_t::GetModelSearchBuffer()
+{
+    return m_szSearchBoxBuffer;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+int MaterialGen_t::GetBestModelName() const
+{
+    return m_iBestModelNameSuggestion;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::MoveBestModelNameSuggIndex(int iOffset)
+{
+    m_iBestModelNameSuggestion += iOffset;
+    m_iBestModelNameSuggestion = std::clamp<int>(m_iBestModelNameSuggestion, 0, m_vecModelNameSuggestions.size() - 1);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+const std::string& MaterialGen_t::GetModelNameAtIndex(int iIndex) const
+{
+    std::vector<std::string>& vecModelNames = F::modelPreview.GetModelNameList();
+    if (vecModelNames.size() == 0)
+        return std::string("NULL");
+
+    iIndex = std::clamp<int>(iIndex, 0, m_vecModelNameSuggestions.size() - 1);
+    return F::modelPreview.GetModelNameList()[m_vecModelNameSuggestions[iIndex]];
 }
 
 

@@ -176,6 +176,24 @@ void ModelPreview_t::SetActiveModel(int iIndex)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetActiveModel(std::string& szModelName)
+{
+    auto it = std::find(m_vecModels.begin(), m_vecModels.end(), szModelName);
+    if (it == m_vecModels.end())
+    {
+        FAIL_LOG("Model not found in our model name list.");
+        return;
+    }
+
+    // This should get the index. ( chatGPT )
+    int iModelIndex = it - m_vecModels.begin();
+
+    SetActiveModel(iModelIndex);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::_InitializeEntity()
 {
     assert(m_bEntInit == false);
@@ -710,7 +728,25 @@ model_t* ModelPreview_t::GetActiveModel() const
 ///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::AddModel(std::string& szModelName)
 {
-    // No bullshiting while in game.
+    std::vector<std::string>& vecValidModelNames = GetModelNameList();
+    auto it = std::find(vecValidModelNames.begin(), vecValidModelNames.end(), szModelName);
+    if (it == vecValidModelNames.end())
+    {
+        FAIL_LOG("Model name [ %s ] is invalid", szModelName.c_str());
+        return false;
+    }
+
+
+    // Add model name in our model name list.
+    auto it2 = std::find(m_vecModels.begin(), m_vecModels.end(), szModelName);
+    if (it2 == m_vecModels.end())
+    {
+        m_vecModels.push_back(szModelName);
+        WIN_LOG("Model name [ %s ] not found in our model name list. so I Added it", szModelName.c_str());
+    }
+
+
+    // Don't add to network string table if in game.
     if (I::iEngine->IsConnected() == true)
         return true;
 
@@ -721,17 +757,11 @@ bool ModelPreview_t::AddModel(std::string& szModelName)
         return false;
     }
 
+    // Add model name in ModelPrecache table.
     if (pModelTable->FindStringIndex(szModelName.c_str()) == INVALID_STRING_INDEX)
     {
         pModelTable->AddString(false, szModelName.c_str());
         WIN_LOG("Model name [ %s ] not found in model string table. so I Added it", szModelName.c_str());
-    }
-
-    auto it = std::find(m_vecModels.begin(), m_vecModels.end(), szModelName);
-    if (it == m_vecModels.end())
-    {
-        m_vecModels.push_back(szModelName);
-        WIN_LOG("Model name [ %s ] not found in our model name list. so I Added it", szModelName.c_str());
     }
 
     return true;
