@@ -65,13 +65,13 @@ public:
     RGBA_t GetRenderViewClr() const;
 
     // Camera
-    void SetCameraPos(const vec& vCameraPos);
-    vec GetCameraPos() const;
+    void  SetCameraPos(const vec& vCameraPos);
+    vec   GetCameraPos() const;
     
     float GetBaseCameraFOV() const;
     float GetVerticalFOV()   const;
     float GetHorizontalFOV() const;
-    void SetCameraFOV(const float flCameraFOV);
+    void  SetCameraFOV(const float flCameraFOV);
 
     // Lighting
     enum AmbientLight_t : int32_t

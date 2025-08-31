@@ -150,6 +150,9 @@ void ModelPreview_t::DiscardStringTables() const
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::SetActiveModel(int iIndex)
 {
+    if (m_bPanelInitilized == false || m_bEntInit == false)
+        return;
+
     // Don't set model pointer if model name not added to string table.
     if (m_bModelPrecached == false)
         return;
@@ -311,11 +314,11 @@ void __fastcall PaintHijack(Panel* a1)
     view.height = iRenderViewHeight; view.width = iRenderViewWidth;
 
     // Animation fix
-    {
+    /*{
         pEnt->m_flAnimTime(pEnt->m_flAnimTime() + tfObject.pGlobalVar->frametime / 2.0f);
         pEnt->m_flCycle(pEnt->m_flCycle() + 0.002f);
         pEnt->m_nSequence(0);
-    }
+    }*/
 
 
     // Rendering model
@@ -703,8 +706,10 @@ void ModelPreview_t::SetCameraFOV(const float flCameraFOV)
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::InvalidateModelPrecache()
 {
-    // This will check if model names are in the model precache table or not.
     m_bModelPrecached = false;
+
+    m_vecModels.clear();
+    m_vecModels.push_back("models/player/soldier.mdl");
 }
 
 
@@ -728,6 +733,7 @@ model_t* ModelPreview_t::GetActiveModel() const
 ///////////////////////////////////////////////////////////////////////////
 bool ModelPreview_t::AddModel(std::string& szModelName)
 {
+    // Checking if model name is valid or not.
     std::vector<std::string>& vecValidModelNames = GetModelNameList();
     auto it = std::find(vecValidModelNames.begin(), vecValidModelNames.end(), szModelName);
     if (it == vecValidModelNames.end())
@@ -936,7 +942,7 @@ void ModelPreview_t::SetAmbientLight(const vec& vLight, AmbientLight_t iLightInd
 ///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::SetDefaultLight()
 {
-    vec vDefaultLight(0.4f, 0.4f, 0.4f);
+    constexpr vec vDefaultLight(0.4f, 0.4f, 0.4f);
 
     m_vAmbientLight[AmbientLight_t::LIGHT_TOP]    = vDefaultLight;
     m_vAmbientLight[AmbientLight_t::LIGHT_BOTTON] = vDefaultLight;

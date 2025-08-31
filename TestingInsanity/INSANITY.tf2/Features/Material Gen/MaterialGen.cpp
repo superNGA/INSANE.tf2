@@ -860,8 +860,8 @@ void MaterialGen_t::_DrawModelPanelOverlay(float flWidth, float flHeight, float 
         // Drawing Suggestions.
         {
             // This is for the suggestions / dropdown.
-            int    nSuggestions = m_vecModelNameSuggestions.size() >= 5 ? 5 : m_vecModelNameSuggestions.size();
             constexpr float flGapFromSearchBar = 8.0f;
+            int    nSuggestions = m_vecModelNameSuggestions.size() >= 5 ? 5 : m_vecModelNameSuggestions.size();
             ImVec2 vSuggPos     = ImVec2(x + vSearchBoxPos.x, y + vSearchBoxPos.y + flGapFromSearchBar);
             
             if (nSuggestions > 0)
@@ -1114,6 +1114,9 @@ void MaterialGen_t::_MakeMaterialBundleNameUnique(std::string& szNameOut, const 
 ///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t iBufferSize)
 {
+    if (szBuffer[0] == '\0')
+        return;
+
     std::vector<std::string>& vecModelNames = F::modelPreview.GetModelNameList();
 
     m_iBestModelNameSuggestion = -1;
@@ -1145,9 +1148,6 @@ void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t
 
     if (m_vecModelNameSuggestions.size() > 0)
         m_iBestModelNameSuggestion = 0;
-
-    for (const int iSuggIndex : m_vecModelNameSuggestions)
-        LOG("%s", vecModelNames[iSuggIndex].c_str());
 }
 
 
