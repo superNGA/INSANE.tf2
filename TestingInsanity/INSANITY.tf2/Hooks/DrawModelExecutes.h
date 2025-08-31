@@ -1,6 +1,7 @@
 // Utility
 #include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
+#include "../Utility/ClassIDHandler/ClassIDHandler.h"
 
 // SDK
 #include "../SDK/class/IMaterialSystem.h"
@@ -28,7 +29,7 @@ MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __f
         return Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
 
 
-    if (pModelEnt == modelState->m_pRenderable)
+    if (pModelEnt->GetClientRenderable() == modelState->m_pRenderable || modelState->m_pRenderable->GetBaseEntFromRenderable()->GetClientClass()->m_ClassID == ClassID::CBaseAnimating)
     {
         std::vector<Material_t*>* pMaterials = F::materialGen.GetModelMaterials();
         

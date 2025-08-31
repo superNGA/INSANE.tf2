@@ -34,12 +34,12 @@
 
 constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
 
-// NOTE : WE ARE ASSUMING THAT ALL MELEE'S HAVE SMACK DELAY, AND SPY KNIFE ALSO HAS SMACK DELAY ( but not backstabs )
+// NOTE : WE ARE ASSUMING THAT ALL MELEE'S HAVE SMACK DELAY, AND SPY KNIFE ALSO HAS SMACK DELAY UNLESS BACKSTAB
 // NOTE : m_flSmackTime for Spy is messed up, so we can't relie on it to set our angles on the perfect tick
 
-//=========================================================================
-//                     PUBLIC METHODS
-//=========================================================================
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
     PROFILE_FUNCTION("Melee Aimbot");
@@ -91,6 +91,8 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool AimbotMelee_t::_ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
     float flCurTime = TICK_TO_TIME(pAttacker->m_nTickBase());
@@ -105,6 +107,8 @@ bool AimbotMelee_t::_ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon,
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void AimbotMelee_t::Reset()
 {
     m_vAttackerFutureEyePos.Init();
@@ -115,9 +119,8 @@ void AimbotMelee_t::Reset()
 }
 
 
-//=========================================================================
-//                     PRIVATE METHODS
-//=========================================================================
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, baseWeapon* pActiveWeapon)
 {
     const AimbotHelper_t::AimbotTargetData_t& aimbotTargetData = F::aimbotHelper.GetAimbotTargetData();
@@ -161,6 +164,9 @@ BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, baseWeapon* pAct
     return nullptr;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker, 
     const std::vector<BaseEntity*>& vecTargets, 
     float flSmackDelay, float flSwingRange, bool bShouldSimulate)
@@ -252,6 +258,8 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const
 {
     auto* pCollidable  = pEnt->GetCollideable();
@@ -272,6 +280,8 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pLocalPlayer, cons
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerEyePos, const BaseEntity* pTarget, const vec& vTargetOrigin) const
 {
     auto* pCollidable = pTarget->GetCollideable();
@@ -292,6 +302,8 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const v
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget)
 {
     float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
@@ -332,6 +344,8 @@ void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* 
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 float AimbotMelee_t::_GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     float flSwingRange = 0.0f;
@@ -355,6 +369,8 @@ float AimbotMelee_t::_GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* p
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     constexpr float flSwingMaxBase = 18.0f;
@@ -375,9 +391,15 @@ float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pA
     // Imagine, flSwingRange as distance centers of 2 boxes, ( 2 boxes means the min & max of the hull )
     // and flSwingMax is the distance between the center of the box to the surface.
     flSwingRange += flSwingMax;
-    return flSwingRange;
+    if(pLocalPlayer->m_iClass() != TF_SPY)
+        return flSwingRange;
+
+    return flSwingRange * 0.8f; // This fucking shit was missing a lot. This should miss anymore now.
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
 {
     auto* pAttackerCollidable = pAttacker->GetCollideable();
@@ -409,6 +431,9 @@ bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
     return flDotProduct > 0.05f;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool AimbotMelee_t::_IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, const vec& vTargetPos, float FOV)
 {
     vec vAttackerToTarget = vTargetPos - vAttackerPos;

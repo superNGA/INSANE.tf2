@@ -48,6 +48,10 @@ bool ClassIDHandler_t::Initialize()
                 m_mapClassNameToID.erase(it);
                 LOG("initialized [ %s ] with class ID [ %d ]", pClientClass->m_pNetworkName, pClientClass->m_ClassID);
             }
+            else
+            {
+                FAIL_LOG("Bullshit class ID [ %d ] for class [ %s ]", pClientClass->m_ClassID, pClientClass->m_pNetworkName);
+            }
         }
 
         pClientClass = pClientClass->m_pNext;

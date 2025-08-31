@@ -1,5 +1,9 @@
 #include "MaterialGen.h"
 
+#include <fstream>
+#include <filesystem>
+namespace filesystem = std::filesystem;
+
 #include "../ModelPreview/ModelPreview.h"
 
 // SDK
@@ -25,6 +29,20 @@
 // External Dependencies
 #include "../../External Libraries/ImGui/imgui.h"
 #include "../../External Libraries/ImGui/imgui_internal.h"
+
+
+const char szDefaultMat1[] = R"(
+"VertexLitGeneric"
+{
+    "$color2" "[0 1 1]"
+    "$ignorez" 1
+})";
+const char szDefaultMat2[] = R"(
+"UnLitGeneric"
+{
+    "$color2" "[0 1 1]"
+    "$ignorez" 1
+})";
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -63,6 +81,11 @@ void MaterialGen_t::Run()
     _AdjustCamera();
     _RotateModel();
     _DrawImGui();
+
+    if (m_bDefaultMatInit == false)
+    {
+        m_bDefaultMatInit = _CreateDefaultMaterials();
+    }
 }
 
 
@@ -172,6 +195,41 @@ void MaterialGen_t::_RotateModel()
 
     float flTimeSinceLastUpdateInSec = static_cast<float>(iTimeSinceStartInMs) / 1000.0f;
     pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * m_flModelRotationSpeed;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MaterialGen_t::_CreateDefaultMaterials()
+{
+    // Adding first default mateiral.
+    {
+        _CreateMaterialBundle();
+        MaterialBundle_t& matBundle = m_vecMatBundles[m_vecMatBundles.size() - 1];
+        matBundle.m_bRenameActive   = false; matBundle.m_bExpanded = false;
+        matBundle.m_szMatBundleName = "VertexLit";
+        
+        Material_t* pMat      = _AddMaterialToBundle(matBundle);
+        pMat->m_bRenameActive = false;
+        pMat->m_szMatName     = "VertexLit";
+        strcpy_s(pMat->m_materialData, sizeof(szDefaultMat1), szDefaultMat1);
+    }
+
+
+    // Adding first default mateiral.
+    {
+        _CreateMaterialBundle();
+        MaterialBundle_t& matBundle = m_vecMatBundles[m_vecMatBundles.size() - 1];
+        matBundle.m_bRenameActive   = false; matBundle.m_bExpanded = false;
+        matBundle.m_szMatBundleName = "UnLit";
+
+        Material_t* pMat      = _AddMaterialToBundle(matBundle);
+        pMat->m_bRenameActive = false;
+        pMat->m_szMatName     = "UnLit";
+        strcpy_s(pMat->m_materialData, sizeof(szDefaultMat2), szDefaultMat2);
+    }
+
+    return true;
 }
 
 
@@ -491,8 +549,14 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
     ImGui::SameLine();
     if (ImGui::Button("save") == true)
     {
-        LOG("Saved all material to file.");
+        _SaveToFile();
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Load") == true)
+    {
+        _LoadFromFile();
+    }
+
 
     ImGui::SetCursorPosY(20.0f);
     int nMatBundles = m_vecMatBundles.size();
@@ -517,6 +581,7 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
             if (ImGui::InputText(std::string("##RenamePanel_" + matBundle.m_szMatBundleName).c_str(), matBundle.m_szRenameBuffer, sizeof(matBundle.m_szRenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue) == true)
             {
                 _MakeMaterialBundleNameUnique(matBundle.m_szMatBundleName, std::string(matBundle.m_szRenameBuffer));
+                _RenameMaterialBundle(matBundle, matBundle.m_szMatBundleName); // Change all the children's names
                 matBundle.m_bRenameActive = false;
 
                 LOG("Renamed material bundle to \"%s\"", matBundle.m_szMatBundleName.c_str());
@@ -546,7 +611,16 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
             if (ImGui::Button("Delete", vPopButtonSize) == true)
             {
-                _DeleteMaterialBundle(matBundle);
+                // 0th and 1st material is reserved for default mateirals.
+                if (iMatBundleIndex > 1)
+                {
+                    _DeleteMaterialBundle(matBundle);
+                    nMatBundles--;
+                }
+                else
+                {
+                    FAIL_LOG("Can't delete default materials");
+                }
             }
             
             ImGui::EndPopup();
@@ -612,7 +686,15 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
 
                     if (ImGui::Button("Delete", vPopButtonSize) == true)
                     {
-                        _DeleteMaterial(pMat, matBundle);
+                        // 0th and 1st material is reserved for default mateirals.
+                        if (iMatBundleIndex > 1)
+                        {
+                            _DeleteMaterial(pMat, matBundle);
+                        }
+                        else
+                        {
+                            FAIL_LOG("Can't delete default materials");
+                        }
                     }
 
                     ImGui::EndPopup();
@@ -912,19 +994,19 @@ void MaterialGen_t::_CreateMaterialBundle()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
+Material_t* MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
 {
     // Creating new material
     Material_t* pMat = new Material_t;
     if (pMat == nullptr)
     {
         FAIL_LOG("Failed to allocate material");
-        return;
+        return nullptr;
     }
 
     memset(pMat->m_materialData, 0, sizeof(pMat->m_materialData));
     pMat->m_materialData[0] = '\0';
-    pMat->m_szParentName    = matBundle.m_szMatBundleName;
+    pMat->m_szParentName    = matBundle.m_szMatBundleName + '\0';
     pMat->m_vecTokens.clear();
     pMat->m_bSaved          = true;
     pMat->m_pKeyValues      = new KeyValues;
@@ -936,6 +1018,8 @@ void MaterialGen_t::_AddMaterialToBundle(MaterialBundle_t& matBundle)
 
     matBundle.m_vecMaterials.push_back(pMat);
     LOG("Created new mateiral \"%s\"->\"%s\"", pMat->m_szParentName.c_str(), pMat->m_szMatName.c_str());
+
+    return pMat;
 }
 
 
@@ -983,22 +1067,38 @@ void MaterialGen_t::_DeleteMaterialBundle(MaterialBundle_t& matBundle)
         _DeleteMaterial(pMat, matBundle);
     }
 
-    LOG("Deleted material bundle \"%s\" and all its materials.", matBundle.m_szMatBundleName.c_str());
+    std::string szMatBundleName = matBundle.m_szMatBundleName;
 
     // Deleting this material bundle from the main list.
     auto it = std::find(m_vecMatBundles.begin(), m_vecMatBundles.end(), matBundle);
     if (it != m_vecMatBundles.end())
         m_vecMatBundles.erase(it);
 
-    // Adjusting active material bundle.
+
+    // Adjust active mat bundle.
     if (m_vecMatBundles.size() <= 0)
     {
         m_iActiveMatBundleIndex.store(-1);
     }
     else
     {
-        m_iActiveMatBundleIndex.store(std::clamp<int>(m_iActiveMatBundleIndex.load() - 1, 0, m_vecMatBundles.size() - 1));
+        m_iActiveMatBundleIndex.store(std::clamp<int>(m_iActiveMatBundleIndex.load(), 0, m_vecMatBundles.size() - 1));
     }
+
+    LOG("Deleted material bundle \"%s\" and all its materials. New bundle count [ %d ]", szMatBundleName.c_str(), m_vecMatBundles.size());
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_RenameMaterialBundle(MaterialBundle_t& matBundle, std::string& szNewName)
+{
+    for (Material_t* pMat : matBundle.m_vecMaterials)
+    {
+        pMat->m_szParentName = szNewName;
+    }
+
+    matBundle.m_szMatBundleName = szNewName;
 }
 
 
@@ -1153,7 +1253,7 @@ void MaterialGen_t::_ConstuctModelNameSuggestions(const char* szBuffer, uint32_t
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
+void MaterialGen_t::_ProcessBuffer(char* szBuffer, uint32_t iBufferSize)
 {
     if (szBuffer == NULL)
         return;
@@ -1184,7 +1284,7 @@ void MaterialGen_t::_ProcessBuffer(const char* szBuffer, uint32_t iBufferSize)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MaterialGen_t::_SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const
+void MaterialGen_t::_SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, char* szBuffer, uint32_t iBufferSize) const
 {
     TokenInfo_t token;
     bool bTokenActive        = false;
@@ -1200,6 +1300,10 @@ void MaterialGen_t::_SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const c
 
         if (c == '\0')
             break;
+
+        // tab characters break everything. Remove them!
+        if (szBuffer[i] == '\t')
+            szBuffer[i] = ' ';
 
         // if line changes, reset col counter & increment line counter. ( these are used for drawing later on )
         iCol++;
@@ -1508,6 +1612,180 @@ void MaterialGen_t::Free()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_SaveToFile()
+{
+    filesystem::path szFolderPath = "INSANE.tf2";
+
+    if (filesystem::exists(szFolderPath) == false)
+    {
+        if (filesystem::create_directory(szFolderPath) == false)
+        {
+            FAIL_LOG("Failed to create folder.");
+            return;
+        }
+    }
+
+    filesystem::path szFilePath = szFolderPath / m_szMatFileName;
+    std::ofstream hFile(szFilePath);
+
+    int nMatBundles = m_vecMatBundles.size();
+
+    // Starting from 2 cause first 2 are default materials which are made at first MatGen launch.
+    for (int iMatBundleIndex = 2; iMatBundleIndex < nMatBundles; iMatBundleIndex++)
+    {
+        MaterialBundle_t& matBundle = m_vecMatBundles[iMatBundleIndex];
+
+        for (Material_t* pMat : matBundle.m_vecMaterials)
+        {
+            hFile << "~" << matBundle.m_szMatBundleName << "~ ->  ~" << pMat->m_szMatName << "~\n";
+            hFile << "~" << pMat->m_materialData << "\n~\n";
+         
+            LOG("Saved material \"%s\"", pMat->m_szMatName.c_str());
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MaterialGen_t::_LoadFromFile()
+{
+    //filesystem::path szFilePath = "INSANE.tf2/Materials.txt";
+    std::string      szFilePath = "INSANE.tf2/" + std::string(m_szMatFileName);
+    filesystem::path filePath   = szFilePath;
+
+    std::ifstream szCheckFile(filePath);
+    if (szCheckFile.is_open() == false)
+    {
+        FAIL_LOG("No saved file found");
+        return;
+    }
+
+    char cc = '\0';
+    int iBreakerCounter = 0;
+    while (szCheckFile.get(cc))
+    {
+        if (cc == '~')
+            iBreakerCounter++;
+    }
+
+    szCheckFile.close();
+
+    if (iBreakerCounter % 2 != 0)
+    {
+        FAIL_LOG("Corrupted material file. Why did you touch it nigga! you missed a '~' sign somewhere.");
+        return;
+    }
+
+
+    // Delete current materials before loading new materials.
+    {
+        int nMatBundles = m_vecMatBundles.size();
+        for (int iMatBundleIndex = nMatBundles - 1; iMatBundleIndex >= 2; iMatBundleIndex--)
+        {
+            _DeleteMaterialBundle(m_vecMatBundles[iMatBundleIndex]);
+        }
+    }
+
+
+    std::ifstream hFile(filePath);
+
+    enum CaptureState : int { CS_MatBundleName, CS_MaterialName, CS_MaterialData};
+    std::string szBuffer = "";
+    char c = '\0';
+    int iCaptureState = 0;
+    int iBreakerCount = 0;
+    MaterialBundle_t* pParentBundle = nullptr;
+    Material_t*       pMat          = nullptr;
+    while (hFile.get(c))
+    {
+        if (c == '~')
+        {
+            iBreakerCount++;
+            if (iBreakerCount % 2 == 0)
+            {
+                LOG("Capture state updating %d. buffer : %s", iCaptureState, szBuffer.c_str());
+
+                switch (iCaptureState)
+                {
+                case CaptureState::CS_MatBundleName:
+                {
+                    bool bMatchFound = false;
+                    for (MaterialBundle_t& matBundle : m_vecMatBundles)
+                    {
+                        if (matBundle.m_szMatBundleName == szBuffer)
+                        {
+                            pParentBundle = &matBundle;
+                            bMatchFound   = true;
+                            break;
+                        }
+                    }
+
+                    if (bMatchFound == true)
+                        break;
+
+                    _CreateMaterialBundle();
+                    pParentBundle = &m_vecMatBundles[m_vecMatBundles.size() - 1];
+                    pParentBundle->m_bRenameActive   = false;
+                    _RenameMaterialBundle(*pParentBundle, szBuffer);
+                    break;
+                }
+                case CaptureState::CS_MaterialName:
+                {
+                    if (pParentBundle == nullptr)
+                    {
+                        FAIL_LOG("Something went wrong. Parent bundle pointer for material [ %s ] is null", szBuffer.c_str());
+                        return;
+                    }
+
+                    pMat = _AddMaterialToBundle(*pParentBundle);
+                    pMat->m_bRenameActive = false;
+                    pMat->m_szMatName     = szBuffer;
+                    pMat->m_bSaved        = false;
+
+                    break;
+                }
+                case CaptureState::CS_MaterialData:
+                {
+                    if (pParentBundle == nullptr)
+                    {
+                        FAIL_LOG("Something went wrong. Parent bundle pointer for material [ %s ] is null", szBuffer.c_str());
+                        return;
+                    }
+
+                    if (pMat == nullptr)
+                    {
+                        FAIL_LOG("Something went wrong. Material pointer is null", szBuffer.c_str());
+                        return;
+                    }
+
+                    strcpy_s(pMat->m_materialData, sizeof(pMat->m_materialData), szBuffer.c_str());
+                    pMat = nullptr; pParentBundle = nullptr;
+
+                    break;
+                }
+                default: break;
+                }
+
+                
+                iCaptureState++;
+                if (iCaptureState > 2)
+                    iCaptureState = 0;
+
+
+                szBuffer.clear(); // After we processed this buffer, we clear it. simple as that.
+            }
+        }
+        else if (iBreakerCount % 2 == 1)
+        {
+            szBuffer.push_back(c);
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 std::vector<std::string> g_vecVMTKeyWords = {
     "\"$basetexture\"",
     "\"$texture2\"",
@@ -1695,39 +1973,63 @@ std::vector<std::string> g_vecVMTKeyWords = {
 
 
 /*
-TODO : 
-"VertexLitGeneric"
+Cool mat : 
+"VertexlitGeneric"
 {
-"$additive" 1
-"$color2" "[0 0.2 0.2]"
-"$model" 1
-"$envmap" "env_cubemap"
-"$envmaptint" "[0 0.5 0.5]"
-"$envmapsaturation" "0.5"
-"$envmapcontrast" "0.5"
-"$selfillum" 1
+    "$wireframe" 1
+    "$baseTexture" "models\items/australium_bar_blue"
+    "$detail" "effects/tiledfire/fireLayeredSlowTiled512.vtf"
+    "$detailscale" "5"
+    "$detailblendfactor" .01
+    "$detailblendmode" 6
+    "$yellow" "0"
 
-"Proxies"
-{
 
-// ENV Map saturation
-"Sine"
-{
-"resultvar" "$envmapsaturation"
-"sineperiod" 1
-"sinemin" 0
-"sinemax" 1
-}
+    "$envmap" "cubemaps\cubemap_sheen002"
+    "$envmaptint" "[0 3.85 10]"
 
-// ENV MAP contrast
-   "Sine"
-{
-"resultvar" "$envmapcontrast"
-"sineperiod" 1
-"sinemin" 0
-"sinemax" 1
-}
 
-}
+//    "$lightwarptexture" "models/player/pyro/pyro_lightwarp"
+    "$normalmapalphaenvmapmask" "1"
+    "$basemapalphaphongmask" "0.5"
+
+    "$phong" "1"
+    "$phongexponent" "60"
+    "$phongboost" "5"
+    "$phongfresnelranges" "[.2 1 4]"
+
+    "$rimlight" "1"
+    "$rimlightexponent" "4"
+    "$rimlightboost" "2"
+
+    // Cloaking
+    "$cloakPassEnabled" "1"
+    "Proxies"
+    {
+        "weapon_invis"
+        {
+        }
+        "AnimatedTexture"
+        {
+            "animatedtexturevar" "$detail"
+            "animatedtextureframenumvar" "$detailframe"
+            "animatedtextureframerate" 30
+        }
+        "BurnLevel"
+        {
+            "resultVar" "$detailblendfactor"
+        }
+        "YellowLevel"
+        {
+            "resultVar" "$yellow"
+        }
+        "Equals"
+        {
+            "srcVar1"  "$yellow"
+            "resultVar" "$color2"
+        }
+
+    }
+
 }
 */

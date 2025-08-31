@@ -100,6 +100,9 @@ public:
     const std::string& GetModelNameAtIndex(int iIndex) const;
 
 private:
+    // Default materials...
+    bool _CreateDefaultMaterials();
+    bool m_bDefaultMatInit = false;
 
     // Drawing...
     bool m_bVisible = false;
@@ -109,14 +112,14 @@ private:
     void _DrawTitleBar(float flWidth, float flHeight, float x, float y, float flRounding);
     void _DrawModelPanelOverlay(float flWidth, float flHeight, float x, float y);
 
-    // Hanlding text buffers here...
+    // Handling text buffers here...
     void _ConstuctModelNameSuggestions(const char* szBuffer, uint32_t iBufferSize);
     char m_szSearchBoxBuffer[512] = "";
     std::vector<int> m_vecModelNameSuggestions;
     int m_iBestModelNameSuggestion = -1;
 
-    void _ProcessBuffer(const char* szBuffer, uint32_t iBufferSize);
-    void _SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, const char* szBuffer, uint32_t iBufferSize) const;
+    void _ProcessBuffer(char * szBuffer, uint32_t iBufferSize);
+    void _SplitBuffer(std::vector<TokenInfo_t>& vecTokensOut, char * szBuffer, uint32_t iBufferSize) const;
     void _ProcessTokens(std::vector<TokenInfo_t>& vecTokenOut, TokenInfo_t & activeTokenOut);
     void _CreateSuggestionList(const std::string& szToken);
     std::vector<int> m_vecSuggestions;
@@ -141,14 +144,21 @@ private:
     Material_t* m_pActiveTEMaterial = nullptr; // This is the material drawn to TextEditor
 
     void _CreateMaterialBundle();
-    void _AddMaterialToBundle(MaterialBundle_t& matBundle);
+    Material_t* _AddMaterialToBundle(MaterialBundle_t& matBundle);
     void _DeleteMaterial(Material_t* pMat, MaterialBundle_t& matBundle);
     void _DeleteMaterialBundle(MaterialBundle_t& matBundle);
+
+    void _RenameMaterialBundle(MaterialBundle_t& matBundle, std::string& szNewName);
 
     void _RefreshMaterial(Material_t* pMaterial);
 
     void _MakeMaterialNameUnique(std::string& szNameOut, const std::string & szBaseName, MaterialBundle_t& parentBundle) const;
     void _MakeMaterialBundleNameUnique(std::string& szNameOut, const std::string & szBaseName) const;
+
+    // Saving & Loading material file.
+    void _SaveToFile();
+    void _LoadFromFile();
+    const char* m_szMatFileName = "Materials.txt";
 };
 ///////////////////////////////////////////////////////////////////////////
 

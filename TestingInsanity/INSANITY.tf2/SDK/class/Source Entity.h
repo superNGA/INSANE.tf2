@@ -144,6 +144,10 @@ class I_client_renderable
 public:
 	// Gets at the containing class...
 	virtual I_client_unknown* GetI_client_unknown() = 0;
+	inline BaseEntity* GetBaseEntFromRenderable()
+	{
+		return GetI_client_unknown()->GetBaseEntity();
+	}
 
 	// Data accessors
 	virtual vec&					GetRenderOrigin(void) = 0;
