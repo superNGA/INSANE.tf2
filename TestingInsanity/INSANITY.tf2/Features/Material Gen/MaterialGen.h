@@ -1,4 +1,11 @@
-// 17 08 25
+//=========================================================================
+//                      MATERIAL GEN
+//=========================================================================
+// by      : INSANE
+// created : 17/08/2025
+// 
+// purpose : Helps create materials with live updates on models :).
+//-------------------------------------------------------------------------
 #pragma once
 
 #include <chrono>
@@ -98,6 +105,8 @@ public:
     int                GetBestModelName() const;
     void               MoveBestModelNameSuggIndex(int iOffset);
     const std::string& GetModelNameAtIndex(int iIndex) const;
+
+    const std::vector<MaterialBundle_t>& GetMaterialList() const;
 
 private:
     // Default materials...

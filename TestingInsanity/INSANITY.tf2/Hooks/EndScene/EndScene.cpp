@@ -7,6 +7,7 @@
 
 // To render here.
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
+#include "../../Features/ImGui/PlayerList/PlayerList.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
 #include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Features/ModelPreview/ModelPreview.h"
@@ -68,17 +69,23 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     // Drawing graphics features.
     {
-        F::graphicsEngine.Run(P_DEVICE);
-        F::materialGen.Run();
+        if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
+        {
+            F::graphicsEngine.Run(P_DEVICE);
 
-        Render::InfoWindow.Draw();
+            Render::playerList.Draw();
+            Render::InfoWindow.Draw();
+            insaneProfiler.Render();
+        }
+
         Render::uiMenu.Draw();
-        insaneProfiler.Render();
+        F::materialGen.Run();
         
         // Model Rendering.
         {
             F::modelPreview.Run();
 
+            // if mat gen is disabled, sync the model panel to our menu.
             if(Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
             {
                 F::modelPreview.SetActiveModel(0);

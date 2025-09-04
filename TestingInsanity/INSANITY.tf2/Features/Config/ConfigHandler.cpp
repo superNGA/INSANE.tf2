@@ -204,6 +204,31 @@ bool ConfigHandler_t::ReadConfigFile(std::string szFileName) const
 
             break;
         }
+        case IFeature::DataType::DT_DROPDOWN:
+        {
+            Feature<DropDown_t>* pFeatureDerived = static_cast<Feature<DropDown_t>*>(pFeature);
+
+            std::regex patternFloat(R"(([-+]?\d+)\|([-+]?\d+)\|([-+]?\d+)\|([-+]?\d+).*)");
+            if (std::regex_match(line, match, patternFloat) == false)
+            {
+                FAIL_LOG("[ %s ] failed DropDown pattern match", line.c_str());
+                break;
+            }
+
+            // Reading Key
+            pFeatureDerived->m_iKey = std::stol(match[2].str());
+
+            // Reading Override / Toggle type
+            int iOverrideType = std::stoi(match[3].str());
+            pFeatureDerived->m_iOverrideType = static_cast<IFeature::OverrideType>( // Gotta Clamp this shit. else can cause "undefined behaviour"
+                std::clamp(iOverrideType, static_cast<int>(IFeature::OverrideType::OVERRIDE_HOLD), static_cast<int>(IFeature::OverrideType::OVERRIDE_TOGGLE))
+                );
+
+            // Reading the "actual data"
+            pFeatureDerived->m_iActiveData = std::stoi(match[4].str());
+
+            break;
+        }
         case IFeature::DataType::DT_COLORDATA:
         {
             Feature<ColorData_t>* pFeatureDerived = static_cast<Feature<ColorData_t>*>(pFeature);
@@ -294,6 +319,14 @@ bool ConfigHandler_t::WriteToConfigFile(std::string szFileName) const
             // Only writting slider value, min & max value of the slider is hardcoded.
             pFile << pFeatureDerived->m_Data.m_flVal << cConfigBreaker;
             pFile << pFeatureDerived->m_OverrideData.m_flVal << cConfigBreaker;
+            break;
+        }
+        case IFeature::DataType::DT_DROPDOWN:
+        {
+            auto* pFeatureDerived = static_cast<Feature<DropDown_t>*>(pFeature);
+
+            pFile << pFeatureDerived->m_iActiveData << cConfigBreaker;
+
             break;
         }
         case IFeature::DataType::DT_COLORDATA:

@@ -139,7 +139,7 @@ struct KeyValues
 
 			pChild = pSibling;
 
-			LOG("Deleted KeyValue pair [ %d ]", iChildName);
+			//LOG("Deleted KeyValue pair [ %d ]", iChildName);
 		}
 	}
 

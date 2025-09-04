@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <functional>
 
 #include "../Hooks/EndScene/EndScene.h"
 #include "../SDK/class/Basic Structures.h"
@@ -54,6 +55,16 @@ struct ColorData_t
     }
 };
 
+struct DropDown_t
+{
+    DropDown_t() : m_pItems(nullptr), m_nItems(0) {}
+    DropDown_t(const char** pItems, int nItems) : m_pItems(pItems), m_nItems(nItems) {}
+
+    const char** m_pItems = nullptr;
+    int          m_nItems = 0;
+};
+
+
 enum FeatureFlags
 {
     FeatureFlag_None                 = 0,
@@ -88,7 +99,8 @@ public:
     enum class DataType : int8_t
     {
         DT_INVALID,
-        DT_BOOLEAN, DT_INTSLIDER, DT_FLOATSLIDER, DT_COLORDATA
+        DT_BOOLEAN, DT_INTSLIDER, DT_FLOATSLIDER, DT_COLORDATA,
+        DT_DROPDOWN
     };
     DataType m_iDataType = DataType::DT_INVALID;
 
@@ -109,7 +121,8 @@ public:
     static_assert(
         std::is_same_v<T, IntSlider_t>   ||
         std::is_same_v<T, FloatSlider_t> ||
-        std::is_same_v<T, ColorData_t>,
+        std::is_same_v<T, ColorData_t>   ||
+        std::is_same_v<T, std::vector<void*>*>,
         "DataType not supported");
     
     Feature(
@@ -138,6 +151,10 @@ public:
         else if (std::is_same_v<T, ColorData_t> == true)
         {
             m_iDataType = DataType::DT_COLORDATA;
+        }
+        else if (std::is_same_v<T, DropDown_t> == true)
+        {
+            m_iDataType = DataType::DT_DROPDOWN;
         }
 
         m_Data = defaultData;
@@ -265,6 +282,41 @@ public:
             return false;
         
         return m_Data;
+    }
+};
+
+
+template<>
+class Feature<DropDown_t> : public IFeature
+{
+public:
+    Feature(
+        DropDown_t  data,
+        std::string szFeatureDisplayName,
+        std::string szSectionName,
+        std::string szTabName,
+        int         iIndex,
+        int64_t     iKey,
+        int         iFlags,
+        std::string szToolTip) :
+        IFeature(szFeatureDisplayName, szSectionName, szTabName, iIndex, iKey, iFlags, szToolTip)
+    {
+        m_iDataType = DataType::DT_DROPDOWN;
+        m_data      = data;
+    }
+
+    DropDown_t m_data;
+    int        m_iActiveData = -1;
+
+    inline void SetItems(const char** pItems, int iSize)
+    {
+        m_data.m_pItems = pItems; 
+        m_data.m_nItems = iSize;
+    }
+
+    inline int GetData()
+    {
+        return m_iActiveData;
     }
 };
 

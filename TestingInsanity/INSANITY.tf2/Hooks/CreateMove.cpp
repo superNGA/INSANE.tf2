@@ -24,6 +24,7 @@
 #include "../Features/MovementSimulation/MovementSimulation.h"
 #include "../Features/ESP/ESP.h"
 #include "../Features/Tick Shifting/TickShifting.h"
+#include "../Features/Entity Iterator/EntityIterator.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -36,11 +37,11 @@
 
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
-	int64_t a1, int64_t a2, CUserCmd* cmd)
+	int64_t a1, int64_t a2, CUserCmd* pCmd)
 {
-	bool result = Hook::CreateMove::O_CreateMove(a1, a2, cmd);
+	bool result = Hook::CreateMove::O_CreateMove(a1, a2, pCmd);
 
-	if ( cmd == nullptr || cmd->command_number == 0)
+	if ( pCmd == nullptr || pCmd->command_number == 0)
 		return result;
 
 	PROFILE_THREAD();
@@ -57,7 +58,10 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	// are we alive ?
 	if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
+	{
+		F::entityIterator.ClearBackTrackData();
 		return result;
+	}
 
 	// --> bSendPacket <--
 	/*
@@ -86,15 +90,15 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	//I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
-	F::movement.Run(cmd, result, pLocalPlayer, pActiveWeapon);
-	F::fakeLag.Run(bSendPacket, cmd);
-	F::antiAim.Run(cmd, result, bSendPacket, pLocalPlayer);
-	//F::noSpread.Run(cmd, result); // incomplete, not working
-	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, cmd, &result);
-	F::critHack.RunV2(cmd, pLocalPlayer, pActiveWeapon);
-	F::esp.Run(pLocalPlayer, cmd);
-	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, cmd, &result, bSendPacket);
-	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, cmd, bSendPacket);
+	F::entityIterator.Run(pLocalPlayer, pActiveWeapon, pCmd);
+	F::movement.Run(pCmd, result, pLocalPlayer, pActiveWeapon);
+	F::fakeLag.Run(bSendPacket, pCmd);
+	F::antiAim.Run(pCmd, result, bSendPacket, pLocalPlayer);
+	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, pCmd, &result);
+	F::critHack.RunV2(pCmd, pLocalPlayer, pActiveWeapon);
+	F::esp.Run(pLocalPlayer, pCmd);
+	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
+	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
 
 
 	// Delete this
@@ -113,7 +117,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 				vec vPos = F::movementSimulation.GetSimulationPos();
 				if (vLastPos.IsEmpty() == false)
 				{
-					F::graphicsEngine.DrawLine(std::format("SIMTEST_{}", iTick), vLastPos, vPos, cmd->viewangles);
+					F::graphicsEngine.DrawLine(std::format("SIMTEST_{}", iTick), vLastPos, vPos, pCmd->viewangles);
 				}
 				vLastPos = vPos;
 			}

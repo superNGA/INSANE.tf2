@@ -32,7 +32,7 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     }
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
-        // surface-to-air freedom dilivery system :)
+        // surface-to-air freedom delivery system :)
         F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
         flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
     }
@@ -80,8 +80,7 @@ void AimbotHelper_t::_ConstructAimbotTargetData()
 
         // TODO : Make jumptable mechanism for this so it is fast. This is ass.
         // 
-        // Forgive me for not using a switch stament here. But I am retrieving the 
-        // Class ID at runtime to avoid breaking in future. I shall make a jumptable myself soon.
+        //I am retrieving the Class ID at runtime to avoid breaking in future, so can't use switch.
         if (iEntID == ClassID::CTFPlayer)
         {
             bEnemy == true ?

@@ -17,6 +17,9 @@
 constexpr ImVec2 MENU_DIMENSIONS(400.0f, 500.0f);
 constexpr ImVec2 BACK_BUTTON_DIMENSIONS(100.0f, 35.0f);
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::Draw()
 {
     // If don't want to render, then return
@@ -97,9 +100,8 @@ void UIMenu::GetWindowPos(float& x, float& y) const
 }
 
 
-//=========================================================================
-//                     Private methods
-//=========================================================================
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawSection(Tab_t* pTab)
 {
     for (const auto* pSection : pTab->m_vecSections)
@@ -114,6 +116,9 @@ void UIMenu::_DrawSection(Tab_t* pTab)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawFeature(IFeature* pFeature, bool bOverride)
 {
     switch (pFeature->m_iDataType)
@@ -130,11 +135,17 @@ void UIMenu::_DrawFeature(IFeature* pFeature, bool bOverride)
     case IFeature::DataType::DT_COLORDATA:
         _DrawColorSelectorFeature(pFeature, bOverride);
         return;
+    case IFeature::DataType::DT_DROPDOWN:
+        _DrawDropDownFeature(pFeature, bOverride);
+        return;
     default:
         return;
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawCheckBoxFeature(IFeature* pFeature, bool bOverride)
 {
     // CheckBoxes don't support override
@@ -152,6 +163,9 @@ void UIMenu::_DrawCheckBoxFeature(IFeature* pFeature, bool bOverride)
     _DrawFeatureOptionWindow(pFeature);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawIntSliderFeature(IFeature* pFeature, bool bOverride)
 {
     // Casting into correct type
@@ -177,6 +191,9 @@ void UIMenu::_DrawIntSliderFeature(IFeature* pFeature, bool bOverride)
     _DrawFeatureOptionWindow(pFeature);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawFloatSlidereature(IFeature* pFeature, bool bOverride) 
 {
     // Casting into correct type
@@ -200,6 +217,9 @@ void UIMenu::_DrawFloatSlidereature(IFeature* pFeature, bool bOverride)
     _DrawFeatureOptionWindow(pFeature);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawColorSelectorFeature(IFeature* pFeature, bool bOverride) 
 {
     // Casting into correct type
@@ -222,6 +242,22 @@ void UIMenu::_DrawColorSelectorFeature(IFeature* pFeature, bool bOverride)
     _DrawFeatureOptionWindow(pFeature);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void UIMenu::_DrawDropDownFeature(IFeature* pFeature, bool bOverride)
+{
+    Feature<DropDown_t>* pDropDown = static_cast<Feature<DropDown_t>*>(pFeature);
+
+    if (ImGui::Combo(pFeature->m_szFeatureDisplayName.c_str(), &pDropDown->m_iActiveData, pDropDown->m_data.m_pItems, pDropDown->m_data.m_nItems) == true)
+    {
+        LOG("Drop down menu");
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
 {
     if ((pFeature->m_iFlags & FeatureFlag_SupportKeyBind) == false)
@@ -240,6 +276,9 @@ void UIMenu::_DrawFeatureOptionWindow(IFeature* pFeature)
     _DrawFeatureOptionPopup(pFeature);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawFeatureOptionPopup(IFeature* pFeature)
 {
     if (ImGui::BeginPopup(std::string("Feature-Options##" + pFeature->m_szFeatureDisplayName).c_str()) == true)
@@ -284,6 +323,9 @@ void UIMenu::_DrawFeatureOptionPopup(IFeature* pFeature)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void UIMenu::_DrawConfigView()
 {
     //----------------------- Drop Down list for avilable files -----------------------

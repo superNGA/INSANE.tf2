@@ -191,13 +191,14 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker,
         // Simulating only by Lerp time.
         nTicksToSimulate = TIME_TO_TICK(Maths::MAX<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate)));
 
-        F::movementSimulation.Initialize(pAttacker, false);
+        /*F::movementSimulation.Initialize(pAttacker, false);
         for (int i = 0; i < nTicksToSimulate; i++)
             F::movementSimulation.RunTick();
 
         m_vAttackerFutureEyePos = F::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
-        F::movementSimulation.Restore();
-        // m_vAttackerFutureEyePos = pAttacker->GetEyePos();
+        F::movementSimulation.Restore();*/
+        
+        m_vAttackerFutureEyePos = pAttacker->GetEyePos();
     }
 
     BaseEntity* pBestTarget     = nullptr;

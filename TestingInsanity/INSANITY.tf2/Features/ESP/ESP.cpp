@@ -1,3 +1,4 @@
+
 #include "ESP.h"
 
 // SDK
@@ -26,8 +27,8 @@ void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
     Maths::AngleVectors(pCmd->viewangles, &vForward, &vRight, &vUp);
 
     int iLocalPlayerIndex = I::iEngine->GetLocalPlayer();
-    int nEnt              = I::IClientEntityList->NumberOfEntities(false);
-    int iFriendlyTeam     = I::IClientEntityList->GetClientEntity(iLocalPlayerIndex)->m_iTeamNum();
+    int nEnt = I::IClientEntityList->NumberOfEntities(false);
+    int iFriendlyTeam = I::IClientEntityList->GetClientEntity(iLocalPlayerIndex)->m_iTeamNum();
 
     GraphicInfo_t espGraphicInfo(
         Features::ESP::PLAYER::TOP_LEFT.GetData().GetAsBytes(),
@@ -72,24 +73,24 @@ void ESP_t::Run(BaseEntity* pLocalPlayer, CUserCmd* pCmd)
             const vec& vMin = pEntCollidable->OBBMins();
             const vec& vMax = pEntCollidable->OBBMaxs();
 
-            float flEntWidht  = vMax.Dist2Dto(vMin);
+            float flEntWidht = vMax.Dist2Dto(vMin);
             float flEntHeight = Maths::MAX<float>(vMin.z, vMax.z);
-            
+
             const char vNum = '0' + iEntIndex;
 
             F::graphicsEngine.DrawRect(
-                std::format("ENT_{}", iEntIndex), 
+                std::format("ENT_{}", iEntIndex),
                 vOrigin + (vRight * (flEntWidht * 0.5f)), // Bottom right corner
                 vOrigin + (vRight * (flEntWidht * -0.5f)) + (vUp * flEntHeight), // Top Left corner
                 pCmd->viewangles, 1000.0f, &espGraphicInfo);
 
             /*F::graphicsEngine.DrawBox(
-                std::format("ENT_{}", iEntIndex), 
+                std::format("ENT_{}", iEntIndex),
                 vOrigin + vMin, vOrigin + vMax,
                 pCmd->viewangles, 1000.0f, &espGraphicInfo);*/
 
-            // Recording angle & velocity for all entities.
-            // This is a temporary solution
+                // Recording angle & velocity for all entities.
+                // This is a temporary solution
             F::movementSimulation.RecordStrafeData(pEnt, false);
         }
     }

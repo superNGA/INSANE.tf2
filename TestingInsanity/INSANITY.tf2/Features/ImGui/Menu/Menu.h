@@ -26,6 +26,7 @@ private:
     void _DrawIntSliderFeature(IFeature* pFeature, bool bOverride);
     void _DrawFloatSlidereature(IFeature* pFeature, bool bOverride);
     void _DrawColorSelectorFeature(IFeature* pFeature, bool bOverride);
+    void _DrawDropDownFeature(IFeature* pFeature, bool bOverride);
 
     void _DrawFeatureOptionWindow(IFeature* pFeature);
     void _DrawFeatureOptionPopup(IFeature* pFeature);

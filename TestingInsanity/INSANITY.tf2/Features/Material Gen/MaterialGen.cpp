@@ -1,3 +1,11 @@
+//=========================================================================
+//                      MATERIAL GEN
+//=========================================================================
+// by      : INSANE
+// created : 17/08/2025
+// 
+// purpose : Helps create materials with live updates on models :).
+//-------------------------------------------------------------------------
 #include "MaterialGen.h"
 
 #include <fstream>
@@ -31,14 +39,12 @@ namespace filesystem = std::filesystem;
 #include "../../External Libraries/ImGui/imgui_internal.h"
 
 
-const char szDefaultMat1[] = R"(
-"VertexLitGeneric"
+const char szDefaultMat1[] = R"("VertexLitGeneric"
 {
     "$color2" "[0 1 1]"
     "$ignorez" 1
 })";
-const char szDefaultMat2[] = R"(
-"UnLitGeneric"
+const char szDefaultMat2[] = R"("UnLitGeneric"
 {
     "$color2" "[0 1 1]"
     "$ignorez" 1
@@ -212,7 +218,10 @@ bool MaterialGen_t::_CreateDefaultMaterials()
         Material_t* pMat      = _AddMaterialToBundle(matBundle);
         pMat->m_bRenameActive = false;
         pMat->m_szMatName     = "VertexLit";
-        strcpy_s(pMat->m_materialData, sizeof(szDefaultMat1), szDefaultMat1);
+        strcpy_s(pMat->m_materialData, sizeof(pMat->m_materialData), szDefaultMat1);
+
+        pMat->m_bSaved = false;
+        _RefreshMaterial(pMat);
     }
 
 
@@ -226,8 +235,13 @@ bool MaterialGen_t::_CreateDefaultMaterials()
         Material_t* pMat      = _AddMaterialToBundle(matBundle);
         pMat->m_bRenameActive = false;
         pMat->m_szMatName     = "UnLit";
-        strcpy_s(pMat->m_materialData, sizeof(szDefaultMat2), szDefaultMat2);
+        strcpy_s(pMat->m_materialData, sizeof(pMat->m_materialData), szDefaultMat2);
+
+        pMat->m_bSaved = false;
+        _RefreshMaterial(pMat);
     }
+
+    _LoadFromFile();
 
     return true;
 }
@@ -1585,6 +1599,14 @@ const std::string& MaterialGen_t::GetModelNameAtIndex(int iIndex) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+const std::vector<MaterialBundle_t>& MaterialGen_t::GetMaterialList() const
+{
+    return m_vecMatBundles;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TokenInfo_t::Reset()
 {
     m_iLine = 0; m_iCol = 0;
@@ -1760,6 +1782,7 @@ void MaterialGen_t::_LoadFromFile()
                     }
 
                     strcpy_s(pMat->m_materialData, sizeof(pMat->m_materialData), szBuffer.c_str());
+                    _RefreshMaterial(pMat);
                     pMat = nullptr; pParentBundle = nullptr;
 
                     break;
