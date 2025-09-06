@@ -13,7 +13,9 @@
 #include "../Features/ModelPreview/ModelPreview.h"
 #include "../Features/Material Gen/MaterialGen.h"
 #include "../Features/Entity Iterator/EntityIterator.h"
+#include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
 #include "EndScene/EndScene.h"
+
 
 
 MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __fastcall, ENGINE_DLL, int64_t, 
@@ -58,15 +60,6 @@ MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __f
         I::iStudioRender->ForcedMaterialOverride(nullptr, OverrideType_t::OVERRIDE_NORMAL);
         return result;
     }
-
-
-    // drawing backtrack info
-    auto* records = F::entityIterator.GetBackTrackRecord(modelState->m_pRenderable->GetBaseEntFromRenderable());
-    if (records != nullptr && records->empty() == false)
-    {
-        Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, records->front().m_bones);
-    }
-
 
     return result;
 }

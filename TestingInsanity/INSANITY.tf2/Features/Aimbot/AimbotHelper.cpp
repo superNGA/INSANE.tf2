@@ -7,6 +7,8 @@
 #include "../../SDK/class/IVDebugOverlay.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 
+#include "../Entity Iterator/EntityIterator.h"
+
 // AIMBOTS
 #include "Aimbot Hitscan/AimbotHitscan.h"
 #include "Aimbot Projectile/AimbotProjectile.h"

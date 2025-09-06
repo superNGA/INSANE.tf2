@@ -273,6 +273,11 @@ struct vec
 		return sqrtf(x * x + y * y + z * z);
 	}
 
+	float LengthSqrt() const
+	{
+		return x * x + y * y + z * z;
+	}
+
 	float Length2D() const
 	{
 		return sqrtf(x * x + y * y);

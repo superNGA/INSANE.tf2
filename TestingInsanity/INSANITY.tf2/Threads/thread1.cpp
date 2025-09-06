@@ -114,6 +114,14 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		tfObject.update();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		static bool bMatGenPrimed = false;
+		if (bMatGenPrimed == false)
+		{
+			bMatGenPrimed = true;
+			F::materialGen.CreateDefaultMaterials();
+			//F::materialGen.m_bDefaultMatInit = true;
+		}
+
 		bool bInGame = I::iEngine->IsInGame();
 		
 		// Resetting features if not in game

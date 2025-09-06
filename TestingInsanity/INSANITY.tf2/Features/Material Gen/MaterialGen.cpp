@@ -90,7 +90,7 @@ void MaterialGen_t::Run()
 
     if (m_bDefaultMatInit == false)
     {
-        m_bDefaultMatInit = _CreateDefaultMaterials();
+        m_bDefaultMatInit = CreateDefaultMaterials();
     }
 }
 
@@ -206,7 +206,7 @@ void MaterialGen_t::_RotateModel()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool MaterialGen_t::_CreateDefaultMaterials()
+bool MaterialGen_t::CreateDefaultMaterials()
 {
     // Adding first default mateiral.
     {
@@ -1726,7 +1726,7 @@ void MaterialGen_t::_LoadFromFile()
             iBreakerCount++;
             if (iBreakerCount % 2 == 0)
             {
-                LOG("Capture state updating %d. buffer : %s", iCaptureState, szBuffer.c_str());
+                LOG("Capture state updating %d. buffer size : %d", iCaptureState, szBuffer.size());
 
                 switch (iCaptureState)
                 {

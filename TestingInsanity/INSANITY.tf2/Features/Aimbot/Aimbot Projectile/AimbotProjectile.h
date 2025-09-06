@@ -162,7 +162,7 @@ DEFINE_FEATURE(
 )
 
 
-DEFINE_SECTION(Visuals, "Aimbot", 11);
+DEFINE_SECTION(Visuals, "Aimbot", 5);
 
 
 DEFINE_FEATURE(Speed, FloatSlider_t, Visuals, Aimbot,
