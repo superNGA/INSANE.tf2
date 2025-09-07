@@ -151,7 +151,7 @@ std::deque<BackTrackRecord_t>* EntityIterator_t::GetBackTrackRecord(BaseEntity* 
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::SetBackTrackTime(const float flBackTrackTime)
 {
-    m_flBackTrackTime = std::clamp<float>(flBackTrackTime, 0.0f, CVars::sv_maxunlag + 0.2f);
+    m_flBackTrackTime = std::clamp<float>(flBackTrackTime, 0.0f, CVars::sv_maxunlag + MAX_BACKTRACK_TIME);
 }
 
 

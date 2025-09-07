@@ -704,6 +704,7 @@ void MaterialGen_t::_DrawMaterialList(float flWidth, float flHeight, float x, fl
                         if (iMatBundleIndex > 1)
                         {
                             _DeleteMaterial(pMat, matBundle);
+                            nMaterials -= 1; // Sketchy fix for deleting while iterating.
                         }
                         else
                         {

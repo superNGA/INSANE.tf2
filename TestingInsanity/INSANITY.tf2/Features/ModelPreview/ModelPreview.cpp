@@ -91,6 +91,14 @@ void ModelPreview_t::Run()
     // Inititalize entity & panel object
     if (_Initialize() == false)
         return;
+
+    // Doing this here, has a lot of benifits, like when the size is 0, Panel's paint never gets called,
+    // and earlier I was doing this in paint, so when game's tabbed out ( size set to 0 ) its never gets 
+    // set to correct size again ever.
+    if (m_pPanel != nullptr)
+    {
+        I::iPanel->SetSize(m_pPanel->GetVPanel(), m_iPanelWidth, m_iPanelHeight);
+    }
 }
 
 

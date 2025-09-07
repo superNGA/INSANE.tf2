@@ -20,6 +20,7 @@ class BaseEntity;
 class baseWeapon;
 class CUserCmd;
 
+constexpr float MAX_BACKTRACK_TIME = 0.2f; // in seconds ofcourse.
 
 ///////////////////////////////////////////////////////////////////////////
 struct BackTrackRecord_t
@@ -130,5 +131,5 @@ DECLARE_FEATURE_OBJECT(entityIterator, EntityIterator_t)
 DEFINE_TAB(BackTrack, 13)
 DEFINE_SECTION(BackTrack, "BackTrack", 6)
 DEFINE_FEATURE(
-    BackTrack_In_Ms, FloatSlider_t, BackTrack, BackTrack, 1, FloatSlider_t(0.0f, 0.0f, 800.0f)
+    BackTrack_In_Ms, FloatSlider_t, BackTrack, BackTrack, 1, FloatSlider_t(0.0f, 0.0f, 1000.0f)
 )

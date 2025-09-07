@@ -117,9 +117,10 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		static bool bMatGenPrimed = false;
 		if (bMatGenPrimed == false)
 		{
-			bMatGenPrimed = true;
-			F::materialGen.CreateDefaultMaterials();
-			//F::materialGen.m_bDefaultMatInit = true;
+			F::materialGen.m_bDefaultMatInit = F::materialGen.CreateDefaultMaterials();
+			bMatGenPrimed					 = F::materialGen.m_bDefaultMatInit;
+			
+			LOG("Material gen primed!");
 		}
 
 		bool bInGame = I::iEngine->IsInGame();

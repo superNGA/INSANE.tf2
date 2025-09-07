@@ -54,6 +54,10 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return;
 
+    // Don't do aimbot while cloaked.
+    if (pLocalPlayer->m_iClass() == TF_SPY && pLocalPlayer->InCond(FLAG_playerCond::TF_COND_STEALTHED) == true)
+        return;
+
     // Detecting the best target.
     if (SDK::InAttack(pLocalPlayer, pActiveWeapon) == false)
     {
@@ -193,6 +197,10 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
             if (flDistance >= flSwingRange)
                 continue;
 
+            // FOV check.
+            if (_IsInFOV(pLocalPlayer, vFutureEyePos, vTargetFuturePos, Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal) == false)
+                continue;
+
             // Store best target.
             if(flDistance < flBestDistance)
             {
@@ -219,7 +227,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
             if (pRecords->size() <= 0)
                 continue;
 
-            int iStartRecordIndex = std::clamp<int>(TIME_TO_TICK(flBackTrackTime) - TIME_TO_TICK(0.2f), 0, pRecords->size() - 1);
+            int iStartRecordIndex = std::clamp<int>(TIME_TO_TICK(flBackTrackTime - MAX_BACKTRACK_TIME), 0, pRecords->size() - 1);
             int iFinalRecordIndex = std::clamp<int>(TIME_TO_TICK(flBackTrackTime),                      0, pRecords->size() - 1);
 
             for (int iRecordIndex = iStartRecordIndex; iRecordIndex <= iFinalRecordIndex; iRecordIndex++)

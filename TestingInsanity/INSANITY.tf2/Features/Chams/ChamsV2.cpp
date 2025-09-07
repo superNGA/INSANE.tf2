@@ -127,10 +127,15 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
     if (records->size() <= 0)
         return;
     
-    // NOTE: A non-zero, non-nullptr backtrack record deque if promised from this point onwards.
+    // NOTE: A valid backtrack record deque with atleast one entry is promised from this point onwards.
 
-    int iWishMaterialIndex = Features::BackTrack::BackTrack::BackTrack_Cham.GetData();
-    int nTicks             = TIME_TO_TICK(F::entityIterator.GetBackTrackTime());
+
+    int iWishMaterialIndex = Features::BackTrack::BackTrack::BackTrack_Cham.GetData() - 1;
+    if (iWishMaterialIndex < 0) // no material set ?
+        return;
+
+    iWishMaterialIndex = std::clamp<int>(iWishMaterialIndex, 0, F::materialGen.GetMaterialList().size() - 1);
+    int nTicks         = TIME_TO_TICK(F::entityIterator.GetBackTrackTime());
 
     if (Features::BackTrack::BackTrack::BackTrack_Cham_Setting.GetData() == 1)
     {
@@ -138,12 +143,6 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
         BackTrackRecord_t& record       = (*records)[iRecordIndex];
 
         reinterpret_cast<T_DME>(pOriginalDME)(pVTable, modelState, renderInfo, record.m_bones);
-
-        // No material set ?
-        if (iWishMaterialIndex < 0)
-            return;
-
-        iWishMaterialIndex = std::clamp<int>(iWishMaterialIndex, 0, F::materialGen.GetMaterialList().size() - 1);
 
         // Drawing using selected material.
         const std::vector<Material_t*>& vecMaterials = F::materialGen.GetMaterialList()[iWishMaterialIndex].m_vecMaterials;
@@ -165,21 +164,16 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
     }
     else
     {
-        for (int iTick = nTicks - TIME_TO_TICK(0.2f); iTick < nTicks; iTick++)
+        int iStartTick = std::clamp<int>(nTicks - TIME_TO_TICK(MAX_BACKTRACK_TIME), 0, records->size() - 1);
+        for (int iTick = iStartTick; iTick < nTicks; iTick++)
         {
-            if (iTick >= records->size())
+            if (iTick >= records->size() || iTick < 0)
                 return;
 
             BackTrackRecord_t& record = (*records)[iTick];
 
             // Draw original
             reinterpret_cast<T_DME>(pOriginalDME)(pVTable, modelState, renderInfo, record.m_bones);
-
-            // No material set ?
-            if (iWishMaterialIndex < 0)
-                return;
-
-            iWishMaterialIndex = std::clamp<int>(iWishMaterialIndex, 0, F::materialGen.GetMaterialList().size() - 1);
 
             // Drawing using selected material.
             const std::vector<Material_t*>& vecMaterials = F::materialGen.GetMaterialList()[iWishMaterialIndex].m_vecMaterials;
