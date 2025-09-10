@@ -4,7 +4,7 @@
 // by      : INSANE
 // created : 14/06/2025
 // 
-// purpose : Hits enemy perfectly with melee weapons ( doesn't contain auto backstab )
+// purpose : Aims for you when using melee weapons, also contains backtrack auto backstab
 //-------------------------------------------------------------------------
 #pragma once
 #include "../../FeatureHandler.h"
@@ -39,7 +39,7 @@ private:
     float _GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
  
-    bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin);
+    bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin, const qangle& qTargetAngles);
     bool _IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, const vec& vTargetPos, float FOV);
 
     vec         m_vAttackerFutureEyePos;

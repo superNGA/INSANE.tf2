@@ -1,6 +1,7 @@
 // UTILITY
 #include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/ConsoleLogging.h"
+#include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/DirectX Handler/DirectXHandler.h"
 
 // SDK
@@ -35,6 +36,7 @@ MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, voi
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		F::graphics.CaptureW2SMatrix();
 		F::directxHandler.SetW2SMatrix();
 
 		if (frameCounter == 2) 

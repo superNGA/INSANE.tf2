@@ -267,9 +267,10 @@ void EntityIterator_t::_ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int i
     // Adding this back track record.
     BackTrackRecord_t record;
     pEnt->SetupBones(record.m_bones, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, CUR_TIME);
-    record.m_iFlags  = pEnt->m_fFlags();
-    record.m_iTick   = iCurrentTick;
-    record.m_vOrigin = pEnt->GetAbsOrigin();
+    record.m_iFlags      = pEnt->m_fFlags();
+    record.m_iTick       = iCurrentTick;
+    record.m_vOrigin     = pEnt->GetAbsOrigin();
+    record.m_qViewAngles = pEnt->m_angEyeAngles();
 
     auto it2 = m_mapEntInfo.find(pEnt);
     std::deque<BackTrackRecord_t>& allRecords = it2->second;

@@ -196,6 +196,11 @@ struct RGBA_t
 
 	unsigned char r, g, b, a;
 
+	void Init()
+	{
+		r = 0; g = 0; b = 0; a = 0xFF;
+	}
+
 	// OPERATORS
 	RGBA_t& operator=(RGBA_t other)
 	{
@@ -449,6 +454,36 @@ struct Vec2
 	}
 };
 
+
+struct Vec4
+{
+	float x, y, z, w;
+
+	Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
+	Vec4(float X, float Y, float Z, float W) : x(X), y(Y), z(Z), w(W) {}
+	Vec4(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+	{
+		x = static_cast<float>(r) / 255.0f;
+		y = static_cast<float>(g) / 255.0f;
+		z = static_cast<float>(b) / 255.0f;
+		w = static_cast<float>(a) / 255.0f;
+	}
+
+	void Init()
+	{
+		x = 0.0f; y = 0.0; z = 0.0f; w = 0.0f;
+	}
+
+	void Set(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+	{
+		x = static_cast<float>(r) / 255.0f;
+		y = static_cast<float>(g) / 255.0f;
+		z = static_cast<float>(b) / 255.0f;
+		w = static_cast<float>(a) / 255.0f;
+	}
+};
+
+
 struct clr_t
 {
 	clr_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
@@ -465,7 +500,24 @@ struct TFclr_t
 by the engine*/
 struct view_matrix
 {
+	constexpr view_matrix()
+	{
+		m[0][0] = 0.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+		m[1][0] = 0.0f; m[1][1] = 0.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
+		m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 0.0f; m[2][3] = 0.0f;
+		m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 0.0f;
+	}
+
 	float m[4][4];
+	const view_matrix& operator=(const view_matrix& other)
+	{
+		m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
+		m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
+		m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
+		m[3][0] = other.m[3][0];   m[3][1] = other.m[3][1];   m[3][2] = other.m[3][2];   m[3][3] = other.m[3][3];
+
+		return *this;
+	}
 };
 
 /* enum for indicating which frame stage the engine is at. Used in FrameStageNotify */

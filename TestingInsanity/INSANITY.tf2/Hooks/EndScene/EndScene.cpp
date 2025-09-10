@@ -5,7 +5,10 @@
 // Resource Handlers
 #include "../../Resources/Fonts/FontManager.h"
 
+#include "../../Features/Graphics Engine V2/Draw Objects/Line/Line.h"
+
 // To render here.
+#include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/PlayerList/PlayerList.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
@@ -67,11 +70,25 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     // Just set one font decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
 
+    // Delete this
+    {
+        static Line_t* pLine = nullptr;
+        if (pLine == nullptr)
+        {
+            pLine = new Line_t();
+            pLine->SetAs2DObject(true);
+            pLine->SetPoints(vec(0.0f, 0.0f, 0.0f), vec(500.0f, 500.0f, 0.0f));
+            pLine->SetColor(255, 255, 255, 255);
+            pLine->SetBlur(1);
+        }
+    }
+
     // Drawing graphics features.
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
             F::graphicsEngine.Run(P_DEVICE);
+            F::graphics.Run(P_DEVICE);
 
             Render::playerList.Draw();
             Render::InfoWindow.Draw();

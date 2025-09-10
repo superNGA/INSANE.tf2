@@ -33,6 +33,7 @@
 #include "../Features/Aimbot/Aimbot Projectile/AimbotProjectile.h"
 #include "../Features/Movement/Movement.h"
 #include "../Features/Projectile Engine/ProjectileEngine.h"
+#include "../Features/Graphics Engine V2/Graphics.h"
 #include "../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
 #include "../Features/ModelPreview/ModelPreview.h"
@@ -218,6 +219,7 @@ void thread1_t::_terminate(HINSTANCE instance)
 			I::iSurface->ApplyChanges();
 		}
 
+		F::graphics.Free();
 		chams.FreeAllMaterial();
 		F::modelPreview.Free();
 		F::materialGen.Free();

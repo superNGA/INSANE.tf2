@@ -4,7 +4,7 @@
 // by      : INSANE
 // created : 14/06/2025
 // 
-// purpose : Hits enemy perfectly with melee weapons ( doesn't contain auto backstab )
+// purpose : Aims for you when using melee weapons, also contains backtrack auto backstab
 //-------------------------------------------------------------------------
 
 #include "AimbotMelee.h"
@@ -168,7 +168,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
 
         // Getting local player's future eye pos.
         vec vFutureEyePos;
-        F::movementSimulation.Initialize(pLocalPlayer, true);
+        F::movementSimulation.Initialize(pLocalPlayer, false); // strafe prediction on attacker or target seems to work worse when simulating such small durations.
         for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
         {
             F::movementSimulation.RunTick();
@@ -199,6 +199,13 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
 
             // FOV check.
             if (_IsInFOV(pLocalPlayer, vFutureEyePos, vTargetFuturePos, Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal) == false)
+                continue;
+
+            // Is target visible.
+            trace_t trace;
+            ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer);
+            I::EngineTrace->UTIL_TraceRay(vFutureEyePos, vTargetFuturePos, MASK_SHOT, &filter, &trace);
+            if (trace.m_fraction < 1.0f && trace.m_entity != pTarget)
                 continue;
 
             // Store best target.
@@ -238,10 +245,16 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
                 if (vAttackerEyePos.DistTo(vBestPointOnTarget) >= flSwingRange)
                     continue;
 
-                if (_CanBackStab(pLocalPlayer, pTarget, record.m_vOrigin) == false)
+                // if we are standing inside the backtrack's Bounding Box, its sometimes doesn't register backstab.
+                // So we are doing a little collision check kinda thing here. This should tell us if we inside target's BB.
+                if (vBestPointOnTarget == vAttackerEyePos)
                     continue;
 
-                LOG("Found target backtrack @ IDX : %d ( Total record : %d )", iRecordIndex, pRecords->size());
+                if (_CanBackStab(pLocalPlayer, pTarget, record.m_vOrigin, record.m_qViewAngles) == false)
+                    continue;
+
+                LOG("Found target backtrack @ IDX : %d ( Total record : %d ) | Angles : %.2f %.2f", 
+                    iRecordIndex, pRecords->size(), record.m_qViewAngles.pitch, record.m_qViewAngles.yaw);
 
                 m_vAttackerFutureEyePos = vAttackerEyePos;
                 m_vBestTargetFuturePos  = vBestPointOnTarget;
@@ -396,7 +409,7 @@ float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pA
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin)
+bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin, const qangle& qTargetAngles)
 {
     auto* pAttackerCollidable = pAttacker->GetCollideable();
     auto* pTargetCollidable = pTarget->GetCollideable();
@@ -410,14 +423,13 @@ bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, con
 
     // Target's view angle vector
     vec vTargetViewAngles;
-    qangle qTargetAngles = pTarget->m_angEyeAngles();
     Maths::AngleVectors(qTargetAngles, &vTargetViewAngles);
     vTargetViewAngles.z = 0.0f;
     vTargetViewAngles.NormalizeInPlace();
     
 #if (DEBUG_BACKSTAB_CHECK == true)
     I::IDebugOverlay->AddLineOverlay(vAttackerOrigin, vAttackerOrigin + (vAttackerToTarget * 100.0f), 255, 0, 0, false, 3.0f);
-    I::IDebugOverlay->AddLineOverlay(vTargetOrigin,   vTargetOrigin + (vTargetViewAngles * 100.0f),   0, 255, 0, false, 3.0f);
+    I::IDebugOverlay->AddLineOverlay(vTargetOrigin, vTargetOrigin + (vTargetViewAngles * 100.0f), 0, 255, 0, false, 3.0f);
 #endif
 
     float flDotProduct = vAttackerToTarget.x * vTargetViewAngles.x + vAttackerToTarget.y * vTargetViewAngles.y;

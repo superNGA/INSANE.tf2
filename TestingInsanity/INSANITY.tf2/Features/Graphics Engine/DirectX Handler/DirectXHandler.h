@@ -30,8 +30,8 @@ private:
     bool _CompileShaders(LPDIRECT3DDEVICE9 pDevice);
     bool _DeclareVertex(LPDIRECT3DDEVICE9 pDevice);
 
-    LPD3DXEFFECT                 m_pEffect = nullptr;
-    IDirect3DStateBlock9* m_pStateBlock = nullptr;
+    LPD3DXEFFECT                 m_pEffect     = nullptr;
+    IDirect3DStateBlock9*        m_pStateBlock = nullptr;
     IDirect3DVertexDeclaration9* m_pVertexDecl = nullptr;
 };
 
