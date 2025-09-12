@@ -2,10 +2,14 @@
 #include <format>
 #include "EndScene.h"
 
+// SDK
+#include "../../SDK/class/IVEngineClient.h"
+
 // Resource Handlers
 #include "../../Resources/Fonts/FontManager.h"
 
 #include "../../Features/Graphics Engine V2/Draw Objects/Line/Line.h"
+#include "../../Features/Graphics Engine V2/Draw Objects/Box/Box.h"
 
 // To render here.
 #include "../../Features/Graphics Engine V2/Graphics.h"
@@ -72,14 +76,43 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     // Delete this
     {
-        static Line_t* pLine = nullptr;
-        if (pLine == nullptr)
+        static BoxFilled3D_t* pBox = nullptr;
+        if (pBox == nullptr)
         {
-            pLine = new Line_t();
-            pLine->SetAs2DObject(true);
-            pLine->SetPoints(vec(0.0f, 0.0f, 0.0f), vec(500.0f, 500.0f, 0.0f));
-            pLine->SetColor(255, 255, 255, 255);
-            pLine->SetBlur(1);
+            pBox = new BoxFilled3D_t();
+            pBox->SetColor(255, 255, 255, 255);
+            pBox->SetRounding(0.1);
+            //pBox->SetBlur(1);
+        }
+        qangle qViewAngles; I::iEngine->GetViewAngles(qViewAngles);
+        pBox->SetVertex(vec(100.0f), vec(0.0f), qViewAngles);
+
+
+        static Box3D_t* pOutlineInGame = nullptr;
+        if (pOutlineInGame == nullptr)
+        {
+            pOutlineInGame = new Box3D_t();
+            pOutlineInGame->SetColor(255, 0, 0, 255);
+        }
+        pOutlineInGame->SetVertex(vec(100.0f), vec(0.0f), qViewAngles);
+
+
+        static BoxFilled2D_t* pBoxScrn = nullptr;
+        if (pBoxScrn == nullptr)
+        {
+            pBoxScrn = new BoxFilled2D_t();
+            pBoxScrn->SetBlur(4);
+            pBoxScrn->SetRounding(0.1);
+            pBoxScrn->SetVertex(vec(0.0f), vec(400.0f, 200.0f, 0.0f));
+            pBoxScrn->SetColor(252, 186, 3, 100);
+        }
+
+        static Box2D_t* pOutline = nullptr;
+        if (pOutline == nullptr)
+        {
+            pOutline = new Box2D_t();
+            pOutline->SetVertex(vec(0.0f), vec(400.0f, 200.0f, 0.0f));
+            pOutline->SetColor(255, 255, 255, 255);
         }
     }
 

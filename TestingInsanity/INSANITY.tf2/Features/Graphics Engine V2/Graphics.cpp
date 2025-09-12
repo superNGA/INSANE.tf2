@@ -26,62 +26,6 @@ void Graphics_t::Run(LPDIRECT3DDEVICE9 pDevice)
     _DrawList(&m_traingles, pDevice);
 
     m_pStateBlock->Apply();
-    
-    return;
-
-    m_pStateBlock->Capture();
-
-
-    struct Point_t { vec m_vPoint; float r, g, b, a; };
-    Point_t vecPoints[4] = {
-        {{  0.0f,    0.0f, 0.0f}, 1.0f, 0.0f, 0.0f, 1.0f},
-        {{-10.0f,  -10.0f, 0.0f}, 1.0f, 0.0f, 0.0f, 1.0f},
-        {{-10.0f,   10.0f, 0.0f}, 1.0f, 0.0f, 0.0f, 1.0f},
-    };
-
-    static IDirect3DVertexBuffer9* pVertexBuffer = nullptr;
-    if (pVertexBuffer == nullptr)
-    {
-        pDevice->CreateVertexBuffer(
-            sizeof(vecPoints), // size to allocate to buffer.
-            D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
-            0,
-            D3DPOOL_DEFAULT,
-            &pVertexBuffer,
-            nullptr
-        );
-    }
-
-
- 
-    Point_t* pBuffer     = nullptr;
-    auto     bLockResult = pVertexBuffer->Lock(0, sizeof(vecPoints), reinterpret_cast<void**>(&pBuffer), D3DLOCK_DISCARD);
-    if (FAILED(bLockResult) == true || pBuffer == nullptr)
-    {
-        FAIL_LOG("FAILED LOCKING BUFFER");
-        return;
-    }
-
-    memcpy(pBuffer, vecPoints, sizeof(vecPoints));
-    pVertexBuffer->Unlock();
-
-
-    {
-        pDevice->SetVertexDeclaration(m_pVertexDecl);
-        pDevice->SetStreamSource(0, pVertexBuffer, 0, sizeof(Point_t));
-
-        m_pEffect->SetTechnique("simple1");
-        UINT numPasses = 0;
-        m_pEffect->Begin(&numPasses, 0);
-
-        m_pEffect->BeginPass(0);
-        pDevice->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 1);
-        m_pEffect->EndPass();
-
-        m_pEffect->End();
-    }
-
-    m_pStateBlock->Apply();
 }
 
 
@@ -89,8 +33,8 @@ void Graphics_t::Run(LPDIRECT3DDEVICE9 pDevice)
 ///////////////////////////////////////////////////////////////////////////
 void Graphics_t::Free()
 {
-    m_lines.FreeBuffer();
-    m_traingles.FreeBuffer();
+    m_lines.FreeBufferAndDeleteDrawObj();
+    m_traingles.FreeBufferAndDeleteDrawObj();
 }
 
 
@@ -110,6 +54,8 @@ void Graphics_t::CaptureW2SMatrix()
 void Graphics_t::RegisterInLineList(IDrawObj_t* pDrawObj)
 {
     m_lines.RegisterDrawObj(pDrawObj);
+    
+    LOG("Registered traingle list object. Verticies [ %d ]", pDrawObj->GetVertexCount());
 }
 
 
@@ -118,6 +64,8 @@ void Graphics_t::RegisterInLineList(IDrawObj_t* pDrawObj)
 void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 {
     m_traingles.RegisterDrawObj(pDrawObj);
+
+    LOG("Registered traingle list object. Verticies [ %d ]", pDrawObj->GetVertexCount());
 }
 
 
@@ -125,11 +73,12 @@ void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 ///////////////////////////////////////////////////////////////////////////
 void Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
-    // if not found in line list, then only find in traingle list.
-    if (m_lines.RemoveDrawObj(pDrawObj) == false)
-    {
-        m_traingles.RemoveDrawObj(pDrawObj);
-    }
+    // Searching in line list first.
+    if (m_lines.RemoveDrawObj(pDrawObj) == true)
+        return;
+
+    // If not found in line list, try to find in Traingle list.
+    m_traingles.RemoveDrawObj(pDrawObj);
 }
 
 
@@ -191,6 +140,7 @@ bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
     int iScreenHeight = 0; int iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
     m_pEffect->SetFloat("g_iScreenHeight", static_cast<float>(iScreenHeight));
     m_pEffect->SetFloat("g_iScreenWidth",  static_cast<float>(iScreenWidth));
+    m_pEffect->SetFloat("g_flIsInGame",    I::iEngine->IsInGame() == true ? 1.0f : 0.0f); // Let the shader know if we are in game or not.
 
     if (I::iEngine->IsInGame() == true)
     {
@@ -213,13 +163,24 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     pData->m_free.store(false);
 
+    bool bIsInGame = I::iEngine->IsInGame();
     // Total number of vertex to dump to buffer.
     uint64_t nVertex = 0;
     {
         for (const IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
         {
+            // Don't draw 3d objects in lobby.
+            if (pDrawObj->m_bIs3D == true && bIsInGame == false)
+                continue;
+            
             nVertex += pDrawObj->GetVertexCount();
         }
+    }
+
+    if (nVertex <= 0)
+    {
+        pData->m_free.store(true);
+        return;
     }
 
     // Make sure buffer size is sufficient.
@@ -233,12 +194,17 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     if (FAILED(bLockResult) == true || pBuffer == nullptr)
     {
         FAIL_LOG("FAILED LOCKING BUFFER");
+        pData->m_free.store(true);
         return;
     }
 
     // Write data to buffer.
     for (IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
     {
+        // Don't draw 3D objects in lobby.
+        if (pDrawObj->m_bIs3D == true && bIsInGame == false)
+            continue;
+
         uint64_t nBytesToWrite = sizeof(Vertex) * pDrawObj->GetVertexCount();
         memcpy(pBuffer, pDrawObj->GetVertexData(), nBytesToWrite);
     
@@ -249,6 +215,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     // Finally, draw whatever is in the buffer.
     {
+        pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
         pDevice->SetVertexDeclaration(m_pVertexDecl);
         pDevice->SetStreamSource(0, pData->m_pBuffer, 0, sizeof(Vertex));
 
@@ -263,7 +230,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
         m_pEffect->End();
     }
 
-    LOG("Drew [ %d ] objects", nVertex / pData->m_iVertexPerPrimitive);
+    //LOG("Drew [ %d ] objects", nVertex / pData->m_iVertexPerPrimitive);
 
     pData->m_free.store(true);
 }
@@ -304,13 +271,14 @@ bool Graphics_t::_DeclareVertex(LPDIRECT3DDEVICE9 pDevice)
 {
     static _D3DVERTEXELEMENT9 vertexDecl[] =
     {
-        {0, 0,                                                   D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
-        {0, sizeof(vec),                                         D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
-        {0, sizeof(vec) + (sizeof(float) * 4),                   D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4,               D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,           D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,      D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 , D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
+        {0, 0,                                                      D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
+        {0, sizeof(vec),                                            D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
+        {0, sizeof(vec) + (sizeof(float) * 4),                      D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4,                  D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,              D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,         D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 ,    D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4, D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 5}, // scale Y 
         D3DDECL_END()
     };
 
@@ -421,11 +389,11 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void VertexBuffer_t::FreeBuffer()
+void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
 {
     while (m_free.load() == false)
     {
-        LOG("Waiting for vertex buffer data to be freed.");
+        FAIL_LOG("Waiting for vertex buffer data to be free-ed.");
     }
 
     m_free.store(false);
@@ -434,10 +402,16 @@ void VertexBuffer_t::FreeBuffer()
         m_pBuffer->Release();
 
     for (IDrawObj_t* pDrawObj : m_vecDrawObjs)
-        delete pDrawObj;
+    {
+        RemoveDrawObj(pDrawObj);
+        pDrawObj->DeleteThis();
+    }
     
     for (IDrawObj_t* pDrawObj : m_vecTempBuffer)
-        delete pDrawObj;
+    {
+        RemoveDrawObj(pDrawObj);
+        pDrawObj->DeleteThis();
+    }
 
     m_pBuffer = nullptr;
 
