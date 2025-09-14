@@ -119,6 +119,7 @@ struct Input_t
     float  m_bInvertColor   : TEXCOORD4;
     float  m_flScaleY       : TEXCOORD5;
     float  m_flCircleThickness : TEXCOORD6; // for value > 0, we assume this draw obj as cirle, else not a circle.
+    float  m_flRGBAnimSpeed : TEXCOORD7;    // for value > 0, we override color to hue value corrosponding to pixels relative uv.
 };
 
 
@@ -133,6 +134,7 @@ struct Output_t
     float  m_bInvertColor   : TEXCOORD4;
     float  m_flScaleY       : TEXCOORD5;
     float  m_flCircleThickness : TEXCOORD6; // for value > 0, we assume this draw obj as cirle, else not a circle.
+    float  m_flRGBAnimSpeed : TEXCOORD7;    // for value > 0, we override color to hue value corrosponding to pixels relative uv.
 };
 
 // Global Vars...
@@ -145,9 +147,10 @@ sampler2D SceneSampler = sampler_state
     MipFilter = NONE;
 };
 
-int      g_flIsInGame    = 0;
-float    g_flScreenHeight = 0.0f;
-float    g_flScreenWidth  = 0.0f;
+float    g_flTimeSinceEpochInSec = 0.0f;
+int      g_flIsInGame            = 0;
+float    g_flScreenHeight        = 0.0f;
+float    g_flScreenWidth         = 0.0f;
 float4x4 g_worldToScreen; // world to screen matrix.
 
 
@@ -193,13 +196,14 @@ Output_t VS(Input_t input)
     }
     
     // Copy essential imformation to output ( required in pixel shader )
-    result.m_bInvertColor  = input.m_bInvertColor;
-    result.m_flRounding    = input.m_flRounding;
-    result.m_flScaleY      = input.m_flScaleY;
-    result.m_flBlurAmmount = input.m_flBlurAmmount;
-    result.m_vRelativeUV   = input.m_vRelativeUV;
-    result.m_clr           = input.m_clr;
+    result.m_bInvertColor      = input.m_bInvertColor;
+    result.m_flRounding        = input.m_flRounding;
+    result.m_flScaleY          = input.m_flScaleY;
+    result.m_flBlurAmmount     = input.m_flBlurAmmount;
+    result.m_vRelativeUV       = input.m_vRelativeUV;
+    result.m_clr               = input.m_clr;
     result.m_flCircleThickness = input.m_flCircleThickness;
+    result.m_flRGBAnimSpeed    = input.m_flRGBAnimSpeed;
     
     return result;
 }
@@ -252,99 +256,202 @@ float Vec2LengthSqr(float2 vec)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+float3 RGBtoHSV(float3 rgb)
+{
+    float cMax = max(rgb.r, max(rgb.g, rgb.b));
+    float cMin = min(rgb.r, min(rgb.g, rgb.b));
+    float delta = cMax - cMin;
+
+    float h = 0.0f;
+    if (delta > 0.00001f)
+    {
+        if (cMax == rgb.r)
+        {
+            h = (rgb.g - rgb.b) / delta;
+            if (h < 0.0f)
+                h += 6.0f;
+        }
+        else if (cMax == rgb.g)
+        {
+            h = (rgb.b - rgb.r) / delta + 2.0f;
+        }
+        else
+        {
+            h = (rgb.r - rgb.g) / delta + 4.0f;
+        }
+        h /= 6.0f;
+    }
+
+    float s = (cMax <= 0.0f) ? 0.0f : (delta / cMax);
+    float v = cMax;
+
+    return float3(h, s, v);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float3 HSVtoRGB(float3 hsv)
+{
+    float h = hsv.x * 6.0f;
+    float s = hsv.y;
+    float v = hsv.z;
+
+    int i = (int) floor(h);
+    float f = h - i;
+    float p = v * (1.0f - s);
+    float q = v * (1.0f - s * f);
+    float t = v * (1.0f - s * (1.0f - f));
+
+    if (i == 0)
+        return float3(v, t, p);
+    if (i == 1)
+        return float3(q, v, p);
+    if (i == 2)
+        return float3(p, v, t);
+    if (i == 3)
+        return float3(p, q, v);
+    if (i == 4)
+        return float3(t, p, v);
+    return float3(v, p, q);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float4 HandleBlur(const Output_t output, const float4 tintClr)
+{
+    float4 vAverageClr = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        
+    if ((int) output.m_flBlurAmmount > 0)
+    {
+        for (int i = 1; i < MAX_BLUR; i++)
+        {
+            vAverageClr += GetClrAverage(output.m_vAbsUV, i);
+                
+            if (i >= (int) output.m_flBlurAmmount)
+                break;
+        }
+            
+        vAverageClr /= output.m_flBlurAmmount;
+    }
+    else
+    {
+        vAverageClr = GetClrAverage(output.m_vAbsUV, 0);
+    }
+            
+    // Lerping rgb toward the actual color of this pixel set by the caller.
+    vAverageClr.rgb = lerp(vAverageClr.rgb, tintClr, output.m_clr.a);
+    vAverageClr.a   = 1.0f;
+    
+    return vAverageClr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float4 InvertColors(const float4 clr)
+{
+    return saturate(float4(1.0f - clr.r, 1.0f - clr.g, 1.0f - clr.b, clr.a));
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RoundCorners(const Output_t output)
+{
+    float2 vUVScaled      = float2(output.m_vRelativeUV.x, output.m_vRelativeUV.y * output.m_flScaleY);
+        
+    float2 vClosestCorner = float2(step(0.5f, output.m_vRelativeUV.x), step(0.5f, output.m_vRelativeUV.y));
+    float2 vCenter        = float2(0.5f, 0.5f);
+        
+    float2 vDirection = (vClosestCorner - vCenter);
+        // Since the center is constant, and closest corner has coordinates either 1 or 0. the vector magnitude
+        // from the center to any of the corner is gaurantted to be 0.5 * sqrt(2). and sqrt fns in shader are (maybe) 
+        // expensive in shaders, so I just slapped in the constant value here.
+    vDirection           /= 0.5f * SQRT_2; //Vec2Length(vDirection); // Unit vector from center to closest corner.
+    float2 vAnchor       = vCenter + (vDirection * ((0.5f - output.m_flRounding) * SQRT_2));
+    float2 vAnchorScaled = float2(vAnchor.x, vAnchor.y - (vClosestCorner.y - (vClosestCorner.y * output.m_flScaleY))); // for top left & right corners, this won't move the anchor.y at all, cause closetCorner.y is 0
+        
+        // now scaling closest corner
+    vClosestCorner.y *= output.m_flScaleY;
+        
+        // Distance of point from closest corner.
+    float2 vCornerToPoint      = vUVScaled - vClosestCorner;
+    float  flDistSqrFromCorner = Vec2LengthSqr(vCornerToPoint);
+        
+        // Distance of point from "best" anchor point.
+    float2 vAnchorToPoint      = vUVScaled - vAnchorScaled;
+    float  flDistSqrFromAnchor = Vec2LengthSqr(vAnchorToPoint);
+        
+    if (flDistSqrFromAnchor > (output.m_flRounding * output.m_flRounding) && flDistSqrFromCorner < (output.m_flRounding * output.m_flRounding))
+        discard;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void DiscardNonCirclePixels(const Output_t output)
+{
+    float2 vCenter = float2(0.5f, 0.5f);
+    float2 vCenterToPoint = output.m_vRelativeUV.xy - vCenter;
+        
+    if (Vec2LengthSqr(vCenterToPoint) > 0.5f * 0.5f)
+        discard;
+    
+    if (Vec2LengthSqr(vCenterToPoint) < (0.5f * 0.5f) - output.m_flCircleThickness)
+        discard;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float4 RGBfy(const Output_t pixel)
+{
+    float4 result = pixel.m_clr;
+    
+    float flHue = ((pixel.m_vRelativeUV.x * pixel.m_vRelativeUV.x) + (pixel.m_vRelativeUV.y * pixel.m_vRelativeUV.y)) / 2.0f;
+    flHue       = frac(flHue + (g_flTimeSinceEpochInSec * pixel.m_flRGBAnimSpeed));
+    
+    float3 hsv = float3(saturate(flHue), 1.0f, 1.0f);
+    result.rgb = HSVtoRGB(hsv);
+    
+    return result;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 float4 PS(Output_t output) : COLOR
 {
     float4 resultClr = output.m_clr;
     
-    // Blur-ing
-    // a object, with blur set to 0, when drawn will draw like nothings draw below it.
-    // We can use it to create "windows" in objects that are already drawn.
-    if ((int)output.m_flBlurAmmount == 0)
+    // RGB-ing.
+    if(output.m_flRGBAnimSpeed >= 0.0f)
     {
-        float4 vAverageClr = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        
-        // Getting this pixels color from "back buffer" or whatever TF that shit is called.
-        vAverageClr = GetClrAverage(output.m_vAbsUV, 0);
-
-        // Moving it towards actual color set by caller.        
-        float3 tint     = float3(output.m_clr.rgb);
-        vAverageClr.rgb = lerp(vAverageClr.rgb, tint, output.m_clr.a);
-        
-        vAverageClr.a = 1.0f;
-        resultClr     = vAverageClr;
+        resultClr = RGBfy(output);
     }
-    else if ((int)output.m_flBlurAmmount > 0)
+    
+    // Blur-ing
+    if ((int)output.m_flBlurAmmount >= 0)
     {
-        float4 vAverageClr = float4(0.0f, 0.0f, 0.0f, 0.0f);
-        
-        for (int i = 1; i < MAX_BLUR; i++)
-        {
-            vAverageClr += GetClrAverage(output.m_vAbsUV, i);
-            
-            if (i >= (int)output.m_flBlurAmmount)
-                break;
-        }
-        
-        vAverageClr /= output.m_flBlurAmmount;
-            
-        // Lerping rgb toward the actual color of this pixel set by the caller.
-        float3 tint     = float3(output.m_clr.rgb);
-        vAverageClr.rgb = lerp(vAverageClr.rgb, tint, output.m_clr.a);
-        vAverageClr.a   = 1.0f;
-        
-        
-        resultClr = vAverageClr;
+        resultClr = HandleBlur(output, resultClr);
     }
     
     // Inverting colors.
     if (output.m_bInvertColor == 1.0f)
     {
-        resultClr.r = 1.0f - resultClr.r;
-        resultClr.g = 1.0f - resultClr.g;
-        resultClr.b = 1.0f - resultClr.b;
+        resultClr = InvertColors(resultClr);
     }
     
     // Rounding Corners
     if (output.m_flScaleY > 0.0f && output.m_flRounding > 0.0f && output.m_flCircleThickness <= 0.0f) // must not be a circle.
     {
-        float2 vUVScaled = float2(output.m_vRelativeUV.x, output.m_vRelativeUV.y * output.m_flScaleY);
-        
-        float2 vClosestCorner = float2(step(0.5f, output.m_vRelativeUV.x), step(0.5f, output.m_vRelativeUV.y));        
-        float2 vCenter        = float2(0.5f, 0.5f);
-        
-        float2 vDirection     = (vClosestCorner - vCenter);
-        // Since the center is constant, and closest corner has coordinates either 1 or 0. the vector magnitude
-        // from the center to any of the corner is gaurantted to be 0.5 * sqrt(2). and sqrt fns in shader are (maybe) 
-        // expensive in shaders, so I just slapped in the constant value here.
-        vDirection           /= 0.5f * SQRT_2; //Vec2Length(vDirection); // Unit vector from center to closest corner.
-        float2 vAnchor        = vCenter + (vDirection * ((0.5f - output.m_flRounding) * SQRT_2));
-        float2 vAnchorScaled  = float2(vAnchor.x, vAnchor.y - (vClosestCorner.y - (vClosestCorner.y * output.m_flScaleY))); // for top left & right corners, this won't move the anchor.y at all, cause closetCorner.y is 0
-        
-        // now scaling closest corner
-        vClosestCorner.y *= output.m_flScaleY;
-        
-        // Distance of point from closest corner.
-        float2 vCornerToPoint      = vUVScaled - vClosestCorner;
-        float  flDistSqrFromCorner = Vec2LengthSqr(vCornerToPoint);
-        
-        // Distance of point from "best" anchor point.
-        float2 vAnchorToPoint      = vUVScaled - vAnchorScaled;
-        float  flDistSqrFromAnchor = Vec2LengthSqr(vAnchorToPoint);
-        
-        if(flDistSqrFromAnchor > (output.m_flRounding * output.m_flRounding) && flDistSqrFromCorner < (output.m_flRounding * output.m_flRounding))
-            discard;
-
+        RoundCorners(output); // just discards unwanted pixels.
     }
     else if(output.m_flCircleThickness > 0.0f) // doing circle math here.
     {
-        float2 vCenter = float2(0.5f, 0.5f);
-        float2 vCenterToPoint = output.m_vRelativeUV.xy - vCenter;
-        
-        if (Vec2LengthSqr(vCenterToPoint) > 0.5f * 0.5f)
-            discard;
-    
-        if(Vec2LengthSqr(vCenterToPoint) < (0.5f * 0.5f) - output.m_flCircleThickness)
-            discard;
+        DiscardNonCirclePixels(output);
     }
     
     return resultClr;

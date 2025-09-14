@@ -44,10 +44,10 @@ namespace directX {
 ///////////////////////////////////////////////////////////////////////////
 HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 {
-	if (!device)
-	{
-		device = P_DEVICE;
-	}
+    if (!device)
+    {
+        device = P_DEVICE;
+    }
 
     /* Doing the backend stuff */
     if (!UI::UI_initialized_DX9 || !UI::WIN32_initialized)
@@ -75,6 +75,20 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     // Just set one decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
+
+    if(false)
+    {
+        static BoxFilled2D_t* pBox{ nullptr };
+        if (pBox == nullptr)
+        {
+            pBox = new BoxFilled2D_t();
+            pBox->SetVertex(vec(0.0f), vec(500.0f));
+            pBox->SetColor(255, 255, 255, 30);
+            pBox->SetRounding(10.0f);
+            pBox->SetRGBAnimSpeed(0.2f);
+            pBox->SetBlur(4);
+        }
+    }
 
     // Drawing graphics features.
     {
@@ -137,7 +151,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* calling original function */
-	auto result = O_endscene(P_DEVICE);
+    auto result = O_endscene(P_DEVICE);
 
     return result;
 }

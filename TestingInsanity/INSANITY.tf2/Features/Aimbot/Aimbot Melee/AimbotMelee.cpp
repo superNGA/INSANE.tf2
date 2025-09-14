@@ -37,26 +37,24 @@
 #include "../../../Extra/math.h"
 #include "../../ImGui/InfoWindow/InfoWindow_t.h"
 
+
 #define DEBUG_BACKSTAB_CHECK false
 
-constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
-
-// NOTE : WE ARE ASSUMING THAT ALL MELEE'S HAVE SMACK DELAY, AND SPY KNIFE ALSO HAS SMACK DELAY UNLESS BACKSTAB
-// NOTE : m_flSmackTime for Spy is messed up, so we can't relie on it to set our angles on the perfect tick
-
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
+bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
+    // NOTE : Output false means, no target has been found.
+    //        Output true  means,  a target has been found.
     PROFILE_FUNCTION("Melee Aimbot");
 
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
-        return;
+        return false;
 
     // Don't do aimbot while cloaked.
     if (pLocalPlayer->m_iClass() == TF_SPY && pLocalPlayer->InCond(FLAG_playerCond::TF_COND_STEALTHED) == true)
-        return;
+        return false;
 
     // Detecting the best target.
     if (SDK::InAttack(pLocalPlayer, pActiveWeapon) == false)
@@ -65,7 +63,7 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     }
 
     if (m_pBestTarget == nullptr)
-        return;
+        return false;
 
     // Auto firing.
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true)
@@ -90,6 +88,8 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         // Reset everything once swing is done.
         Reset();
     }
+
+    return true;
 }
 
 
@@ -311,48 +311,6 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const v
     vClosestPoint.z = std::clamp(vEyePos.z, vHullMin.z, vHullMax.z);
 
     return vClosestPoint;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget)
-{
-    float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
-    
-    // eye pos, swing range line, enemy collision hull
-    vec vClosestPointOnEnemyHull = _GetClosestPointOnEntity(pAttacker, m_vAttackerFutureEyePos, pTarget, m_vBestTargetFuturePos);
-    vec vSwingEndPoint           = m_vAttackerFutureEyePos + ((vClosestPointOnEnemyHull - m_vAttackerFutureEyePos).NormalizeInPlace() * flSwingRange);
-
-    // Visualizing swing range using line
-    I::IDebugOverlay->AddLineOverlay(m_vAttackerFutureEyePos, vSwingEndPoint, 255, 255, 255, false, PREDICTION_DEBUG_DRAWING_LIFE);
-    
-    // Visualizing eye pos using box
-    constexpr vec EYE_POS_BOX_MAX(3.0f, 3.0f, 3.0f);
-    I::IDebugOverlay->AddBoxOverlay(m_vAttackerFutureEyePos, 
-        EYE_POS_BOX_MAX, EYE_POS_BOX_MAX * -1.0f, 
-        qangle(0.0f, 0.0f, 0.0f),
-        255, 0, 0, 50.0f, PREDICTION_DEBUG_DRAWING_LIFE);
-
-    // Target's Collision hull mins, maxs, angles
-    auto* pCollidable                  = pTarget->GetCollideable();
-    const vec& vOBBMin                 = pCollidable->OBBMins();
-    const vec& vOBBMax                 = pCollidable->OBBMaxs();
-    const qangle& qCollisionHullAngles = pCollidable->GetCollisionAngles();
-
-    // Visualizing Target's future collision hull using box
-    I::IDebugOverlay->AddBoxOverlay(
-        m_vBestTargetFuturePos,             
-        vOBBMin, vOBBMax,
-        qCollisionHullAngles,
-        134, 173, 153, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT GREEN
-
-    // Visualizing Target's CURRENT collision hull using box
-    I::IDebugOverlay->AddBoxOverlay(
-        m_vBestTargetPosAtLock,
-        vOBBMin, vOBBMax,
-        qCollisionHullAngles,
-        168, 126, 137, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT RED
 }
 
 

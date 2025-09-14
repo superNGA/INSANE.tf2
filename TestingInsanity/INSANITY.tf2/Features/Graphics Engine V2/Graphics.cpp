@@ -177,6 +177,12 @@ bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
     m_pEffect->SetFloat("g_flScreenWidth",  static_cast<float>(iScreenWidth));
     m_pEffect->SetFloat("g_flIsInGame",    I::iEngine->IsInGame() == true ? 1.0f : 0.0f); // Let the shader know if we are in game or not.
 
+    // Here I am trying to retain some precision cause static_cast<double>(iTimeSinceEpochInMs) is a big number and storing in a float, will cause
+    // poor accuracy cause of poor step size, so we reduce the convert it to seconds first, so its a smaller number and then store it in float, so
+    // we don't lose as much accuracy cause me a smart ass nigga :)
+    int64_t iTimeSinceEpochInMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    m_pEffect->SetFloat("g_flTimeSinceEpochInSec", static_cast<float>(static_cast<double>(iTimeSinceEpochInMs) / 1000.0));
+
     if (I::iEngine->IsInGame() == true)
     {
         m_pEffect->SetMatrix("g_worldToScreen", reinterpret_cast<D3DXMATRIX*>(&m_vW2SMatrix));
@@ -204,8 +210,12 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     {
         for (const IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
         {
-            // Don't draw 3d objects in lobby.
-            if (pDrawObj->m_bIs3D == true && bIsInGame == false)
+            // Don't draw objects that don't wanna be drawn in game.
+            if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
+                continue;
+
+            // Don't draw 3D objects & objects don't wanna be drawn in lobby ( like FOV circles n shit )
+            if (bIsInGame == false && pDrawObj->ShouldDrawInLobby() == false)
                 continue;
             
             nVertex += pDrawObj->GetVertexCount();
@@ -236,8 +246,12 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     // Write data to buffer.
     for (IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
     {
-        // Don't draw 3D objects in lobby.
-        if (pDrawObj->m_bIs3D == true && bIsInGame == false)
+        // Don't draw objects that don't wanna be drawn in game.
+        if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
+            continue;
+
+        // Don't draw 3D objects & objects don't wanna be drawn in lobby ( like FOV circles n shit )
+        if (bIsInGame == false && pDrawObj->ShouldDrawInLobby() == false)
             continue;
 
         uint64_t nBytesToWrite = sizeof(Vertex) * pDrawObj->GetVertexCount();
@@ -306,15 +320,16 @@ bool Graphics_t::_DeclareVertex(LPDIRECT3DDEVICE9 pDevice)
 {
     static _D3DVERTEXELEMENT9 vertexDecl[] =
     {
-        {0, 0,                                                          D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
-        {0, sizeof(vec),                                                D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
-        {0, sizeof(vec) + (sizeof(float) * 4),                          D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4,                      D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,                  D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,             D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 ,        D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4,     D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 5}, // scale Y 
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4 + 4, D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 6}, // circle thickness.
+        {0, 0,                                                              D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
+        {0, sizeof(vec),                                                    D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
+        {0, sizeof(vec) + (sizeof(float) * 4),                              D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4,                          D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,                      D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,                 D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 ,            D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4,         D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 5}, // scale Y 
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4 + 4,     D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 6}, // circle thickness.
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4 + 4 + 4, D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 7}, // RGB anim speed.
         D3DDECL_END()
     };
 

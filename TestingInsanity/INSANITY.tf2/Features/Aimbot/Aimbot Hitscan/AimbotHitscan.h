@@ -9,7 +9,7 @@ class CUserCmd;
 class AimbotHitscan_t
 {
 public:
-    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult);
+    bool Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult);
     void Reset();
 
 private:

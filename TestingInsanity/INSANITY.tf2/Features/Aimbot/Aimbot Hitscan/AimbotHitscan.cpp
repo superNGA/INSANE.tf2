@@ -20,10 +20,10 @@
 MAKE_SIG(CBaseAnimatinng_LookUpBones, "40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL, int64_t, void*, const char*)
 
 
-void AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult)
+bool AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult)
 {
     if (Features::Aimbot::HitscanAimbot::Enable.IsActive() == false)
-        return;
+        return false;
 
     // Getting Target.
     bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon);
@@ -34,7 +34,7 @@ void AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 
     // Ain't got no target to attack
     if (m_pBestTarget == nullptr)
-        return;
+        return false;
 
     // Wanna Auto-Fire ?
     if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true && Features::Aimbot::HitscanAimbot::AutoFire.IsActive() == true)
@@ -63,6 +63,8 @@ void AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
             pCmd->tick_count -= TIME_TO_TICK(0.190f);
         }
     }
+
+    return true;
 }
 
 

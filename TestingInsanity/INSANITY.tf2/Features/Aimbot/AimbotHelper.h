@@ -62,7 +62,7 @@ private:
     void _ConstructAimbotTargetData();
     void _ClearAimbotData();
 
-    void _DrawFOVCircle(const float FOV);
+    void _DrawFOVCircle(const float FOV, bool bTargetFound);
     float m_flGameFOV = -1.0f;
 };
 ///////////////////////////////////////////////////////////////////////////

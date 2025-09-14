@@ -10,17 +10,17 @@
 #include "../../FeatureHandler.h"
 #include "../../../SDK/class/Basic Structures.h"
 
+
 class CUserCmd;
 class BaseEntity;
 class baseWeapon;
 
-// TODO : Swing range optimization ( We can use the corner of the 
-//                                  melee swing hull for more range. )
 
+///////////////////////////////////////////////////////////////////////////
 class AimbotMelee_t
 {
 public:
-    void RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
+    bool RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
 
 private:
@@ -33,7 +33,6 @@ private:
     const vec _GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const;
     const vec _GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerEyePos, const BaseEntity* pTarget, const vec& vTargetOrigin) const;
 
-    void _DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget);
 
     // Determines swing range for our current weapon.
     float _GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
@@ -48,6 +47,9 @@ private:
     BaseEntity* m_pBestTarget  = nullptr;
     int         m_iBestTargetsTick = 0;
 };
+///////////////////////////////////////////////////////////////////////////
+
+
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
 

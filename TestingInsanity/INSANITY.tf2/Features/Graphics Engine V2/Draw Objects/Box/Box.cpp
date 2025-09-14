@@ -95,12 +95,21 @@ void IBoxFilled_t::SetColor(RGBA_t clr, int vertex)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void IBoxFilled_t::SetRounding(float flRounding)
+void IBoxFilled_t::SetRGBAnimSpeed(const float flAnimSpeed)
 {
-    flRounding = std::clamp<float>(flRounding, 0.0f, 1.0f);
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flRGBAnimSpeed = flAnimSpeed;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void IBoxFilled_t::SetRounding(float flRoundingInPixels)
+{
+    flRoundingInPixels = std::clamp<float>(flRoundingInPixels, 0.0f, 1.0f);
 
     for (int i = 0; i < GetVertexCount(); i++)
-        m_vertex[i].m_flRounding = flRounding;
+        m_vertex[i].m_flRounding = flRoundingInPixels;
 }
 
 
@@ -210,6 +219,21 @@ void BoxFilled2D_t::SetVertex(const vec& vMin, const vec& vMax)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void BoxFilled2D_t::SetRounding(float flRoundingInPixels)
+{
+    assert(flRoundingInPixels >= 0.0f && "Rounding is being set to negative value");
+    flRoundingInPixels = Maths::MAX<float>(flRoundingInPixels, 0.0f);
+
+    float flObjWidthInPixels = fabsf(m_vertex[VertexType_t::VertexType_TopLeft].m_vPos.x - m_vertex[VertexType_t::VertexType_BottomRight].m_vPos.x);
+    float flRoundingPercent  = (1.0f / flObjWidthInPixels) * flRoundingInPixels;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flRounding = flRoundingPercent;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 IBox_t::IBox_t()
 {
     F::graphics.RegisterInLineList(this);
@@ -298,6 +322,15 @@ void IBox_t::SetColor(RGBA_t clr, int vertex)
     }
     default: break;
     }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void IBox_t::SetRGBAnimSpeed(const float flAnimSpeed)
+{
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flRGBAnimSpeed = flAnimSpeed;
 }
 
 

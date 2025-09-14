@@ -25,7 +25,8 @@ public:
         VertexType_BottomRight
     };
 
-    virtual void SetColor(RGBA_t clr, int vertex) override final;
+    void SetColor(RGBA_t clr, int vertex) override final;
+    void SetRGBAnimSpeed(const float flAnimSpeed) override final;
 
 protected:
     void InitRelativeUV() override final;

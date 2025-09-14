@@ -25,8 +25,10 @@ public:
         VertexType_BottomRight
     };
     void         SetColor(RGBA_t clr, int vertex) override final;
-    
-    void         SetRounding(float flRounding);
+    void         SetRGBAnimSpeed(const float flAnimSpeed) override final;
+
+    // Functions unique to this class ( not inherited )
+    virtual void SetRounding(float flRoundingInPixels);
 
 protected:
     void InitRelativeUV() override final;
@@ -61,6 +63,7 @@ public:
         VertexType_TopLeft_Dup
     };
     void SetColor(RGBA_t clr, int vertex) override final; 
+    void SetRGBAnimSpeed(const float flAnimSpeed) override final;
 
 protected:
     void InitRelativeUV() override final;
@@ -97,6 +100,8 @@ public:
 
     void InitDimension() override final;
     void SetVertex(const vec& vMin, const vec& vMax);
+
+    void SetRounding(float flRoundingInPixels) override final;
 };
 ///////////////////////////////////////////////////////////////////////////
 

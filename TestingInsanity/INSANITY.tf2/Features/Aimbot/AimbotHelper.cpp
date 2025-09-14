@@ -31,10 +31,11 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
 
     auto  iProjectileType = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_iProjectile;
     float flAimbotFOV     = 0.0f;
+    bool  bTargetFound    = false;
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
-        F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
 
         if(Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsDisabled() == false)
             flAimbotFOV = Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal;
@@ -42,21 +43,21 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
         // surface-to-air freedom delivery system :)
-        F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
 
         if(Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsDisabled() == false)
             flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
     }
     else
     {
-        F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
 
         if(Features::Aimbot::HitscanAimbot::Enable.IsDisabled() == false)
             flAimbotFOV = Features::Aimbot::HitscanAimbot::FOV.GetData().m_flVal;
     }
 
 
-    _DrawFOVCircle(flAimbotFOV);
+    _DrawFOVCircle(flAimbotFOV, bTargetFound);
 }
 
 
@@ -167,7 +168,7 @@ void AimbotHelper_t::_ClearAimbotData()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void AimbotHelper_t::_DrawFOVCircle(const float FOV)
+void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
 {
     // Game FOV hasn't been told to us yet ( i.e. not set through IClientMode::OverrideView() yet). ( IK that its not the best way of doing this. )
     if (m_flGameFOV < 0.0f)
@@ -187,11 +188,9 @@ void AimbotHelper_t::_DrawFOVCircle(const float FOV)
     {
         pCircle = new Circle2D_t();
         pCircle->SetColor(255, 255, 255, 255);
-        pCircle->SetColor(RGBA_t(255, 0, 0, 255),   ICircle_t::VertexType_t::VertexType_TopLeft);
-        pCircle->SetColor(RGBA_t(0, 255, 0, 255),   ICircle_t::VertexType_t::VertexType_TopRight);
-        pCircle->SetColor(RGBA_t(255, 0, 255, 255), ICircle_t::VertexType_t::VertexType_BottomLeft);
-        pCircle->SetColor(RGBA_t(0, 0, 255, 255),   ICircle_t::VertexType_t::VertexType_BottomRight);
-        pCircle->SetThickness(1.0f);
+        pCircle->SetThickness(2.0f);
+        pCircle->SetRGBAnimSpeed(1.0f);
+        pCircle->SetDrawInLobby(false);
     }
     
     pCircle->SetVertex(vec(static_cast<float>(iScreenWidth) / 2.0f, static_cast<float>(iScreenHeight) / 2.0f, 0.0f), flFOVCircleRadius);

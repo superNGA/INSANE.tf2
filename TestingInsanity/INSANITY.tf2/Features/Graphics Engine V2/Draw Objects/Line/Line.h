@@ -17,6 +17,8 @@ public:
     void          SetPoints(const vec& vMin, const vec& vMax);
     void          SetColor(RGBA_t clr, int vertex) override final;
 
+    void          SetRGBAnimSpeed(const float flAnimSpeed) override final;
+
 protected:
     void InitRelativeUV() override final;
 

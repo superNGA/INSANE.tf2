@@ -75,7 +75,7 @@ private:
 class AimbotProjectile_t
 {
 public:
-    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
+    bool Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
     void DeleteProjLUT();
 
