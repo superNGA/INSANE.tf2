@@ -24,5 +24,10 @@ MAKE_HOOK(OverrideView, "48 89 5C 24 ? 55 48 8D 6C 24 ? 48 81 EC ? ? ? ? 48 8B D
 		pViewSetup->fov = Features::Misc::View::FOV.GetData().m_flVal;
 	}
 
+	// TODO : Ain't working. Get back to it.
+	//pViewSetup->fovViewmodel = Features::Misc::View::ViewModel_FOV.GetData().m_flVal;
+
+	F::aimbotHelper.NotifyGameFOV(pViewSetup->fov);
+
 	return Hook::OverrideView::O_OverrideView(pVTable, pViewSetup);
 }

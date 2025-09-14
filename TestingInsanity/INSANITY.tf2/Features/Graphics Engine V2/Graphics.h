@@ -36,7 +36,7 @@ struct VertexBuffer_t
 
     // Draw objs.
     void RegisterDrawObj(IDrawObj_t* pDrawObj);
-    bool RemoveDrawObj(IDrawObj_t* pDrawObj);
+    bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
     std::vector<IDrawObj_t*> m_vecDrawObjs = {};
     std::vector<IDrawObj_t*> m_vecTempBuffer = {};
 };
@@ -118,6 +118,7 @@ struct Input_t
     float  m_bStrictly2D    : TEXCOORD3;
     float  m_bInvertColor   : TEXCOORD4;
     float  m_flScaleY       : TEXCOORD5;
+    float  m_flCircleThickness : TEXCOORD6; // for value > 0, we assume this draw obj as cirle, else not a circle.
 };
 
 
@@ -131,6 +132,7 @@ struct Output_t
     float2 m_vAbsUV         : TEXCOORD3;
     float  m_bInvertColor   : TEXCOORD4;
     float  m_flScaleY       : TEXCOORD5;
+    float  m_flCircleThickness : TEXCOORD6; // for value > 0, we assume this draw obj as cirle, else not a circle.
 };
 
 // Global Vars...
@@ -138,14 +140,14 @@ texture SceneTex;
 sampler2D SceneSampler = sampler_state
 {
     Texture   = <SceneTex>;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
+    MinFilter = POINT;
+    MagFilter = POINT;
     MipFilter = NONE;
 };
 
 int      g_flIsInGame    = 0;
-int      g_iScreenHeight = 0;
-int      g_iScreenWidth  = 0;
+float    g_flScreenHeight = 0.0f;
+float    g_flScreenWidth  = 0.0f;
 float4x4 g_worldToScreen; // world to screen matrix.
 
 
@@ -174,13 +176,13 @@ Output_t VS(Input_t input)
     // If this is a 2D shape or we are not in game ( invalid W2S matrix )
     if (input.m_bStrictly2D == 1.0f || g_flIsInGame == 0.0f)
     {
-        result.m_vPos.x = ((input.m_vPos.x / g_iScreenWidth) - 0.5f) * 2.0f;
-        result.m_vPos.y = ((1.0f - (input.m_vPos.y / g_iScreenHeight)) - 0.5f) * 2.0f; // Y cords are inverted in here, so [-1, -1] is bottom left. and [1, 1] is top right.
+        result.m_vPos.x = ((input.m_vPos.x / g_flScreenWidth) - 0.5f) * 2.0f;
+        result.m_vPos.y = ((1.0f - (input.m_vPos.y / g_flScreenHeight)) - 0.5f) * 2.0f; // Y cords are inverted in here, so [-1, -1] is bottom left. and [1, 1] is top right.
         result.m_vPos.z = 0.0f;
         result.m_vPos.w = 1.0f;
         
-        result.m_vAbsUV.x = input.m_vPos.x / g_iScreenWidth;
-        result.m_vAbsUV.y = input.m_vPos.y / g_iScreenHeight;
+        result.m_vAbsUV.x = input.m_vPos.x / g_flScreenWidth;
+        result.m_vAbsUV.y = input.m_vPos.y / g_flScreenHeight;
     }
     else // if not stricly 2D shape, then world-to-screen matrix mult. is required.
     {
@@ -197,6 +199,7 @@ Output_t VS(Input_t input)
     result.m_flBlurAmmount = input.m_flBlurAmmount;
     result.m_vRelativeUV   = input.m_vRelativeUV;
     result.m_clr           = input.m_clr;
+    result.m_flCircleThickness = input.m_flCircleThickness;
     
     return result;
 }
@@ -205,16 +208,27 @@ Output_t VS(Input_t input)
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 float4 GetClrAverage(float2 uv, int iPixelOffset)
-{
-    float iPixelHeightInUV = 1.0f / g_iScreenHeight;
-    float iPixelWidthInUV  = 1.0f / g_iScreenWidth;
-    iPixelHeightInUV *= iPixelOffset;
-    iPixelWidthInUV  *= iPixelOffset;
+{ 
+    float iPixelHeightInUV = 1.0f / g_flScreenHeight;
+    float iPixelWidthInUV  = 1.0f / g_flScreenWidth;
+    float iOffsetY = iPixelHeightInUV * iPixelOffset;
+    float iOffsetX = iPixelWidthInUV  * iPixelOffset;
     
-    float4 up    = tex2D(SceneSampler, float2(saturate(uv.x + iPixelHeightInUV), saturate(uv.y)));
-    float4 down  = tex2D(SceneSampler, float2(saturate(uv.x - iPixelHeightInUV), saturate(uv.y)));
-    float4 left  = tex2D(SceneSampler, float2(saturate(uv.x), saturate(uv.y - iPixelWidthInUV)));
-    float4 right = tex2D(SceneSampler, float2(saturate(uv.x), saturate(uv.y + iPixelWidthInUV)));
+    // Moving uv coord to center of the pixel / texel
+    uv.x += iPixelWidthInUV  / 2.0f;
+    uv.y += iPixelHeightInUV / 2.0f;
+    uv = saturate(uv);
+    
+    if(iPixelOffset <= 0)
+    {
+        //return tex2D(SceneSampler, float2(saturate(uv.x - iPixelWidthInUV), saturate(uv.y - iPixelHeightInUV)));
+        return tex2D(SceneSampler, uv);
+    }
+    
+    float4 right = tex2D(SceneSampler, float2(saturate(uv.x + iOffsetX), saturate(uv.y)));
+    float4 left  = tex2D(SceneSampler, float2(saturate(uv.x - iOffsetX), saturate(uv.y)));
+    float4 up    = tex2D(SceneSampler, float2(saturate(uv.x), saturate(uv.y - iOffsetY)));
+    float4 down  = tex2D(SceneSampler, float2(saturate(uv.x), saturate(uv.y + iOffsetY)));
     
     return (up + down + left + right) / 4.0f;
 }
@@ -243,27 +257,42 @@ float4 PS(Output_t output) : COLOR
     float4 resultClr = output.m_clr;
     
     // Blur-ing
-    if ((int)output.m_flBlurAmmount > 0)
+    // a object, with blur set to 0, when drawn will draw like nothings draw below it.
+    // We can use it to create "windows" in objects that are already drawn.
+    if ((int)output.m_flBlurAmmount == 0)
     {
         float4 vAverageClr = float4(0.0f, 0.0f, 0.0f, 0.0f);
         
-        for (int i = 0; i < MAX_BLUR; i++)
-        {
-            if (i >= (int)output.m_flBlurAmmount)
-                break;
-            
-            vAverageClr += GetClrAverage(output.m_vAbsUV, i);
-        }
-        
-        vAverageClr  /= output.m_flBlurAmmount;
-        vAverageClr.a = 1.0f;
-        
-        // Lerping rgb toward the actual color of this pixel, to get a tinted effect even after blur. 
-        // color intensity controlled by alpha
-        float3 tint = float3(output.m_clr.rgb);
+        // Getting this pixels color from "back buffer" or whatever TF that shit is called.
+        vAverageClr = GetClrAverage(output.m_vAbsUV, 0);
+
+        // Moving it towards actual color set by caller.        
+        float3 tint     = float3(output.m_clr.rgb);
         vAverageClr.rgb = lerp(vAverageClr.rgb, tint, output.m_clr.a);
         
-        // "returning" averaged out clr.
+        vAverageClr.a = 1.0f;
+        resultClr     = vAverageClr;
+    }
+    else if ((int)output.m_flBlurAmmount > 0)
+    {
+        float4 vAverageClr = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        
+        for (int i = 1; i < MAX_BLUR; i++)
+        {
+            vAverageClr += GetClrAverage(output.m_vAbsUV, i);
+            
+            if (i >= (int)output.m_flBlurAmmount)
+                break;
+        }
+        
+        vAverageClr /= output.m_flBlurAmmount;
+            
+        // Lerping rgb toward the actual color of this pixel set by the caller.
+        float3 tint     = float3(output.m_clr.rgb);
+        vAverageClr.rgb = lerp(vAverageClr.rgb, tint, output.m_clr.a);
+        vAverageClr.a   = 1.0f;
+        
+        
         resultClr = vAverageClr;
     }
     
@@ -276,7 +305,7 @@ float4 PS(Output_t output) : COLOR
     }
     
     // Rounding Corners
-    if (output.m_flScaleY > 0.0f && output.m_flRounding > 0.0f)
+    if (output.m_flScaleY > 0.0f && output.m_flRounding > 0.0f && output.m_flCircleThickness <= 0.0f) // must not be a circle.
     {
         float2 vUVScaled = float2(output.m_vRelativeUV.x, output.m_vRelativeUV.y * output.m_flScaleY);
         
@@ -305,6 +334,17 @@ float4 PS(Output_t output) : COLOR
         if(flDistSqrFromAnchor > (output.m_flRounding * output.m_flRounding) && flDistSqrFromCorner < (output.m_flRounding * output.m_flRounding))
             discard;
 
+    }
+    else if(output.m_flCircleThickness > 0.0f) // doing circle math here.
+    {
+        float2 vCenter = float2(0.5f, 0.5f);
+        float2 vCenterToPoint = output.m_vRelativeUV.xy - vCenter;
+        
+        if (Vec2LengthSqr(vCenterToPoint) > 0.5f * 0.5f)
+            discard;
+    
+        if(Vec2LengthSqr(vCenterToPoint) < (0.5f * 0.5f) - output.m_flCircleThickness)
+            discard;
     }
     
     return resultClr;

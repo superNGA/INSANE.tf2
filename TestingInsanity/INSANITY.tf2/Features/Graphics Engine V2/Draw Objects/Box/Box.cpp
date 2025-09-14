@@ -9,18 +9,7 @@
 IBoxFilled_t::IBoxFilled_t()
 {
     F::graphics.RegisterInTraingleList(this);
-
-    m_vertex[0].m_vRelativeUV = vec(0.0f, 0.0f, 0.0f);
-    
-    // Top right.
-    m_vertex[1].m_vRelativeUV = vec(1.0f, 0.0f, 0.0f);
-    m_vertex[3].m_vRelativeUV = m_vertex[1].m_vRelativeUV;
-    
-    // Bottom left.
-    m_vertex[2].m_vRelativeUV = vec(0.0f, 1.0f, 0.0f);
-    m_vertex[4].m_vRelativeUV = m_vertex[2].m_vRelativeUV;
-
-    m_vertex[5].m_vRelativeUV = vec(1.0f, 1.0f, 0.0f);
+    InitRelativeUV();
 }
 
 
@@ -69,12 +58,78 @@ void IBoxFilled_t::InvertColors(bool bInvert)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void IBoxFilled_t::SetColor(RGBA_t clr, int vertex)
+{
+    vertex = std::clamp<int>(vertex, 0, GetVertexCount() - 1);
+
+    switch (vertex)
+    {
+    case VertexType_t::VertexType_TopLeft:
+    {
+        m_vertex[VertexType_TopLeft].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case VertexType_t::VertexType_TopRight:
+    case VertexType_t::VertexType_TopRight_Dup:
+    {
+        m_vertex[VertexType_TopRight].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_TopRight_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case VertexType_t::VertexType_BottomLeft:
+    case VertexType_t::VertexType_BottomLeft_Dup:
+    {
+        m_vertex[VertexType_BottomLeft].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_BottomLeft_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case VertexType_t::VertexType_BottomRight:
+    {
+        m_vertex[VertexType_BottomRight].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    default: break;
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void IBoxFilled_t::SetRounding(float flRounding)
 {
     flRounding = std::clamp<float>(flRounding, 0.0f, 1.0f);
 
     for (int i = 0; i < GetVertexCount(); i++)
         m_vertex[i].m_flRounding = flRounding;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void IBoxFilled_t::InitRelativeUV()
+{
+    m_vertex[VertexType_TopLeft].m_vRelativeUV        = vec(0.0f, 0.0f, 0.0f);
+    
+    // Top right.
+    m_vertex[VertexType_TopRight].m_vRelativeUV       = vec(1.0f, 0.0f, 0.0f);
+    m_vertex[VertexType_TopRight_Dup].m_vRelativeUV   = m_vertex[VertexType_TopRight].m_vRelativeUV;
+    
+    // Bottom left.
+    m_vertex[VertexType_BottomLeft].m_vRelativeUV     = vec(0.0f, 1.0f, 0.0f);
+    m_vertex[VertexType_BottomLeft_Dup].m_vRelativeUV = m_vertex[VertexType_BottomLeft].m_vRelativeUV;
+
+    m_vertex[VertexType_BottomRight].m_vRelativeUV    = vec(1.0f, 1.0f, 0.0f);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void BoxFilled3D_t::InitDimension()
+{
+    m_bIs3D = true;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flStrictly2D = FLOAT_FALSE;
 }
 
 
@@ -105,12 +160,12 @@ void BoxFilled3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qN
     vec vBottomLeft = vCenter + (vAxisY * flOffsetY) + (vAxisX * flOffsetX * -1.0f);
 
 
-    m_vertex[0].m_vPos = vMin;
-    m_vertex[1].m_vPos = vTopRight;
-    m_vertex[2].m_vPos = vBottomLeft;
-    m_vertex[3].m_vPos = vTopRight;
-    m_vertex[4].m_vPos = vBottomLeft;
-    m_vertex[5].m_vPos = vMax;
+    m_vertex[VertexType_TopLeft].m_vPos        = vMin;
+    m_vertex[VertexType_TopRight].m_vPos       = vTopRight;
+    m_vertex[VertexType_BottomLeft].m_vPos     = vBottomLeft;
+    m_vertex[VertexType_TopRight_Dup].m_vPos   = vTopRight;
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos = vBottomLeft;
+    m_vertex[VertexType_BottomRight].m_vPos    = vMax;
 
     // We are using flOffsetX and flOffsetY here, cause they are calculated based upon the normal
     // so its the true height and width ratio of the box and it doesn't depend on 
@@ -122,17 +177,28 @@ void BoxFilled3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qN
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void BoxFilled2D_t::InitDimension()
+{
+    m_bIs3D = false;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flStrictly2D = FLOAT_TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void BoxFilled2D_t::SetVertex(const vec& vMin, const vec& vMax)
 {
     vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
     vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
 
-    m_vertex[0].m_vPos = vMin;
-    m_vertex[1].m_vPos = vTopRight;
-    m_vertex[2].m_vPos = vBottomLeft;
-    m_vertex[3].m_vPos = vTopRight;
-    m_vertex[4].m_vPos = vBottomLeft;
-    m_vertex[5].m_vPos = vMax;
+    m_vertex[VertexType_TopLeft].m_vPos        = vMin;
+    m_vertex[VertexType_TopRight].m_vPos       = vTopRight;
+    m_vertex[VertexType_BottomLeft].m_vPos     = vBottomLeft;
+    m_vertex[VertexType_TopRight_Dup].m_vPos   = vTopRight;
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos = vBottomLeft;
+    m_vertex[VertexType_BottomRight].m_vPos    = vMax;
 
     // Setting up scale for this 2D box.
     float flHeight = fabsf(vMin.y - vMax.y);
@@ -147,24 +213,7 @@ void BoxFilled2D_t::SetVertex(const vec& vMin, const vec& vMax)
 IBox_t::IBox_t()
 {
     F::graphics.RegisterInLineList(this);
-
-    // Min
-    m_vertex[0].m_vPos = vec(0.0f, 0.0f, 0.0f);
-    
-    // Bottom left
-    m_vertex[1].m_vPos = vec(0.0f, 1.0f, 0.0f);
-    m_vertex[2].m_vPos = m_vertex[1].m_vPos;
-
-    // Max
-    m_vertex[3].m_vPos = vec(1.0f, 1.0f, 0.0f);
-    m_vertex[4].m_vPos = m_vertex[3].m_vPos;
-
-    // Top right
-    m_vertex[5].m_vPos = vec(1.0f, 0.0f, 0.0f);
-    m_vertex[6].m_vPos = m_vertex[5].m_vPos;
-
-    // Min
-    m_vertex[7].m_vPos = m_vertex[0].m_vPos;
+    InitRelativeUV();
 }
 
 
@@ -213,22 +262,106 @@ void IBox_t::InvertColors(bool bInvert)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void IBox_t::SetColor(RGBA_t clr, int vertex)
+{
+    vertex = std::clamp<int>(vertex, 0, GetVertexCount() - 1);
+
+    switch (vertex)
+    {
+    case IBox_t::VertexType_TopLeft:
+    case IBox_t::VertexType_TopLeft_Dup:
+    {
+        m_vertex[VertexType_TopLeft].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_TopLeft_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case IBox_t::VertexType_BottomLeft:
+    case IBox_t::VertexType_BottomLeft_Dup:
+    {
+        m_vertex[VertexType_BottomLeft].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_BottomLeft_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case IBox_t::VertexType_BottomRight:
+    case IBox_t::VertexType_BottomRight_Dup:
+    {
+        m_vertex[VertexType_BottomRight].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_BottomRight_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    case IBox_t::VertexType_TopRight:
+    case IBox_t::VertexType_TopRight_Dup:
+    {
+        m_vertex[VertexType_TopRight].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        m_vertex[VertexType_TopRight_Dup].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+        break;
+    }
+    default: break;
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void IBox_t::InitRelativeUV()
+{
+    // Min
+    m_vertex[VertexType_TopLeft].m_vPos         = vec(0.0f, 0.0f, 0.0f);
+    
+    // Bottom left
+    m_vertex[VertexType_BottomLeft].m_vPos      = vec(0.0f, 1.0f, 0.0f);
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = m_vertex[VertexType_BottomLeft].m_vPos;
+
+    // Max
+    m_vertex[VertexType_BottomRight].m_vPos     = vec(1.0f, 1.0f, 0.0f);
+    m_vertex[VertexType_BottomRight_Dup].m_vPos = m_vertex[VertexType_BottomRight].m_vPos;
+
+    // Top right
+    m_vertex[VertexType_TopRight].m_vPos        = vec(1.0f, 0.0f, 0.0f);
+    m_vertex[VertexType_TopRight_Dup].m_vPos    = m_vertex[VertexType_TopRight].m_vPos;
+
+    // Min
+    m_vertex[VertexType_TopLeft_Dup].m_vPos     = m_vertex[VertexType_TopLeft].m_vPos;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Box2D_t::InitDimension()
+{
+    m_bIs3D = false;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flStrictly2D = FLOAT_TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void Box2D_t::SetVertex(const vec& vMin, const vec& vMax)
 {
     vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
     vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
 
-    m_vertex[0].m_vPos = vMin;
-    m_vertex[1].m_vPos = vBottomLeft;
-    m_vertex[2].m_vPos = vBottomLeft;
-    m_vertex[3].m_vPos = vMax;
-    m_vertex[4].m_vPos = vMax;
-    m_vertex[5].m_vPos = vTopRight;
-    m_vertex[6].m_vPos = vTopRight;
-    m_vertex[7].m_vPos = vMin;
+    m_vertex[VertexType_TopLeft].m_vPos         = vMin;
+    m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = vBottomLeft;
+    m_vertex[VertexType_BottomRight].m_vPos     = vMax;
+    m_vertex[VertexType_BottomRight_Dup].m_vPos = vMax;
+    m_vertex[VertexType_TopRight].m_vPos        = vTopRight;
+    m_vertex[VertexType_TopRight_Dup].m_vPos    = vTopRight;
+    m_vertex[VertexType_TopLeft_Dup].m_vPos     = vMin;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Box3D_t::InitDimension()
+{
+    m_bIs3D = true;
 
     for (int i = 0; i < GetVertexCount(); i++)
-        m_vertex[i].m_flStrictly2D = 1.0f;
+        m_vertex[i].m_flStrictly2D = FLOAT_FALSE;
 }
 
 
@@ -258,15 +391,12 @@ void Box3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qNormal)
     vec vTopRight   = vCenter + (vAxis1 * flOffset1 * -1.0f) + (vAxis2 * flOffset2);
     vec vBottomLeft = vCenter + (vAxis1 * flOffset1) + (vAxis2 * flOffset2 * -1.0f);
 
-    m_vertex[0].m_vPos = vMin;
-    m_vertex[1].m_vPos = vBottomLeft;
-    m_vertex[2].m_vPos = vBottomLeft;
-    m_vertex[3].m_vPos = vMax;
-    m_vertex[4].m_vPos = vMax;
-    m_vertex[5].m_vPos = vTopRight;
-    m_vertex[6].m_vPos = vTopRight;
-    m_vertex[7].m_vPos = vMin;
-
-    for (int i = 0; i < GetVertexCount(); i++)
-        m_vertex[i].m_flStrictly2D = 0.0f;
+    m_vertex[VertexType_TopLeft].m_vPos         = vMin;
+    m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = vBottomLeft;
+    m_vertex[VertexType_BottomRight].m_vPos     = vMax;
+    m_vertex[VertexType_BottomRight_Dup].m_vPos = vMax;
+    m_vertex[VertexType_TopRight].m_vPos        = vTopRight;
+    m_vertex[VertexType_TopRight_Dup].m_vPos    = vTopRight;
+    m_vertex[VertexType_TopLeft_Dup].m_vPos     = vMin;
 }

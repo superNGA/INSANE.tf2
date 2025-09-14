@@ -35,6 +35,41 @@ void Graphics_t::Free()
 {
     m_lines.FreeBufferAndDeleteDrawObj();
     m_traingles.FreeBufferAndDeleteDrawObj();
+
+    if (m_pEffect != nullptr)
+    {
+        m_pEffect->Release();
+        m_pEffect = nullptr;
+        LOG("Released shader.");
+    }
+
+    if (m_pStateBlock != nullptr)
+    {
+        m_pStateBlock->Release();
+        m_pStateBlock = nullptr;
+        LOG("Released state block.");
+    }
+
+    if (m_pVertexDecl != nullptr)
+    {
+        m_pVertexDecl->Release();
+        m_pVertexDecl = nullptr;
+        LOG("Release vertex decleration.");
+    }
+
+    if (m_pSceneTexture != nullptr)
+    {
+        m_pSceneTexture->Release();
+        m_pSceneTexture = nullptr;
+        LOG("Released scene texture.");
+    }
+
+    if (m_pSceneSurface != nullptr)
+    {
+        m_pSceneSurface->Release();
+        m_pSceneSurface = nullptr;
+        LOG("Released scene surface.");
+    }
 }
 
 
@@ -74,11 +109,11 @@ void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 void Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
     // Searching in line list first.
-    if (m_lines.RemoveDrawObj(pDrawObj) == true)
+    if (m_lines.FindAndRemoveDrawObj(pDrawObj) == true)
         return;
 
     // If not found in line list, try to find in Traingle list.
-    m_traingles.RemoveDrawObj(pDrawObj);
+    m_traingles.FindAndRemoveDrawObj(pDrawObj);
 }
 
 
@@ -138,8 +173,8 @@ bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
     m_pEffect->SetTexture("SceneTex", m_pSceneTexture);
 
     int iScreenHeight = 0; int iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
-    m_pEffect->SetFloat("g_iScreenHeight", static_cast<float>(iScreenHeight));
-    m_pEffect->SetFloat("g_iScreenWidth",  static_cast<float>(iScreenWidth));
+    m_pEffect->SetFloat("g_flScreenHeight", static_cast<float>(iScreenHeight));
+    m_pEffect->SetFloat("g_flScreenWidth",  static_cast<float>(iScreenWidth));
     m_pEffect->SetFloat("g_flIsInGame",    I::iEngine->IsInGame() == true ? 1.0f : 0.0f); // Let the shader know if we are in game or not.
 
     if (I::iEngine->IsInGame() == true)
@@ -271,14 +306,15 @@ bool Graphics_t::_DeclareVertex(LPDIRECT3DDEVICE9 pDevice)
 {
     static _D3DVERTEXELEMENT9 vertexDecl[] =
     {
-        {0, 0,                                                      D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
-        {0, sizeof(vec),                                            D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
-        {0, sizeof(vec) + (sizeof(float) * 4),                      D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4,                  D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,              D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,         D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 ,    D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
-        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4, D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 5}, // scale Y 
+        {0, 0,                                                          D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0}, // pos     
+        {0, sizeof(vec),                                                D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_COLOR   , 0}, // color   
+        {0, sizeof(vec) + (sizeof(float) * 4),                          D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0}, // Blur Amm
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4,                      D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 1}, // Rounding
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4,                  D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 2}, // rel. UV 
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12,             D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 3}, // 2D  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 ,        D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 4}, // Invert colors  
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4,     D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 5}, // scale Y 
+        {0, sizeof(vec) + (sizeof(float) * 4) + 4 + 4 + 12 + 4 + 4 + 4, D3DDECLTYPE_FLOAT1, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 6}, // circle thickness.
         D3DDECL_END()
     };
 
@@ -399,21 +435,28 @@ void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
     m_free.store(false);
     
     if (m_pBuffer != nullptr)
+    {
         m_pBuffer->Release();
+        m_pBuffer = nullptr;
+    }
 
+    // Delete and clear all draw objects.
     for (IDrawObj_t* pDrawObj : m_vecDrawObjs)
     {
-        RemoveDrawObj(pDrawObj);
         pDrawObj->DeleteThis();
+        FAIL_LOG("Delete draw obj : %p", pDrawObj);
     }
+    m_vecDrawObjs.clear();
+    m_vecDrawObjs.shrink_to_fit();
     
+    // Delete and clear all temp draw obj.
     for (IDrawObj_t* pDrawObj : m_vecTempBuffer)
     {
-        RemoveDrawObj(pDrawObj);
         pDrawObj->DeleteThis();
+        FAIL_LOG("Delete temp draw obj : %p", pDrawObj);
     }
-
-    m_pBuffer = nullptr;
+    m_vecTempBuffer.clear();
+    m_vecTempBuffer.shrink_to_fit();
 
     // No setting the mutex to true, cause we don't want it to be used anymore.
 }
@@ -446,7 +489,7 @@ void VertexBuffer_t::RegisterDrawObj(IDrawObj_t* pDrawObj)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool VertexBuffer_t::RemoveDrawObj(IDrawObj_t* pDrawObj)
+bool VertexBuffer_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
     auto it = std::find(m_vecDrawObjs.begin(), m_vecDrawObjs.end(), pDrawObj);
 

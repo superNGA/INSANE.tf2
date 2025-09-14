@@ -15,6 +15,16 @@ public:
     void          InvertColors(bool bInvert) override;
 
     void          SetPoints(const vec& vMin, const vec& vMax);
+    void          SetColor(RGBA_t clr, int vertex) override final;
+
+protected:
+    void InitRelativeUV() override final;
+
+    enum VertexType_t : int 
+    { 
+        VertexType_Min = 0, 
+        VertexType_Max 
+    };
 
 protected:
     Vertex m_vertex[2];

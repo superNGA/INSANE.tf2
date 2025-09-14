@@ -5,8 +5,7 @@
 ///////////////////////////////////////////////////////////////////////////
 ILine_t::ILine_t()
 {
-    m_vertex[0].m_vRelativeUV = vec(0.0f, 0.0f, 0.0f);
-    m_vertex[1].m_vRelativeUV = vec(1.0f, 1.0f, 1.0f);
+    InitRelativeUV();
 }
 
 
@@ -59,4 +58,22 @@ void ILine_t::SetPoints(const vec& vMin, const vec& vMax)
 {
     m_vertex[0].m_vPos = vMin;
     m_vertex[1].m_vPos = vMax;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ILine_t::SetColor(RGBA_t clr, int vertex)
+{
+    vertex = std::clamp<int>(vertex, 0, GetVertexCount() - 1);
+    m_vertex[vertex].m_clr.Set(clr.r, clr.g, clr.b, clr.a);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ILine_t::InitRelativeUV()
+{
+    m_vertex[0].m_vRelativeUV = vec(0.0f, 0.0f, 0.0f);
+    m_vertex[1].m_vRelativeUV = vec(1.0f, 1.0f, 1.0f);
 }
