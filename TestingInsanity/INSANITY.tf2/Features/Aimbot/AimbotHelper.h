@@ -15,10 +15,13 @@
 // SDK
 #include "../FeatureHandler.h"
 
+
 class CUserCmd;
 class baseWeapon;
 class BaseEntity;
 
+
+///////////////////////////////////////////////////////////////////////////
 class AimbotHelper_t
 {
 public:
@@ -51,6 +54,7 @@ public:
         _ConstructAimbotTargetData();
         return m_aimbotTargetData;
     }
+    void NotifyGameFOV(const float flFOV);
 
 private:
     AimbotTargetData_t m_aimbotTargetData;
@@ -58,11 +62,16 @@ private:
     void _ConstructAimbotTargetData();
     void _ClearAimbotData();
 
-    void _DrawFOVCircle(const float FOV);
+    void _DrawFOVCircle(const float FOV, bool bTargetFound);
+    float m_flGameFOV = -1.0f;
 };
+///////////////////////////////////////////////////////////////////////////
+
+
 DECLARE_FEATURE_OBJECT(aimbotHelper, AimbotHelper_t)
 
 DEFINE_TAB(Aimbot, 6)
 
 DEFINE_SECTION(View, "Misc", 2)
-DEFINE_FEATURE(FOV, FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(FOV,           FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(ViewModel_FOV, FloatSlider_t, View, Misc, 2, FloatSlider_t(90.0f, 0.0f, 180.0f));

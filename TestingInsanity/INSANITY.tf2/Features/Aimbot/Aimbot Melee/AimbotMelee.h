@@ -4,32 +4,28 @@
 // by      : INSANE
 // created : 14/06/2025
 // 
-// purpose : Hits enemy perfectly with melee weapons ( doesn't contain auto backstab )
+// purpose : Aims for you when using melee weapons, also contains backtrack auto backstab
 //-------------------------------------------------------------------------
 #pragma once
 #include "../../FeatureHandler.h"
 #include "../../../SDK/class/Basic Structures.h"
 
+
 class CUserCmd;
 class BaseEntity;
 class baseWeapon;
 
-// TODO : Swing range optimization ( We can use the corner of the 
-//                                  melee swing hull for more range. )
 
+///////////////////////////////////////////////////////////////////////////
 class AimbotMelee_t
 {
 public:
-    void RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
+    bool RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
 
 private:
-    BaseEntity* _ChooseTarget(BaseEntity* pAttacker, baseWeapon* pActiveWeapon);
-    BaseEntity* _ChooseTargetFromList(
-        BaseEntity* pAttacker,
-        const std::vector<BaseEntity*>& vecTargets,
-        float flSmackDelay, float flSwingRange,
-        bool bShouldSimulate);
+    BaseEntity* _ChooseTarget(BaseEntity * pLocalPlayer, baseWeapon* pActiveWeapon);
+    BaseEntity* _ChooseTargetFromList(BaseEntity * pLocalPlayer, baseWeapon* pActiveWeapon, const std::vector<BaseEntity*>& vecTargets);
 
     bool _ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
 
@@ -37,20 +33,23 @@ private:
     const vec _GetClosestPointOnEntity(BaseEntity* pLocalPlayer, const BaseEntity* pEnt) const;
     const vec _GetClosestPointOnEntity(BaseEntity* pAttacker, const vec& vAttackerEyePos, const BaseEntity* pTarget, const vec& vTargetOrigin) const;
 
-    void _DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget);
 
     // Determines swing range for our current weapon.
     float _GetLooseSwingRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
     float _GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
  
-    bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget);
+    bool _CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin, const qangle& qTargetAngles);
     bool _IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, const vec& vTargetPos, float FOV);
 
     vec         m_vAttackerFutureEyePos;
     vec         m_vBestTargetFuturePos;
     vec         m_vBestTargetPosAtLock;
     BaseEntity* m_pBestTarget  = nullptr;
+    int         m_iBestTargetsTick = 0;
 };
+///////////////////////////////////////////////////////////////////////////
+
+
 DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 
 
@@ -84,9 +83,4 @@ DEFINE_FEATURE(
     MeleeAimbot_OnlyDoBackStabs_Spy, bool, Melee_Aimbot, Aimbot, 9, false,
     FeatureFlag_SupportKeyBind,
     "Only Allow back stabs with spy"
-)
-
-DEFINE_FEATURE(
-    MeleeAimbot_DebugPrediction, bool, Melee_Aimbot, Aimbot, 10, false,
-    FeatureFlag_None, "Draws future position for locked targets"
 )

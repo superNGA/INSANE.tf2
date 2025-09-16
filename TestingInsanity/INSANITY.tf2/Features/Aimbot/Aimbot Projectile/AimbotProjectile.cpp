@@ -34,14 +34,6 @@
 
 
 /*
-DONE : 
-    -> Misses on targets flying / moving fast ( like rocket jumping niggas. )
-    -> Reaches too late on surfing entis.
-    -> Works like shit with high ping.
-    -> Arrows have timming error. it won't set angles at the correct tick.
-*/
-
-/*
 TODO : 
     -> Sometimes doesn't simulate at all & just shoots at current position.
 
@@ -56,10 +48,9 @@ TODO :
 */
 
 
-//=========================================================================
-//                     PUBLIC METHODS
-//=========================================================================
-void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
     PROFILE_FUNCTION("ProjAimbot::Run");
 
@@ -69,13 +60,13 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
         m_lutTrajactory.Initialize(pLocalPlayer, pActiveWeapon);
     }
     else if (pActiveWeapon->getSlot() == WPN_SLOT_SECONDARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
-        return;
+        return false;
 
     // Return if disabled. 
     // ( NOTE : Running for 1 extra tick is intentional. Thats helps when user has aimbot bind to mouse1 & is using compound bow,
     //          so aimbot doesn't turn off on the exact tick when we aim. )
     if (Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsActive() == false && pCmd->tick_count > m_iLastAimbotTick + 1)
-        return;
+        return false;
 
     // Get Projectile info ( like gravity, speed n stuff )
     auto& projInfo = F::projectileEngine.SetupProjectile(pActiveWeapon, pLocalPlayer, pCmd->viewangles);
@@ -88,7 +79,7 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 
     // no target found
     if (m_pBestTarget == nullptr)
-        return;
+        return false;
 
     // Aim at calculated position
     bool bShouldAimbotThisTick = _ShouldAim(pLocalPlayer, pActiveWeapon, pCmd, projInfo);
@@ -117,6 +108,8 @@ void AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
     }
 
     m_iLastAimbotTick = pCmd->tick_count;
+
+    return true;
 }
 
 

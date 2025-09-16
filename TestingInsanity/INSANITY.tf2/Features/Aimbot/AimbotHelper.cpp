@@ -5,7 +5,14 @@
 #include "../../SDK/class/Source Entity.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IVDebugOverlay.h"
+#include "../../SDK/class/IRender.h"
+
+// Utility & UI
+#include "../Graphics Engine V2/Draw Objects/Circle/Circle.h"
+#include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
+
+#include "../Entity Iterator/EntityIterator.h"
 
 // AIMBOTS
 #include "Aimbot Hitscan/AimbotHitscan.h"
@@ -24,27 +31,42 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
 
     auto  iProjectileType = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_iProjectile;
     float flAimbotFOV     = 0.0f;
+    bool  bTargetFound    = false;
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
-        F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
-        flAimbotFOV = Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal;
+        bTargetFound = F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+
+        if(Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsDisabled() == false)
+            flAimbotFOV = Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal;
     }
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
         // surface-to-air freedom delivery system :)
-        F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
-        flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
+        bTargetFound = F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+
+        if(Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsDisabled() == false)
+            flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
     }
     else
     {
-        F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+
+        if(Features::Aimbot::HitscanAimbot::Enable.IsDisabled() == false)
+            flAimbotFOV = Features::Aimbot::HitscanAimbot::FOV.GetData().m_flVal;
     }
 
-    // Whenever you decide to make a FOV circle use this formula
-    // (tan( aimbot_fov / 2.0f ) / tan( game_fov / 2.0f )) * (screen_width / 2.0f)
+
+    _DrawFOVCircle(flAimbotFOV, bTargetFound);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHelper_t::NotifyGameFOV(const float flFOV)
+{
+    m_flGameFOV = flFOV;
+}
 
 //=========================================================================
 //                     PRIVATE METHODS
@@ -141,4 +163,36 @@ void AimbotHelper_t::_ClearAimbotData()
 
     m_aimbotTargetData.m_vecEnemyPipeBombs.clear();
     m_aimbotTargetData.m_vecFriendlyPipeBombs.clear();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
+{
+    // Game FOV hasn't been told to us yet ( i.e. not set through IClientMode::OverrideView() yet). ( IK that its not the best way of doing this. )
+    if (m_flGameFOV < 0.0f)
+        return;
+
+    int iScreenHeight = 0, iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
+    float flFOVCircleRadius = (tanf(DEG2RAD(FOV / 2.0f)) / tanf(DEG2RAD(m_flGameFOV / 2.0f))) * (static_cast<float>(iScreenWidth) / 2.0f);
+
+    flFOVCircleRadius = Maths::MAX<float>(flFOVCircleRadius, 0.0f);
+
+    // if circles too big to fit in screen then don't bother drawing it.
+    if (flFOVCircleRadius > sqrtf(static_cast<float>(iScreenHeight * iScreenHeight + iScreenWidth * iScreenWidth)))
+        return;
+
+    static Circle2D_t* pCircle = nullptr;
+    if (pCircle == nullptr)
+    {
+        pCircle = new Circle2D_t();
+        pCircle->SetColor(255, 255, 255, 255);
+        pCircle->SetThickness(2.0f);
+        pCircle->SetRGBAnimSpeed(1.0f);
+        pCircle->SetDrawInLobby(false);
+    }
+    
+    pCircle->SetVertex(vec(static_cast<float>(iScreenWidth) / 2.0f, static_cast<float>(iScreenHeight) / 2.0f, 0.0f), flFOVCircleRadius);
+    pCircle->SetThickness(2.0f);
 }

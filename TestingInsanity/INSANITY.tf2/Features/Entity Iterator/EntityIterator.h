@@ -20,6 +20,7 @@ class BaseEntity;
 class baseWeapon;
 class CUserCmd;
 
+constexpr float MAX_BACKTRACK_TIME = 0.2f; // in seconds ofcourse.
 
 ///////////////////////////////////////////////////////////////////////////
 struct BackTrackRecord_t
@@ -27,15 +28,8 @@ struct BackTrackRecord_t
     int m_iFlags = 0;
     int m_iTick = 0;
     vec m_vOrigin;
+    qangle m_qViewAngles;
     matrix3x4_t m_bones[MAX_STUDIO_BONES];
-};
-///////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////
-struct EntInfo_t
-{
-    
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +44,13 @@ public:
     
     std::vector<BaseEntity*>& GetEnemyPlayerList();
     std::vector<BaseEntity*>& GetFriendlyPlayerList();
+
+    std::vector<BaseEntity*>& GetEnemyPlayers();
+    std::vector<BaseEntity*>& GetFrendlyPlayers();
+
     std::deque<BackTrackRecord_t>* GetBackTrackRecord(BaseEntity* pEnt);
+    void  SetBackTrackTime(const float flBackTrackTime);
+    float GetBackTrackTime() const;
 
     enum ClassIdIndex : int
     {
@@ -68,9 +68,21 @@ public:
     int  GetEntityMaterial(BaseEntity* pEnt);
     void ClearEntityMaterialOverrides();
 
+    // Fake latency stuff..
+    struct DatagramStat_t
+    {
+        int   m_nInSequenceNr = 0;
+        int   m_nInReliableState = 0;
+        float m_flTimeStamp = 0.0f;
+    };
+    void ClearSequenceData();
+    std::deque<DatagramStat_t>& GetDatagramSequences();
+    int m_iLastAddedSequence = -1;
+
 private:
     // All mighty back track records.
     std::unordered_map<BaseEntity*, std::deque<BackTrackRecord_t>> m_mapEntInfo = {};
+    float m_flBackTrackTime = 0.0f; // This is the final record time for backtrack.
 
     void _ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int iCurrentTick);
     std::vector<BaseEntity*> m_vecPlayerEnemy, m_vecPlayerFriendly;
@@ -91,6 +103,8 @@ private:
     // Entity to Material map.
     std::unordered_map<BaseEntity*, int>  m_mapEntToMateiral = {};
 
+    // Fake lag shit.
+    std::deque<DatagramStat_t> m_qSequences = {};
 
     // Call backs...
     typedef void(*T_CallBack)(BaseEntity*);
@@ -106,3 +120,9 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 
 DECLARE_FEATURE_OBJECT(entityIterator, EntityIterator_t)
+
+DEFINE_TAB(BackTrack, 13)
+DEFINE_SECTION(BackTrack, "BackTrack", 6)
+DEFINE_FEATURE(
+    BackTrack_In_Ms, FloatSlider_t, BackTrack, BackTrack, 1, FloatSlider_t(0.0f, 0.0f, 1000.0f)
+)

@@ -2,10 +2,20 @@
 #include <format>
 #include "EndScene.h"
 
+// SDK
+#include "../../SDK/class/IVEngineClient.h"
+#include "../../SDK/class/IRender.h"
+
 // Resource Handlers
 #include "../../Resources/Fonts/FontManager.h"
 
+#include "../../Features/Graphics Engine V2/Draw Objects/Line/Line.h"
+#include "../../Features/Graphics Engine V2/Draw Objects/Box/Box.h"
+#include "../../Features/Graphics Engine V2/Draw Objects/Circle/Circle.h"
+#include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
+
 // To render here.
+#include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/PlayerList/PlayerList.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
@@ -35,10 +45,10 @@ namespace directX {
 ///////////////////////////////////////////////////////////////////////////
 HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 {
-	if (!device)
-	{
-		device = P_DEVICE;
-	}
+    if (!device)
+    {
+        device = P_DEVICE;
+    }
 
     /* Doing the backend stuff */
     if (!UI::UI_initialized_DX9 || !UI::WIN32_initialized)
@@ -64,7 +74,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
 
-    // Just set one font decent font for now.
+    // Just set one decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
 
     // Drawing graphics features.
@@ -72,6 +82,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
             F::graphicsEngine.Run(P_DEVICE);
+            F::graphics.Run(P_DEVICE);
 
             Render::playerList.Draw();
             Render::InfoWindow.Draw();
@@ -127,7 +138,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     }
 
     /* calling original function */
-	auto result = O_endscene(P_DEVICE);
+    auto result = O_endscene(P_DEVICE);
 
     return result;
 }

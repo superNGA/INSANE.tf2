@@ -58,10 +58,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	// are we alive ?
 	if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
-	{
-		F::entityIterator.ClearBackTrackData();
 		return result;
-	}
 
 	// --> bSendPacket <--
 	/*

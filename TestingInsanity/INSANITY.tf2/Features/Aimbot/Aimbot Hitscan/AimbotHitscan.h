@@ -9,7 +9,7 @@ class CUserCmd;
 class AimbotHitscan_t
 {
 public:
-    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult);
+    bool Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult);
     void Reset();
 
 private:
@@ -21,7 +21,7 @@ private:
 };
 DECLARE_FEATURE_OBJECT(aimbotHitscan, AimbotHitscan_t)
 
-DEFINE_SECTION(HitscanAimbot, "Aimbot", 5)
+DEFINE_SECTION(HitscanAimbot, "Aimbot", 4)
 
 DEFINE_FEATURE(Enable,   bool, HitscanAimbot, Aimbot, 1, false, 
     FeatureFlag_SupportKeyBind)

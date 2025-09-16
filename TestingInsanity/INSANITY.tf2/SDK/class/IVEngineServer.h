@@ -2,6 +2,8 @@
 
 #include "../../Utility/Interface Handler/Interface.h"
 
+class INetChannel;
+
 class IVEngineServer
 {
 public:
@@ -28,9 +30,37 @@ public:
 	virtual int			PrecacheDecal(const char* name, bool preload = false) = 0;
 	virtual int			PrecacheGeneric(const char* s, bool preload = false) = 0;
 
+	// Check's if the name is precached, but doesn't actually precache the name if not...
 	virtual bool		IsModelPrecached(char const* s) const = 0;
 	virtual bool		IsDecalPrecached(char const* s) const = 0;
 	virtual bool		IsGenericPrecached(char const* s) const = 0;
+
+	// Note that sounds are precached using the IEngineSound interface
+
+	// Special purpose PVS checking
+	// Get the cluster # for the specified position
+	virtual int			GetClusterForOrigin(const vec& org) = 0;
+	// Get the PVS bits for a specified cluster and copy the bits into outputpvs.  Returns the number of bytes needed to pack the PVS
+	virtual int			GetPVSForCluster(int cluster, int outputpvslength, unsigned char* outputpvs) = 0;
+	// Check whether the specified origin is inside the specified PVS
+	virtual bool		CheckOriginInPVS(const vec& org, const unsigned char* checkpvs, int checkpvssize) = 0;
+	// Check whether the specified worldspace bounding box is inside the specified PVS
+	virtual bool		CheckBoxInPVS(const vec& mins, const vec& maxs, const unsigned char* checkpvs, int checkpvssize) = 0;
+
+	// Returns the server assigned userid for this player.  Useful for logging frags, etc.  
+	//  returns -1 if the edict couldn't be found in the list of players.
+	virtual int			GetPlayerUserId(const void* e) = 0;
+	virtual const char* GetPlayerNetworkIDString(const void* e) = 0;
+
+	// Return the current number of used edict slots
+	virtual int			GetEntityCount(void) = 0;
+	// Given an edict, returns the entity index
+	virtual int			IndexOfEdict(const void* pEdict) = 0;
+	// Given and entity index, returns the corresponding edict pointer
+	virtual void* PEntityOfEntIndex(int iEntIndex) = 0;
+
+	// Get stats info interface for a client netchannel
+	virtual INetChannel* GetPlayerNetInfo(int playerIndex) = 0;
 };
 
 

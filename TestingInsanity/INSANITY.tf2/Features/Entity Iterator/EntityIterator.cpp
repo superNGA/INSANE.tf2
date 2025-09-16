@@ -30,6 +30,8 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     if (F::tickShifter.ShiftingTicks() == true)
         return;
 
+    SetBackTrackTime(Features::BackTrack::BackTrack::BackTrack_In_Ms.GetData().m_flVal / 1000.0f);
+
     if (m_bJumpTableHelperInit == false)
     {
         _ConstructJumpTableHelper();
@@ -119,6 +121,22 @@ std::vector<BaseEntity*>& EntityIterator_t::GetFriendlyPlayerList()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+std::vector<BaseEntity*>& EntityIterator_t::GetEnemyPlayers()
+{
+    return m_vecPlayerEnemy;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+std::vector<BaseEntity*>& EntityIterator_t::GetFrendlyPlayers()
+{
+    return m_vecPlayerFriendly;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 std::deque<BackTrackRecord_t>* EntityIterator_t::GetBackTrackRecord(BaseEntity* pEnt)
 {
     auto it = m_mapEntInfo.find(pEnt);
@@ -126,6 +144,22 @@ std::deque<BackTrackRecord_t>* EntityIterator_t::GetBackTrackRecord(BaseEntity* 
         return nullptr;
 
     return &it->second;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void EntityIterator_t::SetBackTrackTime(const float flBackTrackTime)
+{
+    m_flBackTrackTime = std::clamp<float>(flBackTrackTime, 0.0f, CVars::sv_maxunlag + MAX_BACKTRACK_TIME);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float EntityIterator_t::GetBackTrackTime() const
+{
+    return m_flBackTrackTime;
 }
 
 
@@ -190,11 +224,32 @@ void EntityIterator_t::ClearEntityMaterialOverrides()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void EntityIterator_t::ClearSequenceData()
+{
+    m_qSequences.clear();
+    m_iLastAddedSequence = -1;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+std::deque<EntityIterator_t::DatagramStat_t>& EntityIterator_t::GetDatagramSequences()
+{
+    return m_qSequences;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::_ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int iCurrentTick)
 {
+    if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
+        return;
+    
     if (pEnt->m_iTeamNum() == iFriendlyTeam)
     {
         m_vecPlayerFriendly.push_back(pEnt);
+        return; // We don't want back track records for team mates.
     }
     else
     {
@@ -209,22 +264,29 @@ void EntityIterator_t::_ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int i
         LOG("Added backtrack record for entity.");
     }
 
-    
     // Adding this back track record.
     BackTrackRecord_t record;
     pEnt->SetupBones(record.m_bones, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, CUR_TIME);
-    record.m_iFlags  = pEnt->m_fFlags();
-    record.m_iTick   = iCurrentTick;
-    record.m_vOrigin = pEnt->GetAbsOrigin();
+    record.m_iFlags      = pEnt->m_fFlags();
+    record.m_iTick       = iCurrentTick;
+    record.m_vOrigin     = pEnt->GetAbsOrigin();
+    record.m_qViewAngles = pEnt->m_angEyeAngles();
 
     auto it2 = m_mapEntInfo.find(pEnt);
     std::deque<BackTrackRecord_t>& allRecords = it2->second;
 
-    allRecords.push_back(record);
+    allRecords.push_front(record);
 
+    // Keep at least one record.
+    const int iMaxRecords = TIME_TO_TICK(GetBackTrackTime()) == 0 ? 1 : TIME_TO_TICK(GetBackTrackTime());
     // removing expired ones.
-    if (allRecords.size() > 0.2f / TICK_INTERVAL)
-        allRecords.pop_front();
+    for (int iTick = 0; iTick < 70; iTick++)
+    {
+        if (allRecords.size() <= iMaxRecords)
+            break;
+
+        allRecords.pop_back();
+    }
 }
 
 

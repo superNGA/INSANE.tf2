@@ -134,431 +134,499 @@
 
 namespace vgui 
 { 
-	typedef uintptr_t VPANEL; 
-	typedef unsigned long HPANEL; 
+    typedef uintptr_t VPANEL; 
+    typedef unsigned long HPANEL; 
 }
 
 enum renderGroup_t
 {
-	RENDER_GROUP_OPAQUE_STATIC_HUGE = 0,		
-	RENDER_GROUP_OPAQUE_ENTITY_HUGE = 1,		
-	RENDER_GROUP_OPAQUE_STATIC = 6,
-	RENDER_GROUP_OPAQUE_ENTITY,					
-	RENDER_GROUP_TRANSLUCENT_ENTITY,
-	RENDER_GROUP_TWOPASS,						
-	RENDER_GROUP_VIEW_MODEL_OPAQUE,				
-	RENDER_GROUP_VIEW_MODEL_TRANSLUCENT,		
-	RENDER_GROUP_OPAQUE_BRUSH,					
-	RENDER_GROUP_OTHER,							
-	RENDER_GROUP_COUNT
+    RENDER_GROUP_OPAQUE_STATIC_HUGE = 0,		
+    RENDER_GROUP_OPAQUE_ENTITY_HUGE = 1,		
+    RENDER_GROUP_OPAQUE_STATIC = 6,
+    RENDER_GROUP_OPAQUE_ENTITY,					
+    RENDER_GROUP_TRANSLUCENT_ENTITY,
+    RENDER_GROUP_TWOPASS,						
+    RENDER_GROUP_VIEW_MODEL_OPAQUE,				
+    RENDER_GROUP_VIEW_MODEL_TRANSLUCENT,		
+    RENDER_GROUP_OPAQUE_BRUSH,					
+    RENDER_GROUP_OTHER,							
+    RENDER_GROUP_COUNT
 };
 
 // used in some places.
 struct Vec4_t
 {
-	float x, y, z, w;
+    float x, y, z, w;
 };
 
 struct qangle
 {
-	qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
-	qangle(float flAngle) : pitch(flAngle), yaw(flAngle), roll(flAngle) {}
-	qangle(float PITCH, float YAW, float ROLL) : pitch(PITCH), yaw(YAW), roll(ROLL) {}
+    qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
+    qangle(float flAngle) : pitch(flAngle), yaw(flAngle), roll(flAngle) {}
+    qangle(float PITCH, float YAW, float ROLL) : pitch(PITCH), yaw(YAW), roll(ROLL) {}
 
-	float pitch, yaw, roll;
+    float pitch, yaw, roll;
 
-	void Init()
-	{
-		pitch = 0.0f; yaw = 0.0f; roll = 0.0f;
-	}
+    void Init()
+    {
+        pitch = 0.0f; yaw = 0.0f; roll = 0.0f;
+    }
 
-	qangle operator+(qangle other) {
-		return qangle(pitch + other.pitch, yaw + other.yaw, 0.0f);
-	}
+    qangle operator+(qangle other) {
+        return qangle(pitch + other.pitch, yaw + other.yaw, 0.0f);
+    }
 
-	qangle operator-(qangle other) {
-		return qangle(pitch - other.pitch, yaw - other.yaw, 0.0f);
-	}
-	qangle& operator=(qangle other)
-	{
-		pitch = other.pitch; yaw = other.yaw; roll = other.roll;
-		return *this;
-	}
+    qangle operator-(qangle other) {
+        return qangle(pitch - other.pitch, yaw - other.yaw, 0.0f);
+    }
+    qangle& operator=(qangle other)
+    {
+        pitch = other.pitch; yaw = other.yaw; roll = other.roll;
+        return *this;
+    }
 };
 
 
 struct RGBA_t
 {
-	constexpr RGBA_t() : r(0), g(0), b(0), a(0) {}
-	constexpr RGBA_t(unsigned char RGB) : r(RGB), g(RGB), b(RGB), a(0xFF) {}
-	constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
-		r(R), g(G), b(B), a(A) {}
+    constexpr RGBA_t() : r(0), g(0), b(0), a(0) {}
+    constexpr RGBA_t(unsigned char RGB) : r(RGB), g(RGB), b(RGB), a(0xFF) {}
+    constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
+        r(R), g(G), b(B), a(A) {}
 
-	unsigned char r, g, b, a;
+    unsigned char r, g, b, a;
 
-	// OPERATORS
-	RGBA_t& operator=(RGBA_t other)
-	{
-		r = other.r; g = other.g; b = other.b; a = other.a;
-		return *this;
-	}
+    void Init()
+    {
+        r = 0; g = 0; b = 0; a = 0xFF;
+    }
+
+    // OPERATORS
+    RGBA_t& operator=(RGBA_t other)
+    {
+        r = other.r; g = other.g; b = other.b; a = other.a;
+        return *this;
+    }
 };
 
 
 struct vec
 {
-	vec() : x(0.0f), y(0.0f), z(0.0f) {}
-	constexpr vec(float X) : x(X), y(X), z(X) {}
-	constexpr vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
-	float x, y, z;
+    vec() : x(0.0f), y(0.0f), z(0.0f) {}
+    constexpr vec(float X) : x(X), y(X), z(X) {}
+    constexpr vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
+    float x, y, z;
 
-	inline void Init()
-	{
-		x = 0.0f; y = 0.0f; z = 0.0f;
-	}
+    inline void Init()
+    {
+        x = 0.0f; y = 0.0f; z = 0.0f;
+    }
 
-	vec operator+(const vec other) const
-	{
-		return vec(x + other.x, y + other.y, z + other.z);
-	}
-	vec operator+(float other) const
-	{
-		return vec(x + other, y + other, z + other);
-	}
-	vec operator-(const vec& other) const
-	{
-		return vec(x - other.x, y - other.y, z - other.z);
-	}
+    vec operator+(const vec other) const
+    {
+        return vec(x + other.x, y + other.y, z + other.z);
+    }
+    vec operator+(float other) const
+    {
+        return vec(x + other, y + other, z + other);
+    }
+    vec operator-(const vec& other) const
+    {
+        return vec(x - other.x, y - other.y, z - other.z);
+    }
 
-	constexpr vec operator*(float other) const
-	{
-		return vec(x * other, y * other, z * other);
-	}
+    constexpr vec operator*(float other) const
+    {
+        return vec(x * other, y * other, z * other);
+    }
 
-	vec operator/(float other) 
-	{
-		return vec(x / other, y / other, z / other);
-	}
+    vec operator/(float other) 
+    {
+        return vec(x / other, y / other, z / other);
+    }
 
-	vec& operator +=(vec other)
-	{
-		x += other.x; y += other.y; z += other.z;
-		return *this;
-	}
+    vec& operator +=(vec other)
+    {
+        x += other.x; y += other.y; z += other.z;
+        return *this;
+    }
 
-	vec& operator-=(vec other)
-	{
-		x -= other.x; y -= other.y; z -= other.z;
-		return *this;
-	}
+    vec& operator-=(vec other)
+    {
+        x -= other.x; y -= other.y; z -= other.z;
+        return *this;
+    }
 
-	vec& operator *=(float other)
-	{
-		x *= other; y *= other; z *= other;
-		return *this;
-	}
+    vec& operator *=(float other)
+    {
+        x *= other; y *= other; z *= other;
+        return *this;
+    }
 
-	void operator= (vec other)
-	{
-		x = other.x; y = other.y; z = other.z;
-	}
+    void operator= (vec other)
+    {
+        x = other.x; y = other.y; z = other.z;
+    }
 
-	bool operator==(const vec& other) const
-	{
-		return (x == other.x && y == other.y && z == other.z);
-	}
+    bool operator==(const vec& other) const
+    {
+        return (x == other.x && y == other.y && z == other.z);
+    }
 
-	float Length()
-	{
-		return sqrtf(x * x + y * y + z * z);
-	}
+    float Length()
+    {
+        return sqrtf(x * x + y * y + z * z);
+    }
 
-	float Length2D() const
-	{
-		return sqrtf(x * x + y * y);
-	}
+    float LengthSqrt() const
+    {
+        return x * x + y * y + z * z;
+    }
 
-	float DistTo(const vec& other) const
-	{
-		return (*this - other).Length();
-	}
+    float Length2D() const
+    {
+        return sqrtf(x * x + y * y);
+    }
 
-	float Dist2Dto(const vec& other) const
-	{
-		return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-	}
-	
-	bool IsEmpty() const
-	{
-		return fabs(x) < 0.0001f && fabs(y) < 0.0001f && fabs(z) < 0.0001f;
-	}
+    float DistTo(const vec& other) const
+    {
+        return (*this - other).Length();
+    }
 
-	bool isEmpty()
-	{
-		if (x || y || z) return false;
-		return true;
-	}
+    float Dist2Dto(const vec& other) const
+    {
+        return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+    }
+    
+    bool IsEmpty() const
+    {
+        return fabs(x) < 0.0001f && fabs(y) < 0.0001f && fabs(z) < 0.0001f;
+    }
 
-	vec Normalize() const
-	{
-		float flLength = sqrtf(x * x + y * y + z * z);
-		return vec(x / flLength, y / flLength, z / flLength);
-	}
+    bool isEmpty()
+    {
+        if (x || y || z) return false;
+        return true;
+    }
 
-	float Dot(const vec& other) const
-	{
-		return (x * other.x + y * other.y + z * other.z);
-	}
+    vec Normalize() const
+    {
+        float flLength = sqrtf(x * x + y * y + z * z);
+        return vec(x / flLength, y / flLength, z / flLength);
+    }
 
-	vec ScaleMultiply(float other)
-	{
-		return vec(x * other, y * other, z * other);
-	}
+    float Dot(const vec& other) const
+    {
+        return (x * other.x + y * other.y + z * other.z);
+    }
 
-	vec CrossProduct(vec other) const
-	{
-		return vec(
-			y * other.z - z * other.y,
-			z * other.x - x * other.z,
-			x * other.y - y * other.x
-		);
-	}
+    vec ScaleMultiply(float other)
+    {
+        return vec(x * other, y * other, z * other);
+    }
 
-	vec& NormalizeInPlace()
-	{
-		float flMagnitude = sqrtf(x * x + y * y + z * z);
-		x /= flMagnitude; y /= flMagnitude; z /= flMagnitude;
-		return *this;
-	}
+    vec CrossProduct(vec other) const
+    {
+        return vec(
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x
+        );
+    }
+
+    vec& NormalizeInPlace()
+    {
+        float flMagnitude = sqrtf(x * x + y * y + z * z);
+        x /= flMagnitude; y /= flMagnitude; z /= flMagnitude;
+        return *this;
+    }
+
+    bool HasSameDirection(const vec& other) const
+    {
+        vec vThis  = this->Normalize();
+        vec vOther = other.Normalize();
+        
+        return 
+            fabsf(vThis.x) == fabsf(vOther.x) &&
+            fabsf(vThis.y) == fabsf(vOther.y) &&
+            fabsf(vThis.z) == fabsf(vOther.z);
+    }
 };
 
 
 __declspec(align(16)) struct vecAligned : public vec {
 
-	float w; // to ensure alligment
+    float w; // to ensure alligment
 
-	vecAligned(float X, float Y, float Z, float W = 0.0f) : vec(X, Y, Z), w(W){}
-	vecAligned() : vec(0.0f, 0.0f, 0.0f), w(0.0f){}
+    vecAligned(float X, float Y, float Z, float W = 0.0f) : vec(X, Y, Z), w(W){}
+    vecAligned() : vec(0.0f, 0.0f, 0.0f), w(0.0f){}
 
-	vecAligned& operator= (const vec& other) 
-	{
-		x = other.x;
-		y = other.y; 
-		z = other.z;
-		return *this;
-	}
+    vecAligned& operator= (const vec& other) 
+    {
+        x = other.x;
+        y = other.y; 
+        z = other.z;
+        return *this;
+    }
 
-	vecAligned& operator= (const vecAligned& other)
-	{
-		x = other.x;
-		y = other.y;
-		z = other.z;
-		w = other.w;
-		return *this;
-	}
+    vecAligned& operator= (const vecAligned& other)
+    {
+        x = other.x;
+        y = other.y;
+        z = other.z;
+        w = other.w;
+        return *this;
+    }
 
-	void operator*=(const float other)
-	{
-		x *= other; y *= other; z *= other; w *= other;
-	}
-	void operator-=(const float other)
-	{
-		x -= other; y -= other; z -= other; w -= other;
-	}
-	void operator+=(const float other)
-	{
-		x += other; y += other; z += other; w += other;
-	}
+    void operator*=(const float other)
+    {
+        x *= other; y *= other; z *= other; w *= other;
+    }
+    void operator-=(const float other)
+    {
+        x -= other; y -= other; z -= other; w -= other;
+    }
+    void operator+=(const float other)
+    {
+        x += other; y += other; z += other; w += other;
+    }
 
-	vecAligned operator+ (const vecAligned& other)
-	{
-		return vecAligned(x + other.x, y + other.y, z + other.z);
-	}
-	vecAligned operator+ (const vec& other)
-	{
-		return vecAligned(x + other.x, y + other.y, z + other.z);
-	}
-	vecAligned operator+ (const float other)
-	{
-		return vecAligned(x + other, y + other, z + other);
-	}
+    vecAligned operator+ (const vecAligned& other)
+    {
+        return vecAligned(x + other.x, y + other.y, z + other.z);
+    }
+    vecAligned operator+ (const vec& other)
+    {
+        return vecAligned(x + other.x, y + other.y, z + other.z);
+    }
+    vecAligned operator+ (const float other)
+    {
+        return vecAligned(x + other, y + other, z + other);
+    }
 
-	vecAligned operator- (const vecAligned& other)
-	{
-		return vecAligned(x - other.x, y - other.y, z - other.z);
-	}
-	vecAligned operator- (const vec& other)
-	{
-		return vecAligned(x - other.x, y - other.y, z - other.z);
-	}
-	vecAligned operator- (const float other)
-	{
-		return vecAligned(x - other, y - other, z - other);
-	}
+    vecAligned operator- (const vecAligned& other)
+    {
+        return vecAligned(x - other.x, y - other.y, z - other.z);
+    }
+    vecAligned operator- (const vec& other)
+    {
+        return vecAligned(x - other.x, y - other.y, z - other.z);
+    }
+    vecAligned operator- (const float other)
+    {
+        return vecAligned(x - other, y - other, z - other);
+    }
 };
 
 
 struct Vec2
 {
-	constexpr Vec2()                 : x(0.0f), y(0.0f){}
-	constexpr Vec2(float X, float Y) : x(X), y(Y){}
-	
-	float x, y;
-	
-	const Vec2& operator=(Vec2 other)
-	{
-		x = other.x; y = other.y;
-		return *this;
-	}
+    constexpr Vec2()                 : x(0.0f), y(0.0f){}
+    constexpr Vec2(float X, float Y) : x(X), y(Y){}
+    
+    float x, y;
+    
+    const Vec2& operator=(Vec2 other)
+    {
+        x = other.x; y = other.y;
+        return *this;
+    }
 
-	bool operator==(Vec2 other) const
-	{
-		return x == other.x && y == other.y;
-	}
+    bool operator==(Vec2 other) const
+    {
+        return x == other.x && y == other.y;
+    }
 
-	bool IsEmpty() const
-	{
-		return fabsf(x) < 0.0001f && fabsf(y) < 0.0001f;
-	}
+    bool IsEmpty() const
+    {
+        return fabsf(x) < 0.0001f && fabsf(y) < 0.0001f;
+    }
 
-	Vec2 operator+(Vec2 other) const
-	{
-		return Vec2(x + other.x, y + other.y);
-	}
+    Vec2 operator+(Vec2 other) const
+    {
+        return Vec2(x + other.x, y + other.y);
+    }
 
-	Vec2& operator+=(Vec2 other) 
-	{
-		x += other.x; y += other.y;
-		return *this;
-	}
+    Vec2& operator+=(Vec2 other) 
+    {
+        x += other.x; y += other.y;
+        return *this;
+    }
 
-	Vec2 operator-(Vec2 other) const
-	{
-		return Vec2(x - other.x, y - other.y);
-	}
+    Vec2 operator-(Vec2 other) const
+    {
+        return Vec2(x - other.x, y - other.y);
+    }
 
-	Vec2& operator-=(Vec2 other) 
-	{
-		x -= other.x; y -= other.y;
-		return *this;
-	}
+    Vec2& operator-=(Vec2 other) 
+    {
+        x -= other.x; y -= other.y;
+        return *this;
+    }
 };
+
+
+struct Vec4
+{
+    float x, y, z, w;
+
+    Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
+    Vec4(float X, float Y, float Z, float W) : x(X), y(Y), z(Z), w(W) {}
+    Vec4(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+    {
+        x = static_cast<float>(r) / 255.0f;
+        y = static_cast<float>(g) / 255.0f;
+        z = static_cast<float>(b) / 255.0f;
+        w = static_cast<float>(a) / 255.0f;
+    }
+
+    void Init()
+    {
+        x = 0.0f; y = 0.0; z = 0.0f; w = 0.0f;
+    }
+
+    void Set(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+    {
+        x = static_cast<float>(r) / 255.0f;
+        y = static_cast<float>(g) / 255.0f;
+        z = static_cast<float>(b) / 255.0f;
+        w = static_cast<float>(a) / 255.0f;
+    }
+};
+
 
 struct clr_t
 {
-	clr_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
-	clr_t(float red, float green, float blue,float alpha) : r(red), g(green), b(blue), a(alpha){}
-	float r, g, b, a;
+    clr_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
+    clr_t(float red, float green, float blue,float alpha) : r(red), g(green), b(blue), a(alpha){}
+    float r, g, b, a;
 };
 
 struct TFclr_t
 {
-	char clr[4];
+    char clr[4];
 };
 
 /* view matrix, stores world-to-view or world-to-screen transformation matrix given
 by the engine*/
 struct view_matrix
 {
-	float m[4][4];
+    constexpr view_matrix()
+    {
+        m[0][0] = 0.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] = 0.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 0.0f; m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 0.0f;
+    }
+
+    float m[4][4];
+    const view_matrix& operator=(const view_matrix& other)
+    {
+        m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
+        m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
+        m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
+        m[3][0] = other.m[3][0];   m[3][1] = other.m[3][1];   m[3][2] = other.m[3][2];   m[3][3] = other.m[3][3];
+
+        return *this;
+    }
 };
 
 /* enum for indicating which frame stage the engine is at. Used in FrameStageNotify */
 enum client_frame_stage
 {
-	FRAME_UNDEFINED = -1,					// (haven't run any frames yet)
-	FRAME_START,
-	FRAME_NET_UPDATE_START,					// A network packet is being recieved
-	FRAME_NET_UPDATE_POSTDATAUPDATE_START,	// Data has been received and we're going to start calling PostDataUpdate
-	FRAME_NET_UPDATE_POSTDATAUPDATE_END,	// Data has been received and we've called PostDataUpdate on all data recipients
-	FRAME_NET_UPDATE_END,					// We've received all packets, we can now do interpolation, prediction, etc..
-	FRAME_RENDER_START,						// We're about to start rendering the scene
-	FRAME_RENDER_END						// We've finished rendering the scene.
+    FRAME_UNDEFINED = -1,					// (haven't run any frames yet)
+    FRAME_START,
+    FRAME_NET_UPDATE_START,					// A network packet is being recieved
+    FRAME_NET_UPDATE_POSTDATAUPDATE_START,	// Data has been received and we're going to start calling PostDataUpdate
+    FRAME_NET_UPDATE_POSTDATAUPDATE_END,	// Data has been received and we've called PostDataUpdate on all data recipients
+    FRAME_NET_UPDATE_END,					// We've received all packets, we can now do interpolation, prediction, etc..
+    FRAME_RENDER_START,						// We're about to start rendering the scene
+    FRAME_RENDER_END						// We've finished rendering the scene.
 };
 
 enum class lifeState_t : int8_t 
 {
-	LIFE_ALIVE = 0,
-	LIFE_DYING,
-	LIFE_DEAD,
-	LIFE_RESPAWNABLE,
-	LIFE_DISCARDBODY
+    LIFE_ALIVE = 0,
+    LIFE_DYING,
+    LIFE_DEAD,
+    LIFE_RESPAWNABLE,
+    LIFE_DISCARDBODY
 };
 
 /* skeleton matrix */
 class matrix3x4_t
 {
 public:
-	matrix3x4_t()		 { Fill(0.0f); }
-	matrix3x4_t(float x) { Fill(x);    }
+    matrix3x4_t()		 { Fill(0.0f); }
+    matrix3x4_t(float x) { Fill(x);    }
 
-	inline void Fill(float X)
-	{
-		m[0][0] = X;	m[0][1] = X;	m[0][2] = X;	m[0][3] = X;
-		m[1][0] = X;	m[1][1] = X;	m[1][2] = X;	m[1][3] = X;
-		m[2][0] = X;	m[2][1] = X;	m[2][2] = X;	m[2][3] = X;
-	}
+    inline void Fill(float X)
+    {
+        m[0][0] = X;	m[0][1] = X;	m[0][2] = X;	m[0][3] = X;
+        m[1][0] = X;	m[1][1] = X;	m[1][2] = X;	m[1][3] = X;
+        m[2][0] = X;	m[2][1] = X;	m[2][2] = X;	m[2][3] = X;
+    }
 
-	float m[3][4];
+    float m[3][4];
 
-	/* gets the bone's world coordinates */
-	vec GetWorldPos(){
-		return vec(m[0][3], m[1][3], m[2][3]);
-	}
+    /* gets the bone's world coordinates */
+    vec GetWorldPos(){
+        return vec(m[0][3], m[1][3], m[2][3]);
+    }
 
-	const matrix3x4_t& operator=(const matrix3x4_t& other)
-	{
-		m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
-		m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
-		m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
+    const matrix3x4_t& operator=(const matrix3x4_t& other)
+    {
+        m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
+        m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
+        m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
 
-		return *this;
-	}
+        return *this;
+    }
 };
 
 /* in game playable classes */
 enum player_class
 {
-	INVALID = 0,
-	TF_SCOUT = 1,
-	TF_SNIPER,
-	TF_SOLDIER,
-	TF_DEMOMAN,
-	TF_MEDIC,
-	TF_HEAVY,
-	TF_PYRO,
-	TF_SPY,
-	TF_ENGINEER,
-	NOT_PLAYER
+    INVALID = 0,
+    TF_SCOUT = 1,
+    TF_SNIPER,
+    TF_SOLDIER,
+    TF_DEMOMAN,
+    TF_MEDIC,
+    TF_HEAVY,
+    TF_PYRO,
+    TF_SPY,
+    TF_ENGINEER,
+    NOT_PLAYER
 };
 
 /* use engine to retrieve this information about player */
 struct player_info_t
 {
-	char		name[32];
-	int			userID;
-	char		guid[33];
-	uint32_t	friendsID;
-	char		friendsName[32];
-	bool		fakeplayer;
-	bool		ishltv;
+    char		name[32];
+    int			userID;
+    char		guid[33];
+    uint32_t	friendsID;
+    char		friendsName[32];
+    bool		fakeplayer;
+    bool		ishltv;
 };
 
 typedef unsigned char byte;
 struct cplane_t
 {
-	vec	normal;
-	float	dist;
-	byte	type;			// for fast side tests
-	byte	signbits;		// signx + (signy<<1) + (signz<<1)
-	byte	pad[2];
+    vec	normal;
+    float	dist;
+    byte	type;			// for fast side tests
+    byte	signbits;		// signx + (signy<<1) + (signz<<1)
+    byte	pad[2];
 };
 
 struct csurface_t
 {
-	const char*		name;
-	short			surfaceProps;
-	unsigned short	flags;		
+    const char*		name;
+    short			surfaceProps;
+    unsigned short	flags;		
 };
 
 /* Dummy stuctures */
@@ -581,147 +649,147 @@ struct UNUSED{};
 
 struct model_t
 {
-	int					fnHandle; // is a 4 byte pointer handle
-	const char*			strName;
+    int					fnHandle; // is a 4 byte pointer handle
+    const char*			strName;
 
-	int					nLoadFlags;		// mark loaded/not loaded
-	int					nServerCount;	// marked at load
-	IMaterial**			ppMaterials;	// null-terminated runtime material cache; ((intptr_t*)(ppMaterials))[-1] == nMaterials
+    int					nLoadFlags;		// mark loaded/not loaded
+    int					nServerCount;	// marked at load
+    IMaterial**			ppMaterials;	// null-terminated runtime material cache; ((intptr_t*)(ppMaterials))[-1] == nMaterials
 
-	int					type; // ENUM HA BC
-	int					flags;			// MODELFLAG_???
+    int					type; // ENUM HA BC
+    int					flags;			// MODELFLAG_???
 
-	// volume occupied by the model graphics	
-	vec					mins, maxs;
-	float				radius;
+    // volume occupied by the model graphics	
+    vec					mins, maxs;
+    float				radius;
 };
 
 // player condition enum ( used for : m_playercond )
 enum FLAG_playerCond
 {
-	TF_COND_INVALID = -1,
-	TF_COND_AIMING = 0,		// Sniper aiming, Heavy minigun.
-	TF_COND_ZOOMED,
-	TF_COND_DISGUISING,
-	TF_COND_DISGUISED,
-	TF_COND_STEALTHED,		// Spy specific
-	TF_COND_INVULNERABLE,
-	TF_COND_TELEPORTED,
-	TF_COND_TAUNTING,
-	TF_COND_INVULNERABLE_WEARINGOFF,
-	TF_COND_STEALTHED_BLINK,
-	TF_COND_SELECTED_TO_TELEPORT,
-	TF_COND_CRITBOOSTED,	// DO NOT RE-USE THIS -- THIS IS FOR KRITZKRIEG AND REVENGE CRITS ONLY
-	TF_COND_TMPDAMAGEBONUS,
-	TF_COND_FEIGN_DEATH,
-	TF_COND_PHASE,
-	TF_COND_STUNNED,		// Any type of stun. Check iStunFlags for more info.
-	TF_COND_OFFENSEBUFF,
-	TF_COND_SHIELD_CHARGE,
-	TF_COND_DEMO_BUFF,
-	TF_COND_ENERGY_BUFF,
-	TF_COND_RADIUSHEAL,
-	TF_COND_HEALTH_BUFF,
-	TF_COND_BURNING,
-	TF_COND_HEALTH_OVERHEALED,
-	TF_COND_URINE,
-	TF_COND_BLEEDING,
-	TF_COND_DEFENSEBUFF,	// 35% defense! No crit damage.
-	TF_COND_MAD_MILK,
-	TF_COND_MEGAHEAL,
-	TF_COND_REGENONDAMAGEBUFF,
-	TF_COND_MARKEDFORDEATH,
-	TF_COND_NOHEALINGDAMAGEBUFF,
-	TF_COND_SPEED_BOOST,				// = 32
-	TF_COND_CRITBOOSTED_PUMPKIN,		// Brandon hates bits
-	TF_COND_CRITBOOSTED_USER_BUFF,
-	TF_COND_CRITBOOSTED_DEMO_CHARGE,
-	TF_COND_SODAPOPPER_HYPE,
-	TF_COND_CRITBOOSTED_FIRST_BLOOD,	// arena mode first blood
-	TF_COND_CRITBOOSTED_BONUS_TIME,
-	TF_COND_CRITBOOSTED_CTF_CAPTURE,
-	TF_COND_CRITBOOSTED_ON_KILL,		// =40. KGB, etc.
-	TF_COND_CANNOT_SWITCH_FROM_MELEE,
-	TF_COND_DEFENSEBUFF_NO_CRIT_BLOCK,	// 35% defense! Still damaged by crits.
-	TF_COND_REPROGRAMMED,				// Bots only
-	TF_COND_CRITBOOSTED_RAGE_BUFF,
-	TF_COND_DEFENSEBUFF_HIGH,			// 75% defense! Still damaged by crits.
-	TF_COND_SNIPERCHARGE_RAGE_BUFF,		// Sniper Rage - Charge time speed up
-	TF_COND_DISGUISE_WEARINGOFF,		// Applied for half-second post-disguise
-	TF_COND_MARKEDFORDEATH_SILENT,		// Sans sound
-	TF_COND_DISGUISED_AS_DISPENSER,
-	TF_COND_SAPPED,						// =50. Bots only
-	TF_COND_INVULNERABLE_HIDE_UNLESS_DAMAGED,
-	TF_COND_INVULNERABLE_USER_BUFF,
-	TF_COND_HALLOWEEN_BOMB_HEAD,
-	TF_COND_HALLOWEEN_THRILLER,
-	TF_COND_RADIUSHEAL_ON_DAMAGE,
-	TF_COND_CRITBOOSTED_CARD_EFFECT,
-	TF_COND_INVULNERABLE_CARD_EFFECT,
-	TF_COND_MEDIGUN_UBER_BULLET_RESIST,
-	TF_COND_MEDIGUN_UBER_BLAST_RESIST,
-	TF_COND_MEDIGUN_UBER_FIRE_RESIST,		// =60
-	TF_COND_MEDIGUN_SMALL_BULLET_RESIST,
-	TF_COND_MEDIGUN_SMALL_BLAST_RESIST,
-	TF_COND_MEDIGUN_SMALL_FIRE_RESIST,
-	TF_COND_STEALTHED_USER_BUFF,			// Any class can have this
-	TF_COND_MEDIGUN_DEBUFF,
-	TF_COND_STEALTHED_USER_BUFF_FADING,
-	TF_COND_BULLET_IMMUNE,
-	TF_COND_BLAST_IMMUNE,
-	TF_COND_FIRE_IMMUNE,
-	TF_COND_PREVENT_DEATH,					// =70
-	TF_COND_MVM_BOT_STUN_RADIOWAVE, 		// Bots only
-	TF_COND_HALLOWEEN_SPEED_BOOST,
-	TF_COND_HALLOWEEN_QUICK_HEAL,
-	TF_COND_HALLOWEEN_GIANT,
-	TF_COND_HALLOWEEN_TINY,
-	TF_COND_HALLOWEEN_IN_HELL,
-	TF_COND_HALLOWEEN_GHOST_MODE,			// =77
-	TF_COND_MINICRITBOOSTED_ON_KILL,
-	TF_COND_OBSCURED_SMOKE,
-	TF_COND_PARACHUTE_DEPLOYED,				// =80
-	TF_COND_BLASTJUMPING,
-	TF_COND_HALLOWEEN_KART,
-	TF_COND_HALLOWEEN_KART_DASH,
-	TF_COND_BALLOON_HEAD,					// =84 larger head, lower-gravity-feeling jumps
-	TF_COND_MELEE_ONLY,						// =85 melee only
-	TF_COND_SWIMMING_CURSE,					// player movement become swimming movement
-	TF_COND_FREEZE_INPUT,					// freezes player input
-	TF_COND_HALLOWEEN_KART_CAGE,			// attach cage model to player while in kart
-	TF_COND_DONOTUSE_0,
-	TF_COND_RUNE_STRENGTH,
-	TF_COND_RUNE_HASTE,
-	TF_COND_RUNE_REGEN,
-	TF_COND_RUNE_RESIST,
-	TF_COND_RUNE_VAMPIRE,
-	TF_COND_RUNE_REFLECT,
-	TF_COND_RUNE_PRECISION,
-	TF_COND_RUNE_AGILITY,
-	TF_COND_GRAPPLINGHOOK,
-	TF_COND_GRAPPLINGHOOK_SAFEFALL,
-	TF_COND_GRAPPLINGHOOK_LATCHED,
-	TF_COND_GRAPPLINGHOOK_BLEEDING,
-	TF_COND_AFTERBURN_IMMUNE,
-	TF_COND_RUNE_KNOCKOUT,
-	TF_COND_RUNE_IMBALANCE,
-	TF_COND_CRITBOOSTED_RUNE_TEMP,
-	TF_COND_PASSTIME_INTERCEPTION,
-	TF_COND_SWIMMING_NO_EFFECTS,			// =107_DNOC_FT
-	TF_COND_PURGATORY,
-	TF_COND_RUNE_KING,
-	TF_COND_RUNE_PLAGUE,
-	TF_COND_RUNE_SUPERNOVA,
-	TF_COND_PLAGUE,
-	TF_COND_KING_BUFFED,
-	TF_COND_TEAM_GLOWS,						// used to show team glows to living players
-	TF_COND_KNOCKED_INTO_AIR,
-	TF_COND_COMPETITIVE_WINNER,
-	TF_COND_COMPETITIVE_LOSER,
-	TF_COND_HEALING_DEBUFF,
-	TF_COND_PASSTIME_PENALTY_DEBUFF,		// when carrying the ball without any teammates nearby	
-	TF_COND_GRAPPLED_TO_PLAYER,
-	TF_COND_GRAPPLED_BY_PLAYER
+    TF_COND_INVALID = -1,
+    TF_COND_AIMING = 0,		// Sniper aiming, Heavy minigun.
+    TF_COND_ZOOMED,
+    TF_COND_DISGUISING,
+    TF_COND_DISGUISED,
+    TF_COND_STEALTHED,		// Spy specific
+    TF_COND_INVULNERABLE,
+    TF_COND_TELEPORTED,
+    TF_COND_TAUNTING,
+    TF_COND_INVULNERABLE_WEARINGOFF,
+    TF_COND_STEALTHED_BLINK,
+    TF_COND_SELECTED_TO_TELEPORT,
+    TF_COND_CRITBOOSTED,	// DO NOT RE-USE THIS -- THIS IS FOR KRITZKRIEG AND REVENGE CRITS ONLY
+    TF_COND_TMPDAMAGEBONUS,
+    TF_COND_FEIGN_DEATH,
+    TF_COND_PHASE,
+    TF_COND_STUNNED,		// Any type of stun. Check iStunFlags for more info.
+    TF_COND_OFFENSEBUFF,
+    TF_COND_SHIELD_CHARGE,
+    TF_COND_DEMO_BUFF,
+    TF_COND_ENERGY_BUFF,
+    TF_COND_RADIUSHEAL,
+    TF_COND_HEALTH_BUFF,
+    TF_COND_BURNING,
+    TF_COND_HEALTH_OVERHEALED,
+    TF_COND_URINE,
+    TF_COND_BLEEDING,
+    TF_COND_DEFENSEBUFF,	// 35% defense! No crit damage.
+    TF_COND_MAD_MILK,
+    TF_COND_MEGAHEAL,
+    TF_COND_REGENONDAMAGEBUFF,
+    TF_COND_MARKEDFORDEATH,
+    TF_COND_NOHEALINGDAMAGEBUFF,
+    TF_COND_SPEED_BOOST,				// = 32
+    TF_COND_CRITBOOSTED_PUMPKIN,		// Brandon hates bits
+    TF_COND_CRITBOOSTED_USER_BUFF,
+    TF_COND_CRITBOOSTED_DEMO_CHARGE,
+    TF_COND_SODAPOPPER_HYPE,
+    TF_COND_CRITBOOSTED_FIRST_BLOOD,	// arena mode first blood
+    TF_COND_CRITBOOSTED_BONUS_TIME,
+    TF_COND_CRITBOOSTED_CTF_CAPTURE,
+    TF_COND_CRITBOOSTED_ON_KILL,		// =40. KGB, etc.
+    TF_COND_CANNOT_SWITCH_FROM_MELEE,
+    TF_COND_DEFENSEBUFF_NO_CRIT_BLOCK,	// 35% defense! Still damaged by crits.
+    TF_COND_REPROGRAMMED,				// Bots only
+    TF_COND_CRITBOOSTED_RAGE_BUFF,
+    TF_COND_DEFENSEBUFF_HIGH,			// 75% defense! Still damaged by crits.
+    TF_COND_SNIPERCHARGE_RAGE_BUFF,		// Sniper Rage - Charge time speed up
+    TF_COND_DISGUISE_WEARINGOFF,		// Applied for half-second post-disguise
+    TF_COND_MARKEDFORDEATH_SILENT,		// Sans sound
+    TF_COND_DISGUISED_AS_DISPENSER,
+    TF_COND_SAPPED,						// =50. Bots only
+    TF_COND_INVULNERABLE_HIDE_UNLESS_DAMAGED,
+    TF_COND_INVULNERABLE_USER_BUFF,
+    TF_COND_HALLOWEEN_BOMB_HEAD,
+    TF_COND_HALLOWEEN_THRILLER,
+    TF_COND_RADIUSHEAL_ON_DAMAGE,
+    TF_COND_CRITBOOSTED_CARD_EFFECT,
+    TF_COND_INVULNERABLE_CARD_EFFECT,
+    TF_COND_MEDIGUN_UBER_BULLET_RESIST,
+    TF_COND_MEDIGUN_UBER_BLAST_RESIST,
+    TF_COND_MEDIGUN_UBER_FIRE_RESIST,		// =60
+    TF_COND_MEDIGUN_SMALL_BULLET_RESIST,
+    TF_COND_MEDIGUN_SMALL_BLAST_RESIST,
+    TF_COND_MEDIGUN_SMALL_FIRE_RESIST,
+    TF_COND_STEALTHED_USER_BUFF,			// Any class can have this
+    TF_COND_MEDIGUN_DEBUFF,
+    TF_COND_STEALTHED_USER_BUFF_FADING,
+    TF_COND_BULLET_IMMUNE,
+    TF_COND_BLAST_IMMUNE,
+    TF_COND_FIRE_IMMUNE,
+    TF_COND_PREVENT_DEATH,					// =70
+    TF_COND_MVM_BOT_STUN_RADIOWAVE, 		// Bots only
+    TF_COND_HALLOWEEN_SPEED_BOOST,
+    TF_COND_HALLOWEEN_QUICK_HEAL,
+    TF_COND_HALLOWEEN_GIANT,
+    TF_COND_HALLOWEEN_TINY,
+    TF_COND_HALLOWEEN_IN_HELL,
+    TF_COND_HALLOWEEN_GHOST_MODE,			// =77
+    TF_COND_MINICRITBOOSTED_ON_KILL,
+    TF_COND_OBSCURED_SMOKE,
+    TF_COND_PARACHUTE_DEPLOYED,				// =80
+    TF_COND_BLASTJUMPING,
+    TF_COND_HALLOWEEN_KART,
+    TF_COND_HALLOWEEN_KART_DASH,
+    TF_COND_BALLOON_HEAD,					// =84 larger head, lower-gravity-feeling jumps
+    TF_COND_MELEE_ONLY,						// =85 melee only
+    TF_COND_SWIMMING_CURSE,					// player movement become swimming movement
+    TF_COND_FREEZE_INPUT,					// freezes player input
+    TF_COND_HALLOWEEN_KART_CAGE,			// attach cage model to player while in kart
+    TF_COND_DONOTUSE_0,
+    TF_COND_RUNE_STRENGTH,
+    TF_COND_RUNE_HASTE,
+    TF_COND_RUNE_REGEN,
+    TF_COND_RUNE_RESIST,
+    TF_COND_RUNE_VAMPIRE,
+    TF_COND_RUNE_REFLECT,
+    TF_COND_RUNE_PRECISION,
+    TF_COND_RUNE_AGILITY,
+    TF_COND_GRAPPLINGHOOK,
+    TF_COND_GRAPPLINGHOOK_SAFEFALL,
+    TF_COND_GRAPPLINGHOOK_LATCHED,
+    TF_COND_GRAPPLINGHOOK_BLEEDING,
+    TF_COND_AFTERBURN_IMMUNE,
+    TF_COND_RUNE_KNOCKOUT,
+    TF_COND_RUNE_IMBALANCE,
+    TF_COND_CRITBOOSTED_RUNE_TEMP,
+    TF_COND_PASSTIME_INTERCEPTION,
+    TF_COND_SWIMMING_NO_EFFECTS,			// =107_DNOC_FT
+    TF_COND_PURGATORY,
+    TF_COND_RUNE_KING,
+    TF_COND_RUNE_PLAGUE,
+    TF_COND_RUNE_SUPERNOVA,
+    TF_COND_PLAGUE,
+    TF_COND_KING_BUFFED,
+    TF_COND_TEAM_GLOWS,						// used to show team glows to living players
+    TF_COND_KNOCKED_INTO_AIR,
+    TF_COND_COMPETITIVE_WINNER,
+    TF_COND_COMPETITIVE_LOSER,
+    TF_COND_HEALING_DEBUFF,
+    TF_COND_PASSTIME_PENALTY_DEBUFF,		// when carrying the ball without any teammates nearby	
+    TF_COND_GRAPPLED_TO_PLAYER,
+    TF_COND_GRAPPLED_BY_PLAYER
 };
 
 //=========================================================================

@@ -55,6 +55,8 @@ REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_bottom)
 REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_cap)
 REGISTER_CVAR_FLOAT(tf_weapon_criticals_bucket_default)
 REGISTER_CVAR_FLOAT(sv_airaccelerate)
+REGISTER_CVAR_FLOAT(host_timescale)
+REGISTER_CVAR_FLOAT(sv_maxunlag)
 
 REGISTER_CVAR_FLOAT(cl_interp)
 REGISTER_CVAR_FLOAT(cl_interp_ratio)

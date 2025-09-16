@@ -24,6 +24,7 @@ MAKE_HOOK(ClientModeShared_LevelInit, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 48 8
     
     F::entityIterator.ClearBackTrackData(); F::entityIterator.ClearLists();
     F::entityIterator.ClearEntityMaterialOverrides();
+    F::entityIterator.ClearSequenceData();
 
     return result;
 }

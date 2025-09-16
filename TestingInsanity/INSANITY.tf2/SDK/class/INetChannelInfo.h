@@ -56,4 +56,22 @@ public:
 	virtual void		GetRemoteFramerate(float* pflFrameTime, float* pflFrameTimeStdDeviation) const = 0;
 
 	virtual float		GetTimeoutSeconds() const = 0;
+
+	bool		m_bProcessingMessages;
+	bool		m_bClearedDuringProcessing;
+	bool		m_bShouldDelete;
+
+	// last send outgoing sequence number
+	int			m_nOutSequenceNr;
+	// last received incoming sequnec number
+	int			m_nInSequenceNr;
+	// last received acknowledge outgoing sequnce number
+	int			m_nOutSequenceNrAck;
+
+	// state of outgoing reliable data (0/1) flip flop used for loss detection
+	int			m_nOutReliableState;
+	// state of incoming reliable data
+	int			m_nInReliableState;
+
+	int			m_nChokedPackets;	//number of choked packets
 };

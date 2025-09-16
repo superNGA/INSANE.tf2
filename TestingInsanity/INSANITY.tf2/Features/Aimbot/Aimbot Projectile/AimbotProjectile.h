@@ -75,7 +75,7 @@ private:
 class AimbotProjectile_t
 {
 public:
-    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
+    bool Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult);
     void Reset();
     void DeleteProjLUT();
 
@@ -162,7 +162,7 @@ DEFINE_FEATURE(
 )
 
 
-DEFINE_SECTION(Visuals, "Aimbot", 11);
+DEFINE_SECTION(Visuals, "Aimbot", 5);
 
 
 DEFINE_FEATURE(Speed, FloatSlider_t, Visuals, Aimbot,

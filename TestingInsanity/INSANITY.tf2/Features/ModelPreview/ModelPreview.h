@@ -17,7 +17,7 @@
 class BaseEntity;
 class Panel;
 class INetworkStringTable;
-class model_t;
+struct model_t;
 
 class ModelPreview_t
 {

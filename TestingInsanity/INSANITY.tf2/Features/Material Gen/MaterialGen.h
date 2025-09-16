@@ -108,10 +108,11 @@ public:
 
     const std::vector<MaterialBundle_t>& GetMaterialList() const;
 
-private:
     // Default materials...
-    bool _CreateDefaultMaterials();
+    bool CreateDefaultMaterials();
     bool m_bDefaultMatInit = false;
+
+private:
 
     // Drawing...
     bool m_bVisible = false;

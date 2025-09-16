@@ -4,16 +4,20 @@
 // by      : INSANE
 // created : 14/06/2025
 // 
-// purpose : Hits enemy perfectly with melee weapons ( doesn't contain auto backstab )
+// purpose : Aims for you when using melee weapons, also contains backtrack auto backstab
 //-------------------------------------------------------------------------
 
 #include "AimbotMelee.h"
 #include "../AimbotHelper.h"
 #include "../../CritHack/CritHack.h"
 
+#include <deque>
+#include <algorithm>
+
 // SDK
 #include "../../../SDK/class/Source Entity.h"
 #include "../../../SDK/class/BaseWeapon.h"
+#include "../../../SDK/class/IVEngineClient.h"
 #include "../../../SDK/class/IVDebugOverlay.h"
 #include "../../../SDK/class/FileWeaponInfo.h"
 #include "../../../SDK/class/CCollisionProperty.h"
@@ -22,52 +26,46 @@
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
 #include "../../../SDK/class/CommonFns.h"
+#include "../../../SDK/class/IVEngineServer.h"
 
 // UTILITY
+#include "../../Entity Iterator/EntityIterator.h"
 #include "../../../Utility/CVar Handler/CVarHandler.h"
 #include "../../../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../../../Utility/Hook Handler/Hook_t.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
 #include "../../ImGui/InfoWindow/InfoWindow_t.h"
 
+
 #define DEBUG_BACKSTAB_CHECK false
 
-constexpr float PREDICTION_DEBUG_DRAWING_LIFE = 3.0f;
-
-// NOTE : WE ARE ASSUMING THAT ALL MELEE'S HAVE SMACK DELAY, AND SPY KNIFE ALSO HAS SMACK DELAY UNLESS BACKSTAB
-// NOTE : m_flSmackTime for Spy is messed up, so we can't relie on it to set our angles on the perfect tick
-
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
+bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
+    // NOTE : Output false means, no target has been found.
+    //        Output true  means,  a target has been found.
     PROFILE_FUNCTION("Melee Aimbot");
 
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
-        return;
+        return false;
 
-    bool bInAttack = SDK::InAttack(pLocalPlayer, pActiveWeapon);
-    
-    // FINDING TARGET
-    if (bInAttack == false)
+    // Don't do aimbot while cloaked.
+    if (pLocalPlayer->m_iClass() == TF_SPY && pLocalPlayer->InCond(FLAG_playerCond::TF_COND_STEALTHED) == true)
+        return false;
+
+    // Detecting the best target.
+    if (SDK::InAttack(pLocalPlayer, pActiveWeapon) == false)
     {
         m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon);
     }
-    else if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_DebugPrediction.IsActive() == true && m_pBestTarget != nullptr)
-    {
-        // Storing position at the time of "Locking"
-        if (m_vBestTargetPosAtLock.IsEmpty() == true)
-            m_vBestTargetPosAtLock = m_pBestTarget->GetAbsOrigin();
-        
-        // Drawing Current & Predicted position.
-        _DrawPredictionDebugInfo(pActiveWeapon, pActiveWeapon, m_pBestTarget);
-    }
 
     if (m_pBestTarget == nullptr)
-        return;
+        return false;
 
-    // HANDLING AUTO FIRE
+    // Auto firing.
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true)
     {
         pCmd->buttons |= IN_ATTACK;
@@ -77,17 +75,21 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     if(_ShouldAim(pLocalPlayer, pActiveWeapon, pCmd) == true)
     {
         // Calculating target's angles
-        vec vTargetBestPos = _GetClosestPointOnEntity(pLocalPlayer, m_pBestTarget);
         qangle qTargetBestAngles;
-        Maths::VectorAnglesFromSDK(vTargetBestPos - pLocalPlayer->GetEyePos(), qTargetBestAngles);
+        Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - m_vAttackerFutureEyePos, qTargetBestAngles);
+
+        LOG("Fired @ command [ %d ]. Difference %d", pCmd->tick_count, pCmd->tick_count - m_iBestTargetsTick);
 
         // Silent aim
-        pCmd->viewangles = qTargetBestAngles;
+        pCmd->viewangles   = qTargetBestAngles;
+        pCmd->tick_count   = pLocalPlayer->m_iClass() == TF_SPY ? m_iBestTargetsTick : pCmd->tick_count;
         *pCreatemoveResult = false; // Setting silent aim
 
         // Reset everything once swing is done.
         Reset();
     }
+
+    return true;
 }
 
 
@@ -95,6 +97,9 @@ void AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 ///////////////////////////////////////////////////////////////////////////
 bool AimbotMelee_t::_ShouldAim(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
+    if (m_pBestTarget == nullptr)
+        return false;
+
     float flCurTime = TICK_TO_TIME(pAttacker->m_nTickBase());
     
     // If not spy, we can just use the netvar :)
@@ -115,147 +120,153 @@ void AimbotMelee_t::Reset()
     m_vBestTargetFuturePos.Init();
     m_vBestTargetPosAtLock.Init();
 
-    m_pBestTarget     = nullptr;
+    m_pBestTarget      = nullptr;
+    m_iBestTargetsTick = 0;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pAttacker, baseWeapon* pActiveWeapon)
+BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
-    const AimbotHelper_t::AimbotTargetData_t& aimbotTargetData = F::aimbotHelper.GetAimbotTargetData();
-    float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flSmackDelay;
-    float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
+    BaseEntity* pBestTarget  = nullptr;
 
-    bool bShouldSimulateForPlayers = (pActiveWeapon->m_iClass() != TF_SPY);
-    BaseEntity* pBestTarget = nullptr;
+    // First we will arrange the target list in a ascending order of distance from local player using quick sort. 
+    // This theoratically should find us a target faster.
+    std::vector<BaseEntity*> vecTargets = F::entityIterator.GetEnemyPlayers();
+    std::sort(vecTargets.begin(), vecTargets.end(), [&](BaseEntity* pEnt1, BaseEntity* pEnt2)->bool
+        {
+            return (pEnt1->GetAbsOrigin() - pLocalPlayer->GetAbsOrigin()).LengthSqrt() < (pEnt2->GetAbsOrigin() - pLocalPlayer->GetAbsOrigin()).LengthSqrt();
+        });
 
-    // Trying to find enemy players first
-    pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyPlayers, flSmackDelay, flSwingRange, bShouldSimulateForPlayers);
+
+    // Now we find a record / entity we can hit.
+    pBestTarget = _ChooseTargetFromList(pLocalPlayer, pActiveWeapon, vecTargets);
     if (pBestTarget != nullptr)
         return pBestTarget;
 
-    //// if no enemy player found, try to find building next
-    //// SENTRY GUNS
-    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemySentry, flSmackDelay, flSwingRange, false);
-    //if (pBestTarget != nullptr)
-    //    return pBestTarget;
 
-    //// DISPENSERS
-    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyDispensers, flSmackDelay, flSwingRange, false);
-    //if (pBestTarget != nullptr)
-    //    return pBestTarget;
-
-    //// TELEPORTERS
-    //pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecEnemyTeleporters, flSmackDelay, flSwingRange, false);
-    //if (pBestTarget != nullptr)
-    //    return pBestTarget;
-
-    // TODO : Make this dynamic
-    bool bIsDisciplinaryAction = (pActiveWeapon->GetWeaponDefinitionID() == 447);
-    if (bIsDisciplinaryAction == true && Features::Aimbot::Melee_Aimbot::MeleeAimbot_HitTeammates_when_benificial.IsActive() == true) // Find valid teammate if we can hit them for advantage
-    {
-        pBestTarget = _ChooseTargetFromList(pAttacker, aimbotTargetData.m_vecFriendlyPlayers, flSmackDelay, flSwingRange, true);
-        if (pBestTarget != nullptr)
-            return pBestTarget;
-    }
-
-    // Add building support too
     return nullptr;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-BaseEntity* AimbotMelee_t::_ChooseTargetFromList( BaseEntity* pAttacker, 
-    const std::vector<BaseEntity*>& vecTargets, 
-    float flSmackDelay, float flSwingRange, bool bShouldSimulate)
+BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, const std::vector<BaseEntity*>& vecTargets)
 {
-    uint32_t nTicksToSimulate = flSmackDelay / TICK_INTERVAL;
+    float flSmackDelay = pActiveWeapon->GetTFWeaponInfo()->GetWeaponData(0)->m_flSmackDelay;
+    float flSwingRange = _GetSwingHullRange(pLocalPlayer, pActiveWeapon);
 
-    if (bShouldSimulate == false)
-        nTicksToSimulate = 0;
-
-    // Attacker's future position
-    if (bShouldSimulate == true)
+    if (pLocalPlayer->m_iClass() != TF_SPY)
     {
-        F::movementSimulation.Initialize(pAttacker, false);
-        for (int i = 0; i < nTicksToSimulate; i++)
-            F::movementSimulation.RunTick();
+        float       flBestDistance = std::numeric_limits<float>::infinity();
+        BaseEntity* pBestTarget    = nullptr;
 
-        m_vAttackerFutureEyePos = F::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
+        int nTicksToSimulate = 0;
+        //nTicksToSimulate += TIME_TO_TICK(Maths::MAX<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate))); // lerp.
+        nTicksToSimulate += TIME_TO_TICK(flSmackDelay); // Smack delay.
+
+        // Getting local player's future eye pos.
+        vec vFutureEyePos;
+        F::movementSimulation.Initialize(pLocalPlayer, false); // strafe prediction on attacker or target seems to work worse when simulating such small durations.
+        for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+        {
+            F::movementSimulation.RunTick();
+        }
+        vFutureEyePos = F::movementSimulation.GetSimulationPos() + pLocalPlayer->m_vecViewOffset();
         F::movementSimulation.Restore();
-    }
-    else
-    {
-        // Simulating only by Lerp time.
-        nTicksToSimulate = TIME_TO_TICK(Maths::MAX<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate)));
 
-        /*F::movementSimulation.Initialize(pAttacker, false);
-        for (int i = 0; i < nTicksToSimulate; i++)
-            F::movementSimulation.RunTick();
-
-        m_vAttackerFutureEyePos = F::movementSimulation.GetSimulationPos() + pAttacker->m_vecViewOffset();
-        F::movementSimulation.Restore();*/
-        
-        m_vAttackerFutureEyePos = pAttacker->GetEyePos();
-    }
-
-    BaseEntity* pBestTarget     = nullptr;
-    float       flBestDistance  = std::numeric_limits<float>::infinity();
-    vec         vBestTargetFuturePos;
-
-    for (BaseEntity* pTarget : vecTargets)
-    {
-        vec vTargetFuturePos;
-        if (bShouldSimulate == true)
+        // Finding most smackable target.
+        for (BaseEntity* pTarget : vecTargets)
         {
+            // Get target's future pos.
+            vec vTargetFuturePos;
             F::movementSimulation.Initialize(pTarget, false);
-            for (int i = 0; i < nTicksToSimulate; i++)
+            for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+            {
                 F::movementSimulation.RunTick();
-
-            vTargetFuturePos = F::movementSimulation.GetSimulationPos();
-
-            F::movementSimulation.Restore();
-        }
-        else
-        {
-            // We already set nTicksToSimulate to Lerp ammount of ticks. 
-            // We are simulating target by lerp ammount of ticks.
-            F::movementSimulation.Initialize(pTarget, false);
-            for (int i = 0; i < nTicksToSimulate; i++)
-                F::movementSimulation.RunTick();
-
+            }
             vTargetFuturePos = F::movementSimulation.GetSimulationPos();
             F::movementSimulation.Restore();
 
-            // vTargetFuturePos = pTarget->GetAbsOrigin();
-        }
-
-        // FOV check
-        if (_IsInFOV(pAttacker, m_vAttackerFutureEyePos, vTargetFuturePos, Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal) == false)
-            continue;
-
-        if (pAttacker->m_iClass() == TF_SPY && Features::Aimbot::Melee_Aimbot::MeleeAimbot_OnlyDoBackStabs_Spy.IsActive() == true)
-            if (_CanBackStab(pAttacker, pTarget) == false)
+            
+            // Too far away ?
+            const vec vBestPosOnTarget = _GetClosestPointOnEntity(pLocalPlayer, vFutureEyePos, pTarget, vTargetFuturePos);
+            
+            float flDistance = vFutureEyePos.DistTo(vBestPosOnTarget);
+            if (flDistance >= flSwingRange)
                 continue;
 
-        const vec vClosestPoint = _GetClosestPointOnEntity(pAttacker, m_vAttackerFutureEyePos, pTarget, vTargetFuturePos);
-        float flDist = m_vAttackerFutureEyePos.DistTo(vClosestPoint);
+            // FOV check.
+            if (_IsInFOV(pLocalPlayer, vFutureEyePos, vTargetFuturePos, Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal) == false)
+                continue;
 
-        if (flDist < flBestDistance)
+            // Is target visible.
+            trace_t trace;
+            ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer);
+            I::EngineTrace->UTIL_TraceRay(vFutureEyePos, vTargetFuturePos, MASK_SHOT, &filter, &trace);
+            if (trace.m_fraction < 1.0f && trace.m_entity != pTarget)
+                continue;
+
+            // Store best target.
+            if(flDistance < flBestDistance)
+            {
+                flBestDistance          = flDistance;
+
+                pBestTarget             = pTarget;
+                m_vBestTargetFuturePos  = vTargetFuturePos;
+                m_vAttackerFutureEyePos = vFutureEyePos;
+            }
+        }
+
+        return pBestTarget;
+    }
+    else // SPY
+    {
+        vec   vAttackerEyePos = pLocalPlayer->GetEyePos();
+        float flBackTrackTime = F::entityIterator.GetBackTrackTime();
+        for (BaseEntity* pTarget : vecTargets)
         {
-            flBestDistance       = flDist;
-            vBestTargetFuturePos = vTargetFuturePos;
-            pBestTarget          = pTarget;
+            std::deque<BackTrackRecord_t>* pRecords = F::entityIterator.GetBackTrackRecord(pTarget);
+            if (pRecords == nullptr)
+                continue;
+
+            if (pRecords->size() <= 0)
+                continue;
+
+            int iStartRecordIndex = std::clamp<int>(TIME_TO_TICK(flBackTrackTime - MAX_BACKTRACK_TIME), 0, pRecords->size() - 1);
+            int iFinalRecordIndex = std::clamp<int>(TIME_TO_TICK(flBackTrackTime),                      0, pRecords->size() - 1);
+
+            for (int iRecordIndex = iStartRecordIndex; iRecordIndex <= iFinalRecordIndex; iRecordIndex++)
+            {
+                BackTrackRecord_t& record = (*pRecords)[iRecordIndex];
+                
+                vec vBestPointOnTarget = _GetClosestPointOnEntity(pLocalPlayer, vAttackerEyePos, pTarget, record.m_vOrigin);
+                if (vAttackerEyePos.DistTo(vBestPointOnTarget) >= flSwingRange)
+                    continue;
+
+                // if we are standing inside the backtrack's Bounding Box, its sometimes doesn't register backstab.
+                // So we are doing a little collision check kinda thing here. This should tell us if we inside target's BB.
+                if (vBestPointOnTarget == vAttackerEyePos)
+                    continue;
+
+                if (_CanBackStab(pLocalPlayer, pTarget, record.m_vOrigin, record.m_qViewAngles) == false)
+                    continue;
+
+                LOG("Found target backtrack @ IDX : %d ( Total record : %d ) | Angles : %.2f %.2f", 
+                    iRecordIndex, pRecords->size(), record.m_qViewAngles.pitch, record.m_qViewAngles.yaw);
+
+                m_vAttackerFutureEyePos = vAttackerEyePos;
+                m_vBestTargetFuturePos  = vBestPointOnTarget;
+                m_pBestTarget           = pTarget;
+                m_iBestTargetsTick      = record.m_iTick;
+                return pTarget;
+            }
         }
     }
+    
 
-    if (flBestDistance > flSwingRange)
-        return nullptr;
-
-    m_vBestTargetFuturePos = vBestTargetFuturePos;
-    return pBestTarget;
+    return nullptr;
 }
 
 
@@ -300,48 +311,6 @@ const vec AimbotMelee_t::_GetClosestPointOnEntity(BaseEntity* pAttacker, const v
     vClosestPoint.z = std::clamp(vEyePos.z, vHullMin.z, vHullMax.z);
 
     return vClosestPoint;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void AimbotMelee_t::_DrawPredictionDebugInfo(BaseEntity* pAttacker, baseWeapon* pActiveWeapon, BaseEntity* pTarget)
-{
-    float flSwingRange = _GetSwingHullRange(pAttacker, pActiveWeapon);
-    
-    // eye pos, swing range line, enemy collision hull
-    vec vClosestPointOnEnemyHull = _GetClosestPointOnEntity(pAttacker, m_vAttackerFutureEyePos, pTarget, m_vBestTargetFuturePos);
-    vec vSwingEndPoint           = m_vAttackerFutureEyePos + ((vClosestPointOnEnemyHull - m_vAttackerFutureEyePos).NormalizeInPlace() * flSwingRange);
-
-    // Visualizing swing range using line
-    I::IDebugOverlay->AddLineOverlay(m_vAttackerFutureEyePos, vSwingEndPoint, 255, 255, 255, false, PREDICTION_DEBUG_DRAWING_LIFE);
-    
-    // Visualizing eye pos using box
-    constexpr vec EYE_POS_BOX_MAX(3.0f, 3.0f, 3.0f);
-    I::IDebugOverlay->AddBoxOverlay(m_vAttackerFutureEyePos, 
-        EYE_POS_BOX_MAX, EYE_POS_BOX_MAX * -1.0f, 
-        qangle(0.0f, 0.0f, 0.0f),
-        255, 0, 0, 50.0f, PREDICTION_DEBUG_DRAWING_LIFE);
-
-    // Target's Collision hull mins, maxs, angles
-    auto* pCollidable                  = pTarget->GetCollideable();
-    const vec& vOBBMin                 = pCollidable->OBBMins();
-    const vec& vOBBMax                 = pCollidable->OBBMaxs();
-    const qangle& qCollisionHullAngles = pCollidable->GetCollisionAngles();
-
-    // Visualizing Target's future collision hull using box
-    I::IDebugOverlay->AddBoxOverlay(
-        m_vBestTargetFuturePos,             
-        vOBBMin, vOBBMax,
-        qCollisionHullAngles,
-        134, 173, 153, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT GREEN
-
-    // Visualizing Target's CURRENT collision hull using box
-    I::IDebugOverlay->AddBoxOverlay(
-        m_vBestTargetPosAtLock,
-        vOBBMin, vOBBMax,
-        qCollisionHullAngles,
-        168, 126, 137, 10.0f, PREDICTION_DEBUG_DRAWING_LIFE); // LIGHT RED
 }
 
 
@@ -392,22 +361,18 @@ float AimbotMelee_t::_GetSwingHullRange(BaseEntity* pLocalPlayer, baseWeapon* pA
     // Imagine, flSwingRange as distance centers of 2 boxes, ( 2 boxes means the min & max of the hull )
     // and flSwingMax is the distance between the center of the box to the surface.
     flSwingRange += flSwingMax;
-    if(pLocalPlayer->m_iClass() != TF_SPY)
-        return flSwingRange;
-
-    return flSwingRange * 0.8f; // This fucking shit was missing a lot. This should miss anymore now.
+    return flSwingRange;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
+bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget, const vec& vTargetOrigin, const qangle& qTargetAngles)
 {
     auto* pAttackerCollidable = pAttacker->GetCollideable();
-    auto* pTargetCollidable   = pTarget->GetCollideable();
+    auto* pTargetCollidable = pTarget->GetCollideable();
     
     vec vAttackerOrigin = pAttackerCollidable->GetCollisionOrigin();
-    vec vTargetOrigin   = pTargetCollidable->GetCollisionOrigin();
 
     // Vector connecting Attacker to Taret
     vec vAttackerToTarget = vTargetOrigin - vAttackerOrigin;
@@ -416,14 +381,13 @@ bool AimbotMelee_t::_CanBackStab(BaseEntity* pAttacker, BaseEntity* pTarget)
 
     // Target's view angle vector
     vec vTargetViewAngles;
-    qangle qTargetAngles = pTarget->m_angEyeAngles();
     Maths::AngleVectors(qTargetAngles, &vTargetViewAngles);
     vTargetViewAngles.z = 0.0f;
     vTargetViewAngles.NormalizeInPlace();
     
 #if (DEBUG_BACKSTAB_CHECK == true)
     I::IDebugOverlay->AddLineOverlay(vAttackerOrigin, vAttackerOrigin + (vAttackerToTarget * 100.0f), 255, 0, 0, false, 3.0f);
-    I::IDebugOverlay->AddLineOverlay(vTargetOrigin,   vTargetOrigin + (vTargetViewAngles * 100.0f),   0, 255, 0, false, 3.0f);
+    I::IDebugOverlay->AddLineOverlay(vTargetOrigin, vTargetOrigin + (vTargetViewAngles * 100.0f), 0, 255, 0, false, 3.0f);
 #endif
 
     float flDotProduct = vAttackerToTarget.x * vTargetViewAngles.x + vAttackerToTarget.y * vTargetViewAngles.y;
@@ -449,4 +413,44 @@ bool AimbotMelee_t::_IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, con
     float flTargetFOV = RAD2DEG(acosf(flDot));
 
     return FOV > flTargetFOV;
+}
+
+
+//=========================================================================
+//                     DEBUG HOOKS
+//=========================================================================
+MAKE_HOOK(StartLagComp, "40 55 57 41 55 48 81 EC", __fastcall, SERVER_DLL, void*, void* pThis, BaseEntity* pEnt, CUserCmd* pCmd)
+{
+    if (pEnt == nullptr || pCmd == nullptr)
+    {
+        FAIL_LOG("Bad inputs!!");
+        return Hook::StartLagComp::O_StartLagComp(pThis, pEnt, pCmd);
+    }
+
+    int64_t iEntIndex = *(int64_t*)(reinterpret_cast<uintptr_t>(pEnt) + 48);
+    int iPlayerIndex;
+    if (iEntIndex)
+    {
+        iPlayerIndex = (unsigned int)*(__int16*)(iEntIndex + 6);// IDK What the fuck is happening here
+    }
+    else
+    {
+        iPlayerIndex = 0LL;
+    }
+
+    LOG("PlayerIndex : %d", iPlayerIndex);
+    
+    auto* pNetInfo = I::iVEngineServer->GetPlayerNetInfo(iPlayerIndex);
+    if (pNetInfo == nullptr)
+    {
+        FAIL_LOG("Bad net info. fuck you tf2");
+        return Hook::StartLagComp::O_StartLagComp(pThis, pEnt, pCmd);
+    }
+
+    float flPing = pNetInfo->GetLatency(FLOW_OUTGOING);
+
+    LOG("Player Ping : %.2f ms. Player tick count : %d. Player Attack status : [ %s ]", 
+        flPing * 1000, pCmd->tick_count, pCmd->buttons & IN_ATTACK ? "ATTACKING" : "not attacking");
+
+    return Hook::StartLagComp::O_StartLagComp(pThis, pEnt, pCmd);
 }
