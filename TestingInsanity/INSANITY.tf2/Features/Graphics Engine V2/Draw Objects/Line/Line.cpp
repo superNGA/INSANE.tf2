@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////////////////////////
 ILine_t::ILine_t()
 {
+    F::graphics.RegisterInLineList(this);
     InitRelativeUV();
 }
 
@@ -21,8 +22,8 @@ unsigned int ILine_t::GetVertexCount() const
 ///////////////////////////////////////////////////////////////////////////
 void ILine_t::SetBlur(const int iBlur)
 {
-    m_vertex[0].m_flBlurAmmount = static_cast<float>(iBlur);
-    m_vertex[1].m_flBlurAmmount = static_cast<float>(iBlur);
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flBlurAmmount = static_cast<float>(iBlur);
 }
 
 
@@ -38,8 +39,8 @@ const Vertex* ILine_t::GetVertexData() const
 ///////////////////////////////////////////////////////////////////////////
 void ILine_t::SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
-    m_vertex[0].m_clr.Set(r, g, b, a);
-    m_vertex[1].m_clr.Set(r, g, b, a);
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_clr.Set(r, g, b, a);
 }
 
 
@@ -47,8 +48,8 @@ void ILine_t::SetColor(unsigned char r, unsigned char g, unsigned char b, unsign
 ///////////////////////////////////////////////////////////////////////////
 void ILine_t::InvertColors(bool bInvert)
 {
-    m_vertex[0].m_flInvertColors = 1.0f;
-    m_vertex[1].m_flInvertColors = 1.0f;
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flInvertColors = (bInvert == true ? FLOAT_TRUE : FLOAT_FALSE);
 }
 
 
@@ -85,4 +86,26 @@ void ILine_t::InitRelativeUV()
 {
     m_vertex[0].m_vRelativeUV = vec(0.0f, 0.0f, 0.0f);
     m_vertex[1].m_vRelativeUV = vec(1.0f, 1.0f, 1.0f);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Line2D_t::InitDimension()
+{
+    m_bIs3D = false;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flStrictly2D = FLOAT_TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Line3D_t::InitDimension()
+{
+    m_bIs3D = true;
+
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flStrictly2D = FLOAT_FALSE;
 }

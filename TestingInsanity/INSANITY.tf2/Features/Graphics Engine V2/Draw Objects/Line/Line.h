@@ -20,7 +20,7 @@ public:
     void          SetRGBAnimSpeed(const float flAnimSpeed) override final;
 
 protected:
-    void InitRelativeUV() override final;
+    void          InitRelativeUV() override final;
 
     enum VertexType_t : int 
     { 
@@ -40,12 +40,11 @@ class Line2D_t : public ILine_t
 public:
     Line2D_t() : ILine_t()
     {
-        F::graphics.RegisterInLineList(this);
-        m_vertex[0].m_flStrictly2D = FLOAT_TRUE;
-        m_vertex[1].m_flStrictly2D = FLOAT_TRUE;
-
-        m_bIs3D = false;
+        InitDimension();
     }
+
+protected:
+    void InitDimension() override final;
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -56,11 +55,9 @@ class Line3D_t : public ILine_t
 public:
     Line3D_t() : ILine_t()
     {
-        F::graphics.RegisterInLineList(this);
-        m_vertex[0].m_flStrictly2D = FLOAT_FALSE;
-        m_vertex[1].m_flStrictly2D = FLOAT_FALSE;
-
-        m_bIs3D = true;
+        InitDimension();
     }
+
+    void InitDimension() override final;
 };
 ///////////////////////////////////////////////////////////////////////////

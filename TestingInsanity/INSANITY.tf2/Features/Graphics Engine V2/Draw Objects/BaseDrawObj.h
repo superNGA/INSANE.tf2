@@ -30,6 +30,7 @@ struct Vertex
         m_flInvertColors   = 0.0f;
         m_flScaleY         = -1.0f;
         m_flCircleThinkess = -1.0f;
+        m_flRGBAnimSpeed   = -1.0f;
     }
 
     vec    m_vPos;
@@ -40,8 +41,8 @@ struct Vertex
     float  m_flStrictly2D     = 0.0f;
     float  m_flInvertColors   = 0.0f;
     float  m_flScaleY         = -1.0f;
-    float  m_flCircleThinkess = -1.0f; // for value > 0, we assume this draw obj as cirle, else not a circle.
-    float  m_flRGBAnimSpeed   = -1.0f;
+    float  m_flCircleThinkess = -1.0f; // for value >  0, we assume this draw obj as cirle, else not a circle.
+    float  m_flRGBAnimSpeed   = -1.0f; // For speed >= 0, we animate a rgb effect flowing from bottom left to top right. ( this var alters the anim. speed ).
 };
 ///////////////////////////////////////////////////////////////////////////
 

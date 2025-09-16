@@ -12,6 +12,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Line/Line.h"
 #include "../../Features/Graphics Engine V2/Draw Objects/Box/Box.h"
 #include "../../Features/Graphics Engine V2/Draw Objects/Circle/Circle.h"
+#include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
 #include "../../Features/Graphics Engine V2/Graphics.h"
@@ -75,20 +76,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     // Just set one decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
-
-    if(false)
-    {
-        static BoxFilled2D_t* pBox{ nullptr };
-        if (pBox == nullptr)
-        {
-            pBox = new BoxFilled2D_t();
-            pBox->SetVertex(vec(0.0f), vec(500.0f));
-            pBox->SetColor(255, 255, 255, 30);
-            pBox->SetRounding(10.0f);
-            pBox->SetRGBAnimSpeed(0.2f);
-            pBox->SetBlur(4);
-        }
-    }
 
     // Drawing graphics features.
     {

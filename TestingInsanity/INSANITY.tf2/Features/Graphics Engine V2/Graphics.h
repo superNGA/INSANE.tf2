@@ -225,7 +225,6 @@ float4 GetClrAverage(float2 uv, int iPixelOffset)
     
     if(iPixelOffset <= 0)
     {
-        //return tex2D(SceneSampler, float2(saturate(uv.x - iPixelWidthInUV), saturate(uv.y - iPixelHeightInUV)));
         return tex2D(SceneSampler, uv);
     }
     
@@ -341,7 +340,7 @@ float4 HandleBlur(const Output_t output, const float4 tintClr)
     }
             
     // Lerping rgb toward the actual color of this pixel set by the caller.
-    vAverageClr.rgb = lerp(vAverageClr.rgb, tintClr, output.m_clr.a);
+    vAverageClr.rgb = lerp(vAverageClr.rgb, tintClr.rgb, output.m_clr.a);
     vAverageClr.a   = 1.0f;
     
     return vAverageClr;
@@ -358,7 +357,7 @@ float4 InvertColors(const float4 clr)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void RoundCorners(const Output_t output)
+float4 RoundCorners(const Output_t output, float4 initialClr)
 {
     float2 vUVScaled      = float2(output.m_vRelativeUV.x, output.m_vRelativeUV.y * output.m_flScaleY);
         
@@ -384,23 +383,48 @@ void RoundCorners(const Output_t output)
     float2 vAnchorToPoint      = vUVScaled - vAnchorScaled;
     float  flDistSqrFromAnchor = Vec2LengthSqr(vAnchorToPoint);
         
-    if (flDistSqrFromAnchor > (output.m_flRounding * output.m_flRounding) && flDistSqrFromCorner < (output.m_flRounding * output.m_flRounding))
-        discard;
+    // this pixel can't in the rounding range.
+    if (flDistSqrFromCorner > (output.m_flRounding * output.m_flRounding))
+        return initialClr;
+    
+    // This is how much smoothing we are doing on the corners.
+    // Currently its hardcoded to 10 pixels, and we are not calculating it dynamically cause
+    // that can cause bullshit for bigger boxes.
+    // NOTE : Increasing this will give a smoother rounding, but it doesn't blend
+    //        with the rest of the shape which isn't rounded.
+    const float flSmoothingPixels = (1 / g_flScreenWidth);
+    
+    float flDistSmoothingEnd = (output.m_flRounding - flSmoothingPixels) * (output.m_flRounding - flSmoothingPixels);
+    if (flDistSqrFromAnchor > flDistSmoothingEnd)
+    {
+        return float4(initialClr.rgb, initialClr.a * smoothstep(output.m_flRounding * output.m_flRounding, flDistSmoothingEnd, flDistSqrFromAnchor));
+    }
+    
+    return initialClr;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void DiscardNonCirclePixels(const Output_t output)
+float4 DiscardNonCirclePixels(const Output_t output, float4 initialClr)
 {
-    float2 vCenter = float2(0.5f, 0.5f);
+    float2 vCenter        = float2(0.5f, 0.5f);
     float2 vCenterToPoint = output.m_vRelativeUV.xy - vCenter;
         
-    if (Vec2LengthSqr(vCenterToPoint) > 0.5f * 0.5f)
-        discard;
+    float flInnerBlendStart = 0.5f - output.m_flCircleThickness;
+    float flOuterBlendStart = 0.5f;
     
-    if (Vec2LengthSqr(vCenterToPoint) < (0.5f * 0.5f) - output.m_flCircleThickness)
-        discard;
+    float flDist = Vec2Length(vCenterToPoint);
+    
+    float flOuterBlendEnd = 0.5f - (2.0f / g_flScreenWidth);
+    float flInnerBlendEnd = 0.5f - output.m_flCircleThickness + (2.0f / g_flScreenWidth);
+    
+    // We are doing a sort of MSAA rip off thing here. 
+    // We are smoothing alpha around the edges of the circle, so make it look smoother.
+    float flAlphaOuter = smoothstep(flOuterBlendStart, (flOuterBlendEnd + flInnerBlendStart) / 2.0f, flDist);
+    float flAlphaInner = smoothstep(flInnerBlendStart, (flInnerBlendEnd + flOuterBlendStart) / 2.0f, flDist);
+    
+    return float4(initialClr.rgb, flAlphaInner * flAlphaOuter);
 }
 
 
@@ -408,13 +432,14 @@ void DiscardNonCirclePixels(const Output_t output)
 ///////////////////////////////////////////////////////////////////////////
 float4 RGBfy(const Output_t pixel)
 {
-    float4 result = pixel.m_clr;
+    float4 result = float4(0.0f, 0.0f, 0.0f, 0.0f);
     
     float flHue = ((pixel.m_vRelativeUV.x * pixel.m_vRelativeUV.x) + (pixel.m_vRelativeUV.y * pixel.m_vRelativeUV.y)) / 2.0f;
     flHue       = frac(flHue + (g_flTimeSinceEpochInSec * pixel.m_flRGBAnimSpeed));
     
     float3 hsv = float3(saturate(flHue), 1.0f, 1.0f);
     result.rgb = HSVtoRGB(hsv);
+    result.a   = pixel.m_clr.a;
     
     return result;
 }
@@ -447,11 +472,11 @@ float4 PS(Output_t output) : COLOR
     // Rounding Corners
     if (output.m_flScaleY > 0.0f && output.m_flRounding > 0.0f && output.m_flCircleThickness <= 0.0f) // must not be a circle.
     {
-        RoundCorners(output); // just discards unwanted pixels.
+        resultClr = RoundCorners(output, resultClr); // just discards unwanted pixels.
     }
     else if(output.m_flCircleThickness > 0.0f) // doing circle math here.
     {
-        DiscardNonCirclePixels(output);
+        resultClr = DiscardNonCirclePixels(output, resultClr);
     }
     
     return resultClr;

@@ -194,5 +194,5 @@ void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
     }
     
     pCircle->SetVertex(vec(static_cast<float>(iScreenWidth) / 2.0f, static_cast<float>(iScreenHeight) / 2.0f, 0.0f), flFOVCircleRadius);
-    pCircle->SetThickness(1.0f);
+    pCircle->SetThickness(2.0f);
 }

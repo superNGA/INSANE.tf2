@@ -22,7 +22,7 @@ void Graphics_t::Run(LPDIRECT3DDEVICE9 pDevice)
 
     m_pStateBlock->Capture();
     
-    _DrawList(&m_lines, pDevice);
+    _DrawList(&m_lines,     pDevice);
     _DrawList(&m_traingles, pDevice);
 
     m_pStateBlock->Apply();
@@ -265,6 +265,9 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     // Finally, draw whatever is in the buffer.
     {
         pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, TRUE);
+        pDevice->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, TRUE);
+
         pDevice->SetVertexDeclaration(m_pVertexDecl);
         pDevice->SetStreamSource(0, pData->m_pBuffer, 0, sizeof(Vertex));
 
