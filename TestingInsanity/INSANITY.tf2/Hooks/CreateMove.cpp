@@ -22,9 +22,9 @@
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
-#include "../Features/ESP/ESP.h"
 #include "../Features/Tick Shifting/TickShifting.h"
 #include "../Features/Entity Iterator/EntityIterator.h"
+#include "../Features/ESP/ESPV2.h"
 
 //======================= SDK =======================
 #include "../SDK/class/CUserCmd.h"
@@ -82,9 +82,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	bool* bSendPacket = reinterpret_cast<bool*>(pStackFrameStart_ClientModeShared_Createmove);
 
-	// TODO : Make proper function rich drawing mechanism to we don't have to relly on this dog shit.
-	//		  This also slows down own stuff & not as functional.
-	//I::IDebugOverlay->ClearAllOverlays();
 
 	// Running Features
 	F::entityIterator.Run(pLocalPlayer, pActiveWeapon, pCmd);
@@ -93,10 +90,9 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::antiAim.Run(pCmd, result, bSendPacket, pLocalPlayer);
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, pCmd, &result);
 	F::critHack.RunV2(pCmd, pLocalPlayer, pActiveWeapon);
-	F::esp.Run(pLocalPlayer, pCmd);
+	F::espV2.Run(pLocalPlayer);
 	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
 	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
-
 
 	// Delete this
 	// Testing Strafe prediction

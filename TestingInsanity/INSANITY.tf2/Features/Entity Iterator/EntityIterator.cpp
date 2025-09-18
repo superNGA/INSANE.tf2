@@ -43,6 +43,19 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
 
     int nEntities = I::IClientEntityList->NumberOfEntities(false);
 
+
+    std::vector<BaseEntity*>* vAllConnectedEnemies = m_vecAllConnectedEnemies.GetWriteBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecAllConnectedEnemies, vAllConnectedEnemies);
+
+    std::vector<BaseEntity*>* vAllConnectedTeammates = m_vecAllConnectedTeammates.GetWriteBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecAllConnectedTeammates, vAllConnectedTeammates);
+
+    std::vector<BaseEntity*>* vecTeamMates = m_vecPlayerFriendly.GetWriteBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecPlayerFriendly, vecTeamMates);
+    
+    std::vector<BaseEntity*>* vecEnemies = m_vecPlayerEnemy.GetWriteBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecPlayerEnemy, vecEnemies);
+
     for (int iEntIndex = 0; iEntIndex < nEntities; iEntIndex++)
     {
         BaseEntity* pEnt = I::IClientEntityList->GetClientEntity(iEntIndex);
@@ -50,14 +63,20 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
         if (pEnt == nullptr)
             continue;
 
-        // Construct list with all Dormant / non dormant players for player list.
-        int iClassID = pEnt->GetClientClass()->m_ClassID;
-        if (iClassID == ClassID::CTFPlayer)
+        int  iClassID        = pEnt->GetClientClass()->m_ClassID;
+        bool bFriendlyEntity = pEnt->m_iTeamNum() == pLocalPlayer->m_iTeamNum();
+
+        // Storing all connected players separetly for the player list widget.
+        if (iClassID == ClassID::CTFPlayer && vAllConnectedEnemies != nullptr && vAllConnectedTeammates != nullptr)
         {
-            if (pEnt->m_iTeamNum() == pLocalPlayer->m_iTeamNum())
-                m_vecPlayerListMates.push_back(pEnt);
+            if (bFriendlyEntity == true)
+            {
+                vAllConnectedTeammates->push_back(pEnt);
+            }
             else
-                m_vecPlayerListEnemy.push_back(pEnt);
+            {
+                vAllConnectedEnemies->push_back(pEnt);
+            }
         }
 
         if (pEnt->IsDormant() == true || pEnt == pLocalPlayer)
@@ -72,7 +91,11 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
 
         switch (it->second)
         {
-        case ClassIdIndex::CTFPlayer:         _ProcessPlayer(pEnt, pLocalPlayer->m_iTeamNum(), pCmd->tick_count); break;
+        case ClassIdIndex::CTFPlayer:         
+        {
+            _ProcessPlayer((bFriendlyEntity == true ? vecTeamMates : vecEnemies), pEnt, pCmd->tick_count);
+            break;
+        }
         case ClassIdIndex::CObjectSentrygun:  _ProcessSentry(pEnt, pLocalPlayer->m_iTeamNum());     break;
         case ClassIdIndex::CObjectDispenser:  _ProcessDispenser(pEnt, pLocalPlayer->m_iTeamNum());  break;
         case ClassIdIndex::CObjectTeleporter: _ProcessTeleporter(pEnt, pLocalPlayer->m_iTeamNum()); break;
@@ -84,14 +107,31 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+__forceinline void ClearDoubleBufferVector(Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& data)
+{
+    std::vector<BaseEntity*>* pBuffer = data.GetWriteBuffer();
+    if (pBuffer != nullptr)
+    {
+        pBuffer->clear();
+        data.ReturnWriteBuffer(pBuffer, false);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::ClearLists()
 {
-    m_vecPlayerEnemy.clear();     m_vecPlayerFriendly.clear();
+    // Non-Dormant entities.
+    ClearDoubleBufferVector(m_vecPlayerEnemy);
+    ClearDoubleBufferVector(m_vecPlayerFriendly);
     m_vecDispenserEnemy.clear();  m_vecDispenserFriendly.clear();
     m_vecSentryEnemy.clear();     m_vecSentryFriendly.clear();
     m_vecTeleporterEnemy.clear(); m_vecTeleporterFriendly.clear();
 
-    m_vecPlayerListEnemy.clear(); m_vecPlayerListMates.clear();
+    // Dormant & Non-Dormant players.
+    ClearDoubleBufferVector(m_vecAllConnectedEnemies);
+    ClearDoubleBufferVector(m_vecAllConnectedTeammates);
 }
 
 
@@ -105,23 +145,23 @@ void EntityIterator_t::ClearBackTrackData()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-std::vector<BaseEntity*>& EntityIterator_t::GetEnemyPlayerList()
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetAllConnectedEnemiesList()
 {
-    return m_vecPlayerListEnemy;
+    return m_vecAllConnectedEnemies;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-std::vector<BaseEntity*>& EntityIterator_t::GetFriendlyPlayerList()
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetAllConnectedTeamMatesList()
 {
-    return m_vecPlayerListMates;
+    return m_vecAllConnectedTeammates;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-std::vector<BaseEntity*>& EntityIterator_t::GetEnemyPlayers()
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemyPlayers()
 {
     return m_vecPlayerEnemy;
 }
@@ -129,7 +169,7 @@ std::vector<BaseEntity*>& EntityIterator_t::GetEnemyPlayers()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-std::vector<BaseEntity*>& EntityIterator_t::GetFrendlyPlayers()
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFrendlyPlayers()
 {
     return m_vecPlayerFriendly;
 }
@@ -241,21 +281,12 @@ std::deque<EntityIterator_t::DatagramStat_t>& EntityIterator_t::GetDatagramSeque
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void EntityIterator_t::_ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int iCurrentTick)
+void EntityIterator_t::_ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn, BaseEntity* pEnt, int iCurrentTick)
 {
     if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
     
-    if (pEnt->m_iTeamNum() == iFriendlyTeam)
-    {
-        m_vecPlayerFriendly.push_back(pEnt);
-        return; // We don't want back track records for team mates.
-    }
-    else
-    {
-        m_vecPlayerEnemy.push_back(pEnt);
-    }
-
+    vecListToPushIn->push_back(pEnt);
 
     auto it = m_mapEntInfo.find(pEnt);
     if (it == m_mapEntInfo.end())

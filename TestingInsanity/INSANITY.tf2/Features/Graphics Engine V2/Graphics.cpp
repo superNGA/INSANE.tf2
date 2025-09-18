@@ -106,14 +106,14 @@ void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
+bool Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
     // Searching in line list first.
     if (m_lines.FindAndRemoveDrawObj(pDrawObj) == true)
-        return;
+        return true;
 
     // If not found in line list, try to find in Traingle list.
-    m_traingles.FindAndRemoveDrawObj(pDrawObj);
+    return m_traingles.FindAndRemoveDrawObj(pDrawObj);
 }
 
 
@@ -199,7 +199,10 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     if (pData->m_free.load() == false)
         return;
 
-    if (pData->m_vecDrawObjs.empty() == true)
+    std::vector<IDrawObj_t*>* vecDrawObjs = pData->m_vecDrawObj.GetReadBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_READ_BUFFER(&pData->m_vecDrawObj, vecDrawObjs);
+
+    if (vecDrawObjs->empty() == true)
         return;
 
     pData->m_free.store(false);
@@ -208,7 +211,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     // Total number of vertex to dump to buffer.
     uint64_t nVertex = 0;
     {
-        for (const IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
+        for (const IDrawObj_t* pDrawObj : *vecDrawObjs)
         {
             // Don't draw objects that don't wanna be drawn in game.
             if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
@@ -230,7 +233,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     // Make sure buffer size is sufficient.
     uint64_t iVertexDataSize = sizeof(Vertex) * nVertex;
-    if (pData->AdjustBufferSize(iVertexDataSize, pDevice) == false)
+    if (pData->AdjustBufferSize(iVertexDataSize, pDevice, vecDrawObjs->size()) == false)
         return;
 
     // Lock buffer.
@@ -244,7 +247,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     }
 
     // Write data to buffer.
-    for (IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
+    for (IDrawObj_t* pDrawObj : *vecDrawObjs)
     {
         // Don't draw objects that don't wanna be drawn in game.
         if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
@@ -402,7 +405,7 @@ bool Graphics_t::_CreateStateBlock(LPDIRECT3DDEVICE9 pDevice)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice)
+bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice, int nObjects)
 {
     // if we already got this much space.
     if (m_iBufferSize.load() > iSizeRequired)
@@ -413,7 +416,7 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
 
     // Warning size.
     if (iSizeRequired >= 10ull * 0x400ull)
-        FAIL_LOG("Buffer size more than 10KiBs, we are drawing [ %d ] objects. is this normal", m_vecDrawObjs.size());
+        FAIL_LOG("Buffer size more than 10KiBs, we are drawing [ %d ] objects. is this normal", nObjects);
 
     // Release old buffer first.
     if (m_pBuffer != nullptr)
@@ -445,38 +448,17 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
 ///////////////////////////////////////////////////////////////////////////
 void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
 {
-    while (m_free.load() == false)
-    {
-        FAIL_LOG("Waiting for vertex buffer data to be free-ed.");
-    }
+    std::vector<IDrawObj_t*>* pDrawObjs = m_vecDrawObj.GetWriteBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_WRITE_BUFFER(&m_vecDrawObj, pDrawObjs);
 
-    m_free.store(false);
-    
-    if (m_pBuffer != nullptr)
-    {
-        m_pBuffer->Release();
-        m_pBuffer = nullptr;
-    }
-
-    // Delete and clear all draw objects.
-    for (IDrawObj_t* pDrawObj : m_vecDrawObjs)
+    for (IDrawObj_t* pDrawObj : *pDrawObjs)
     {
         pDrawObj->DeleteThis();
-        FAIL_LOG("Delete draw obj : %p", pDrawObj);
+        FAIL_LOG("Deleted draw obj [ %p ]", pDrawObj);
     }
-    m_vecDrawObjs.clear();
-    m_vecDrawObjs.shrink_to_fit();
-    
-    // Delete and clear all temp draw obj.
-    for (IDrawObj_t* pDrawObj : m_vecTempBuffer)
-    {
-        pDrawObj->DeleteThis();
-        FAIL_LOG("Delete temp draw obj : %p", pDrawObj);
-    }
-    m_vecTempBuffer.clear();
-    m_vecTempBuffer.shrink_to_fit();
 
-    // No setting the mutex to true, cause we don't want it to be used anymore.
+    pDrawObjs->clear();
+    pDrawObjs->shrink_to_fit();
 }
 
 
@@ -484,24 +466,7 @@ void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
 ///////////////////////////////////////////////////////////////////////////
 void VertexBuffer_t::RegisterDrawObj(IDrawObj_t* pDrawObj)
 {
-    // if draw obj list is not free, the leave obj in temp buffer.
-    if (m_free.load() == false)
-    {
-        m_vecTempBuffer.push_back(pDrawObj);
-        return;
-    }
-    
-    // if draw obj list is free, then store it and if anythings left in temp buffer.
-    m_free.store(false);
-    m_vecDrawObjs.push_back(pDrawObj);
-
-    // Dump everything from temp storage to main obj list.
-    for (IDrawObj_t* pObj : m_vecTempBuffer)
-        m_vecDrawObjs.push_back(pObj);
-
-    m_vecTempBuffer.clear();
-
-    m_free.store(true);
+    m_vecDrawObj.PushBack(pDrawObj);
 }
 
 
@@ -509,25 +474,14 @@ void VertexBuffer_t::RegisterDrawObj(IDrawObj_t* pDrawObj)
 ///////////////////////////////////////////////////////////////////////////
 bool VertexBuffer_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
-    auto it = std::find(m_vecDrawObjs.begin(), m_vecDrawObjs.end(), pDrawObj);
+    std::vector<IDrawObj_t*>* pDrawObjs = m_vecDrawObj.GetWriteBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_WRITE_BUFFER(&m_vecDrawObj, pDrawObjs);
 
-    // Trying to find obj in draw obj list.
-    if (it != m_vecDrawObjs.end())
-    {
-        LOG("Removed draw obj @ %p", pDrawObj);
-        m_vecDrawObjs.erase(it);
-        return true;
-    }
+    auto it = std::find(pDrawObjs->begin(), pDrawObjs->end(), pDrawObj);
+    if (it == pDrawObjs->end())
+        return false;
 
-    // Trying to find obj in temp list.
-    auto itTempList = std::find(m_vecTempBuffer.begin(), m_vecTempBuffer.end(), pDrawObj);
-    if (itTempList != m_vecTempBuffer.end())
-    {
-        LOG("Removed draw obj from temp list @ %p", pDrawObj);
-        m_vecTempBuffer.erase(itTempList);
-        return true;
-    }
-
-    // Draw obj is not present in this vertexBuffer obj.
-    return false;
+    pDrawObjs->erase(it);
+    FAIL_LOG("Removed draw object [ %p ]", pDrawObj);
+    return true;
 }

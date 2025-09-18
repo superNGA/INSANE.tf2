@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../FeatureHandler.h"
+#include "../../Utility/Containers/VecThreadSafe.h"
 
 
 class IDrawObj_t;
@@ -26,7 +27,7 @@ struct VertexBuffer_t
 
     
     // Vertex buffer...
-    bool AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice);
+    bool AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice, int nObjects);
     void FreeBufferAndDeleteDrawObj();
     D3DPRIMITIVETYPE        m_iPrimitiveType;
     int                     m_iVertexPerPrimitive = 0;
@@ -37,8 +38,10 @@ struct VertexBuffer_t
     // Draw objs.
     void RegisterDrawObj(IDrawObj_t* pDrawObj);
     bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
-    std::vector<IDrawObj_t*> m_vecDrawObjs = {};
-    std::vector<IDrawObj_t*> m_vecTempBuffer = {};
+    //std::vector<IDrawObj_t*> m_vecDrawObjs   = {};
+    //std::vector<IDrawObj_t*> m_vecTempBuffer = {};
+
+    Containers::VecThreadSafe_t<IDrawObj_t*> m_vecDrawObj;
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +62,7 @@ public:
 
     void RegisterInLineList(IDrawObj_t* pDrawObj);
     void RegisterInTraingleList(IDrawObj_t* pDrawObj);
-    void FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
+    bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
 
 private:
     bool _Initialize(LPDIRECT3DDEVICE9 pDevice);
@@ -388,7 +391,7 @@ float4 RoundCorners(const Output_t output, float4 initialClr)
         return initialClr;
     
     // This is how much smoothing we are doing on the corners.
-    // Currently its hardcoded to 10 pixels, and we are not calculating it dynamically cause
+    // Currently its hardcoded to 1 pixels, and we are not calculating it dynamically cause
     // that can cause bullshit for bigger boxes.
     // NOTE : Increasing this will give a smoother rounding, but it doesn't blend
     //        with the rest of the shape which isn't rounded.

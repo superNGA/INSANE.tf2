@@ -28,17 +28,26 @@ void PlayerList_t::Draw()
         ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Mid);
     }
 
-    std::vector<BaseEntity*>& vecEnemies = F::entityIterator.GetEnemyPlayerList();
-    std::vector<BaseEntity*>& vecMates   = F::entityIterator.GetFriendlyPlayerList();
+    std::vector<BaseEntity*>* vecEnemies = F::entityIterator.GetAllConnectedEnemiesList().GetReadBuffer();
+    if (vecEnemies == nullptr)
+        return;
+
+    std::vector<BaseEntity*>* vecMates   = F::entityIterator.GetAllConnectedTeamMatesList().GetReadBuffer();
+    if (vecMates == nullptr)
+    {
+        // Release what we already acquired. to prevent bullshit happening.
+        F::entityIterator.GetAllConnectedEnemiesList().ReturnReadBuffer(vecEnemies);
+        return;
+    }
 
     float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y);
     float flMenuWidth = 0.0f, flMenuHeight = 0.0f; Render::uiMenu.GetWindowSize(flMenuHeight, flMenuWidth);
 
     constexpr float flWidth = 250.0f;
    
-    ImVec2 vWindowSize(flWidth, (vecEnemies.size() + vecMates.size() + 2) * ImGui::GetTextLineHeight());
+    ImVec2 vWindowSize(flWidth, (vecEnemies->size() + vecMates->size() + 2) * ImGui::GetTextLineHeight());
     ImGui::SetNextWindowSize(vWindowSize);
-    ImVec2 vWindowPos(x - flWidth, y + (flMenuHeight / 2.0f) - ((vecEnemies.size() + 1) * ImGui::GetTextLineHeight()));
+    ImVec2 vWindowPos(x - flWidth, y + (flMenuHeight / 2.0f) - ((vecEnemies->size() + 1) * ImGui::GetTextLineHeight()));
     ImGui::SetNextWindowPos(vWindowPos);
 
     if (ImGui::Begin("##PlayerList", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar) == true)
@@ -50,7 +59,7 @@ void PlayerList_t::Draw()
         // Drawing Enemy names.
         static player_info_t playerinfo;
         static BaseEntity* pActiveEntity = nullptr;
-        for (BaseEntity* pEnt : vecEnemies)
+        for (BaseEntity* pEnt : *vecEnemies)
         {
             if (pEnt == nullptr)
                 continue;
@@ -75,7 +84,7 @@ void PlayerList_t::Draw()
         vTextPos.y += ImGui::GetTextLineHeight() * 2.0f;
 
         // Drawing friend names.
-        for (BaseEntity* pEnt : vecMates)
+        for (BaseEntity* pEnt : *vecMates)
         {
             if (pEnt == nullptr)
                 continue;
@@ -127,6 +136,9 @@ void PlayerList_t::Draw()
 
         ImGui::End();
     }
+
+    F::entityIterator.GetAllConnectedEnemiesList().ReturnReadBuffer(vecEnemies);
+    F::entityIterator.GetAllConnectedTeamMatesList().ReturnReadBuffer(vecMates);
 
     {
         ImGui::PopFont();

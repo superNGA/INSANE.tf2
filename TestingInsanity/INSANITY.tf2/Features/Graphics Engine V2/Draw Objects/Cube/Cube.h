@@ -4,7 +4,7 @@
 
 
 ///////////////////////////////////////////////////////////////////////////
-class Cube3D_t : IDrawObj_t
+class Cube3D_t : public IDrawObj_t
 {
 public:
     Cube3D_t();
