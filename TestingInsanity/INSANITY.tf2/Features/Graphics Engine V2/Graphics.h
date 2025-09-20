@@ -9,7 +9,8 @@
 #include "../../Utility/Containers/VecThreadSafe.h"
 
 
-typedef IDirect3DDevice9 IDevice;
+typedef IDirect3DDevice9 D3DDevice;
+typedef IDirect3DSurface9 D3DSurface;
 class IDrawObj_t;
 
 
@@ -18,12 +19,12 @@ struct RenderTargetDup_t
 {
     RenderTargetDup_t(int iSurfaceLevel) : m_iLevel(iSurfaceLevel) {}
 
-    bool Init(IDevice* pDevice);
+    bool Init(D3DDevice* pDevice);
     void Free();
 
-    void StartCapture(IDevice* pDevice);
-    void EndCapture(IDevice* pDevice);
-    void DumpCapture(IDevice* pDevice, IDirect3DSurface9* pDest) const;
+    void StartCapture(D3DDevice* pDevice);
+    void EndCapture(D3DDevice* pDevice);
+    void DumpCapture(D3DDevice* pDevice, IDirect3DSurface9* pDest) const;
 
     IDirect3DTexture9* m_pTexture         = nullptr;
     IDirect3DSurface9* m_pSurface         = nullptr;
@@ -72,7 +73,7 @@ public:
     Graphics_t():
         m_lines(D3DPRIMITIVETYPE::D3DPT_LINELIST, 2),
         m_traingles(D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST, 3),
-        m_renderTargetDup0(0)
+        m_renderTargetDup0(0), m_renderTargetDup1(1)
     {}
 
     void Run(LPDIRECT3DDEVICE9 pDevice);
@@ -85,18 +86,13 @@ public:
     bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
 
     RenderTargetDup_t m_renderTargetDup0;
+    RenderTargetDup_t m_renderTargetDup1;
 
 private:
     bool _Initialize(LPDIRECT3DDEVICE9 pDevice);
     bool _InitShaderVariables(LPDIRECT3DDEVICE9 pDevice);
 
     void _DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice);
-
-    //bool _CreateImGuiRenderTarget(LPDIRECT3DDEVICE9 pDevice);
-    //bool m_bImGuiTargetInit = false;
-    //IDirect3DTexture9* m_pImGuiRenderTexture = nullptr;
-    //IDirect3DSurface9* m_pImGuiRenderSurface = nullptr;
-    //IDirect3DSurface9* m_pTempSurface        = nullptr;
 
     bool m_bShaderCompiled  = false;
     bool _CompileShader(LPDIRECT3DDEVICE9 pDevice);
@@ -109,6 +105,8 @@ private:
 
     bool m_bStateBlockInit  = false;
     bool _CreateStateBlock(LPDIRECT3DDEVICE9 pDevice);
+
+    void _DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer) const;
 
     LPD3DXEFFECT                 m_pEffect       = nullptr;
     IDirect3DStateBlock9*        m_pStateBlock   = nullptr;

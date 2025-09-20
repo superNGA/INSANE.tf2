@@ -50,7 +50,7 @@ HRESULT directX::H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, voi
     HRESULT iResult = O_BeginScene(pDevice, a1, a2, a3, a4);
     
     F::graphics.m_renderTargetDup0.StartCapture(pDevice);
-
+    F::graphics.m_renderTargetDup1.StartCapture(pDevice);
     return iResult;
 }
 
@@ -59,34 +59,32 @@ HRESULT directX::H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, voi
 ///////////////////////////////////////////////////////////////////////////
 HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
 {
-    if (!device)
-    {
+    if (device == nullptr)
         device = pDevice;
-    }
 
-    /* Doing the backend stuff */
-    if (!UI::UI_initialized_DX9 || !UI::WIN32_initialized)
+    if (UI::UI_initialized_DX9 == false || UI::WIN32_initialized == false)
     {
         initialize_backends();
     }
 
-
-    if (UI::UI_initialized_DX9 && UI::WIN32_initialized)
+    if (UI::UI_initialized_DX9 == true && UI::WIN32_initialized == true)
     {
-        // Font init must succed
         if (Resources::Fonts::fontManager.Initialize() == false)
             return O_endscene(pDevice);
     }
 
-    /* skipping all if already ended */
-    if (UI::UI_has_been_shutdown) return O_endscene(pDevice);
+    if (UI::UI_has_been_shutdown) 
+    {
+        return O_endscene(pDevice);
+    }
 
+
+    F::graphics.m_renderTargetDup1.EndCapture(pDevice);
     F::graphics.m_renderTargetDup0.EndCapture(pDevice);
     F::graphics.Run(pDevice);
 
     // ImGui drawing here.
     ImGuiIO& io = ImGui::GetIO();
-    //io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
