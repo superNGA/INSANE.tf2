@@ -9,7 +9,29 @@
 #include "../../Utility/Containers/VecThreadSafe.h"
 
 
+typedef IDirect3DDevice9 IDevice;
 class IDrawObj_t;
+
+
+///////////////////////////////////////////////////////////////////////////
+struct RenderTargetDup_t
+{
+    RenderTargetDup_t(int iSurfaceLevel) : m_iLevel(iSurfaceLevel) {}
+
+    bool Init(IDevice* pDevice);
+    void Free();
+
+    void StartCapture(IDevice* pDevice);
+    void EndCapture(IDevice* pDevice);
+    void DumpCapture(IDevice* pDevice, IDirect3DSurface9* pDest) const;
+
+    IDirect3DTexture9* m_pTexture         = nullptr;
+    IDirect3DSurface9* m_pSurface         = nullptr;
+    IDirect3DSurface9* m_pOriginalSurface = nullptr;
+    int32_t            m_iLevel           = -1;
+    bool               m_bInit            = false;
+};
+///////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -38,9 +60,6 @@ struct VertexBuffer_t
     // Draw objs.
     void RegisterDrawObj(IDrawObj_t* pDrawObj);
     bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
-    //std::vector<IDrawObj_t*> m_vecDrawObjs   = {};
-    //std::vector<IDrawObj_t*> m_vecTempBuffer = {};
-
     Containers::VecThreadSafe_t<IDrawObj_t*> m_vecDrawObj;
 };
 ///////////////////////////////////////////////////////////////////////////
@@ -52,7 +71,8 @@ class Graphics_t
 public:
     Graphics_t():
         m_lines(D3DPRIMITIVETYPE::D3DPT_LINELIST, 2),
-        m_traingles(D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST, 3)
+        m_traingles(D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST, 3),
+        m_renderTargetDup0(0)
     {}
 
     void Run(LPDIRECT3DDEVICE9 pDevice);
@@ -64,22 +84,30 @@ public:
     void RegisterInTraingleList(IDrawObj_t* pDrawObj);
     bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
 
+    RenderTargetDup_t m_renderTargetDup0;
+
 private:
     bool _Initialize(LPDIRECT3DDEVICE9 pDevice);
     bool _InitShaderVariables(LPDIRECT3DDEVICE9 pDevice);
 
     void _DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice);
 
-    bool m_bShaderCompiled = false;
+    //bool _CreateImGuiRenderTarget(LPDIRECT3DDEVICE9 pDevice);
+    //bool m_bImGuiTargetInit = false;
+    //IDirect3DTexture9* m_pImGuiRenderTexture = nullptr;
+    //IDirect3DSurface9* m_pImGuiRenderSurface = nullptr;
+    //IDirect3DSurface9* m_pTempSurface        = nullptr;
+
+    bool m_bShaderCompiled  = false;
     bool _CompileShader(LPDIRECT3DDEVICE9 pDevice);
 
-    bool m_bVertexDecl = false;
+    bool m_bVertexDecl      = false;
     bool _DeclareVertex(LPDIRECT3DDEVICE9 pDevice);
 
-    bool m_bTextureInit = false;
+    bool m_bTextureInit     = false;
     bool _CreateTexture(LPDIRECT3DDEVICE9 pDevice);
 
-    bool m_bStateBlockInit = false;
+    bool m_bStateBlockInit  = false;
     bool _CreateStateBlock(LPDIRECT3DDEVICE9 pDevice);
 
     LPD3DXEFFECT                 m_pEffect       = nullptr;
@@ -123,6 +151,20 @@ struct Input_t
     float  m_flScaleY       : TEXCOORD5;
     float  m_flCircleThickness : TEXCOORD6; // for value > 0, we assume this draw obj as cirle, else not a circle.
     float  m_flRGBAnimSpeed : TEXCOORD7;    // for value > 0, we override color to hue value corrosponding to pixels relative uv.
+};
+
+
+struct InputImGui_t
+{
+    float3 m_vPos : POSITION;
+};
+
+
+struct OutputImGui_t
+{
+    float4 m_vPos : POSITION;
+    float4 m_clr  : COLOR;
+    float2 m_AbsUV : TEXCOORD0;
 };
 
 
@@ -170,6 +212,38 @@ float4 W2S(float3 worldPos)
     screenPos.w = (worldPos.x * g_worldToScreen._41) + (worldPos.y * g_worldToScreen._42) + (worldPos.z * g_worldToScreen._43) + g_worldToScreen._44;
 
     return screenPos;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+OutputImGui_t VSImGui(InputImGui_t input)
+{
+    OutputImGui_t result;
+    
+    result.m_vPos.x = (input.m_vPos.x - 0.5f) *  2.0f;
+    result.m_vPos.y = (input.m_vPos.y - 0.5f) * -2.0f;
+    result.m_vPos.z = 0.0f;
+    result.m_vPos.w = 1.0f;
+    
+    result.m_AbsUV.x = input.m_vPos.x;
+    result.m_AbsUV.y = input.m_vPos.y;
+    
+    result.m_clr = float4(1.0f, 0.0f, 0.0f, 1.0f);
+    
+    return result;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float4 PSImGui(OutputImGui_t output) : COLOR
+{
+    float4 clr = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    
+    clr = tex2D(SceneSampler, output.m_AbsUV);
+    
+    return clr;
 }
 
 
@@ -494,6 +568,18 @@ technique simple1
     {
         VertexShader = compile vs_3_0 VS();
         PixelShader  = compile ps_3_0 PS();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+technique ImGui
+{
+    pass p0
+    {
+        VertexShader = compile vs_3_0 VSImGui();
+        PixelShader  = compile ps_3_0 PSImGui();
     }
 }
 

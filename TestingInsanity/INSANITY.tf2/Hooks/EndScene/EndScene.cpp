@@ -15,6 +15,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/PlayerList/PlayerList.h"
@@ -44,11 +45,23 @@ namespace directX {
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
+HRESULT directX::H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4)
+{
+    HRESULT iResult = O_BeginScene(pDevice, a1, a2, a3, a4);
+    
+    F::graphics.m_renderTargetDup0.StartCapture(pDevice);
+
+    return iResult;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
 {
     if (!device)
     {
-        device = P_DEVICE;
+        device = pDevice;
     }
 
     /* Doing the backend stuff */
@@ -62,15 +75,18 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     {
         // Font init must succed
         if (Resources::Fonts::fontManager.Initialize() == false)
-            return O_endscene(P_DEVICE);
+            return O_endscene(pDevice);
     }
 
     /* skipping all if already ended */
-    if (UI::UI_has_been_shutdown) return O_endscene(P_DEVICE);
+    if (UI::UI_has_been_shutdown) return O_endscene(pDevice);
 
-    /* Starting ImGui new frame*/
+    F::graphics.m_renderTargetDup0.EndCapture(pDevice);
+    F::graphics.Run(pDevice);
+
+    // ImGui drawing here.
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
+    //io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
@@ -82,10 +98,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
-            //F::espV2.Run();
-
-            F::graphicsEngine.Run(P_DEVICE);
-            F::graphics.Run(P_DEVICE);
+            F::graphicsEngine.Run(pDevice);
 
             Render::playerList.Draw();
             Render::InfoWindow.Draw();
@@ -93,6 +106,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         }
 
         Render::uiMenu.Draw();
+        Render::menuGUI.Draw();
         F::materialGen.Run();
         
         // Model Rendering.
@@ -125,23 +139,20 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
 
     ImGui::PopFont();
 
-    /* Frame end */
+    // Ending ImGui drawing.
     ImGui::EndFrame();
     ImGui::Render();
 
+    // Real drawing & pushing to vertex buffer is done here.
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
     if (UI::UI_visble)
     {
-        /* managing shutdone once the animation is done */
         if (UI::shutdown_UI && !UI::UI_has_been_shutdown)
         {
             shutdown_imgui();
         }
     }
 
-    /* calling original function */
-    auto result = O_endscene(P_DEVICE);
-
-    return result;
+    return O_endscene(pDevice);
 }

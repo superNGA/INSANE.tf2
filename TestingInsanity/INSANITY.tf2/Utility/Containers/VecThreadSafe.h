@@ -164,21 +164,27 @@ inline bool Containers::VecThreadSafe_t<T>::_DumpProducerQueue()
 {
     m_mtxTemp.lock(); m_mtxMain.lock();
 
+    bool bDumpedSomething = false;
+
     // If nothing to dump then leave early.
-    if (m_vecProducerQueue.size() <= 0)
+    if (m_vecProducerQueue.size() > 0)
     {
-        m_mtxMain.unlock(); m_mtxTemp.unlock();
-        return false;
-    }
+        // Drop shit from producer queue to main buffer.
+        for (T& data : m_vecProducerQueue)
+        {
+            m_vecMainBuffer.push_back(data);
+        }
 
-    // Dump & release locks.
-    for (T& data : m_vecProducerQueue)
+        // Delete this log nigga.
+        LOG("Dumped [ %d ] objects from producers queue to main buffer { size : %d }", m_vecProducerQueue.size(), m_vecMainBuffer.size());
+        m_vecProducerQueue.clear();
+        bDumpedSomething = true;
+    }
+    else
     {
-        m_vecMainBuffer.push_back(data);
+        bDumpedSomething = false;
     }
-    LOG("Dumped [ %d ] objects from producers queue to main buffer { size : %d }", m_vecProducerQueue.size(), m_vecMainBuffer.size());
-    m_vecProducerQueue.clear();
-
+    
     m_mtxMain.unlock(); m_mtxTemp.unlock();
-    return true;
+    return bDumpedSomething;
 }

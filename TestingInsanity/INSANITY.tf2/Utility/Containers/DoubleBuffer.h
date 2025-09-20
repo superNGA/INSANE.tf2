@@ -70,10 +70,10 @@ namespace Containers
     public:
         BufferAutoRelease_t(IDoubleBuffer_t* pBuf, void* pKeyData, bool bReleaseWriteBuffer, bool bSwap)
         {
-            m_pBuf = pBuf;
+            m_pBuf                = pBuf;
             m_bReleaseWriteBuffer = bReleaseWriteBuffer;
-            m_bSwap = bSwap;
-            m_pKeyData = pKeyData;
+            m_bSwap               = bSwap;
+            m_pKeyData            = pKeyData;
         }
         ~BufferAutoRelease_t()
         {

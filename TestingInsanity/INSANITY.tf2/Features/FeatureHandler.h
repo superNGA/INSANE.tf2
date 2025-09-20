@@ -42,6 +42,13 @@ struct ColorData_t
         b = static_cast<float>(B) / 255.0f;
         a = static_cast<float>(A) / 255.0f;
     }
+    constexpr ColorData_t(RGBA_t clr)
+    {
+        r = static_cast<float>(clr.r) / 255.0f;
+        g = static_cast<float>(clr.g) / 255.0f;
+        b = static_cast<float>(clr.b) / 255.0f;
+        a = static_cast<float>(clr.a) / 255.0f;
+    }
     float r, g, b, a;
 
     inline RGBA_t GetAsBytes() const

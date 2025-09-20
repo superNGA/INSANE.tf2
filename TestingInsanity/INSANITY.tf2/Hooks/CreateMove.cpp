@@ -90,7 +90,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	F::antiAim.Run(pCmd, result, bSendPacket, pLocalPlayer);
 	F::aimbotHelper.Run(pLocalPlayer, pActiveWeapon, pCmd, &result);
 	F::critHack.RunV2(pCmd, pLocalPlayer, pActiveWeapon);
-	F::espV2.Run(pLocalPlayer);
+	//F::espV2.Run(pLocalPlayer);
 	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
 	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
 

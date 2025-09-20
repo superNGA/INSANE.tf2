@@ -30,11 +30,13 @@ namespace directX
     
     // EndScene Hook stuff...
     typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
+    typedef HRESULT(APIENTRY* T_Present)(LPDIRECT3DDEVICE9, void*, void*, void*, void*);
     inline T_endscene O_endscene    = nullptr;
-    inline T_endscene O_BeginScene  = nullptr;
+    inline T_Present  O_BeginScene  = nullptr;
     inline LPDIRECT3DDEVICE9 device = nullptr;
 
     HRESULT H_endscene(LPDIRECT3DDEVICE9 P_DEVICE);
+    HRESULT H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4);
 
     void initialize_backends();
     void shutdown_imgui();

@@ -54,7 +54,7 @@ void Graphics_t::Free()
     {
         m_pVertexDecl->Release();
         m_pVertexDecl = nullptr;
-        LOG("Release vertex decleration.");
+        LOG("Released vertex decleration.");
     }
 
     if (m_pSceneTexture != nullptr)
@@ -70,6 +70,8 @@ void Graphics_t::Free()
         m_pSceneSurface = nullptr;
         LOG("Released scene surface.");
     }
+
+    m_renderTargetDup0.Free();
 }
 
 
@@ -119,6 +121,111 @@ bool Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+//void Graphics_t::DrawImGui(LPDIRECT3DDEVICE9 pDevice)
+//{
+//    if (m_bImGuiTargetInit == false || m_bShaderCompiled == false)
+//        return;
+//
+//    struct VertexSimple_t { float x, y, z; };
+//    VertexSimple_t quad[] =
+//    {
+//        { 0.0f, 0.0f, 1.0f}, // Top    left
+//        { 1.0f, 0.0f, 1.0f}, // Top    right
+//        { 0.0f, 1.0f, 1.0f}, // Bottom left
+//        { 1.0f, 1.0f, 1.0f}  // Bottom right
+//    };
+//
+//    static IDirect3DVertexDeclaration9* pDecl = nullptr;
+//    {
+//        static _D3DVERTEXELEMENT9 vertexDecl[] =
+//        {
+//            {0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+//            D3DDECL_END()
+//        };
+//
+//        if(pDecl == nullptr)
+//        {
+//            if (FAILED(pDevice->CreateVertexDeclaration(vertexDecl, &pDecl)) == true || pDecl == nullptr)
+//            {
+//                FAIL_LOG("Ass vertex decl");
+//                return;
+//            }
+//            else
+//            {
+//                WIN_LOG("GOT vertex decl for ImGui");
+//            }
+//        }
+//    }
+//
+//    static IDirect3DVertexBuffer9* pBuffer{ nullptr };
+//    {
+//        if(pBuffer == nullptr)
+//        {
+//            HRESULT bAllocResult = pDevice->CreateVertexBuffer(
+//                sizeof(quad),
+//                D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY,
+//                0,
+//                D3DPOOL_DEFAULT,
+//                &pBuffer,
+//                nullptr
+//            );
+//
+//            if (FAILED(bAllocResult) == true || pBuffer == nullptr)
+//            {
+//                FAIL_LOG("Failed buffer alloc for ImGui");
+//                return;
+//            }
+//            else
+//            {
+//                WIN_LOG("GOT buffer for ImGui");
+//            }
+//        }
+//    }
+//
+//    m_pStateBlock->Capture();
+//
+//    void*   pLockedBuffer = nullptr;
+//    HRESULT bLockResult   = pBuffer->Lock(0, sizeof(quad), &pLockedBuffer, D3DLOCK_DISCARD);
+//    if (FAILED(bLockResult) == true || pLockedBuffer == nullptr)
+//    {
+//        FAIL_LOG("FAILED LOCKING BUFFER");
+//        return;
+//    }
+//
+//    if (pLockedBuffer == nullptr)
+//        return;
+//    
+//    memcpy(pLockedBuffer, quad, sizeof(quad));
+//    pBuffer->Unlock();
+//
+//
+//    {
+//        m_pEffect->SetTexture("SceneTex", m_pImGuiRenderTexture);
+//
+//        pDevice->SetRenderState(D3DRS_CULLMODE,              D3DCULL_NONE);
+//        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS,  TRUE);
+//        pDevice->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, TRUE);
+//        pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,      TRUE);
+//
+//        pDevice->SetVertexDeclaration(pDecl);
+//        pDevice->SetStreamSource(0, pBuffer, 0, sizeof(VertexSimple_t));
+//
+//        m_pEffect->SetTechnique("ImGui");
+//        uint32_t iPass = 0; 
+//        m_pEffect->Begin(&iPass, 0);
+//        m_pEffect->BeginPass(0);
+//
+//        pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
+//        
+//        m_pEffect->EndPass();
+//        m_pEffect->End();
+//    }
+//    m_pStateBlock->Apply();
+//}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
 {
     // Compile Shader...
@@ -157,6 +264,13 @@ bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
             return false;
     }
 
+    if (m_renderTargetDup0.m_bInit == false)
+    {
+        bool bSucceded = m_renderTargetDup0.Init(pDevice);
+        if (bSucceded == false)
+            return false;
+    }
+
     return true;
 }
 
@@ -165,11 +279,10 @@ bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
 ///////////////////////////////////////////////////////////////////////////
 bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
 {
-    IDirect3DSurface9* pBackBuffer = nullptr;
-    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    pDevice->StretchRect(pBackBuffer, nullptr, m_pSceneSurface, nullptr, D3DTEXF_NONE);
-    pBackBuffer->Release();
+    if (m_bStateBlockInit == false || m_bShaderCompiled == false || m_bStateBlockInit == false || m_bVertexDecl == false)
+        return false;
 
+    m_renderTargetDup0.DumpCapture(pDevice, m_pSceneSurface);
     m_pEffect->SetTexture("SceneTex", m_pSceneTexture);
 
     int iScreenHeight = 0; int iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
@@ -267,9 +380,10 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     // Finally, draw whatever is in the buffer.
     {
-        pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, TRUE);
+        pDevice->SetRenderState(D3DRS_CULLMODE,              D3DCULL_NONE);
+        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS,  TRUE);
         pDevice->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, TRUE);
+        pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,      TRUE);
 
         pDevice->SetVertexDeclaration(m_pVertexDecl);
         pDevice->SetStreamSource(0, pData->m_pBuffer, 0, sizeof(Vertex));
@@ -290,6 +404,42 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     pData->m_free.store(true);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//bool Graphics_t::_CreateImGuiRenderTarget(LPDIRECT3DDEVICE9 pDevice)
+//{
+//    int iWidth = 0, iHeight = 0; I::iEngine->GetScreenSize(iWidth, iHeight);
+//    HRESULT iTextureResult = pDevice->CreateTexture(
+//        iWidth, iHeight,
+//        1,
+//        D3DUSAGE_RENDERTARGET,
+//        D3DFMT_A8R8G8B8,
+//        D3DPOOL_DEFAULT,
+//        &m_pImGuiRenderTexture,
+//        nullptr
+//    );
+//
+//    // Did texture creation failed?
+//    if (FAILED(iTextureResult) == true || m_pImGuiRenderTexture == nullptr)
+//    {
+//        FAIL_LOG("Failed to create custom render texture for ImGui.");
+//        m_pImGuiRenderTexture = nullptr;
+//        return false;
+//    }
+//
+//    // Getting surface from texture.
+//    HRESULT iSurfaceResult = m_pImGuiRenderTexture->GetSurfaceLevel(0, &m_pImGuiRenderSurface);
+//    if (FAILED(iSurfaceResult) == true || m_pImGuiRenderSurface == nullptr)
+//    {
+//        FAIL_LOG("Failed to get surface level 0 from create texture.");
+//        m_pImGuiRenderSurface = nullptr;
+//        return false;
+//    }
+//
+//    return true;
+//}
+//
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -484,4 +634,111 @@ bool VertexBuffer_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
     pDrawObjs->erase(it);
     FAIL_LOG("Removed draw object [ %p ]", pDrawObj);
     return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool RenderTargetDup_t::Init(IDevice* pDevice)
+{
+    if (pDevice == nullptr)
+        return false;
+
+    if (m_bInit == true)
+        return true;
+
+    int iWidth = 0, iHeight = 0; I::iEngine->GetScreenSize(iWidth, iHeight);
+    HRESULT iTextureResult = pDevice->CreateTexture(
+        iWidth, iHeight,
+        1,
+        D3DUSAGE_RENDERTARGET,
+        D3DFMT_A8R8G8B8,
+        D3DPOOL_DEFAULT,
+        &m_pTexture,
+        nullptr
+    );
+
+    // Did texture creation failed?
+    if (FAILED(iTextureResult) == true || m_pTexture == nullptr)
+    {
+        FAIL_LOG("Failed to create Render Texture");
+        m_pTexture = nullptr;
+        return false;
+    }
+
+    // Getting surface from texture.
+    HRESULT iSurfaceResult = m_pTexture->GetSurfaceLevel(0, &m_pSurface);
+    if (FAILED(iSurfaceResult) == true || m_pSurface == nullptr)
+    {
+        FAIL_LOG("Failed to create Render Surface");
+        m_pSurface = nullptr;
+        return false;
+    }
+
+    WIN_LOG("Successfully create Render_Texture & Render_Surface for LEVEL [ %d ]", m_iLevel);
+    m_bInit = true;
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::Free()
+{
+    if (m_bInit == false)
+        return;
+
+    if (m_pSurface != nullptr)
+    {
+        m_pSurface->Release();
+        m_pSurface = nullptr;
+        LOG("Release m_pSurface for RenderTargetDup Level [ %d ]");
+    }
+
+    if (m_pTexture != nullptr)
+    {
+        m_pTexture->Release();
+        m_pTexture = nullptr;
+        LOG("Release m_pTexture for RenderTargetDup Level [ %d ]");
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::StartCapture(IDevice* pDevice)
+{
+    if (m_bInit == false)
+        return;
+
+    IDirect3DSurface9* pBackBuffer = nullptr;
+    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+    pDevice->GetRenderTarget(m_iLevel, &m_pOriginalSurface);
+    pDevice->SetRenderTarget(m_iLevel, m_pSurface);
+
+    pBackBuffer->Release();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::EndCapture(IDevice* pDevice)
+{
+    if (m_bInit == false)
+        return;
+
+    pDevice->SetRenderTarget(m_iLevel, m_pOriginalSurface);
+    m_pOriginalSurface->Release(); // We got this in StartCapture() so to level the reference counter we gotta release this.
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::DumpCapture(IDevice* pDevice, IDirect3DSurface9* pDest) const
+{
+    if (m_bInit == false)
+        return;
+
+    pDevice->StretchRect(m_pSurface, nullptr, pDest, nullptr, D3DTEXF_NONE);
 }
