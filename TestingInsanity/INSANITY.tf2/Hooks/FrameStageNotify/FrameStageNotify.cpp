@@ -7,12 +7,6 @@
 // SDK
 #include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
-//#include "../../SDK/class/BaseEntity.h"
-//#include "../../SDK/class/BaseWeapon.h"
-//#include "../../SDK/class/IVEngineClient.h"
-//#include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
-//#include "../../Features/Projectile Engine/ProjectileEngine.h"
-//#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 
 //void hook::frame_stage_notify::hook_frame_stage_notify(void* p_vtable, client_frame_stage frame_stage)

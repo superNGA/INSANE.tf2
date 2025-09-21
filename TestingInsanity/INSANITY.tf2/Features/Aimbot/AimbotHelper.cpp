@@ -193,6 +193,10 @@ void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
         pCircle->SetDrawInLobby(false);
     }
     
-    pCircle->SetVertex(vec(static_cast<float>(iScreenWidth) / 2.0f, static_cast<float>(iScreenHeight) / 2.0f, 0.0f), flFOVCircleRadius);
+    vec vScreenCenter(static_cast<float>(iScreenWidth) / 2.0f, static_cast<float>(iScreenHeight) / 2.0f, 0.0f);
+    pCircle->SetVertex(
+        vec(vScreenCenter.x - flFOVCircleRadius, vScreenCenter.y - flFOVCircleRadius, 0.0f),
+        vec(vScreenCenter.x + flFOVCircleRadius, vScreenCenter.y + flFOVCircleRadius, 0.0f));
+    
     pCircle->SetThickness(2.0f);
 }

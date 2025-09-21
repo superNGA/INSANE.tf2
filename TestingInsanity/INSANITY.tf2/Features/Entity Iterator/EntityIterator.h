@@ -12,6 +12,7 @@
 #include <vector>
 #include <deque>
 
+#include "../../Utility/Containers/DoubleBuffer.h"
 #include "../FeatureHandler.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 
@@ -25,10 +26,16 @@ constexpr float MAX_BACKTRACK_TIME = 0.2f; // in seconds ofcourse.
 ///////////////////////////////////////////////////////////////////////////
 struct BackTrackRecord_t
 {
-    int m_iFlags = 0;
-    int m_iTick = 0;
-    vec m_vOrigin;
-    qangle m_qViewAngles;
+    BackTrackRecord_t()
+    {
+        m_iFlags = 0; m_iTick = 0; 
+        m_vOrigin.Init(); m_qViewAngles.Init();
+        // ain't setting bones to 0, waste of resoures.
+    }
+    int         m_iFlags = 0;
+    int         m_iTick = 0;
+    vec         m_vOrigin;
+    qangle      m_qViewAngles;
     matrix3x4_t m_bones[MAX_STUDIO_BONES];
 };
 ///////////////////////////////////////////////////////////////////////////
@@ -42,11 +49,11 @@ public:
     void ClearLists();
     void ClearBackTrackData();
     
-    std::vector<BaseEntity*>& GetEnemyPlayerList();
-    std::vector<BaseEntity*>& GetFriendlyPlayerList();
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedEnemiesList();
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedTeamMatesList();
 
-    std::vector<BaseEntity*>& GetEnemyPlayers();
-    std::vector<BaseEntity*>& GetFrendlyPlayers();
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetEnemyPlayers();
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetFrendlyPlayers();
 
     std::deque<BackTrackRecord_t>* GetBackTrackRecord(BaseEntity* pEnt);
     void  SetBackTrackTime(const float flBackTrackTime);
@@ -82,23 +89,27 @@ public:
 private:
     // All mighty back track records.
     std::unordered_map<BaseEntity*, std::deque<BackTrackRecord_t>> m_mapEntInfo = {};
-    float m_flBackTrackTime = 0.0f; // This is the final record time for backtrack.
+    float m_flBackTrackTime = 0.0f; // This is how much time the last backtrack record is behind from the actual player's location.
 
-    void _ProcessPlayer(BaseEntity* pEnt, int iFriendlyTeam, int iCurrentTick);
-    std::vector<BaseEntity*> m_vecPlayerEnemy, m_vecPlayerFriendly;
+
+    void _ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn, BaseEntity* pEnt, int iCurrentTick);
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>> m_vecPlayerEnemy, m_vecPlayerFriendly;
+
 
     void _ProcessSentry(BaseEntity* pEnt, int iFriendlyTeam);
     std::vector<BaseEntity*> m_vecSentryEnemy, m_vecSentryFriendly;
 
+
     void _ProcessDispenser(BaseEntity* pEnt, int iFriendlyTeam);
     std::vector<BaseEntity*> m_vecDispenserEnemy, m_vecDispenserFriendly;
+
 
     void _ProcessTeleporter(BaseEntity* pEnt, int iFriendlyTeam);
     std::vector<BaseEntity*> m_vecTeleporterEnemy, m_vecTeleporterFriendly;
 
 
     // Ent list for playerlist. ( contains dormant entities & localplayer too )
-    std::vector<BaseEntity*> m_vecPlayerListEnemy, m_vecPlayerListMates;
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>> m_vecAllConnectedEnemies, m_vecAllConnectedTeammates;
 
     // Entity to Material map.
     std::unordered_map<BaseEntity*, int>  m_mapEntToMateiral = {};
@@ -111,8 +122,9 @@ private:
     void _CallBack(BaseEntity* pEnt);
     std::vector<void*> m_vecCallBacks = {};
 
+    // NOTE : I get my classID's as runtime ( look @ ClassIDHandler.h ).
     // Since I can't use switches for class IDs, I am using this as a 
-    // Unordered map to get from class id ( dynamic ) to compile time known numbers.
+    // Unordered map to get from class id to compile time known numbers.
     void _ConstructJumpTableHelper();
     bool m_bJumpTableHelperInit = false;
     std::unordered_map<int, int> m_jumpTableHelperMap = {};

@@ -30,24 +30,33 @@ MAKE_SIG(CMaterialSystem_CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2",
 class IMaterialSystem
 {
 public:
+    ///////////////////////////////////////////////////////////////////////////
     inline void* ClearBuffer(bool bClearColor, bool bClearDepth, bool bClearStencil = false) 
     { 
         return Sig::CMaterialSystem_ClearBuffer(this, bClearColor, bClearDepth, bClearStencil);
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////
     inline void* FindTexture(const char* szTextureName, const char* szType, bool bComplain = true, int iAdditionalFlags = 0)
     {
         return Sig::CMateiralSystem_FindTexture(this, szTextureName, szType, bComplain, iAdditionalFlags);
     }
     
+
+    ///////////////////////////////////////////////////////////////////////////
     inline IMatRenderContext* GetRenderContext() { return Sig::CMaterialSystem_GetRenderContext(this); }
 
+
+    ///////////////////////////////////////////////////////////////////////////
     inline void* CreateRenderTarget( int w, int h, int sizeMode, int format, int depth)
     {
         return 
             Sig::CMaterialSystem_CreateNamedRenderTargetTextureEx(this, NULL, w, h, sizeMode, format, depth, 4 | 8, 0);
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////
     inline ITexture* CreateRenderTarget(const char* szTargetName, int w, int h, int sizeMode, int format, int depth)
     {
         return 
@@ -55,12 +64,15 @@ public:
     }
 
 
+    ///////////////////////////////////////////////////////////////////////////
     // Find Materials
     inline IMaterial* FindMaterial(const char* szMaterialName, const char* szTextureGroupName, bool bComplain, const char* szCommonPrefix)
     {
         return Sig::CMaterialSystem_FindMaterial(this, szMaterialName, szTextureGroupName, bComplain, szCommonPrefix);
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////
     inline IMaterial* CreateMaterial(const char* szMaterialName, KeyValues* pKV)
     {
         return Sig::CMaterialSystem_CreateMaterial(this, szMaterialName, pKV);

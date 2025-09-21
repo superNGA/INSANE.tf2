@@ -6,6 +6,8 @@
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IRender.h"
 
+#include "../../Utility/Hook Handler/Hook_t.h"
+
 // Resource Handlers
 #include "../../Resources/Fonts/FontManager.h"
 
@@ -15,6 +17,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ImGui/PlayerList/PlayerList.h"
@@ -23,6 +26,7 @@
 #include "../../Features/ModelPreview/ModelPreview.h"
 #include "../../Features/Material Gen/MaterialGen.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../../Features/ESP/ESPV2.h"
 
 
 namespace directX {
@@ -42,34 +46,90 @@ namespace directX {
 
 
 ///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
+
+// Render Target copy call purpous. 
+// ( 3 Copies from back buffer to some other place ( maybe some offscreen Render Target ) is done.
+enum RTCopyCallIndex_t : int
 {
-    if (!device)
+    RTCopyCallIndex_BaseWorld           = 0,
+    RTCopyCallIndex_ProjectilesAndDoors = 1,
+    RTCopyCallIndex_ViewModel           = 2 // world, doors & projectiles and view model are all drawn till this call. so we can copy here.
+};
+int g_rtCopyCallIndex = RTCopyCallIndex_BaseWorld;
+///////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_StretchRect(LPDIRECT3DDEVICE9 pDevice, IDirect3DSurface9* pSrcSurface, void* pSrcRect, IDirect3DSurface9* pDestSurface, void* pDestRect, int StretchRectType)
+{
+    D3DSurface* pBackBuffer = nullptr;
+    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+    if (pSrcSurface == pBackBuffer)
     {
-        device = P_DEVICE;
+        if(g_rtCopyCallIndex >= RTCopyCallIndex_ProjectilesAndDoors && g_rtCopyCallIndex <= RTCopyCallIndex_ViewModel)
+        {
+            O_stretchRect(pDevice, pSrcSurface, nullptr, F::graphics.GetBlurSample(), nullptr, D3DTEXF_NONE);
+        }
+
+        g_rtCopyCallIndex++;
     }
 
-    /* Doing the backend stuff */
-    if (!UI::UI_initialized_DX9 || !UI::WIN32_initialized)
+    pBackBuffer->Release();
+    return O_stretchRect(pDevice, pSrcSurface, pSrcRect, pDestSurface, pDestRect, StretchRectType);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4)
+{
+    HRESULT iResult = O_present(pDevice, a1, a2, a3, a4);
+
+
+    if (I::iEngine->IsInGame() == false)
+    {
+        F::graphics.m_renderTargetDup0.StartCapture(pDevice);
+    }
+
+    return iResult;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
+{
+    if (device == nullptr)
+        device = pDevice;
+
+    if (UI::UI_initialized_DX9 == false || UI::WIN32_initialized == false)
     {
         initialize_backends();
     }
 
-
-    if (UI::UI_initialized_DX9 && UI::WIN32_initialized)
+    if (UI::UI_initialized_DX9 == true && UI::WIN32_initialized == true)
     {
-        // Font init must succed
         if (Resources::Fonts::fontManager.Initialize() == false)
-            return O_endscene(P_DEVICE);
+            return O_endscene(pDevice);
     }
 
-    /* skipping all if already ended */
-    if (UI::UI_has_been_shutdown) return O_endscene(P_DEVICE);
+    if (UI::UI_has_been_shutdown) 
+    {
+        return O_endscene(pDevice);
+    }
 
-    /* Starting ImGui new frame*/
+
+    if(I::iEngine->IsInGame() == false)
+    {
+        F::graphics.m_renderTargetDup0.EndCapture(pDevice);
+    }
+    F::graphics.Run(pDevice);
+
+    // ImGui drawing here.
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(1920.0f, 1080.0f); // Replace with actual screen resolution
     ImGui_ImplWin32_NewFrame();
     ImGui_ImplDX9_NewFrame();
     ImGui::NewFrame();
@@ -81,8 +141,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
-            F::graphicsEngine.Run(P_DEVICE);
-            F::graphics.Run(P_DEVICE);
+            F::graphicsEngine.Run(pDevice);
 
             Render::playerList.Draw();
             Render::InfoWindow.Draw();
@@ -90,6 +149,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
         }
 
         Render::uiMenu.Draw();
+        Render::menuGUI.Draw();
         F::materialGen.Run();
         
         // Model Rendering.
@@ -118,27 +178,35 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 P_DEVICE)
             }
         }
 
+        if (F::graphics.GetBlurTexture() != nullptr)
+        {
+            ImGui::Begin("Texture Preview");
+
+            // You can also tint or add border colors:
+            ImGui::Image(reinterpret_cast<ImTextureID>(F::graphics.GetBlurTexture()), ImVec2(256, 256));
+
+            ImGui::End();
+        }
+
     }
 
     ImGui::PopFont();
 
-    /* Frame end */
+    // Ending ImGui drawing.
     ImGui::EndFrame();
     ImGui::Render();
 
+    // Real drawing & pushing to vertex buffer is done here.
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
     if (UI::UI_visble)
     {
-        /* managing shutdone once the animation is done */
         if (UI::shutdown_UI && !UI::UI_has_been_shutdown)
         {
             shutdown_imgui();
         }
     }
 
-    /* calling original function */
-    auto result = O_endscene(P_DEVICE);
-
-    return result;
+    g_rtCopyCallIndex = 0;
+    return O_endscene(pDevice);
 }

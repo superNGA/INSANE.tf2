@@ -39,6 +39,7 @@
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/PullFromAssembly.h"
+#include "../Graphics Engine V2/Graphics.h"
 
 // Debugging macros
 #define ENABLE_DEBUGGING_HOOKS  false

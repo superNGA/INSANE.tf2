@@ -2,6 +2,8 @@
 
 // Utility
 #include "../../Utility/ConsoleLogging.h"
+#include "../ModelPreview/ModelPreview.h"
+#include "../Material Gen/MaterialGen.h"
 
 // SDK
 #include "../../SDK/class/IVEngineClient.h"
@@ -54,7 +56,7 @@ void Graphics_t::Free()
     {
         m_pVertexDecl->Release();
         m_pVertexDecl = nullptr;
-        LOG("Release vertex decleration.");
+        LOG("Released vertex decleration.");
     }
 
     if (m_pSceneTexture != nullptr)
@@ -70,6 +72,8 @@ void Graphics_t::Free()
         m_pSceneSurface = nullptr;
         LOG("Released scene surface.");
     }
+
+    m_renderTargetDup0.Free();
 }
 
 
@@ -106,14 +110,14 @@ void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
+bool Graphics_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
     // Searching in line list first.
     if (m_lines.FindAndRemoveDrawObj(pDrawObj) == true)
-        return;
+        return true;
 
     // If not found in line list, try to find in Traingle list.
-    m_traingles.FindAndRemoveDrawObj(pDrawObj);
+    return m_traingles.FindAndRemoveDrawObj(pDrawObj);
 }
 
 
@@ -157,6 +161,13 @@ bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
             return false;
     }
 
+    if (m_renderTargetDup0.m_bInit == false)
+    {
+        bool bSucceded = m_renderTargetDup0.Init(pDevice);
+        if (bSucceded == false)
+            return false;
+    }
+
     return true;
 }
 
@@ -165,23 +176,43 @@ bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
 ///////////////////////////////////////////////////////////////////////////
 bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
 {
-    IDirect3DSurface9* pBackBuffer = nullptr;
-    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    pDevice->StretchRect(pBackBuffer, nullptr, m_pSceneSurface, nullptr, D3DTEXF_NONE);
-    pBackBuffer->Release();
+    if (m_bStateBlockInit == false || m_bShaderCompiled == false || m_bStateBlockInit == false || m_bVertexDecl == false)
+        return false;
 
+
+    if (I::iEngine->IsInGame() == false)
+    {
+        D3DSurface* pBackBuffer = nullptr;
+        pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+        m_renderTargetDup0.DumpCapture(pDevice, m_pSceneSurface);
+
+        if (directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
+        {
+            _DumpCaptureAndMaskModelPanel(pDevice, m_renderTargetDup0.m_pSurface, pBackBuffer);
+        }
+        else
+        {
+            m_renderTargetDup0.DumpCapture(pDevice, pBackBuffer);
+        }
+
+        pBackBuffer->Release();
+    }
     m_pEffect->SetTexture("SceneTex", m_pSceneTexture);
+
 
     int iScreenHeight = 0; int iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
     m_pEffect->SetFloat("g_flScreenHeight", static_cast<float>(iScreenHeight));
     m_pEffect->SetFloat("g_flScreenWidth",  static_cast<float>(iScreenWidth));
     m_pEffect->SetFloat("g_flIsInGame",    I::iEngine->IsInGame() == true ? 1.0f : 0.0f); // Let the shader know if we are in game or not.
 
-    // Here I am trying to retain some precision cause static_cast<double>(iTimeSinceEpochInMs) is a big number and storing in a float, will cause
+
+    // Here I am trying to retain some precision cause "static_cast<double>(iTimeSinceEpochInMs)" is a big number and storing in a float, will cause
     // poor accuracy cause of poor step size, so we reduce the convert it to seconds first, so its a smaller number and then store it in float, so
-    // we don't lose as much accuracy cause me a smart ass nigga :)
+    // we don't lose as much accuracy. me a smart ass nigga :)
     int64_t iTimeSinceEpochInMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     m_pEffect->SetFloat("g_flTimeSinceEpochInSec", static_cast<float>(static_cast<double>(iTimeSinceEpochInMs) / 1000.0));
+
 
     if (I::iEngine->IsInGame() == true)
     {
@@ -199,7 +230,10 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     if (pData->m_free.load() == false)
         return;
 
-    if (pData->m_vecDrawObjs.empty() == true)
+    std::vector<IDrawObj_t*>* vecDrawObjs = pData->m_vecDrawObj.GetReadBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_READ_BUFFER(&pData->m_vecDrawObj, vecDrawObjs);
+
+    if (vecDrawObjs->empty() == true)
         return;
 
     pData->m_free.store(false);
@@ -208,7 +242,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     // Total number of vertex to dump to buffer.
     uint64_t nVertex = 0;
     {
-        for (const IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
+        for (const IDrawObj_t* pDrawObj : *vecDrawObjs)
         {
             // Don't draw objects that don't wanna be drawn in game.
             if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
@@ -230,7 +264,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     // Make sure buffer size is sufficient.
     uint64_t iVertexDataSize = sizeof(Vertex) * nVertex;
-    if (pData->AdjustBufferSize(iVertexDataSize, pDevice) == false)
+    if (pData->AdjustBufferSize(iVertexDataSize, pDevice, vecDrawObjs->size()) == false)
         return;
 
     // Lock buffer.
@@ -244,7 +278,7 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
     }
 
     // Write data to buffer.
-    for (IDrawObj_t* pDrawObj : pData->m_vecDrawObjs)
+    for (IDrawObj_t* pDrawObj : *vecDrawObjs)
     {
         // Don't draw objects that don't wanna be drawn in game.
         if (bIsInGame == true && pDrawObj->ShouldDrawInGame() == false)
@@ -264,9 +298,10 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
     // Finally, draw whatever is in the buffer.
     {
-        pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, TRUE);
+        pDevice->SetRenderState(D3DRS_CULLMODE,              D3DCULL_NONE);
+        pDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS,  TRUE);
         pDevice->SetRenderState(D3DRS_ANTIALIASEDLINEENABLE, TRUE);
+        pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,      TRUE);
 
         pDevice->SetVertexDeclaration(m_pVertexDecl);
         pDevice->SetStreamSource(0, pData->m_pBuffer, 0, sizeof(Vertex));
@@ -281,8 +316,6 @@ void Graphics_t::_DrawList(VertexBuffer_t* pData, LPDIRECT3DDEVICE9 pDevice)
 
         m_pEffect->End();
     }
-
-    //LOG("Drew [ %d ] objects", nVertex / pData->m_iVertexPerPrimitive);
 
     pData->m_free.store(true);
 }
@@ -402,7 +435,31 @@ bool Graphics_t::_CreateStateBlock(LPDIRECT3DDEVICE9 pDevice)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice)
+void Graphics_t::_DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer)
+{
+    // Dumping "RenderTargetIndex" 0's data ( that we captur each frame starting from Present Fn ( PostCall )) into the back buffer,
+    // such that the Model Preview Panel doesn't get hidden ( cause the model gets draw from Satan's ass somewhere before
+    // Present call and the doesn't get captured in the data we captured ). This method is ass and probably 
+    // not very good for performance, but its the only thing I could get to work so... its part of the final build. :)
+    int iScreenWidth = 0, iScreenHeight = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
+    int x            = 0, y             = 0; F::modelPreview.GetRenderViewPos(x, y);
+    int iWidth       = 0, iHeight       = 0; F::modelPreview.GetRenderViewSize(iHeight, iWidth);
+    
+    RECT leftMask  { 0,                    0,  x,             iScreenHeight };
+    RECT RightMask { x + iWidth,           0,  iScreenWidth,  iScreenHeight };
+    RECT TopMask   { x,                    0,  x + iWidth,    y };
+    RECT BottomMask{ x,          y + iHeight,  x + iWidth,    iScreenHeight };
+    
+    pDevice->StretchRect(pSource, &leftMask,   pBackBuffer, &leftMask,   D3DTEXF_NONE);
+    pDevice->StretchRect(pSource, &RightMask,  pBackBuffer, &RightMask,  D3DTEXF_NONE);
+    pDevice->StretchRect(pSource, &TopMask,    pBackBuffer, &TopMask,    D3DTEXF_NONE);
+    pDevice->StretchRect(pSource, &BottomMask, pBackBuffer, &BottomMask, D3DTEXF_NONE);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 pDevice, int nObjects)
 {
     // if we already got this much space.
     if (m_iBufferSize.load() > iSizeRequired)
@@ -413,7 +470,7 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
 
     // Warning size.
     if (iSizeRequired >= 10ull * 0x400ull)
-        FAIL_LOG("Buffer size more than 10KiBs, we are drawing [ %d ] objects. is this normal", m_vecDrawObjs.size());
+        FAIL_LOG("Buffer size more than 10KiBs, we are drawing [ %d ] objects. is this normal", nObjects);
 
     // Release old buffer first.
     if (m_pBuffer != nullptr)
@@ -445,38 +502,17 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
 ///////////////////////////////////////////////////////////////////////////
 void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
 {
-    while (m_free.load() == false)
-    {
-        FAIL_LOG("Waiting for vertex buffer data to be free-ed.");
-    }
+    std::vector<IDrawObj_t*>* pDrawObjs = m_vecDrawObj.GetWriteBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_WRITE_BUFFER(&m_vecDrawObj, pDrawObjs);
 
-    m_free.store(false);
-    
-    if (m_pBuffer != nullptr)
-    {
-        m_pBuffer->Release();
-        m_pBuffer = nullptr;
-    }
-
-    // Delete and clear all draw objects.
-    for (IDrawObj_t* pDrawObj : m_vecDrawObjs)
+    for (IDrawObj_t* pDrawObj : *pDrawObjs)
     {
         pDrawObj->DeleteThis();
-        FAIL_LOG("Delete draw obj : %p", pDrawObj);
+        FAIL_LOG("Deleted draw obj [ %p ]", pDrawObj);
     }
-    m_vecDrawObjs.clear();
-    m_vecDrawObjs.shrink_to_fit();
-    
-    // Delete and clear all temp draw obj.
-    for (IDrawObj_t* pDrawObj : m_vecTempBuffer)
-    {
-        pDrawObj->DeleteThis();
-        FAIL_LOG("Delete temp draw obj : %p", pDrawObj);
-    }
-    m_vecTempBuffer.clear();
-    m_vecTempBuffer.shrink_to_fit();
 
-    // No setting the mutex to true, cause we don't want it to be used anymore.
+    pDrawObjs->clear();
+    pDrawObjs->shrink_to_fit();
 }
 
 
@@ -484,24 +520,7 @@ void VertexBuffer_t::FreeBufferAndDeleteDrawObj()
 ///////////////////////////////////////////////////////////////////////////
 void VertexBuffer_t::RegisterDrawObj(IDrawObj_t* pDrawObj)
 {
-    // if draw obj list is not free, the leave obj in temp buffer.
-    if (m_free.load() == false)
-    {
-        m_vecTempBuffer.push_back(pDrawObj);
-        return;
-    }
-    
-    // if draw obj list is free, then store it and if anythings left in temp buffer.
-    m_free.store(false);
-    m_vecDrawObjs.push_back(pDrawObj);
-
-    // Dump everything from temp storage to main obj list.
-    for (IDrawObj_t* pObj : m_vecTempBuffer)
-        m_vecDrawObjs.push_back(pObj);
-
-    m_vecTempBuffer.clear();
-
-    m_free.store(true);
+    m_vecDrawObj.PushBack(pDrawObj);
 }
 
 
@@ -509,25 +528,120 @@ void VertexBuffer_t::RegisterDrawObj(IDrawObj_t* pDrawObj)
 ///////////////////////////////////////////////////////////////////////////
 bool VertexBuffer_t::FindAndRemoveDrawObj(IDrawObj_t* pDrawObj)
 {
-    auto it = std::find(m_vecDrawObjs.begin(), m_vecDrawObjs.end(), pDrawObj);
+    std::vector<IDrawObj_t*>* pDrawObjs = m_vecDrawObj.GetWriteBuffer(true);
+    VECTHREADSAFE_AUTO_RELEASE_WRITE_BUFFER(&m_vecDrawObj, pDrawObjs);
 
-    // Trying to find obj in draw obj list.
-    if (it != m_vecDrawObjs.end())
-    {
-        LOG("Removed draw obj @ %p", pDrawObj);
-        m_vecDrawObjs.erase(it);
+    auto it = std::find(pDrawObjs->begin(), pDrawObjs->end(), pDrawObj);
+    if (it == pDrawObjs->end())
+        return false;
+
+    pDrawObjs->erase(it);
+    FAIL_LOG("Removed draw object [ %p ]", pDrawObj);
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool RenderTargetDup_t::Init(D3DDevice* pDevice)
+{
+    if (pDevice == nullptr)
+        return false;
+
+    if (m_bInit == true)
         return true;
+
+    int iWidth = 0, iHeight = 0; I::iEngine->GetScreenSize(iWidth, iHeight);
+    HRESULT iTextureResult = pDevice->CreateTexture(
+        iWidth, iHeight,
+        1,
+        D3DUSAGE_RENDERTARGET,
+        D3DFMT_A8R8G8B8,
+        D3DPOOL_DEFAULT,
+        &m_pTexture,
+        nullptr
+    );
+
+    // Did texture creation failed?
+    if (FAILED(iTextureResult) == true || m_pTexture == nullptr)
+    {
+        FAIL_LOG("Failed to create Render Texture");
+        m_pTexture = nullptr;
+        return false;
     }
 
-    // Trying to find obj in temp list.
-    auto itTempList = std::find(m_vecTempBuffer.begin(), m_vecTempBuffer.end(), pDrawObj);
-    if (itTempList != m_vecTempBuffer.end())
+    // Getting surface from texture.
+    HRESULT iSurfaceResult = m_pTexture->GetSurfaceLevel(0, &m_pSurface);
+    if (FAILED(iSurfaceResult) == true || m_pSurface == nullptr)
     {
-        LOG("Removed draw obj from temp list @ %p", pDrawObj);
-        m_vecTempBuffer.erase(itTempList);
-        return true;
+        FAIL_LOG("Failed to create Render Surface");
+        m_pSurface = nullptr;
+        return false;
     }
 
-    // Draw obj is not present in this vertexBuffer obj.
-    return false;
+    WIN_LOG("Successfully create Render_Texture & Render_Surface for LEVEL [ %d ]", m_iLevel);
+    m_bInit = true;
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::Free()
+{
+    if (m_bInit == false)
+        return;
+
+    if (m_pSurface != nullptr)
+    {
+        m_pSurface->Release();
+        m_pSurface = nullptr;
+        LOG("Release m_pSurface for RenderTargetDup Level [ %d ]", m_iLevel);
+    }
+
+    if (m_pTexture != nullptr)
+    {
+        m_pTexture->Release();
+        m_pTexture = nullptr;
+        LOG("Release m_pTexture for RenderTargetDup Level [ %d ]", m_iLevel);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::StartCapture(D3DDevice* pDevice)
+{
+    if (m_bInit == false)
+        return;
+
+    m_pOriginalSurface = nullptr;
+    pDevice->GetRenderTarget(m_iLevel, &m_pOriginalSurface);
+    pDevice->SetRenderTarget(m_iLevel, m_pSurface);
+
+    pDevice->Clear(0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_RGBA(0, 0, 0, 0), 1.0f, 0);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::EndCapture(D3DDevice* pDevice)
+{
+    if (m_bInit == false || m_pOriginalSurface == nullptr)
+        return;
+
+    pDevice->SetRenderTarget(m_iLevel, m_pOriginalSurface);
+    m_pOriginalSurface->Release(); // We got this in StartCapture() so to level the reference counter we gotta release this.
+    m_pOriginalSurface = nullptr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void RenderTargetDup_t::DumpCapture(D3DDevice* pDevice, IDirect3DSurface9* pDest) const
+{
+    if (m_bInit == false)
+        return;
+
+    pDevice->StretchRect(m_pSurface, nullptr, pDest, nullptr, D3DTEXF_NONE);
 }

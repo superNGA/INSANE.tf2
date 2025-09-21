@@ -133,7 +133,13 @@ BaseEntity* AimbotMelee_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* p
 
     // First we will arrange the target list in a ascending order of distance from local player using quick sort. 
     // This theoratically should find us a target faster.
-    std::vector<BaseEntity*> vecTargets = F::entityIterator.GetEnemyPlayers();
+    auto* vecEnemyReadOnlyList = F::entityIterator.GetEnemyPlayers().GetReadBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&F::entityIterator.GetEnemyPlayers(), vecEnemyReadOnlyList);
+
+    if (vecEnemyReadOnlyList == nullptr)
+        return nullptr;
+
+    std::vector<BaseEntity*> vecTargets = *vecEnemyReadOnlyList;
     std::sort(vecTargets.begin(), vecTargets.end(), [&](BaseEntity* pEnt1, BaseEntity* pEnt2)->bool
         {
             return (pEnt1->GetAbsOrigin() - pLocalPlayer->GetAbsOrigin()).LengthSqrt() < (pEnt2->GetAbsOrigin() - pLocalPlayer->GetAbsOrigin()).LengthSqrt();
