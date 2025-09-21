@@ -52,3 +52,4 @@ _ReSharper*/
 *.ipdb
 *.tlog
 *.tmp
+*.i64
