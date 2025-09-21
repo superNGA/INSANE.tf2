@@ -19,8 +19,9 @@ extern HWND WINDOW;
 extern LPDIRECT3DDEVICE9 DEVICE;
 
 /*returns endscene address.*/
-void* get_endscene();
+void* GetEndScene();
 void* GetBeginScene();
+void* GetStretchRect();
 
 /*Gets the Directx devices virtual table*/
 bool GET_DIRECTX_DEVICES_VTABLE(void** P_TABLE, size_t SIZE);

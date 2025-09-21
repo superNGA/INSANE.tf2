@@ -29,14 +29,22 @@ namespace directX
     extern ImGuiContext* context;
     
     // EndScene Hook stuff...
-    typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
-    typedef HRESULT(APIENTRY* T_Present)(LPDIRECT3DDEVICE9, void*, void*, void*, void*);
-    inline T_endscene O_endscene    = nullptr;
-    inline T_Present  O_BeginScene  = nullptr;
     inline LPDIRECT3DDEVICE9 device = nullptr;
 
+    // IDirect3DDevice9::EndScene
+    typedef HRESULT(APIENTRY* T_endscene)(LPDIRECT3DDEVICE9);
+    inline T_endscene O_endscene = nullptr;
     HRESULT H_endscene(LPDIRECT3DDEVICE9 P_DEVICE);
-    HRESULT H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4);
+
+    // IDirect3DDevice9::Present
+    typedef HRESULT(APIENTRY* T_Present)(LPDIRECT3DDEVICE9, void*, void*, void*, void*);
+    inline T_Present O_present = nullptr;
+    HRESULT H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4);
+
+    // IDirect3DDevice9::StretchRect
+    typedef HRESULT(APIENTRY* T_StretchRect)(LPDIRECT3DDEVICE9, void*, void*, void*, void*, int);
+    inline T_StretchRect O_stretchRect = nullptr;
+    HRESULT H_StretchRect(LPDIRECT3DDEVICE9 pDevice, IDirect3DSurface9* pSrcSurface, void* pSrcRect, IDirect3DSurface9* pDestSurface, void* pDestRect, int StretchRectType);
 
     void initialize_backends();
     void shutdown_imgui();

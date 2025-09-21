@@ -44,7 +44,7 @@ void MenuGUI_t::Draw()
     if (ImGui::Begin("##MainMenuGUI", nullptr, iWindowFlags) == true)
     {
         vWindowPos = ImGui::GetWindowPos();
-        ImGui::Text("INSANE.TF2 BY !!GODLIKE_INSANE!!");
+        ImGui::Text("INSANE.TF2 BY !!INSANE!!");
         ImGui::End();
     }
 

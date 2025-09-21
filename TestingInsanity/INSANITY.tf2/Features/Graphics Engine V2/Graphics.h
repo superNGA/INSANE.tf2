@@ -73,7 +73,7 @@ public:
     Graphics_t():
         m_lines(D3DPRIMITIVETYPE::D3DPT_LINELIST, 2),
         m_traingles(D3DPRIMITIVETYPE::D3DPT_TRIANGLELIST, 3),
-        m_renderTargetDup0(0), m_renderTargetDup1(1)
+        m_renderTargetDup0(0)
     {}
 
     void Run(LPDIRECT3DDEVICE9 pDevice);
@@ -85,8 +85,10 @@ public:
     void RegisterInTraingleList(IDrawObj_t* pDrawObj);
     bool FindAndRemoveDrawObj(IDrawObj_t* pDrawObj);
 
+    inline D3DSurface* GetBlurSample() const { return m_pSceneSurface; }
+    inline IDirect3DTexture9* GetBlurTexture() const { return m_pSceneTexture; }
+
     RenderTargetDup_t m_renderTargetDup0;
-    RenderTargetDup_t m_renderTargetDup1;
 
 private:
     bool _Initialize(LPDIRECT3DDEVICE9 pDevice);
@@ -106,7 +108,7 @@ private:
     bool m_bStateBlockInit  = false;
     bool _CreateStateBlock(LPDIRECT3DDEVICE9 pDevice);
 
-    void _DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer) const;
+    void _DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer);
 
     LPD3DXEFFECT                 m_pEffect       = nullptr;
     IDirect3DStateBlock9*        m_pStateBlock   = nullptr;

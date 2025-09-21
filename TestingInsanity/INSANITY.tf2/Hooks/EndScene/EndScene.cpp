@@ -6,6 +6,8 @@
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IRender.h"
 
+#include "../../Utility/Hook Handler/Hook_t.h"
+
 // Resource Handlers
 #include "../../Resources/Fonts/FontManager.h"
 
@@ -44,13 +46,54 @@ namespace directX {
 
 
 ///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-HRESULT directX::H_beginScene(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4)
+
+// Render Target copy call purpous. 
+// ( 3 Copies from back buffer to some other place ( maybe some offscreen Render Target ) is done.
+enum RTCopyCallIndex_t : int
 {
-    HRESULT iResult = O_BeginScene(pDevice, a1, a2, a3, a4);
-    
-    F::graphics.m_renderTargetDup0.StartCapture(pDevice);
-    F::graphics.m_renderTargetDup1.StartCapture(pDevice);
+    RTCopyCallIndex_BaseWorld           = 0,
+    RTCopyCallIndex_ProjectilesAndDoors = 1,
+    RTCopyCallIndex_ViewModel           = 2 // world, doors & projectiles and view model are all drawn till this call. so we can copy here.
+};
+int g_rtCopyCallIndex = RTCopyCallIndex_BaseWorld;
+///////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_StretchRect(LPDIRECT3DDEVICE9 pDevice, IDirect3DSurface9* pSrcSurface, void* pSrcRect, IDirect3DSurface9* pDestSurface, void* pDestRect, int StretchRectType)
+{
+    D3DSurface* pBackBuffer = nullptr;
+    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+
+    if (pSrcSurface == pBackBuffer)
+    {
+        if(g_rtCopyCallIndex >= RTCopyCallIndex_ProjectilesAndDoors && g_rtCopyCallIndex <= RTCopyCallIndex_ViewModel)
+        {
+            O_stretchRect(pDevice, pSrcSurface, nullptr, F::graphics.GetBlurSample(), nullptr, D3DTEXF_NONE);
+        }
+
+        g_rtCopyCallIndex++;
+    }
+
+    pBackBuffer->Release();
+    return O_stretchRect(pDevice, pSrcSurface, pSrcRect, pDestSurface, pDestRect, StretchRectType);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* a3, void* a4)
+{
+    HRESULT iResult = O_present(pDevice, a1, a2, a3, a4);
+
+
+    if (I::iEngine->IsInGame() == false)
+    {
+        F::graphics.m_renderTargetDup0.StartCapture(pDevice);
+    }
+
     return iResult;
 }
 
@@ -79,8 +122,10 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
     }
 
 
-    F::graphics.m_renderTargetDup1.EndCapture(pDevice);
-    F::graphics.m_renderTargetDup0.EndCapture(pDevice);
+    if(I::iEngine->IsInGame() == false)
+    {
+        F::graphics.m_renderTargetDup0.EndCapture(pDevice);
+    }
     F::graphics.Run(pDevice);
 
     // ImGui drawing here.
@@ -133,6 +178,16 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
             }
         }
 
+        if (F::graphics.GetBlurTexture() != nullptr)
+        {
+            ImGui::Begin("Texture Preview");
+
+            // You can also tint or add border colors:
+            ImGui::Image(reinterpret_cast<ImTextureID>(F::graphics.GetBlurTexture()), ImVec2(256, 256));
+
+            ImGui::End();
+        }
+
     }
 
     ImGui::PopFont();
@@ -152,5 +207,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         }
     }
 
+    g_rtCopyCallIndex = 0;
     return O_endscene(pDevice);
 }

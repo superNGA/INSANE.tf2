@@ -161,9 +161,10 @@ bool thread1_t::_initializeHooks()
 	MH_Initialize();
 	LOG("thread 1", "Minhook started");
 
-	/* hooking FNs */
-	MH_CreateHook((LPVOID*)get_endscene(), (LPVOID)directX::H_endscene, (LPVOID*)&directX::O_endscene);
-	MH_CreateHook((LPVOID*)GetBeginScene(), (LPVOID)directX::H_beginScene, (LPVOID*)&directX::O_BeginScene);
+	// D3D9 fn hooks
+	MH_CreateHook((LPVOID*)GetEndScene(),    (LPVOID)directX::H_endscene,	 (LPVOID*)&directX::O_endscene   );
+	MH_CreateHook((LPVOID*)GetBeginScene(),  (LPVOID)directX::H_present,	 (LPVOID*)&directX::O_present	 );
+	MH_CreateHook((LPVOID*)GetStretchRect(), (LPVOID)directX::H_StretchRect, (LPVOID*)&directX::O_stretchRect);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 	winproc::hook_winproc();

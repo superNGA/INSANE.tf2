@@ -74,7 +74,6 @@ void Graphics_t::Free()
     }
 
     m_renderTargetDup0.Free();
-    m_renderTargetDup1.Free();
 }
 
 
@@ -169,13 +168,6 @@ bool Graphics_t::_Initialize(LPDIRECT3DDEVICE9 pDevice)
             return false;
     }
 
-    if (m_renderTargetDup1.m_bInit == false)
-    {
-        bool bSucceded = m_renderTargetDup1.Init(pDevice);
-        if (bSucceded == false)
-            return false;
-    }
-
     return true;
 }
 
@@ -188,22 +180,24 @@ bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
         return false;
 
 
-    D3DSurface* pBackBuffer = nullptr;  
-    pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
-    
-    RenderTargetDup_t* pBestCapture = I::iEngine->IsInGame() == false ? &m_renderTargetDup0 : &m_renderTargetDup1;
-    pBestCapture->DumpCapture(pDevice, m_pSceneSurface);
-
-    if(directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
+    if (I::iEngine->IsInGame() == false)
     {
-        _DumpCaptureAndMaskModelPanel(pDevice, pBestCapture->m_pSurface, pBackBuffer);
-    }
-    else
-    {
-        pBestCapture->DumpCapture(pDevice, pBackBuffer);
-    }
+        D3DSurface* pBackBuffer = nullptr;
+        pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
-    pBackBuffer->Release();
+        m_renderTargetDup0.DumpCapture(pDevice, m_pSceneSurface);
+
+        if (directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
+        {
+            _DumpCaptureAndMaskModelPanel(pDevice, m_renderTargetDup0.m_pSurface, pBackBuffer);
+        }
+        else
+        {
+            m_renderTargetDup0.DumpCapture(pDevice, pBackBuffer);
+        }
+
+        pBackBuffer->Release();
+    }
     m_pEffect->SetTexture("SceneTex", m_pSceneTexture);
 
 
@@ -441,7 +435,7 @@ bool Graphics_t::_CreateStateBlock(LPDIRECT3DDEVICE9 pDevice)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void Graphics_t::_DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer) const
+void Graphics_t::_DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer)
 {
     // Dumping "RenderTargetIndex" 0's data ( that we captur each frame starting from Present Fn ( PostCall )) into the back buffer,
     // such that the Model Preview Panel doesn't get hidden ( cause the model gets draw from Satan's ass somewhere before

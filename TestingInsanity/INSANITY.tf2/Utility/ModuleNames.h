@@ -12,3 +12,4 @@
 #define SERVER_DLL				"server.dll"
 #define TIER0_DLL               "tier0.dll"
 #define VGUIMATSURFACE_DLL      "vguimatsurface.dll"
+#define SHADERAPIDX9_DLL        "shaderapidx9.dll"
