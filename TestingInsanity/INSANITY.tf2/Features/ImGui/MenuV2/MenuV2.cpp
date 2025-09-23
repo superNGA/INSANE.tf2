@@ -131,7 +131,7 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
         // Rounding
         m_pMainMenu->SetRounding(Features::Menu::Menu::Rounding.GetData().m_flVal);
 
-        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y);
+        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY());
 
         ImGui::End();
     }
@@ -222,38 +222,87 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
     if (pTab == nullptr)
         return;
 
+    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(x, y));
+
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+    }
     
-    constexpr float FRAME_PADDING_PXL         = 15.0f;
-    constexpr float SECTION_PADDING_PXL       = 10.0f;
-    constexpr float INTER_FEATURE_PADDING_PXL =  5.0f;
+    constexpr float FRAME_PADDING_PXL         = 15.0f; // Padding between Main body & its contents.
+    constexpr float SECTION_PADDING_PXL       = 10.0f; // Padding between Section walls & its contents.
+    constexpr float INTER_FEATURE_PADDING_PXL =  5.0f; // Padding between each feature.
+    constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres & its contents.
+    constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
+
+    ImVec2 vLeftSectionCursor (x + FRAME_PADDING_PXL,                             y + FRAME_PADDING_PXL);
+    ImVec2 vRightSectionCursor(x + (flWidth / 2.0f) + (FRAME_PADDING_PXL / 2.0f), y + FRAME_PADDING_PXL);
+
+    bool bDrawingOnLeft = true;
 
     for (Section_t* pSection : pTab->m_vecSections)
     {
-        ImVec2 vSectionSize = _CalculateSectionSize(
-            pSection->m_vecFeatures.size(),
-            INTER_FEATURE_PADDING_PXL, SECTION_PADDING_PXL,
-            ((flWidth - (3.0f * FRAME_PADDING_PXL)) / 2.0f) - (2 * SECTION_PADDING_PXL), 20.0f);
+        // This is the screen pos for the cursor.
+        ImVec2* pSectionScreenPos = bDrawingOnLeft == true ? &vLeftSectionCursor : &vRightSectionCursor;
+        ImGui::SetCursorScreenPos(*pSectionScreenPos);
+        ImVec2 vSectionLocalPos(pSectionScreenPos->x - vWindowPos.x, pSectionScreenPos->y - vWindowPos.y);
 
-        auto* pDrawList = ImGui::GetWindowDrawList();
-        pDrawList->AddRect(
-            ImVec2(x + FRAME_PADDING_PXL, y + FRAME_PADDING_PXL),
-            ImVec2(x + FRAME_PADDING_PXL + vSectionSize.x, y + FRAME_PADDING_PXL + vSectionSize.y),
-            ImColor(1.0f, 1.0f, 1.0f, 1.0f));
+
+        float flFeatureWidth = (flWidth / 2.0f) - (1.5f * FRAME_PADDING_PXL) - (2 * SECTION_PADDING_PXL);
+        ImGui::SetCursorPos(ImVec2(vSectionLocalPos.x + SECTION_PADDING_PXL + FEATURE_PADDING_PXL, ImGui::GetCursorPosY() + SECTION_PADDING_PXL));
 
         for (IFeature* pFeature : pSection->m_vecFeatures)
         {
+            ImVec2 vCursorPos = ImGui::GetCursorPos();
+
+            if(Features::Menu::Menu::Draw_Guides.IsActive() == true)
+            {
+                ImVec2 vCursorScreenPos = ImGui::GetCursorScreenPos(); 
+                vCursorScreenPos.x -= FEATURE_PADDING_PXL; // we added the feature padding before this & we don't that here. ( so we remove it )
+                ImGui::GetWindowDrawList()->AddRect(vCursorScreenPos, ImVec2(vCursorScreenPos.x + flFeatureWidth, vCursorScreenPos.y + FEATURE_HEIGHT), ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+            }
+
             // Drawing the got dayem features.
             switch (pFeature->m_iDataType)
             {
-            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean(pFeature);     break;
-            case IFeature::DataType::DT_COLORDATA:   _DrawColor(pFeature);       break;
-            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider(pFeature);   break;
-            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature); break;
-            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown(pFeature);    break;
+            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean    (pFeature, vCursorPos.x + flFeatureWidth - (2.0f * FEATURE_PADDING_PXL)); break;
+            case IFeature::DataType::DT_COLORDATA:   _DrawColor      (pFeature, vCursorPos.x + flFeatureWidth - (2.0f * FEATURE_PADDING_PXL)); break;
+            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider  (pFeature, (flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL, vCursorPos.x + ((flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL)); break;
+            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature, (flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL, vCursorPos.x + ((flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL)); break;
+            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown   (pFeature, (flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL, vCursorPos.x + ((flFeatureWidth / 2.0f) - FEATURE_PADDING_PXL)); break;
             default: break;
             }
+
+            // Adjust cursor for the next feature.
+            ImGui::SetCursorPosX(vSectionLocalPos.x + SECTION_PADDING_PXL + FEATURE_PADDING_PXL      );
+            ImGui::SetCursorPosY(vCursorPos.y       + FEATURE_HEIGHT      + INTER_FEATURE_PADDING_PXL);
         }
+
+
+        ImVec2 vSectionSize = _CalculateSectionSize(
+            pSection->m_vecFeatures.size(),                 // No. of features.
+            INTER_FEATURE_PADDING_PXL, SECTION_PADDING_PXL, // Padding
+            flFeatureWidth, FEATURE_HEIGHT                  // Width & Height for each feature.
+        );
+
+        if (Features::Menu::Menu::Draw_Guides.IsActive() == true)
+        {
+            ImGui::GetWindowDrawList()->AddRect(
+                *pSectionScreenPos,
+                ImVec2(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y),
+                ImColor(1.0f, 1.0f, 1.0f, 1.0f)
+            );
+        }
+
+        // Adding section's size fo next section draws accordingly.
+        pSectionScreenPos->y += vSectionSize.y + FRAME_PADDING_PXL;
+        
+        // Choosing the side with the most space.
+        bDrawingOnLeft = (vLeftSectionCursor.y > vRightSectionCursor.y ? false : true);
+    }
+
+    {
+        ImGui::PopStyleVar();
     }
 }
 
@@ -271,15 +320,17 @@ ImVec2 MenuGUI_t::_CalculateSectionSize(int nFeatures, float flInterFeaturePaddi
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawBoolean(IFeature* pFeature) const
+void MenuGUI_t::_DrawBoolean(IFeature* pFeature, float flFeatureEnd) const
 {
     Feature<bool>* pBoolFeature = reinterpret_cast<Feature<bool>*>(pFeature);
     
+    float flCheckBoxWidth = ImGui::GetFrameHeight();
+
     // Feature's name
-    ImGui::Text(pBoolFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pBoolFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(flFeatureEnd - flCheckBoxWidth);
 
     // Checkbox
-    ImGui::Checkbox(("##" + pBoolFeature->m_szFeatureDisplayName).c_str(), &pBoolFeature->m_Data);
+    ImGui::Checkbox(("##" + pBoolFeature->m_szTabName + pBoolFeature->m_szSectionName + pBoolFeature->m_szFeatureDisplayName).c_str(), &pBoolFeature->m_Data);
 
     // Tool tip
     if (ImGui::IsItemHovered() == true && pBoolFeature->m_szToolTip.empty() == false)
@@ -289,15 +340,18 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawIntSlider(IFeature* pFeature) const
+void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const
 {
     Feature<IntSlider_t>* pIntFeature = reinterpret_cast<Feature<IntSlider_t>*>(pFeature);
 
     // Feature's name
-    ImGui::Text(pIntFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pIntFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(flWidgetStartX);
 
     // Checkbox
-    ImGui::SliderInt(("##" + pIntFeature->m_szFeatureDisplayName).c_str(), &pIntFeature->m_Data.m_iVal, pIntFeature->m_Data.m_iMin, pIntFeature->m_Data.m_iMin);
+    ImGui::SetNextItemWidth(flWidgetWidth);
+    ImGui::SliderInt(
+        ("##" + pIntFeature->m_szTabName + pIntFeature->m_szSectionName + pIntFeature->m_szFeatureDisplayName).c_str(), 
+        &pIntFeature->m_Data.m_iVal, pIntFeature->m_Data.m_iMin, pIntFeature->m_Data.m_iMax);
 
     // Tool tip
     if (ImGui::IsItemHovered() == true && pIntFeature->m_szToolTip.empty() == false)
@@ -307,15 +361,18 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature) const
+void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const
 {
     Feature<FloatSlider_t>* pFloatFeature = reinterpret_cast<Feature<FloatSlider_t>*>(pFeature);
 
     // Feature's name
-    ImGui::Text(pFloatFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pFloatFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(flWidgetStartX);
 
     // Checkbox
-    ImGui::SliderFloat(("##" + pFloatFeature->m_szFeatureDisplayName).c_str(), &pFloatFeature->m_Data.m_flVal, pFloatFeature->m_Data.m_flMin, pFloatFeature->m_Data.m_flMin);
+    ImGui::SetNextItemWidth(flWidgetWidth);
+    ImGui::SliderFloat(
+        ("##" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(), 
+        &pFloatFeature->m_Data.m_flVal, pFloatFeature->m_Data.m_flMin, pFloatFeature->m_Data.m_flMax);
 
     // Tool tip
     if (ImGui::IsItemHovered() == true && pFloatFeature->m_szToolTip.empty() == false)
@@ -325,15 +382,18 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawDropDown(IFeature* pFeature) const
+void MenuGUI_t::_DrawDropDown(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const
 {
     Feature<DropDown_t>* pDropDownFeature = static_cast<Feature<DropDown_t>*>(pFeature);
 
     // Feature's name
-    ImGui::Text(pDropDownFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pDropDownFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(flWidgetStartX);
 
     // Drop Down Feature
-    ImGui::Combo(("##" + pFeature->m_szFeatureDisplayName).c_str(), &pDropDownFeature->m_iActiveData, pDropDownFeature->m_data.m_pItems, pDropDownFeature->m_data.m_nItems);
+    ImGui::SetNextItemWidth(flWidgetWidth);
+    ImGui::Combo(
+        ("##" + pDropDownFeature->m_szTabName + pDropDownFeature->m_szSectionName + pDropDownFeature->m_szFeatureDisplayName).c_str(), 
+        &pDropDownFeature->m_iActiveData, pDropDownFeature->m_data.m_pItems, pDropDownFeature->m_data.m_nItems);
     
     // Tool tip
     if (ImGui::IsItemHovered() == true && pDropDownFeature->m_szToolTip.empty() == false)
@@ -343,13 +403,16 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawColor(IFeature* pFeature) const
+void MenuGUI_t::_DrawColor(IFeature* pFeature, float flFeatureWidth) const
 {
     Feature<ColorData_t>* pColorFeature = reinterpret_cast<Feature<ColorData_t>*>(pFeature);
 
-    ImGui::Text(pColorFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    float flColorPreviewSize = ImGui::GetFrameHeight();
+    ImGui::Text(pColorFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(flFeatureWidth - flColorPreviewSize);
 
-    ImGui::ColorEdit3(("##" + pColorFeature->m_szFeatureDisplayName).c_str(), &pColorFeature->m_Data.r);
+    ImGui::ColorEdit3(
+        ("##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str(), &pColorFeature->m_Data.r,
+        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
     // Tool tip
     if (ImGui::IsItemHovered() == true && pColorFeature->m_szToolTip.empty() == false)

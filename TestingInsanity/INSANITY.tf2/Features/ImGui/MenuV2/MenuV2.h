@@ -27,11 +27,11 @@ private:
     ImVec2 _CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const;
 
     // Feature specfic...
-    void _DrawBoolean    (IFeature* pFeature) const;
-    void _DrawIntSlider  (IFeature* pFeature) const;
-    void _DrawFloatSlider(IFeature* pFeature) const;
-    void _DrawDropDown   (IFeature* pFeature) const;
-    void _DrawColor      (IFeature* pFeature) const;
+    void _DrawBoolean(IFeature* pFeature, float flFeatureEnd) const;
+    void _DrawIntSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
+    void _DrawFloatSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
+    void _DrawDropDown(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
+    void _DrawColor      (IFeature* pFeature, float flFeatureWidth) const;
 
     void   _CalculateColors();
     void   _StyleSideMenuBottons();
@@ -70,6 +70,7 @@ DEFINE_FEATURE(rgb,              bool,          Menu, Menu, 7, false)
 DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, Menu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
 DEFINE_FEATURE(Rounding,         FloatSlider_t, Menu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f)) 
+DEFINE_FEATURE(Draw_Guides,      bool,          Menu, Menu, 10, true)
 
 ////////////////////////////// SIDE MENU ////////////////////////////////////
 DEFINE_SECTION(SideMenu, "Menu", 2)
