@@ -98,7 +98,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
-	if (featureHandler.Initialize() == false)
+	if (Config::featureHandler.Initialize() == false)
 	{
 		_terminate(instance);
 	}
@@ -108,7 +108,7 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 		_terminate(instance);
 	}
 
-	//=======================MAIN CHEAT LOOP=======================
+	//======================= MAIN LOOP =======================
 	LOG("Initialized MainLoop Thread");
 	while (!directX::UI::UI_has_been_shutdown)
 	{

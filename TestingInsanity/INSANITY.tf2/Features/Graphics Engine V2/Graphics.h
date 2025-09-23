@@ -154,20 +154,6 @@ struct Input_t
 };
 
 
-struct InputImGui_t
-{
-    float3 m_vPos : POSITION;
-};
-
-
-struct OutputImGui_t
-{
-    float4 m_vPos : POSITION;
-    float4 m_clr  : COLOR;
-    float2 m_AbsUV : TEXCOORD0;
-};
-
-
 struct Output_t
 {
     float4 m_vPos           : POSITION;
@@ -217,38 +203,6 @@ float4 W2S(float3 worldPos)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-OutputImGui_t VSImGui(InputImGui_t input)
-{
-    OutputImGui_t result;
-    
-    result.m_vPos.x = (input.m_vPos.x - 0.5f) *  2.0f;
-    result.m_vPos.y = (input.m_vPos.y - 0.5f) * -2.0f;
-    result.m_vPos.z = 0.0f;
-    result.m_vPos.w = 1.0f;
-    
-    result.m_AbsUV.x = input.m_vPos.x;
-    result.m_AbsUV.y = input.m_vPos.y;
-    
-    result.m_clr = float4(1.0f, 0.0f, 0.0f, 1.0f);
-    
-    return result;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-float4 PSImGui(OutputImGui_t output) : COLOR
-{
-    float4 clr = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    
-    clr = tex2D(SceneSampler, output.m_AbsUV);
-    
-    return clr;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
 Output_t VS(Input_t input)
 {
     Output_t result;
@@ -258,7 +212,7 @@ Output_t VS(Input_t input)
     {
         result.m_vPos.x = ((input.m_vPos.x / g_flScreenWidth) - 0.5f) * 2.0f;
         result.m_vPos.y = ((1.0f - (input.m_vPos.y / g_flScreenHeight)) - 0.5f) * 2.0f; // Y cords are inverted in here, so [-1, -1] is bottom left. and [1, 1] is top right.
-        result.m_vPos.z = 0.0f;
+        result.m_vPos.z = input.m_vPos.z;
         result.m_vPos.w = 1.0f;
         
         result.m_vAbsUV.x = input.m_vPos.x / g_flScreenWidth;
@@ -568,18 +522,6 @@ technique simple1
     {
         VertexShader = compile vs_3_0 VS();
         PixelShader  = compile ps_3_0 PS();
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-technique ImGui
-{
-    pass p0
-    {
-        VertexShader = compile vs_3_0 VSImGui();
-        PixelShader  = compile ps_3_0 PSImGui();
     }
 }
 

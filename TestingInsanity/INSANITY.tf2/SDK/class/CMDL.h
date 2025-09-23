@@ -14,7 +14,7 @@ struct CMDL
 	CMDL()
 	{
 		m_MDLHandle = 0xFFFF;
-		m_Color = RGBA_t(255, 255, 255, 255);
+		m_Color = RGBA_t((unsigned char)255, 255, 255, 255);
 		m_nSkin = 0;
 		m_nBody = 0;
 		m_nSequence = 0;

@@ -129,8 +129,8 @@ void ICircle_t::InitRelativeUV()
 ///////////////////////////////////////////////////////////////////////////
 void Circle2D_t::SetVertex(const vec& vMin, const vec& vMax)
 {
-    vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
-    vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
+    vec vTopRight   = vec(vMax.x, vMin.y, vMin.z);
+    vec vBottomLeft = vec(vMin.x, vMax.y, vMax.z);
 
     m_vertex[VertexType_TopLeft].m_vPos        = vMin;
     m_vertex[VertexType_TopRight].m_vPos       = vTopRight;
@@ -151,10 +151,10 @@ void Circle2D_t::SetVertex(const vec& vMin, const vec& vMax)
 ///////////////////////////////////////////////////////////////////////////
 void Circle2D_t::SetVertex(const vec& vCenter, const float flRadius)
 {
-    vec vMax(vCenter.x + flRadius, vCenter.y + flRadius, 0.0f);
-    vec vMin(vCenter.x - flRadius, vCenter.y - flRadius, 0.0f);
-    vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
-    vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
+    vec vMax(vCenter.x + flRadius, vCenter.y + flRadius, vCenter.z);
+    vec vMin(vCenter.x - flRadius, vCenter.y - flRadius, vCenter.z);
+    vec vTopRight   = vec(vMax.x, vMin.y, vCenter.z);
+    vec vBottomLeft = vec(vMin.x, vMax.y, vCenter.z);
 
     m_vertex[VertexType_TopLeft].m_vPos        = vMin;
     m_vertex[VertexType_TopRight].m_vPos       = vTopRight;

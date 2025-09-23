@@ -439,4 +439,5 @@ private:
     std::unordered_map<uint64_t, IFeature*> m_mapFeatureToConfigLinkerMap = {};
     bool _ConstructFeatureToConfigLinkerMap();
 };
-inline FeatureHandler_t featureHandler;
+
+DECLARE_CUSTOM_OBJECT(featureHandler, FeatureHandler_t, Config)

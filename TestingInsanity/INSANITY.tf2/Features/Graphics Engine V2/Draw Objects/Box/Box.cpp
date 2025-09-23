@@ -199,8 +199,8 @@ void BoxFilled2D_t::InitDimension()
 ///////////////////////////////////////////////////////////////////////////
 void BoxFilled2D_t::SetVertex(const vec& vMin, const vec& vMax)
 {
-    vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
-    vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
+    vec vTopRight   = vec(vMax.x, vMin.y, vMin.z);
+    vec vBottomLeft = vec(vMin.x, vMax.y, vMax.z);
 
     m_vertex[VertexType_TopLeft].m_vPos        = vMin;
     m_vertex[VertexType_TopRight].m_vPos       = vTopRight;
@@ -373,8 +373,8 @@ void Box2D_t::InitDimension()
 ///////////////////////////////////////////////////////////////////////////
 void Box2D_t::SetVertex(const vec& vMin, const vec& vMax)
 {
-    vec vTopRight   = vec(vMax.x, vMin.y, 0.0f);
-    vec vBottomLeft = vec(vMin.x, vMax.y, 0.0f);
+    vec vTopRight   = vec(vMax.x, vMin.y, vMin.z);
+    vec vBottomLeft = vec(vMin.x, vMax.y, vMax.z);
 
     m_vertex[VertexType_TopLeft].m_vPos         = vMin;
     m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;

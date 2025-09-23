@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <cstdint>
 #include <cmath>
+#include <algorithm>
 
 #define MAX_STUDIO_BONES	128
 #define HITBOX_BONES		0x00000100
@@ -153,12 +154,27 @@ enum renderGroup_t
     RENDER_GROUP_COUNT
 };
 
-// used in some places.
+struct Vec4;
+struct Vec2;
+struct vec;
+struct Vec4_t;
+struct qangle;
+struct RGBA_t;
+struct view_matrix;
+struct ImVec4;
+struct HSVA_t;
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct Vec4_t
 {
     float x, y, z, w;
 };
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct qangle
 {
     qangle() : pitch(0.0f), yaw(0.0f), roll(0.0f){}
@@ -167,49 +183,55 @@ struct qangle
 
     float pitch, yaw, roll;
 
-    void Init()
-    {
-        pitch = 0.0f; yaw = 0.0f; roll = 0.0f;
-    }
+    void Init();
 
-    qangle operator+(qangle other) {
-        return qangle(pitch + other.pitch, yaw + other.yaw, 0.0f);
-    }
-
-    qangle operator-(qangle other) {
-        return qangle(pitch - other.pitch, yaw - other.yaw, 0.0f);
-    }
-    qangle& operator=(qangle other)
-    {
-        pitch = other.pitch; yaw = other.yaw; roll = other.roll;
-        return *this;
-    }
+    qangle  operator+(qangle other);
+    qangle  operator-(qangle other);
+    qangle& operator=(qangle other);
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct RGBA_t
 {
-    constexpr RGBA_t() : r(0), g(0), b(0), a(0) {}
-    constexpr RGBA_t(unsigned char RGB) : r(RGB), g(RGB), b(RGB), a(0xFF) {}
-    constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
+    explicit constexpr RGBA_t() : r(0), g(0), b(0), a(0) {}
+    explicit constexpr RGBA_t(unsigned char RGB) : r(RGB), g(RGB), b(RGB), a(0xFF) {}
+    explicit constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
         r(R), g(G), b(B), a(A) {}
+    explicit RGBA_t(float R, float G, float B, float A);
 
     unsigned char r, g, b, a;
 
-    void Init()
-    {
-        r = 0; g = 0; b = 0; a = 0xFF;
-    }
+    void Init();
 
     // OPERATORS
-    RGBA_t& operator=(RGBA_t other)
-    {
-        r = other.r; g = other.g; b = other.b; a = other.a;
-        return *this;
-    }
+    RGBA_t& operator=(RGBA_t other);
+
+    RGBA_t IncreaseInPlace(int iOffset, bool bColors, bool bAlpha);
+    RGBA_t IncreaseClr(int iOffset, bool bColors, bool bAlpha) const;
+    void   LerpInPlace(RGBA_t target, float flPower, bool bColors, bool bAlpha);
+    Vec4   GetAsVec4()   const;
+    ImVec4 GetAsImVec4() const;
+    HSVA_t ToHSVA()      const;
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+struct HSVA_t
+{
+    constexpr HSVA_t() : h(0.0f), s(0.0f), v(0.0f), a(0.0f) {}
+    constexpr HSVA_t(float hue, float saturation, float vibrance, float alpha) : h(hue), s(saturation), v(vibrance), a(alpha) {}
+    float h, s, v, a;
+
+    void   Init();
+    RGBA_t ToRGBA() const;
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct vec
 {
     vec() : x(0.0f), y(0.0f), z(0.0f) {}
@@ -217,143 +239,37 @@ struct vec
     constexpr vec(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
     float x, y, z;
 
-    inline void Init()
-    {
-        x = 0.0f; y = 0.0f; z = 0.0f;
-    }
+    void Init();
 
-    vec operator+(const vec other) const
-    {
-        return vec(x + other.x, y + other.y, z + other.z);
-    }
-    vec operator+(float other) const
-    {
-        return vec(x + other, y + other, z + other);
-    }
-    vec operator-(const vec& other) const
-    {
-        return vec(x - other.x, y - other.y, z - other.z);
-    }
+    vec operator+(const vec other)           const;
+    vec operator+(float other)               const;
+    vec operator-(const vec& other)          const;
 
-    constexpr vec operator*(float other) const
-    {
-        return vec(x * other, y * other, z * other);
-    }
+    constexpr vec operator*(float other) const { return vec(x * other, y * other, z * other); }
+    vec   operator/ (float other);
+    vec&  operator+=(vec other);
+    vec&  operator-=(vec other);
+    vec&  operator*=(float other);
+    void  operator= (vec other);
+    bool  operator==(const vec& other)       const;
 
-    vec operator/(float other) 
-    {
-        return vec(x / other, y / other, z / other);
-    }
-
-    vec& operator +=(vec other)
-    {
-        x += other.x; y += other.y; z += other.z;
-        return *this;
-    }
-
-    vec& operator-=(vec other)
-    {
-        x -= other.x; y -= other.y; z -= other.z;
-        return *this;
-    }
-
-    vec& operator *=(float other)
-    {
-        x *= other; y *= other; z *= other;
-        return *this;
-    }
-
-    void operator= (vec other)
-    {
-        x = other.x; y = other.y; z = other.z;
-    }
-
-    bool operator==(const vec& other) const
-    {
-        return (x == other.x && y == other.y && z == other.z);
-    }
-
-    float Length()
-    {
-        return sqrtf(x * x + y * y + z * z);
-    }
-
-    float LengthSqrt() const
-    {
-        return x * x + y * y + z * z;
-    }
-
-    float Length2D() const
-    {
-        return sqrtf(x * x + y * y);
-    }
-
-    float DistTo(const vec& other) const
-    {
-        return (*this - other).Length();
-    }
-
-    float Dist2Dto(const vec& other) const
-    {
-        return sqrtf((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-    }
-    
-    bool IsEmpty() const
-    {
-        return fabs(x) < 0.0001f && fabs(y) < 0.0001f && fabs(z) < 0.0001f;
-    }
-
-    bool isEmpty()
-    {
-        if (x || y || z) return false;
-        return true;
-    }
-
-    vec Normalize() const
-    {
-        float flLength = sqrtf(x * x + y * y + z * z);
-        return vec(x / flLength, y / flLength, z / flLength);
-    }
-
-    float Dot(const vec& other) const
-    {
-        return (x * other.x + y * other.y + z * other.z);
-    }
-
-    vec ScaleMultiply(float other)
-    {
-        return vec(x * other, y * other, z * other);
-    }
-
-    vec CrossProduct(vec other) const
-    {
-        return vec(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
-        );
-    }
-
-    vec& NormalizeInPlace()
-    {
-        float flMagnitude = sqrtf(x * x + y * y + z * z);
-        x /= flMagnitude; y /= flMagnitude; z /= flMagnitude;
-        return *this;
-    }
-
-    bool HasSameDirection(const vec& other) const
-    {
-        vec vThis  = this->Normalize();
-        vec vOther = other.Normalize();
-        
-        return 
-            fabsf(vThis.x) == fabsf(vOther.x) &&
-            fabsf(vThis.y) == fabsf(vOther.y) &&
-            fabsf(vThis.z) == fabsf(vOther.z);
-    }
+    float Length();
+    float LengthSqrt()                       const;
+    float Length2D()                         const;
+    float DistTo(const vec& other)           const;
+    float Dist2Dto(const vec& other)         const;
+    bool  IsEmpty()                          const;
+    bool  IsZero()                           const;
+    vec   Normalize()                        const;
+    float Dot(const vec& other)              const;
+    vec   CrossProduct(vec other)            const;
+    vec&  NormalizeInPlace();
+    bool  HasSameDirection(const vec& other) const;
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 __declspec(align(16)) struct vecAligned : public vec {
 
     float w; // to ensure alligment
@@ -361,64 +277,23 @@ __declspec(align(16)) struct vecAligned : public vec {
     vecAligned(float X, float Y, float Z, float W = 0.0f) : vec(X, Y, Z), w(W){}
     vecAligned() : vec(0.0f, 0.0f, 0.0f), w(0.0f){}
 
-    vecAligned& operator= (const vec& other) 
-    {
-        x = other.x;
-        y = other.y; 
-        z = other.z;
-        return *this;
-    }
-
-    vecAligned& operator= (const vecAligned& other)
-    {
-        x = other.x;
-        y = other.y;
-        z = other.z;
-        w = other.w;
-        return *this;
-    }
-
-    void operator*=(const float other)
-    {
-        x *= other; y *= other; z *= other; w *= other;
-    }
-    void operator-=(const float other)
-    {
-        x -= other; y -= other; z -= other; w -= other;
-    }
-    void operator+=(const float other)
-    {
-        x += other; y += other; z += other; w += other;
-    }
-
-    vecAligned operator+ (const vecAligned& other)
-    {
-        return vecAligned(x + other.x, y + other.y, z + other.z);
-    }
-    vecAligned operator+ (const vec& other)
-    {
-        return vecAligned(x + other.x, y + other.y, z + other.z);
-    }
-    vecAligned operator+ (const float other)
-    {
-        return vecAligned(x + other, y + other, z + other);
-    }
-
-    vecAligned operator- (const vecAligned& other)
-    {
-        return vecAligned(x - other.x, y - other.y, z - other.z);
-    }
-    vecAligned operator- (const vec& other)
-    {
-        return vecAligned(x - other.x, y - other.y, z - other.z);
-    }
-    vecAligned operator- (const float other)
-    {
-        return vecAligned(x - other, y - other, z - other);
-    }
+    void        operator*=(const float       other);
+    void        operator-=(const float       other);
+    void        operator+=(const float       other);
+                
+    vecAligned& operator= (const vec&        other);
+    vecAligned& operator= (const vecAligned& other);
+    vecAligned  operator+ (const vecAligned& other);
+    vecAligned  operator+ (const vec&        other);
+    vecAligned  operator+ (const float       other);
+    vecAligned  operator- (const vecAligned& other);
+    vecAligned  operator- (const vec&        other);
+    vecAligned  operator- (const float       other);
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct Vec2
 {
     constexpr Vec2()                 : x(0.0f), y(0.0f){}
@@ -426,75 +301,33 @@ struct Vec2
     
     float x, y;
     
-    const Vec2& operator=(Vec2 other)
-    {
-        x = other.x; y = other.y;
-        return *this;
-    }
-
-    bool operator==(Vec2 other) const
-    {
-        return x == other.x && y == other.y;
-    }
-
-    bool IsEmpty() const
-    {
-        return fabsf(x) < 0.0001f && fabsf(y) < 0.0001f;
-    }
-
-    Vec2 operator+(Vec2 other) const
-    {
-        return Vec2(x + other.x, y + other.y);
-    }
-
-    Vec2& operator+=(Vec2 other) 
-    {
-        x += other.x; y += other.y;
-        return *this;
-    }
-
-    Vec2 operator-(Vec2 other) const
-    {
-        return Vec2(x - other.x, y - other.y);
-    }
-
-    Vec2& operator-=(Vec2 other) 
-    {
-        x -= other.x; y -= other.y;
-        return *this;
-    }
+    const Vec2& operator= (Vec2 other);
+    bool        operator==(Vec2 other) const;
+    bool        IsEmpty()              const;
+    Vec2        operator+ (Vec2 other) const;
+    Vec2&       operator+=(Vec2 other);
+    Vec2        operator- (Vec2 other) const;
+    Vec2&       operator-=(Vec2 other);
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct Vec4
 {
     float x, y, z, w;
 
     Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
     Vec4(float X, float Y, float Z, float W) : x(X), y(Y), z(Z), w(W) {}
-    Vec4(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
-    {
-        x = static_cast<float>(r) / 255.0f;
-        y = static_cast<float>(g) / 255.0f;
-        z = static_cast<float>(b) / 255.0f;
-        w = static_cast<float>(a) / 255.0f;
-    }
+    Vec4(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
-    void Init()
-    {
-        x = 0.0f; y = 0.0; z = 0.0f; w = 0.0f;
-    }
-
-    void Set(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
-    {
-        x = static_cast<float>(r) / 255.0f;
-        y = static_cast<float>(g) / 255.0f;
-        z = static_cast<float>(b) / 255.0f;
-        w = static_cast<float>(a) / 255.0f;
-    }
+    void Init();
+    void Set(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 };
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct clr_t
 {
     clr_t() : r(0.0f), g(0.0f), b(0.0f), a(0.0f){}
@@ -502,34 +335,26 @@ struct clr_t
     float r, g, b, a;
 };
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct TFclr_t
 {
     char clr[4];
 };
 
-/* view matrix, stores world-to-view or world-to-screen transformation matrix given
-by the engine*/
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 struct view_matrix
 {
-    constexpr view_matrix()
-    {
-        m[0][0] = 0.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
-        m[1][0] = 0.0f; m[1][1] = 0.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
-        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 0.0f; m[2][3] = 0.0f;
-        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 0.0f;
-    }
-
     float m[4][4];
-    const view_matrix& operator=(const view_matrix& other)
-    {
-        m[0][0] = other.m[0][0];   m[0][1] = other.m[0][1];   m[0][2] = other.m[0][2];   m[0][3] = other.m[0][3];
-        m[1][0] = other.m[1][0];   m[1][1] = other.m[1][1];   m[1][2] = other.m[1][2];   m[1][3] = other.m[1][3];
-        m[2][0] = other.m[2][0];   m[2][1] = other.m[2][1];   m[2][2] = other.m[2][2];   m[2][3] = other.m[2][3];
-        m[3][0] = other.m[3][0];   m[3][1] = other.m[3][1];   m[3][2] = other.m[3][2];   m[3][3] = other.m[3][3];
 
-        return *this;
-    }
+    view_matrix();
+
+    const view_matrix& operator=(const view_matrix& other);
 };
+
 
 /* enum for indicating which frame stage the engine is at. Used in FrameStageNotify */
 enum client_frame_stage

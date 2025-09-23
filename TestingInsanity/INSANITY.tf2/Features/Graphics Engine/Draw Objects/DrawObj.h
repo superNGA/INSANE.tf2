@@ -109,7 +109,7 @@ public:
 
 private:
     static constexpr uint16_t m_iVertexCount = 3U * 2U * 4U; // vertex per triangle * triangle per side * number of sides.
-    Vertex_t m_vecVertcies[m_iVertexCount]   = {};
+    Vertex_t m_vecVertcies[m_iVertexCount];
 };
 
 
@@ -130,7 +130,7 @@ public:
 
 private:
     static constexpr uint16_t m_iVertexCount = 3U * 2U * 12U; // Vertex per traingle * traingle per side * total sides count
-    Vertex_t m_vecVertcies[m_iVertexCount] = {};
+    Vertex_t m_vecVertcies[m_iVertexCount];
 };
 
 
@@ -151,5 +151,5 @@ public:
 
 private:
     static constexpr uint16_t m_iVertexCount = 3U * 2U; // Vertex per traingle * traingle per side
-    Vertex_t m_vecVertcies[m_iVertexCount] = {};
+    Vertex_t m_vecVertcies[m_iVertexCount];
 };

@@ -445,7 +445,7 @@ void AimbotProjectile_t::_DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapo
         vLastProjPos = vProjPos;
 
         // projectile hit Target or some obsticle, so we end drawing here
-        if (F::projectileEngine.m_projInfo.m_vEnd.isEmpty() == false ||
+        if (F::projectileEngine.m_projInfo.m_vEnd.IsZero() == false ||
             vProjPos.DistTo(m_vBestTargetFuturePos) < 50.0f)
             return;
     }
