@@ -27,11 +27,11 @@ private:
     ImVec2 _CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const;
 
     // Feature specfic...
-    void _DrawBoolean(IFeature* pFeature, float flFeatureEnd) const;
-    void _DrawIntSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
-    void _DrawFloatSlider(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
-    void _DrawDropDown(IFeature* pFeature, float flWidgetWidth, float flWidgetStartX) const;
-    void _DrawColor      (IFeature* pFeature, float flFeatureWidth) const;
+    void _DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)                             const;
+    void _DrawIntSlider  (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) const;
+    void _DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) const;
+    void _DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)      const;
+    void _DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)                           const;
 
     void   _CalculateColors();
     void   _StyleSideMenuBottons();
