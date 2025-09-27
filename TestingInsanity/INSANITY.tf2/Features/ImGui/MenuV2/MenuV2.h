@@ -90,3 +90,18 @@ DEFINE_FEATURE(Rounding,         FloatSlider_t, SideMenu, Menu, 9, FloatSlider_t
 ////////////////////////////// THEME ////////////////////////////////////
 DEFINE_SECTION(Theme, "Menu", 3)
 DEFINE_FEATURE(Theme, ColorData_t, Theme, Menu, 1, ColorData_t(RGBA_t((unsigned char)255, 0, 0, 255)))
+
+
+////////////////////////////// SECTION BOXES ////////////////////////////////////
+DEFINE_SECTION(SectionBoxes, "Menu", 4)
+DEFINE_FEATURE(Blur,             FloatSlider_t, SectionBoxes, Menu, 1, FloatSlider_t(0.0f, 0.0f, 8.0f))
+
+DEFINE_FEATURE(ColorTopRight,    ColorData_t,   SectionBoxes, Menu, 2, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopLeft,     ColorData_t,   SectionBoxes, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomRight, ColorData_t,   SectionBoxes, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomLeft,  ColorData_t,   SectionBoxes, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+
+DEFINE_FEATURE(rgb,              bool,          SectionBoxes, Menu, 6, false)
+DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, SectionBoxes, Menu, 7, FloatSlider_t(0.0f, 0.0f, 10.0f))
+
+DEFINE_FEATURE(Rounding,         FloatSlider_t, SectionBoxes, Menu, 8, FloatSlider_t(15.0f, 0.0f, 100.0f))

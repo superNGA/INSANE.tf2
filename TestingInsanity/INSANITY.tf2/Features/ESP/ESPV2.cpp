@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////
 void ESPV2_t::Run(BaseEntity* pLocalPlayer)
 {
-    PROFILE_FUNCTION("ESP");
+    PROFILE_FUNCTION();
 
     if (m_bMapCleared == false)
         return;

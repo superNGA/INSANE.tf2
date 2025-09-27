@@ -1,5 +1,8 @@
 #include "MenuV2.h"
 
+#include <format>
+#include <algorithm>
+
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
 #include "../../FeatureHandler.h"
@@ -16,8 +19,9 @@ constexpr float SIDEMENU_SCALE            =  0.2f; // Percentage of main body al
 constexpr float FRAME_PADDING_PXL         = 15.0f; // Padding between Main body & its contents.
 constexpr float SECTION_PADDING_PXL       = 10.0f; // Padding between Section walls & its contents.
 constexpr float INTER_FEATURE_PADDING_PXL =  5.0f; // Padding between each feature.
-constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres & its contents.
+constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres walls & its contents.
 constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
+constexpr float SECTION_NAME_HEIGHT       = 30.0f; // Height of each feature.
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -37,7 +41,6 @@ void MenuGUI_t::Draw()
 
     if (_Initialize() == false)
         return;
-
     {
         ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     }
@@ -238,23 +241,34 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
 
     ImVec2 vLeftSectionCursor (x + FRAME_PADDING_PXL,                             y + FRAME_PADDING_PXL);
     ImVec2 vRightSectionCursor(x + (flWidth / 2.0f) + (FRAME_PADDING_PXL / 2.0f), y + FRAME_PADDING_PXL);
-
     bool bDrawingOnLeft = true;
 
-    for (Section_t* pSection : pTab->m_vecSections)
+    // List of all background boxes for our renderer
+    static std::vector<BoxFilled2D_t*> vecSectionBoxes = {};
+
+    int iSectionIndex = 0; int nSections = pTab->m_vecSections.size();
+    for (iSectionIndex = 0; iSectionIndex < nSections; iSectionIndex++)
     {
+        Section_t* pSection = pTab->m_vecSections[iSectionIndex];
+
         // This is the screen pos for the cursor.
         ImVec2* pSectionScreenPos = bDrawingOnLeft == true ? &vLeftSectionCursor : &vRightSectionCursor;
         ImGui::SetCursorScreenPos(*pSectionScreenPos);
         ImVec2 vSectionLocalPos(pSectionScreenPos->x - vWindowPos.x, pSectionScreenPos->y - vWindowPos.y);
+        
+        // Drawing Section name.
+        ImVec2 vSectionNamePos(pSectionScreenPos->x + FEATURE_PADDING_PXL, pSectionScreenPos->y + (SECTION_NAME_HEIGHT - ImGui::GetTextLineHeight()) / 2.0f);
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        pDrawList->AddText(vSectionNamePos, ImColor(m_clrSecondary.GetAsImVec4()), pSection->m_szSectionDisplayName.c_str());
+        pSectionScreenPos->y += SECTION_NAME_HEIGHT; // Compensate for the section name, so section box doesn't draw over the name.
 
-
+        // Adjusting cursor pos before drawing feautres.
         float flFeatureWidth = (flWidth / 2.0f) - (1.5f * FRAME_PADDING_PXL) - (2 * SECTION_PADDING_PXL);
-        ImGui::SetCursorPos(ImVec2(vSectionLocalPos.x + SECTION_PADDING_PXL + FEATURE_PADDING_PXL, ImGui::GetCursorPosY() + SECTION_PADDING_PXL));
+        ImGui::SetCursorPos(ImVec2(vSectionLocalPos.x + SECTION_PADDING_PXL + FEATURE_PADDING_PXL, pSectionScreenPos->y - vWindowPos.y + SECTION_PADDING_PXL)); 
 
         for (IFeature* pFeature : pSection->m_vecFeatures)
         {
-            ImVec2 vCursorPos = ImGui::GetCursorPos();
+            ImVec2 vCursorPos        = ImGui::GetCursorPos();
             ImVec2 vFeatureMinPadded = vCursorPos;
             ImVec2 vFeatureMaxPadded(vCursorPos.x + flFeatureWidth - (2.0f * FEATURE_PADDING_PXL), vCursorPos.y + FEATURE_HEIGHT);
 
@@ -297,12 +311,50 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
             );
         }
 
+        // Creating section's UI boxes.
+        if (iSectionIndex >= vecSectionBoxes.size())
+        {
+            vecSectionBoxes.push_back(new BoxFilled2D_t());
+        }
+
+        // Setting Section's UI boxes size & pos
+        BoxFilled2D_t* pBox = vecSectionBoxes[iSectionIndex];
+        // Clamping vertex for section's UI boxes.
+        vec vSectionBoxMin(pSectionScreenPos->x,                  pSectionScreenPos->y, 0.0f);
+        vec vSectionBoxMax(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y, 0.0f);
+        {
+            vSectionBoxMin.x = std::clamp<float>(vSectionBoxMin.x, x,            x + flWidth);
+            vSectionBoxMin.y = std::clamp<float>(vSectionBoxMin.y, vWindowPos.y, vWindowPos.y + flHeight);
+
+            vSectionBoxMax.x = std::clamp<float>(vSectionBoxMax.x, x,            x + flWidth);
+            vSectionBoxMax.y = std::clamp<float>(vSectionBoxMax.y, vWindowPos.y, vWindowPos.y + flHeight);
+        }
+
+        // Setting Visual settings for section boxes.
+        pBox->SetVertex(vSectionBoxMin, vSectionBoxMax);
+        pBox->SetColor(Features::Menu::SectionBoxes::ColorTopLeft.GetData().GetAsBytes(),     IBoxFilled_t::VertexType_t::VertexType_TopLeft);
+        pBox->SetColor(Features::Menu::SectionBoxes::ColorTopRight.GetData().GetAsBytes(),    IBoxFilled_t::VertexType_t::VertexType_TopRight);
+        pBox->SetColor(Features::Menu::SectionBoxes::ColorBottomLeft.GetData().GetAsBytes(),  IBoxFilled_t::VertexType_t::VertexType_BottomLeft);
+        pBox->SetColor(Features::Menu::SectionBoxes::ColorBottomRight.GetData().GetAsBytes(), IBoxFilled_t::VertexType_t::VertexType_BottomRight);
+        pBox->SetRGBAnimSpeed(Features::Menu::SectionBoxes::rgb.IsActive() == false ? -1.0 : Features::Menu::SectionBoxes::RGBSpeed.GetData().m_flVal);    
+        pBox->SetBlur(Features::Menu::SectionBoxes::Blur.GetData().m_flVal);
+        pBox->SetRounding(Features::Menu::SectionBoxes::Rounding.GetData().m_flVal);
+        pBox->SetVisible(true);
+
         // Adding section's size fo next section draws accordingly.
         pSectionScreenPos->y += vSectionSize.y + FRAME_PADDING_PXL;
         
         // Choosing the side with the most space.
         bDrawingOnLeft = (vLeftSectionCursor.y > vRightSectionCursor.y ? false : true);
     }
+
+    // Disabling unused section UI boxes.
+    size_t nBoxes = vecSectionBoxes.size();
+    for (int iBoxIndex = iSectionIndex; iBoxIndex < nBoxes; iBoxIndex++)
+    {
+        vecSectionBoxes[iBoxIndex]->SetVisible(false);
+    }
+
 
     {
         ImGui::PopStyleVar();

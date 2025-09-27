@@ -47,7 +47,7 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 {
     // NOTE : Output false means, no target has been found.
     //        Output true  means,  a target has been found.
-    PROFILE_FUNCTION("Melee Aimbot");
+    PROFILE_FUNCTION(); 
 
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return false;

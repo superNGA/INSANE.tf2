@@ -1,0 +1,3 @@
+D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja/CMakeFiles/Insane_tf2.dir
+D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja/CMakeFiles/edit_cache.dir
+D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja/CMakeFiles/rebuild_cache.dir

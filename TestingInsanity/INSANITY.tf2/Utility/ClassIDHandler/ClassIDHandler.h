@@ -29,7 +29,7 @@ DECLARE_FEATURE_OBJECT(classIDHandler, ClassIDHandler_t)
 
 #define REGISTER_CLASS_ID(szName)\
 namespace ClassID{ inline int szName = -1; }\
-namespace ClassID_Helper{ inline ClassID_t ClassID_##szName(&ClassID::##szName, std::string(#szName));}
+namespace ClassID_Helper{ inline ClassID_t classid_##szName(&ClassID::szName, std::string(#szName));}
 
 //REGISTER_CLASS_ID(CTFWearableRazorback)
 //REGISTER_CLASS_ID(CTFWearableDemoShield)

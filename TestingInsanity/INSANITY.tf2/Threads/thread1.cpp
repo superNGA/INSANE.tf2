@@ -39,6 +39,8 @@
 #include "../Features/ModelPreview/ModelPreview.h"
 #include "../Features/Material Gen/MaterialGen.h"
 
+#include "../External Libraries/MinHook/MinHook.h"
+
 Utility util;
 
 //=========================================================================
@@ -222,7 +224,6 @@ void thread1_t::_terminate(HINSTANCE instance)
 		}
 
 		F::graphics.Free();
-		chams.FreeAllMaterial();
 		F::modelPreview.Free();
 		F::materialGen.Free();
 
