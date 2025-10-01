@@ -46,6 +46,9 @@ private:
 
     void _TriggerPopup(IFeature* pFeature) const;
     void _DrawColorPopup(IFeature* pFeature);
+    void _DrawFloatSliderPopup(IFeature* pFeature);
+    void _DrawIntSliderPopup(IFeature* pFeature);
+    void _DrawBooleanPopup(IFeature* pFeature);
 
     // Helper functions...
     void _CalculateColors();
@@ -128,4 +131,4 @@ DEFINE_FEATURE(ColorBottomLeft,  ColorData_t,   SectionBoxes, Menu, 5, ColorData
 DEFINE_FEATURE(rgb,              bool,          SectionBoxes, Menu, 6, false)
 DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, SectionBoxes, Menu, 7, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
-DEFINE_FEATURE(Rounding,         FloatSlider_t, SectionBoxes, Menu, 8, FloatSlider_t(15.0f, 0.0f, 100.0f))
+DEFINE_FEATURE(Rounding,         FloatSlider_t, SectionBoxes, Menu, 8, FloatSlider_t(15.0f, 0.0f, 100.0f), FeatureFlag_SupportKeyBind)
