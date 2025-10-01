@@ -53,3 +53,6 @@ _ReSharper*/
 *.tlog
 *.tmp
 *.i64
+/TestingInsanity/build
+*.yaml
+*.depend

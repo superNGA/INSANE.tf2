@@ -1,5 +1,6 @@
 #include "WinProc.h"
 #include "../../Features/ImGui/Menu/Menu.h"
+#include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Material Gen/MaterialGen.h"
 
 // Utility
@@ -12,6 +13,7 @@
 #include "../../SDK/class/ISurface.h"
 #include "../../SDK/class/IInputSystem.h"
 #include "../../SDK/class/IInput.h"
+#include <winuser.h>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -85,6 +87,30 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         }
     }
+
+
+    // Recording key for Key-Bind
+    if (Render::menuGUI.ShouldRecordKey() == true)
+    {
+        if (uMsg == WM_XBUTTONDOWN)
+        {
+            WORD xButton = GET_XBUTTON_WPARAM(wParam);
+            if(xButton == XBUTTON1 || xButton == XBUTTON2)
+            {
+                // we will be using the unofficial offset ( 0x05 & 0x06 ) for xbuttons.
+                Render::menuGUI.ReturnRecordedKey(xButton + 0x04);
+                LOG("Recorded : %X", xButton);
+                return TRUE;
+            }
+        }
+        else if (uMsg == WM_KEYDOWN || (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST && uMsg != WM_MOUSEMOVE))
+        {
+            Render::menuGUI.ReturnRecordedKey(wParam); 
+            LOG("Recorded : %X", wParam);
+            return TRUE;
+        }
+    }
+
 
     // Checking if menu has been toggled
     static bool bLastMenuVisibility    = true;

@@ -24,7 +24,7 @@ events:
       The output was:
       0
       MSBuild version 17.14.23+b0019275e for .NET Framework
-      Build started 9/27/2025 3:55:47 PM.
+      Build started 9/28/2025 9:25:55 AM.
       
       Project "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\3.31.5\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -53,7 +53,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.55
+      Time Elapsed 00:00:00.66
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -72,8 +72,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-w6lztv"
-      binary: "D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-w6lztv"
+      source: "D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-29e0lx"
+      binary: "D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-29e0lx"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
@@ -83,34 +83,34 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-w6lztv'
+        Change Dir: 'D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-29e0lx'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_30945.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3423d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.14.23+b0019275e for .NET Framework
-        Build started 9/27/2025 3:55:48 PM.
+        Build started 9/28/2025 9:25:56 AM.
         
-        Project "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w6lztv\\cmTC_30945.vcxproj" on node 1 (default targets).
+        Project "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-29e0lx\\cmTC_3423d.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_30945.dir\\Debug\\".
+          Creating directory "cmTC_3423d.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w6lztv\\Debug\\".
-          Creating directory "cmTC_30945.dir\\Debug\\cmTC_30945.tlog\\".
+          Creating directory "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-29e0lx\\Debug\\".
+          Creating directory "cmTC_3423d.dir\\Debug\\cmTC_3423d.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_30945.dir\\Debug\\cmTC_30945.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_30945.dir\\Debug\\cmTC_30945.tlog\\unsuccessfulbuild".
+          Creating "cmTC_3423d.dir\\Debug\\cmTC_3423d.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_3423d.dir\\Debug\\cmTC_3423d.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_30945.dir\\Debug\\\\" /Fd"cmTC_30945.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\mingw64\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_3423d.dir\\Debug\\\\" /Fd"cmTC_3423d.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\mingw64\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35216 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_30945.dir\\Debug\\\\" /Fd"cmTC_30945.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\mingw64\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_3423d.dir\\Debug\\\\" /Fd"cmTC_3423d.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\mingw64\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w6lztv\\Debug\\cmTC_30945.exe" /INCREMENTAL /ILK:"cmTC_30945.dir\\Debug\\cmTC_30945.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-w6lztv/Debug/cmTC_30945.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-w6lztv/Debug/cmTC_30945.lib" /MACHINE:X64  /machine:x64 cmTC_30945.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_30945.vcxproj -> D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w6lztv\\Debug\\cmTC_30945.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-29e0lx\\Debug\\cmTC_3423d.exe" /INCREMENTAL /ILK:"cmTC_3423d.dir\\Debug\\cmTC_3423d.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-29e0lx/Debug/cmTC_3423d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/Github Repos/INSANE.tf2/TestingInsanity/build/CMakeFiles/CMakeScratch/TryCompile-29e0lx/Debug/cmTC_3423d.lib" /MACHINE:X64  /machine:x64 cmTC_3423d.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_3423d.vcxproj -> D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-29e0lx\\Debug\\cmTC_3423d.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_30945.dir\\Debug\\cmTC_30945.tlog\\unsuccessfulbuild".
-          Touching "cmTC_30945.dir\\Debug\\cmTC_30945.tlog\\cmTC_30945.lastbuildstate".
-        Done Building Project "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w6lztv\\cmTC_30945.vcxproj" (default targets).
+          Deleting file "cmTC_3423d.dir\\Debug\\cmTC_3423d.tlog\\unsuccessfulbuild".
+          Touching "cmTC_3423d.dir\\Debug\\cmTC_3423d.tlog\\cmTC_3423d.lastbuildstate".
+        Done Building Project "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\build\\CMakeFiles\\CMakeScratch\\TryCompile-29e0lx\\cmTC_3423d.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)

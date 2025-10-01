@@ -3,8 +3,11 @@
 #include "../../../SDK/class/Basic Structures.h"
 #include "../../FeatureHandler.h"
 
+
 class BoxFilled2D_t;
 struct ImVec2;
+struct ImFont;
+
 
 ///////////////////////////////////////////////////////////////////////////
 class MenuGUI_t
@@ -15,10 +18,18 @@ public:
     void Draw();
     void SetVisible(bool bVisible);
 
+    bool ShouldRecordKey() const;
+    void ReturnRecordedKey(int64_t iKey);
+
 private:
     bool m_bVisible = true;
 
+    void _StartRecordingKey();
+    bool    m_bRecordingKey = false;
+    int64_t m_iRecordedKey  = 0;
+
     bool   _Initialize();
+    void   _InitFonts();
 
     ImVec2 _DrawMainBody(float flWidth, float flHeight);
     void   _DrawTabBar(float flWidth, float flHeight, float x, float y);
@@ -27,28 +38,41 @@ private:
     ImVec2 _CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const;
 
     // Feature specfic...
-    void _DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)                             const;
-    void _DrawIntSlider  (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) const;
-    void _DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) const;
-    void _DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)      const;
-    void _DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)                           const;
+    void _DrawBoolean     (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
+    void _DrawIntSlider   (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
+    void _DrawFloatSlider (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
+    void _DrawDropDown    (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
+    void _DrawColor       (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
 
-    void   _CalculateColors();
-    void   _StyleSideMenuBottons();
-    void   _PopAllStyles();
+    void _TriggerPopup(IFeature* pFeature) const;
+    void _DrawColorPopup(IFeature* pFeature);
+
+    // Helper functions...
+    void _CalculateColors();
+    void _StyleSideMenuBottons();
+    void _PopAllStyles();
 
     Tab_t* m_pActiveTab = nullptr;
+    std::vector<BoxFilled2D_t*> m_vecSectionBoxes = {}; // Holds draw objects for secton UI boxes.
 
     RGBA_t m_clrPrimary;
     RGBA_t m_clrSecondary;
     RGBA_t m_clrTheme;
     RGBA_t m_clrSideMenuButtons;
+    RGBA_t m_clrSectionBox;
+    RGBA_t m_clrFeatureText;
 
     int            m_nPushedStyleColors = 0;
     int            m_nPushedStyleVars   = 0;
 
-    BoxFilled2D_t* m_pMainMenu = nullptr;
-    BoxFilled2D_t* m_pSideMenu = nullptr;
+    BoxFilled2D_t* m_pMainMenu          = nullptr;
+    BoxFilled2D_t* m_pSideMenu          = nullptr;
+
+    // Fonts.
+    ImFont*        m_pFontFeatures      = nullptr;
+    ImFont*        m_pFontSectionName   = nullptr;
+    ImFont*        m_pFontSideMenu      = nullptr;
+    ImFont*        m_pFontCatagoryName  = nullptr;
 };
 ///////////////////////////////////////////////////////////////////////////
 
