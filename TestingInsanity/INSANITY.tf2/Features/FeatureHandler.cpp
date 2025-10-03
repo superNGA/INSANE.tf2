@@ -14,7 +14,7 @@ Tab_t::Tab_t(std::string szTabDisplayName, int iIndex)
     m_szTabDisplayName = szTabDisplayName;
     m_iIndex           = iIndex;
 
-    featureHandler.RegisterTab(this);
+    Config::featureHandler.RegisterTab(this);
 }
 
 void Tab_t::DumpNSort()
@@ -42,7 +42,7 @@ Section_t::Section_t(std::string szSectionDisplayName, std::string szTabName, in
     m_szTabName            = szTabName;
     m_iIndex               = iIndex;
 
-    featureHandler.RegisterSection(this);
+    Config::featureHandler.RegisterSection(this);
 }
 
 void Section_t::DumpNSort()
@@ -89,7 +89,7 @@ IFeature::IFeature(std::string szFeatureDisplayName, std::string szSectionName, 
         m_iOverrideType = OverrideType::OVERRIDE_HOLD;
     }
 
-    featureHandler.RegisterFeature(this);
+    Config::featureHandler.RegisterFeature(this);
 }
 
 //=========================================================================

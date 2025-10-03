@@ -3,7 +3,7 @@
 #include "InjectorLogic.h"
 
 const char* TARGET_PROCESS  = "tf_win64.exe";
-const char* DLL_PATH        = "..\\output\\INSANE.tf2.dll";
+const char* DLL_PATH        = "..\\output\\Insane_tf2.dll";
 int main(void)
 {
     if (injector.Intitialize(TARGET_PROCESS, DLL_PATH) == false)

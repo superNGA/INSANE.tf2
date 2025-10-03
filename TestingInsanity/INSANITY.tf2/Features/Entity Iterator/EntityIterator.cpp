@@ -25,7 +25,7 @@
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
-    PROFILE_FUNCTION("Entity Iterator");
+    PROFILE_FUNCTION();
 
     if (F::tickShifter.ShiftingTicks() == true)
         return;

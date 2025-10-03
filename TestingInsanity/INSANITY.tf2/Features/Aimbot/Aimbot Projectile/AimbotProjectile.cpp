@@ -7,6 +7,7 @@
 // purpose : Aimbots projectiles :)
 //-------------------------------------------------------------------------
 #include "AimbotProjectile.h"
+#include <format>
 
 // SDK
 #include "../../../SDK/class/BaseEntity.h"
@@ -52,7 +53,7 @@ TODO :
 ///////////////////////////////////////////////////////////////////////////
 bool AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
-    PROFILE_FUNCTION("ProjAimbot::Run");
+    PROFILE_FUNCTION();
 
     // Constructing LUT ( only for pipes )
     if (pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
@@ -229,7 +230,7 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
 
 bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
 {
-    PROFILE_FUNCTION("Proj::Solver");
+    PROFILE_FUNCTION();
 
     float flGravity = projInfo.m_flGravityMult * CVars::sv_gravity * -1.0f;
 
@@ -445,7 +446,7 @@ void AimbotProjectile_t::_DrawProjectilePath(BaseEntity* pLocalPlayer, baseWeapo
         vLastProjPos = vProjPos;
 
         // projectile hit Target or some obsticle, so we end drawing here
-        if (F::projectileEngine.m_projInfo.m_vEnd.isEmpty() == false ||
+        if (F::projectileEngine.m_projInfo.m_vEnd.IsZero() == false ||
             vProjPos.DistTo(m_vBestTargetFuturePos) < 50.0f)
             return;
     }
@@ -770,7 +771,7 @@ void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach, float flAngle 
 
 float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpolation)
 {
-    PROFILE_FUNCTION("GetTravelTime");
+    PROFILE_FUNCTION();
 
     if(m_pTrajactoryLUT == nullptr)
     {

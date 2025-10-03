@@ -95,7 +95,7 @@ bool ConfigHandler_t::ReadConfigFile(std::string szFileName) const
     if (pSourceFile.good() == false || pSourceFile.is_open() == false)
         return false;
 
-    auto& mapFeatureToConfigLinker = featureHandler.GetConfigLinkerMap();
+    auto& mapFeatureToConfigLinker = Config::featureHandler.GetConfigLinkerMap();
     
     std::string line;
     std::getline(pSourceFile, line); // Skipping the first line i.e. Signature.
@@ -288,7 +288,7 @@ bool ConfigHandler_t::WriteToConfigFile(std::string szFileName) const
     _SignFile(pFile);
 
     // Writting to file
-    auto& mapFeatureToConfigLinker = featureHandler.GetConfigLinkerMap();
+    auto& mapFeatureToConfigLinker = Config::featureHandler.GetConfigLinkerMap();
     for (const auto& [iHash, pFeature] : mapFeatureToConfigLinker)
     {
         pFile << iHash << cConfigBreaker;

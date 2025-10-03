@@ -98,7 +98,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	// Testing Strafe prediction
 	if(false)
 	{
-		PROFILE_FUNCTION("Strafe_Pred_Test");
+		// PROFILE_FUNCTION("Strafe_Pred_Test");
 	
 		F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
 		if (F::movementSimulation.Initialize(pLocalPlayer) == true)

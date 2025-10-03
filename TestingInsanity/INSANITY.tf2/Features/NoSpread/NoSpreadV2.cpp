@@ -219,7 +219,7 @@ void NoSpreadV2_t::_FixSpread(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapo
         vCorrectedAngles = vForward - vSpreadX - vSpreadY; vCorrectedAngles.NormalizeInPlace();
     }
 
-    if (vCorrectedAngles.isEmpty() == true)
+    if (vCorrectedAngles.IsZero() == true)
         return;
 
     /*if(nBullets == 1)

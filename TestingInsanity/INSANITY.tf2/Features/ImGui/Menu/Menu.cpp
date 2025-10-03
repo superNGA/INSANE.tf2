@@ -34,7 +34,7 @@ void UIMenu::Draw()
         m_vLastWindowPos = { ImGui::GetWindowPos().x, ImGui::GetWindowPos().y };
 
         // Aquiring Feature map
-        const auto& vecFeatureMap = featureHandler.GetFeatureMap();
+        const auto& vecFeatureMap = Config::featureHandler.GetFeatureMap();
 
         // Drawing Tabs
         if (m_iViewState == UIViewState::TAB_VIEW)

@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////
 void ESPV2_t::Run(BaseEntity* pLocalPlayer)
 {
-    PROFILE_FUNCTION("ESP");
+    PROFILE_FUNCTION();
 
     if (m_bMapCleared == false)
         return;
@@ -95,10 +95,10 @@ void ESPV2_t::Run(BaseEntity* pLocalPlayer)
 void ESPV2_t::Free()
 {
     LOG("Starting freeing all entities");
-    for (const auto& [pEnt, pDrawObj] : m_vecEntToDrawObj)
+    for (const auto& it : m_vecEntToDrawObj)
     {
-        if(F::graphics.FindAndRemoveDrawObj(pDrawObj) == true)
-            pDrawObj->DeleteThis();
+        if(F::graphics.FindAndRemoveDrawObj(it.second) == true)
+            it.second->DeleteThis();
     }
     LOG("Deleted all entities");
 

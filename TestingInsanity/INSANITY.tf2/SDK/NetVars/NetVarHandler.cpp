@@ -44,7 +44,7 @@ void NetVarHandler_t::RegisterNetVar(NetVar_t* pNetVar)
     // Did Hash got created properly or not?
     if (pNetVar->m_iHash == 0)
     {
-        FAIL_LOG("Hash is [ %llu ] for NetVar [ %s->%s ]", pNetVar->m_iHash, pNetVar->m_szTableName, pNetVar->m_szNetVarName);
+        FAIL_LOG("Hash is [ %llu ] for NetVar [ %s->%s ]", pNetVar->m_iHash, pNetVar->m_szTableName.c_str(), pNetVar->m_szNetVarName.c_str());
         m_bFailedRegisteration = true;
         return;
     }
@@ -59,7 +59,7 @@ void NetVarHandler_t::RegisterNetVar(NetVar_t* pNetVar)
         auto it2 = m_mapRegisteredNetvars.find(pNetVar->m_iHash);
         if (it2 == m_mapRegisteredNetvars.end())
         {
-            FAIL_LOG("Failed to add element [ %s->%s ]", pNetVar->m_szTableName, pNetVar->m_szNetVarName);
+            FAIL_LOG("Failed to add element [ %s->%s ]", pNetVar->m_szTableName.c_str(), pNetVar->m_szNetVarName.c_str());
             m_bFailedRegisteration = true;
             return;
         }

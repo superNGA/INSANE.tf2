@@ -223,7 +223,7 @@ DEFINE_FEATURE(
 
 DEFINE_FEATURE(
     BG_Clr, ColorData_t, Settings, Insane_Profiler,
-    3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
+    3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlags::FeatureFlag_SupportKeyBind,
     "Background color for your profiler window"
 )
 

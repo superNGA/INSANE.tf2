@@ -1,0 +1,566 @@
+[
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_draw.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_draw.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_draw.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_draw.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_impl_dx9.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_impl_dx9.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_impl_dx9.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_impl_dx9.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_impl_win32.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_impl_win32.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_impl_win32.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_impl_win32.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_tables.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_tables.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_tables.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_tables.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_widgets.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_widgets.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\External Libraries\\ImGui\\imgui_widgets.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\External_Libraries\\ImGui\\imgui_widgets.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Extra\\spacing.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Extra\\spacing.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Extra\\spacing.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Extra\\spacing.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Hitscan\\AimbotHitscan.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Hitscan\\AimbotHitscan.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Hitscan\\AimbotHitscan.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Hitscan\\AimbotHitscan.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Melee\\AimbotMelee.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Melee\\AimbotMelee.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Melee\\AimbotMelee.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Melee\\AimbotMelee.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Projectile\\AimbotProjectile.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Projectile\\AimbotProjectile.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\Aimbot Projectile\\AimbotProjectile.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\Aimbot_Projectile\\AimbotProjectile.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\AimbotHelper.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\AimbotHelper.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Aimbot\\AimbotHelper.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Aimbot\\AimbotHelper.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Anti_Aim\\AntiAim.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Anti Aim\\AntiAim.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Anti Aim\\AntiAim.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Anti_Aim\\AntiAim.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\BulletTracers\\BulletTarcers_t.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\BulletTracers\\BulletTarcers_t.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\BulletTracers\\BulletTarcers_t.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\BulletTracers\\BulletTarcers_t.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Chams\\ChamsV2.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Chams\\ChamsV2.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Chams\\ChamsV2.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Chams\\ChamsV2.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Config\\ConfigHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Config\\ConfigHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Config\\ConfigHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Config\\ConfigHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\CritHack\\CritHack.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\CritHack\\CritHack.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\CritHack\\CritHack.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\CritHack\\CritHack.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ESP\\ESPV2.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ESP\\ESPV2.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ESP\\ESPV2.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ESP\\ESPV2.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Entity_Iterator\\EntityIterator.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Entity Iterator\\EntityIterator.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Entity Iterator\\EntityIterator.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Entity_Iterator\\EntityIterator.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Fake_Lag\\FakeLag.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Fake Lag\\FakeLag.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Fake Lag\\FakeLag.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Fake_Lag\\FakeLag.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\FeatureHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\FeatureHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\FeatureHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\FeatureHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\BaseDrawObj.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\BaseDrawObj.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\BaseDrawObj.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\BaseDrawObj.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Box\\Box.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Box\\Box.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Box\\Box.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Box\\Box.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Circle\\Circle.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Circle\\Circle.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Circle\\Circle.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Circle\\Circle.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Cube\\Cube.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Cube\\Cube.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Cube\\Cube.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Cube\\Cube.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Line\\Line.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Line\\Line.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Draw Objects\\Line\\Line.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Draw_Objects\\Line\\Line.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Graphics.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Graphics.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine V2\\Graphics.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine_V2\\Graphics.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\DirectX_Handler\\DirectXHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\DirectX Handler\\DirectXHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\DirectX Handler\\DirectXHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\DirectX_Handler\\DirectXHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\Draw_Objects\\DrawObj.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\Draw Objects\\DrawObj.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\Draw Objects\\DrawObj.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\Draw_Objects\\DrawObj.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\Graphics_Engine\\GraphicsEngine.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\Graphics Engine\\GraphicsEngine.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Graphics Engine\\Graphics Engine\\GraphicsEngine.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Graphics_Engine\\Graphics_Engine\\GraphicsEngine.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\InfoWindow\\InfoWindow_t.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\InfoWindow\\InfoWindow_t.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\InfoWindow\\InfoWindow_t.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\InfoWindow\\InfoWindow_t.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\Menu\\Menu.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\Menu\\Menu.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\Menu\\Menu.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\Menu\\Menu.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\MenuV2\\MenuV2.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\MenuV2\\MenuV2.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\MenuV2\\MenuV2.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\MenuV2\\MenuV2.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerList.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerList.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerList.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerList.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Material_Gen\\MaterialGen.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Material Gen\\MaterialGen.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Material Gen\\MaterialGen.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Material_Gen\\MaterialGen.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ModelPreview\\ModelPreview.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ModelPreview\\ModelPreview.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ModelPreview\\ModelPreview.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ModelPreview\\ModelPreview.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Movement\\Movement.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Movement\\Movement.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Movement\\Movement.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Movement\\Movement.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\MovementSimulation\\MovementSimulation.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\MovementSimulation\\MovementSimulation.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\MovementSimulation\\MovementSimulation.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\MovementSimulation\\MovementSimulation.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\NoSpread\\NoSpread.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\NoSpread\\NoSpread.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\NoSpread\\NoSpread.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\NoSpread\\NoSpread.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\NoSpread\\NoSpreadV2.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\NoSpread\\NoSpreadV2.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\NoSpread\\NoSpreadV2.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\NoSpread\\NoSpreadV2.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Projectile_Engine\\ProjectileEngine.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Projectile Engine\\ProjectileEngine.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Projectile Engine\\ProjectileEngine.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Projectile_Engine\\ProjectileEngine.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Tick_Shifting\\TickShifting.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Tick Shifting\\TickShifting.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Tick Shifting\\TickShifting.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Tick_Shifting\\TickShifting.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\config.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\config.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\config.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\config.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\GlobalVars.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\GlobalVars.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\GlobalVars.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\GlobalVars.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CClientState_Disconnect.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CClientState_Disconnect.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CClientState_Disconnect.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CClientState_Disconnect.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CL_Move.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CL_Move.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CL_Move.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CL_Move.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CNetChan_SendDatagram.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CNetChan_SendDatagram.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CNetChan_SendDatagram.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CNetChan_SendDatagram.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CTFWeaponBaseMelee_CalcIsAttackCritHelper.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CTFWeaponBaseMelee_CalcIsAttackCritHelper.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CTFWeaponBaseMelee_CalcIsAttackCritHelper.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CTFWeaponBaseMelee_CalcIsAttackCritHelper.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CTFWeaponBase_CalcIsAttackCriticalHelper.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CTFWeaponBase_CalcIsAttackCriticalHelper.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CTFWeaponBase_CalcIsAttackCriticalHelper.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CTFWeaponBase_CalcIsAttackCriticalHelper.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CheckForPureServerWhitelist\\sv_pure.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CheckForPureServerWhitelist\\sv_pure.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CheckForPureServerWhitelist\\sv_pure.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CheckForPureServerWhitelist\\sv_pure.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\ClientModeShared_LevelInit.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\ClientModeShared_LevelInit.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\ClientModeShared_LevelInit.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\ClientModeShared_LevelInit.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CreateMove.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CreateMove.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\CreateMove.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\CreateMove.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DirectX_Hook\\DirectX_hook.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DirectX Hook\\DirectX_hook.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DirectX Hook\\DirectX_hook.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DirectX_Hook\\DirectX_hook.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DispatchUserMessage\\DispatchUserMessage.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DispatchUserMessage\\DispatchUserMessage.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DispatchUserMessage\\DispatchUserMessage.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DispatchUserMessage\\DispatchUserMessage.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DrawModelExecutes.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DrawModelExecutes.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\DrawModelExecutes.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\DrawModelExecutes.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\EndScene\\EndScene_helper_functions.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\EndScene\\EndScene helper functions.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\EndScene\\EndScene helper functions.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\EndScene\\EndScene_helper_functions.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\EndScene\\EndScene.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\EndScene\\EndScene.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\EndScene\\EndScene.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\EndScene\\EndScene.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\FX_FireBullets.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\FX_FireBullets.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\FX_FireBullets.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\FX_FireBullets.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\FrameStageNotify\\FrameStageNotify.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\FrameStageNotify\\FrameStageNotify.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\FrameStageNotify\\FrameStageNotify.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\FrameStageNotify\\FrameStageNotify.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\GetBulletTracers.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\GetBulletTracers.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\GetBulletTracers.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\GetBulletTracers.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\GetUserCmd.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\GetUserCmd.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\GetUserCmd.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\GetUserCmd.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\PaintTraverse.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\PaintTraverse.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\PaintTraverse.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\PaintTraverse.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\ShouldDrawViewModel.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\ShouldDrawViewModel.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\ShouldDrawViewModel.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\ShouldDrawViewModel.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\WinProc\\WinProc.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\WinProc\\WinProc.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\WinProc\\WinProc.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\WinProc\\WinProc.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\overrideView.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\overrideView.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\overrideView.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\overrideView.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\renderGlowEffect.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\renderGlowEffect.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Hooks\\renderGlowEffect.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Hooks\\renderGlowEffect.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Libraries\\Console_System_V2\\ConsoleSystem.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Libraries\\Console System V2\\ConsoleSystem.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Libraries\\Console System V2\\ConsoleSystem.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Libraries\\Console_System_V2\\ConsoleSystem.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Libraries\\Utility\\Utility.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Libraries\\Utility\\Utility.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Libraries\\Utility\\Utility.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Libraries\\Utility\\Utility.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\FontManager.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\FontManager.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\FontManager.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\FontManager.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_NL\\JetBrains_Mono_NL_Light.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono NL\\JetBrains Mono NL Light.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono NL\\JetBrains Mono NL Light.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_NL\\JetBrains_Mono_NL_Light.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_NL\\JetBrains_Mono_NL_SemiBold.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono NL\\JetBrains Mono NL SemiBold.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono NL\\JetBrains Mono NL SemiBold.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_NL\\JetBrains_Mono_NL_SemiBold.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Entity_Manager\\entityManager.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Entity Manager\\entityManager.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Entity Manager\\entityManager.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Entity_Manager\\entityManager.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\FN_index_Manager\\FN_index_Manager.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\FN index Manager\\FN index Manager.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\FN index Manager\\FN index Manager.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\FN_index_Manager\\FN_index_Manager.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\NetVars\\NetVarHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\NetVars\\NetVarHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\NetVars\\NetVarHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\NetVars\\NetVarHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\TF_object_manager\\TFOjectManager.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\TF object manager\\TFOjectManager.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\TF object manager\\TFOjectManager.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\TF_object_manager\\TFOjectManager.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\BaseEntity.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\BaseEntity.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\BaseEntity.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\BaseEntity.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\Basic_Structures.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\Basic Structures.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\Basic Structures.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\Basic_Structures.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\CommonFns.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\CommonFns.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\CommonFns.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\CommonFns.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IGameEventManager.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IGameEventManager.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IGameEventManager.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IGameEventManager.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\INetworkStringTable.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\INetworkStringTable.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\INetworkStringTable.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\INetworkStringTable.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IPanel.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IPanel.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IPanel.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IPanel.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IVDebugOverlay.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IVDebugOverlay.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\IVDebugOverlay.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\IVDebugOverlay.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\Source_Entity.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\Source Entity.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\Source Entity.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\Source_Entity.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\baseWeapon.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\baseWeapon.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\baseWeapon.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\baseWeapon.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\bf_buf.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\bf_buf.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\class\\bf_buf.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\class\\bf_buf.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Threads\\thread1.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Threads\\thread1.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Threads\\thread1.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Threads\\thread1.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\CVar_Handler\\CVarHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\CVar Handler\\CVarHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\CVar Handler\\CVarHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\CVar_Handler\\CVarHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\ClassIDHandler\\ClassIDHandler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\ClassIDHandler\\ClassIDHandler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\ClassIDHandler\\ClassIDHandler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\ClassIDHandler\\ClassIDHandler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Export_Fn_Handler\\ExportFnHelper.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Export Fn Handler\\ExportFnHelper.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Export Fn Handler\\ExportFnHelper.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Export_Fn_Handler\\ExportFnHelper.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Hook_Handler\\Hook_t.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Hook Handler\\Hook_t.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Hook Handler\\Hook_t.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Hook_Handler\\Hook_t.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Insane_Profiler\\InsaneProfiler.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Insane Profiler\\InsaneProfiler.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Insane Profiler\\InsaneProfiler.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Insane_Profiler\\InsaneProfiler.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Interface_Handler\\Interface.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Interface Handler\\Interface.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Interface Handler\\Interface.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Interface_Handler\\Interface.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Signature_Handler\\signatures.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Signature Handler\\signatures.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Utility\\Signature Handler\\signatures.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Utility\\Signature_Handler\\signatures.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\main.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\main.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\main.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\main.cpp.obj"
+}
+]

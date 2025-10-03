@@ -149,7 +149,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         }
 
         Render::uiMenu.Draw();
-        Render::menuGUI.Draw();
+        Render::menuGUI.SetVisible(UI::UI_visble); Render::menuGUI.Draw();
         F::materialGen.Run();
         
         // Model Rendering.
@@ -176,16 +176,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
             {
                 F::modelPreview.SetVisible(true);
             }
-        }
-
-        if (F::graphics.GetBlurTexture() != nullptr)
-        {
-            ImGui::Begin("Texture Preview");
-
-            // You can also tint or add border colors:
-            ImGui::Image(reinterpret_cast<ImTextureID>(F::graphics.GetBlurTexture()), ImVec2(256, 256));
-
-            ImGui::End();
         }
 
     }
