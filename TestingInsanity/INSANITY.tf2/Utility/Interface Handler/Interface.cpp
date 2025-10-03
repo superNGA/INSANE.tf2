@@ -1,6 +1,9 @@
 #include "Interface.h"
 #include "../ConsoleLogging.h"
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 Interface_t::Interface_t(const char* szVersion, const char* szDll, void** pDestination)
 {
     m_szIdentifier = szVersion;
@@ -11,19 +14,25 @@ Interface_t::Interface_t(const char* szVersion, const char* szDll, void** pDesti
     interfaceInitialize.AddInterface(this);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 Interface_t::Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t iOffset, uint32_t iCurInstructionSize, const char* name)
 {
-    m_szInterfaceName = name;
-    m_szDll = szDll;
-    m_pDestination = ppDestination;
-    m_iOffset = iOffset;
-    m_szIdentifier = signature;
-    m_bToBeScanned = true;
+    m_szInterfaceName    = name;
+    m_szDll              = szDll;
+    m_pDestination       = ppDestination;
+    m_iOffset            = iOffset;
+    m_szIdentifier       = signature;
+    m_bToBeScanned       = true;
     m_iCurInstrutionSize = iCurInstructionSize;
 
     interfaceInitialize.AddInterface(this);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool Interface_t::Initialize()
 {
     if(m_bToBeScanned == false)
@@ -58,6 +67,9 @@ bool Interface_t::Initialize()
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool InterfaceInitialize_t::Initialize()
 {
     for (auto& I : m_vecInterfaces)

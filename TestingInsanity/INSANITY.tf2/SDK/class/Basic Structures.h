@@ -200,6 +200,7 @@ struct RGBA_t
     explicit constexpr RGBA_t(unsigned char R, unsigned char G, unsigned char B, unsigned char A) :
         r(R), g(G), b(B), a(A) {}
     explicit RGBA_t(float R, float G, float B, float A);
+    RGBA_t(const ImVec4& vClr);
 
     unsigned char r, g, b, a;
 
@@ -211,6 +212,7 @@ struct RGBA_t
     RGBA_t IncreaseInPlace(int iOffset, bool bColors, bool bAlpha);
     RGBA_t IncreaseClr(int iOffset, bool bColors, bool bAlpha) const;
     void   LerpInPlace(RGBA_t target, float flPower, bool bColors, bool bAlpha);
+    void   Set(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a);
     Vec4   GetAsVec4()   const;
     ImVec4 GetAsImVec4() const;
     HSVA_t ToHSVA()      const;

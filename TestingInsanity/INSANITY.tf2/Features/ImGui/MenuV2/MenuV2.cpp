@@ -1,15 +1,18 @@
 #include "MenuV2.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
-#include <minwindef.h>
-#include <wincrypt.h>
-#include <winnt.h>
+#include <fibersapi.h>
+#include <wingdi.h>
+#include <winscard.h>
+#include <winuser.h>
 
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
 #include "../../FeatureHandler.h"
 #include "../../../Resources/Fonts/FontManager.h"
+#include "../../../SDK/class/IPanel.h"
 
 // Renderer
 #include "../../Graphics Engine V2/Graphics.h"
@@ -26,12 +29,24 @@ constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres w
 constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
 constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
 
+constexpr float WIDGET_ROUNDING           = 3.0f;
+constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
+constexpr float POPUP_ROUNDING            = 5.0f;
+constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
+
+constexpr float ANIM_COMPLETION_TOLERANCE = 0.005f;
+constexpr float ANIM_COMPLETE             = 1.0f;
+constexpr float ANIM_ZERO                 = 0.0f;
+constexpr float ANIM_DURATION_IN_SEC      = 0.3f;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 MenuGUI_t::MenuGUI_t()
 {
     m_clrPrimary.Init(); m_clrSecondary.Init(); m_clrTheme.Init();
+
+    m_lastResetTime = std::chrono::high_resolution_clock::now();
+    m_popupOpenTime = std::chrono::high_resolution_clock::now();
 }
 
 
@@ -44,6 +59,7 @@ void MenuGUI_t::_InitFonts()
     m_pFontSectionName  = Resources::Fonts::JetBrains_SemiBold_NL_Small; 
     m_pFontSideMenu     = Resources::Fonts::JetBrains_SemiBold_NL_Small;
     m_pFontCatagoryName = Resources::Fonts::JetBrains_SemiBold_NL_Small;
+    m_pPopupFont        = Resources::Fonts::JetBrains_SemiBold_NL_Small;
 }
 
 
@@ -62,6 +78,9 @@ void MenuGUI_t::Draw()
     
     _CalculateColors();
     
+    _CalculateAnim(m_lastResetTime, m_flAnimation, ANIM_DURATION_IN_SEC);
+    _CalculateAnim(m_popupOpenTime, m_flPopupAnimation, ANIM_DURATION_IN_SEC);
+
     // Drawing main body.
     float  flScaleMult = Features::Menu::Menu::Scale.GetData().m_flVal;
     ImVec2 vWindowSize(900.0f * flScaleMult, 650.0f * flScaleMult);
@@ -91,6 +110,12 @@ void MenuGUI_t::SetVisible(bool bVisible)
 
     for(IDrawObj_t* pDrawObjs : m_vecSectionBoxes)
         pDrawObjs->SetVisible(bVisible);
+
+    if(bVisible == false)
+    {
+        _ResetAnimation(m_lastResetTime, m_flAnimation);
+        _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+    }
 }
 
 
@@ -160,7 +185,8 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
         // Rounding
         m_pMainMenu->SetRounding(Features::Menu::Menu::Rounding.GetData().m_flVal);
 
-        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY());
+        float flAnimatedScroll = (ANIM_COMPLETE - m_flAnimation) * 50.0f;
+        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll);
 
         ImGui::End();
     }
@@ -227,6 +253,7 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
                 if (ImGui::Button(std::string("    " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
                 {
                     m_pActiveTab = pTab;
+                    _ResetAnimation(m_lastResetTime, m_flAnimation);
                 }
                 ImGui::PopFont();
 
@@ -306,6 +333,8 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
 
 
             // Drawing the got dayem features.
+            RGBA_t clrFetureText; _CalcTextClrForBg(clrFetureText, m_clrSectionBox);
+            ImGui::PushStyleColor(ImGuiCol_Text, clrFetureText.GetAsImVec4());
             ImGui::PushFont(m_pFontFeatures);
             switch (pFeature->m_iDataType)
             {
@@ -317,6 +346,7 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
             default: break;
             }
             ImGui::PopFont();
+            ImGui::PopStyleColor();
 
 
             // Adjust cursor for the next feature.
@@ -331,6 +361,16 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
             flFeatureWidth, FEATURE_HEIGHT                  // Width & Height for each feature.
         );
 
+        // Drawing Theme ImGuiCol_Border
+        if(Features::Menu::SectionBoxes::ThemeBorder.IsActive() == true)
+        {
+            ImGui::GetWindowDrawList()->AddRect(
+                *pSectionScreenPos, 
+                ImVec2(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y), 
+                ImColor(m_clrTheme.GetAsImVec4()),
+                Features::Menu::SectionBoxes::Rounding.GetData().m_flVal);
+        }
+        
         if (Features::Menu::Menu::Draw_Guides.IsActive() == true)
         {
             ImGui::GetWindowDrawList()->AddRect(
@@ -413,6 +453,8 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
     ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, m_clrTheme.GetAsImVec4());
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  m_clrTheme.GetAsImVec4());
     ImGui::PushStyleColor(ImGuiCol_CheckMark,      ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border,         m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
     
     float  flCheckBoxSide  = ImGui::GetFrameHeight();
@@ -422,7 +464,7 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
-    ImGui::TextColored(m_clrFeatureText.GetAsImVec4(), pBoolFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pBoolFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
 
     // Checkbox
     ImVec2 vCheckBoxOrigin(vWindowPos.x + vMaxWithPadding.x - flCheckBoxSide, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flCheckBoxSide) / 2.0f);
@@ -434,6 +476,22 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
     if(pBoolFeature->m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind)
     {
         ImVec2 vKeyBindPanelButton(vCheckBoxOrigin.x - FEATURE_PADDING_PXL - flCheckBoxSide, vCheckBoxOrigin.y);
+
+        ImGuiIO& io = ImGui::GetIO();
+        bool bButtonHovered = (
+            (io.MousePos.x >= vKeyBindPanelButton.x && io.MousePos.x <= vKeyBindPanelButton.x + ImGui::GetFrameHeight()) &&
+            (io.MousePos.y >= vKeyBindPanelButton.y && io.MousePos.y <= vKeyBindPanelButton.y + ImGui::GetFrameHeight())
+        );
+
+        ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
+        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
         if(ImGui::Button(("?##" + pBoolFeature->m_szTabName + pBoolFeature->m_szSectionName + pBoolFeature->m_szFeatureDisplayName).c_str(), ImVec2(flCheckBoxSide, flCheckBoxSide)) == true)
         {
@@ -441,15 +499,26 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
         }
 
         _DrawBooleanPopup(pFeature);
+        ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
     // Tool tip
-    if (ImGui::IsItemHovered() == true && pBoolFeature->m_szToolTip.empty() == false)
-        ImGui::SetTooltip(pBoolFeature->m_szToolTip.c_str());
+    {
+        ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
+
+        if (ImGui::IsItemHovered() == true && pBoolFeature->m_szToolTip.empty() == false)
+            ImGui::SetTooltip(pBoolFeature->m_szToolTip.c_str());
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
 
     // Pop all style vars.
-    ImGui::PopStyleColor(4);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleColor(5);
+    ImGui::PopStyleVar(2);
 }
 
 
@@ -485,18 +554,26 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     
 
     // Tool tip
-    if (ImGui::IsItemHovered() == true && pIntFeature->m_szToolTip.empty() == false)
-        ImGui::SetTooltip(pIntFeature->m_szToolTip.c_str());
+    {
+        ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
-    // Pop all style vars.
-    ImGui::PopStyleColor(6);
+        if (ImGui::IsItemHovered() == true && pIntFeature->m_szToolTip.empty() == false)
+            ImGui::SetTooltip(pIntFeature->m_szToolTip.c_str());
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
 
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
     // Drawing label for slider.
+    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
     pDrawList->AddText(
         ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f),
-        ImColor(m_clrFeatureText.GetAsImVec4()), pIntFeature->m_szFeatureDisplayName.c_str()
+        ImColor(clrText.GetAsImVec4()), pIntFeature->m_szFeatureDisplayName.c_str()
     );
 
 
@@ -511,23 +588,47 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     if(pIntFeature->m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
-        ImVec2 vKeyBindPanelButton(vTrackStart.x - (FEATURE_PADDING_PXL * 2.0f) - flFrameHeight, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flFrameHeight) / 2.0f);
+        ImVec2 vKeyBindPanelButton(
+            vTrackStart.x - (FEATURE_PADDING_PXL * 2.0f) - flFrameHeight,
+            vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flFrameHeight) / 2.0f);
+
+        ImGuiIO& io = ImGui::GetIO();
+        bool bButtonHovered = (
+            (io.MousePos.x >= vKeyBindPanelButton.x && io.MousePos.x <= vKeyBindPanelButton.x + ImGui::GetFrameHeight()) &&
+            (io.MousePos.y >= vKeyBindPanelButton.y && io.MousePos.y <= vKeyBindPanelButton.y + ImGui::GetFrameHeight())
+        );
+
+        ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
+        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
         if(ImGui::Button(("?##" + pIntFeature->m_szTabName + pIntFeature->m_szSectionName + pIntFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
+            _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
         }
 
         _DrawIntSliderPopup(pFeature);
+
+        ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
 
     // Drawing knob.
     constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = static_cast<float>(pIntFeature->GetData().m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
+    flKnobPos      *= m_flAnimation; // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
+
+    // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
     ImVec2 vKnobOriginScreen(
-        vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK) + (flTrackWidth * flKnobPos),
+        vWindowPos.x + vMinWithPadding.x + ((flFeatureWidth * GAP_BEFORE_TRACK) + KNOB_SIZE_PXL) + ((flTrackWidth - (2.0f * KNOB_SIZE_PXL)) * flKnobPos),
         vWindowPos.y + ((vMinWithPadding.y + vMaxWithPadding.y) / 2.0f)
     );
     pDrawList->AddRectFilled(
@@ -542,7 +643,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     );
 
     // Styling & drawing float input.
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  2.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,  ImVec2(0.5f, 0.5f));
     ImGui::PushStyleColor(ImGuiCol_Border,        m_clrTheme.GetAsImVec4());
@@ -561,13 +662,16 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{}", pIntFeature->GetData().m_iVal);
+    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->GetData().m_iVal) * m_flAnimation);
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
         ImVec2(vFloatInputScreenPos.x + ((flIntInputWidth - (static_cast<float>(nDigits) * flCharWidth)) / 2.0f), vFloatInputScreenPos.y + ((ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) / 2.0f)),
-        ImColor(255, 255, 255, 255), szSliderValue.c_str()
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
     );
+
+    // Pop all style vars.
+    ImGui::PopStyleColor(6);
 }
 
 
@@ -587,8 +691,8 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::PushStyleColor(ImGuiCol_SliderGrab,       ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_Text,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    
-    // Feature's name
+
+    // Drawing Feature's name
     ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y));
     constexpr float GAP_BEFORE_TRACK = 0.4f;
@@ -599,51 +703,85 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::SetNextItemWidth(flTrackWidth);
     ImGui::SliderFloat(
         ("##" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(),
-        &pFloatFeature->m_Data.m_flVal, pFloatFeature->m_Data.m_flMin, pFloatFeature->m_Data.m_flMax);
+        &pFloatFeature->m_Data.m_flVal, pFloatFeature->m_Data.m_flMin, pFloatFeature->m_Data.m_flMax); 
+    
 
     // Tool tip
-    if (ImGui::IsItemHovered() == true && pFloatFeature->m_szToolTip.empty() == false)
-        ImGui::SetTooltip(pFloatFeature->m_szToolTip.c_str());
+    {
+        ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
-    // Pop all style vars.
-    ImGui::PopStyleColor(6);
+        if (ImGui::IsItemHovered() == true && pFloatFeature->m_szToolTip.empty() == false)
+            ImGui::SetTooltip(pFloatFeature->m_szToolTip.c_str());
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
+
 
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-    
+
     // Drawing label for slider.
+    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
     pDrawList->AddText(
         ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f),
-        ImColor(m_clrFeatureText.GetAsImVec4()), pFloatFeature->m_szFeatureDisplayName.c_str()
+        ImColor(clrText.GetAsImVec4()), pFloatFeature->m_szFeatureDisplayName.c_str()
     );
 
 
     // Drawing the slider manually
     constexpr float TRACK_THICKNESS_PXL = 4.0f;
-    ImVec2 vTrackEnd(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK) + flTrackWidth, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) + TRACK_THICKNESS_PXL);
     ImVec2 vTrackStart(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK), vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) - TRACK_THICKNESS_PXL);
-
+    ImVec2 vTrackEnd(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK) + flTrackWidth, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) + TRACK_THICKNESS_PXL);
+    
     pDrawList->AddRectFilled(vTrackStart, vTrackEnd, ImColor(255, 255, 255, 255), 10.0f);
-
+        
     // Drawing Keybind popup.
     if(pFloatFeature->m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
-        ImVec2 vKeyBindPanelButton(vTrackStart.x - (FEATURE_PADDING_PXL * 2.0f) - flFrameHeight, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flFrameHeight) / 2.0f);
+        ImVec2 vKeyBindPanelButton(
+            vTrackStart.x - (FEATURE_PADDING_PXL * 2.0f) - flFrameHeight,
+            vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flFrameHeight) / 2.0f);
+
+        ImGuiIO& io = ImGui::GetIO();
+        bool bButtonHovered = (
+            (io.MousePos.x >= vKeyBindPanelButton.x && io.MousePos.x <= vKeyBindPanelButton.x + ImGui::GetFrameHeight()) &&
+            (io.MousePos.y >= vKeyBindPanelButton.y && io.MousePos.y <= vKeyBindPanelButton.y + ImGui::GetFrameHeight())
+        );
+
+        ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
+        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
         if(ImGui::Button(("?##" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
+            _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
         }
 
         _DrawFloatSliderPopup(pFeature);
+        ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
+
 
     // Drawing knob.
     constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = (pFloatFeature->GetData().m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
+    flKnobPos      *= m_flAnimation; // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
+
+    // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
     ImVec2 vKnobOriginScreen(
-        vWindowPos.x + vMinWithPadding.x   + (flFeatureWidth * GAP_BEFORE_TRACK) + (flTrackWidth * flKnobPos),
+        vWindowPos.x + vMinWithPadding.x + ((flFeatureWidth * GAP_BEFORE_TRACK) + KNOB_SIZE_PXL) + ((flTrackWidth - (2.0f * KNOB_SIZE_PXL)) * flKnobPos),
         vWindowPos.y + ((vMinWithPadding.y + vMaxWithPadding.y) / 2.0f)
     );
     pDrawList->AddRectFilled(
@@ -658,32 +796,35 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     );
 
     // Styling & drawing float input.
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
-    ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
-    ImGui::PushStyleColor(ImGuiCol_Text,    ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, m_clrSecondary.GetAsImVec4());
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,  ImVec2(0.5f, 0.5f));
+    ImGui::PushStyleColor(ImGuiCol_Border,        m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,       m_clrSecondary.GetAsImVec4());
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, m_clrTheme.GetAsImVec4());
 
     ImGui::SetCursorScreenPos(vFloatInputScreenPos);
-    float flFloatInputWidth = (vWindowPos.x + vMaxWithPadding.x) - vFloatInputScreenPos.x;
-    ImGui::SetNextItemWidth(flFloatInputWidth);
+    float flIntInputWidth = (vWindowPos.x + vMaxWithPadding.x) - vFloatInputScreenPos.x;
+    ImGui::SetNextItemWidth(flIntInputWidth);
 
     ImGui::InputFloat(
         ("##FloatInput" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(),
-        &pFloatFeature->m_Data.m_flVal, 0.0f, 0.0f, "%.1f");
+        &pFloatFeature->m_Data.m_flVal);
 
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal);
+    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal * m_flAnimation);
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
-        ImVec2(vFloatInputScreenPos.x + ((flFloatInputWidth - (static_cast<float>(nDigits) * flCharWidth)) / 2.0f), vFloatInputScreenPos.y + ((ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) / 2.0f)),
-        ImColor(255, 255, 255, 255), szSliderValue.c_str()
+        ImVec2(vFloatInputScreenPos.x + ((flIntInputWidth - (static_cast<float>(nDigits) * flCharWidth)) / 2.0f), vFloatInputScreenPos.y + ((ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) / 2.0f)),
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
     );
+
+    // Pop all style vars.
+    ImGui::PopStyleColor(6);
 }
 
 
@@ -692,7 +833,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
 void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
 {
     // Styling
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
     ImGui::PushStyleColor(ImGuiCol_Border,         m_clrTheme.GetAsImVec4());
     ImGui::PushStyleColor(ImGuiCol_FrameBg,        m_clrSecondary.GetAsImVec4());
@@ -711,18 +852,48 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
-    ImGui::TextColored(m_clrFeatureText.GetAsImVec4(), pDropDownFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pDropDownFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
 
     // Drop Down Feature
-    ImGui::SetNextItemWidth(flFeatureWidth / 2.0f);
-    ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMaxWithPadding.x - flFeatureWidth / 2.0f, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flWidgetHeight) / 2.0f));
-    ImGui::Combo(
-        ("##" + pDropDownFeature->m_szTabName + pDropDownFeature->m_szSectionName + pDropDownFeature->m_szFeatureDisplayName).c_str(),
-        &pDropDownFeature->m_iActiveData, pDropDownFeature->m_data.m_pItems, pDropDownFeature->m_data.m_nItems);
+    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrPrimary);
+    {
+        // Make sure drop down menu is completely opaque, we don't want no translucent ass drop down menu.
+        ImVec4 vDropdownClr  = m_clrPrimary.GetAsImVec4();    vDropdownClr.w  = 1.0f;
+        ImVec4 vHighLightClr = m_clrSectionBox.GetAsImVec4(); vHighLightClr.w = 1.0f;
+
+        ImGui::PushStyleColor(ImGuiCol_Text,    clrText.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vDropdownClr);
+        ImGui::PushStyleColor(ImGuiCol_Border,  vDropdownClr);
+
+        // Styling selected shit
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive,  vHighLightClr);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, vHighLightClr);
+        ImGui::PushStyleColor(ImGuiCol_Header,        vHighLightClr);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, POPUP_ROUNDING); // a little bit of hardcoded rounding.
+
+        ImGui::SetNextItemWidth(flFeatureWidth / 2.0f);
+        ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMaxWithPadding.x - flFeatureWidth / 2.0f, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flWidgetHeight) / 2.0f));
+        ImGui::Combo(
+            ("##" + pDropDownFeature->m_szTabName + pDropDownFeature->m_szSectionName + pDropDownFeature->m_szFeatureDisplayName).c_str(),
+            &pDropDownFeature->m_iActiveData, pDropDownFeature->m_data.m_pItems, pDropDownFeature->m_data.m_nItems);
+
+        ImGui::PopStyleColor(6);
+        ImGui::PopStyleVar();
+    }
 
     // Tool tip
-    if (ImGui::IsItemHovered() == true && pDropDownFeature->m_szToolTip.empty() == false)
-        ImGui::SetTooltip(pDropDownFeature->m_szToolTip.c_str());
+    {
+        ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
+
+        if (ImGui::IsItemHovered() == true && pDropDownFeature->m_szToolTip.empty() == false)
+            ImGui::SetTooltip(pDropDownFeature->m_szToolTip.c_str());
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
 
     // Pop all style vars.
     ImGui::PopStyleColor(7);
@@ -741,26 +912,88 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
     float  flFeatureWidth     = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
     ImVec2 vWindowPos         = ImGui::GetWindowPos();
     
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   3.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
     ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
 
     // Label
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
-    ImGui::TextColored(m_clrFeatureText.GetAsImVec4(), pColorFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
+    ImGui::Text(pColorFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
 
     // Color preview widget.
     ImVec2 vColorPreviewOrigin(vWindowPos.x + vMaxWithPadding.x - flColorPreviewSide, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - flColorPreviewSide) / 2.0f);
     ImGui::SetCursorScreenPos(vColorPreviewOrigin);
-    ImGui::ColorEdit4(
-        ("##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str(), &pColorFeature->m_Data.r,
-        ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    {
+        ImVec4 vPopclr       = m_clrPrimary.GetAsImVec4();    vPopclr.w       = 1.0f;
+        ImVec4 vSecondaryClr = m_clrSectionBox.GetAsImVec4(); vSecondaryClr.w = 1.0f;
+        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrPrimary);
+
+        ImGui::PushStyleColor(ImGuiCol_PopupBg,        vPopclr);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,        vSecondaryClr);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  vSecondaryClr);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, vSecondaryClr);
+        ImGui::PushStyleColor(ImGuiCol_Border,         ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text,           clrText.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, POPUP_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(2.0f, 2.0f));
+
+        std::string szColorPickerID = ("##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str();
+
+        // Color Picker
+        ImGui::ColorEdit4(
+            szColorPickerID.c_str(), &pColorFeature->m_Data.r,
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_PickerHueWheel);
+
+
+        // Drawing custom color preview border, cause it won't let me change it properly.
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        pDrawList->AddRect(
+            vColorPreviewOrigin, 
+            ImVec2(vColorPreviewOrigin.x + flColorPreviewSide, vColorPreviewOrigin.y + flColorPreviewSide), 
+            ImColor(m_clrTheme.GetAsImVec4()), WIDGET_ROUNDING, 0, WIDGET_BORDER_THICKNESS);
+
+
+        ImGui::PopStyleColor(6); ImGui::PopStyleVar(3);
+    }
+
+    // Tool tip
+    {
+        ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
+
+        if (ImGui::IsItemHovered() == true && pColorFeature->m_szToolTip.empty() == false)
+            ImGui::SetTooltip(pColorFeature->m_szToolTip.c_str());
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar();
+    }
 
     // Drawing Keybind widget
     if(pColorFeature->m_iFlags & FeatureFlags::FeatureFlag_SupportKeyBind)
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+        float flFrameHeight = ImGui::GetFrameHeight();
         ImVec2 vKeyBindPanelButton(vColorPreviewOrigin.x - FEATURE_PADDING_PXL - flColorPreviewSide, vColorPreviewOrigin.y);
+
+        ImGuiIO& io = ImGui::GetIO();
+        bool bButtonHovered = (
+            (io.MousePos.x >= vKeyBindPanelButton.x && io.MousePos.x <= vKeyBindPanelButton.x + ImGui::GetFrameHeight()) &&
+            (io.MousePos.y >= vKeyBindPanelButton.y && io.MousePos.y <= vKeyBindPanelButton.y + ImGui::GetFrameHeight())
+        );
+
+        ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
+        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
 
         if(ImGui::Button(("?##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str(), ImVec2(flColorPreviewSide, flColorPreviewSide)) == true)
@@ -768,12 +1001,9 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
             _TriggerPopup(pFeature);
         }
         _DrawColorPopup(pFeature);
-        ImGui::PopStyleVar();
-    }
 
-    // Tool tip
-    if (ImGui::IsItemHovered() == true && pColorFeature->m_szToolTip.empty() == false)
-        ImGui::SetTooltip(pColorFeature->m_szToolTip.c_str());
+        ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
+    }
 
     ImGui::PopStyleColor();
     ImGui::PopStyleVar(2);
@@ -821,17 +1051,22 @@ char VkToChar(int vk)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 {
+    ImGui::PushFont(m_pPopupFont);
+
     constexpr float nRows         = 3.0f;
     float           flPopupHeight = (SECTION_PADDING_PXL * (nRows + 1.0f)) + (nRows * ImGui::GetFrameHeight());
     ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, flPopupHeight), ImVec2(400.0f, flPopupHeight));
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
+    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
-        ImGui::PushStyleColor(ImGuiCol_Border,  vPopClr);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-        // ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, POPUP_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,  POPUP_ROUNDING);
     }
     
 
@@ -866,16 +1101,20 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
             ImGui::SetCursorScreenPos(ImVec2(vKeyBindButtonPos.x, vKeyBindButtonPos.y + (flFrameHeight - ImGui::GetTextLineHeight()) / 2.0f));
             vKeyBindButtonPos.x += m_pFontFeatures->GetCharAdvance(' ') * szKeyBind.size();
 
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szKeyBind.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szKeyBind.c_str());
         }
 
 
         // Drawing & formatting Keybind button.
         {
             {
-                ImGui::PushStyleColor(ImGuiCol_Button,        m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vKeyBindButtonPos);
@@ -887,11 +1126,13 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
                 _StartRecordingKey();
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Current keybind for this feature. ( Click to change )");
+            ImGui::PopStyleColor();
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
         
@@ -901,9 +1142,12 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
+                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
+
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrTheme.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vClearKeybindButtonPos);
@@ -912,12 +1156,14 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
                 pFeature->m_iKey = 0;
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Clear keybind for this feature.");
+            ImGui::PopStyleColor();
 
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
 
@@ -936,7 +1182,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 
             // Current Hold Setting.
             std::string szHoldStyle = std::format("Style    : [ {} ]", pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ? " Hold " : "Toggle");
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szHoldStyle.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szHoldStyle.c_str());
             
             // Hold setting toggle button.
             bool bSupportSingleStyle = (pFeature->m_iFlags & FeatureFlag_HoldOnlyKeyBind) || (pFeature->m_iFlags & FeatureFlag_ToggleOnlyKeyBind);
@@ -947,9 +1193,13 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
                 // Styling Toggle button
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button,        bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                    ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
                 }
 
 
@@ -964,7 +1214,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 
                 // Pop toggle button styles.
                 {
-                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleColor(4);
                 }
             }
         }
@@ -976,20 +1226,27 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
         ImGui::SetCursorScreenPos(ImVec2(vOverrideDataPos.x, vOverrideDataPos.y + (flFrameHeight - ImGui::GetTextLineHeight()) / 2.0f));
 
         std::string szOverrideData("Override :");
-        ImGui::TextColored(vClrSectionBoxFullAlpha, szOverrideData.c_str());
+        ImGui::TextColored(vTextClr.GetAsImVec4(), szOverrideData.c_str());
 
+
+        ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
+        
         ImGui::SetCursorScreenPos(ImVec2(vOverrideDataPos.x + INTER_FEATURE_PADDING_PXL + (m_pFontFeatures->GetCharAdvance(' ') * szOverrideData.size()), vOverrideDataPos.y));
         ImGui::ColorEdit4(
             ("##Override" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), 
             &pClrFeature->m_OverrideData.r, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 
+        ImGui::PopStyleColor(); ImGui::PopStyleVar();
 
         ImGui::EndPopup(); 
     }
     
     // Removing popup formatting.
     ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleVar(4);
+
+    ImGui::PopFont();
 }
 
 
@@ -997,16 +1254,22 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 {
+    ImGui::PushFont(m_pPopupFont);
+
     constexpr float nRows         = 3.0f;
     float           flPopupHeight = (SECTION_PADDING_PXL * (nRows + 1.0f)) + (nRows * ImGui::GetFrameHeight());
     ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, flPopupHeight), ImVec2(400.0f, flPopupHeight));
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
+    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
-        ImGui::PushStyleColor(ImGuiCol_Border,  vPopClr);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, POPUP_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,  POPUP_ROUNDING);
     }
     
 
@@ -1041,16 +1304,20 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
             ImGui::SetCursorScreenPos(ImVec2(vKeyBindButtonPos.x, vKeyBindButtonPos.y + (flFrameHeight - ImGui::GetTextLineHeight()) / 2.0f));
             vKeyBindButtonPos.x += m_pFontFeatures->GetCharAdvance(' ') * szKeyBind.size();
 
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szKeyBind.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szKeyBind.c_str());
         }
 
 
         // Drawing & formatting Keybind button.
         {
             {
-                ImGui::PushStyleColor(ImGuiCol_Button,        m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vKeyBindButtonPos);
@@ -1062,11 +1329,13 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
                 _StartRecordingKey();
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Current keybind for this feature. ( Click to change )");
+            ImGui::PopStyleColor();
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
         
@@ -1076,9 +1345,12 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
+                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
+
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrTheme.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vClearKeybindButtonPos);
@@ -1087,12 +1359,14 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
                 pFeature->m_iKey = 0;
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Clear keybind for this feature.");
+            ImGui::PopStyleColor();
 
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
 
@@ -1111,7 +1385,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 
             // Current Hold Setting.
             std::string szHoldStyle = std::format("Style    : [ {} ]", pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ? " Hold " : "Toggle");
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szHoldStyle.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szHoldStyle.c_str());
             
             // Hold setting toggle button.
             bool bSupportSingleStyle = (pFeature->m_iFlags & FeatureFlag_HoldOnlyKeyBind) || (pFeature->m_iFlags & FeatureFlag_ToggleOnlyKeyBind);
@@ -1122,9 +1396,13 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
                 // Styling Toggle button
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button,        bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                    ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
                 }
 
 
@@ -1139,7 +1417,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 
                 // Pop toggle button styles.
                 {
-                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleColor(4);
                 }
             }
         }
@@ -1176,21 +1454,26 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = (pFloatFeature->m_OverrideData.m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
+        flKnobPos      *= m_flPopupAnimation;
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
-        ImVec2 vKnobOrigin(vTrackOrigin.x + (TRACK_WIDTH * flKnobPos), vTrackOrigin.y);
+
+        // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
+        ImVec2 vKnobOrigin(vTrackOrigin.x + KNOB_SIZE_PXL + ((TRACK_WIDTH - (2.0f * KNOB_SIZE_PXL)) * flKnobPos), vTrackOrigin.y);
 
         pDrawList->AddRectFilled(ImVec2(vKnobOrigin.x - KNOB_SIZE_PXL, vKnobOrigin.y - KNOB_SIZE_PXL), ImVec2(vKnobOrigin.x + KNOB_SIZE_PXL, vKnobOrigin.y + KNOB_SIZE_PXL), ImColor(m_clrTheme.GetAsImVec4()), 10000.0f);
 
 
         
         // Styling & drawing float input.
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
         ImGui::PushStyleColor(ImGuiCol_Border,        m_clrTheme.GetAsImVec4());
         ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_FrameBg,       vClrSectionBoxFullAlpha);
         ImGui::PushStyleColor(ImGuiCol_FrameBgActive, m_clrTheme.GetAsImVec4());
+        RGBA_t clrText; _CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
+
 
         ImVec2 vFloatInputScreenPos(vOverrideDataPos.x + TRACK_WIDTH + INTER_FEATURE_PADDING_PXL, vOverrideDataPos.y);
         ImGui::SetCursorScreenPos(vFloatInputScreenPos);
@@ -1204,12 +1487,12 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal);
+        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal * m_flPopupAnimation);
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
         ImVec2(vFloatInputScreenPos.x + ((flFloatInputWidth - (static_cast<float>(nDigits) * flCharWidth)) / 2.0f), vFloatInputScreenPos.y + ((ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) / 2.0f)),
-        ImColor(255, 255, 255, 255), szSliderValue.c_str());
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str());
         
 
         ImGui::PopStyleColor(6);
@@ -1219,8 +1502,9 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
     
     // Removing popup formatting.
     ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleVar(4);
 
+    ImGui::PopFont();
 }
 
 
@@ -1228,16 +1512,22 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 {
+    ImGui::PushFont(m_pPopupFont);
+
     constexpr float nRows         = 3.0f;
     float           flPopupHeight = (SECTION_PADDING_PXL * (nRows + 1.0f)) + (nRows * ImGui::GetFrameHeight());
     ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, flPopupHeight), ImVec2(400.0f, flPopupHeight));
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
+    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
-        ImGui::PushStyleColor(ImGuiCol_Border,  vPopClr);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, POPUP_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,  POPUP_ROUNDING);
     }
     
 
@@ -1272,16 +1562,20 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
             ImGui::SetCursorScreenPos(ImVec2(vKeyBindButtonPos.x, vKeyBindButtonPos.y + (flFrameHeight - ImGui::GetTextLineHeight()) / 2.0f));
             vKeyBindButtonPos.x += m_pFontFeatures->GetCharAdvance(' ') * szKeyBind.size();
 
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szKeyBind.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szKeyBind.c_str());
         }
 
 
         // Drawing & formatting Keybind button.
         {
             {
-                ImGui::PushStyleColor(ImGuiCol_Button,        m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vKeyBindButtonPos);
@@ -1293,11 +1587,13 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
                 _StartRecordingKey();
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Current keybind for this feature. ( Click to change )");
+            ImGui::PopStyleColor();
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
         
@@ -1307,9 +1603,11 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
+                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrTheme.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vClearKeybindButtonPos);
@@ -1318,12 +1616,14 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
                 pFeature->m_iKey = 0;
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Clear keybind for this feature.");
+            ImGui::PopStyleColor();
 
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
 
@@ -1342,7 +1642,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 
             // Current Hold Setting.
             std::string szHoldStyle = std::format("Style    : [ {} ]", pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ? " Hold " : "Toggle");
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szHoldStyle.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szHoldStyle.c_str());
             
             // Hold setting toggle button.
             bool bSupportSingleStyle = (pFeature->m_iFlags & FeatureFlag_HoldOnlyKeyBind) || (pFeature->m_iFlags & FeatureFlag_ToggleOnlyKeyBind);
@@ -1353,9 +1653,13 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
                 // Styling Toggle button
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button,        bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+
+                    ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
+                    ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
                 }
 
 
@@ -1370,7 +1674,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 
                 // Pop toggle button styles.
                 {
-                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleColor(4);
                 }
             }
         }
@@ -1407,21 +1711,26 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = static_cast<float>(pIntFeature->m_OverrideData.m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
+        flKnobPos      *= m_flPopupAnimation;
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
-        ImVec2 vKnobOrigin(vTrackOrigin.x + (TRACK_WIDTH * flKnobPos), vTrackOrigin.y);
+        
+        // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
+        ImVec2 vKnobOrigin(vTrackOrigin.x + KNOB_SIZE_PXL + ((TRACK_WIDTH - (2.0f * KNOB_SIZE_PXL)) * flKnobPos), vTrackOrigin.y);
 
         pDrawList->AddRectFilled(ImVec2(vKnobOrigin.x - KNOB_SIZE_PXL, vKnobOrigin.y - KNOB_SIZE_PXL), ImVec2(vKnobOrigin.x + KNOB_SIZE_PXL, vKnobOrigin.y + KNOB_SIZE_PXL), ImColor(m_clrTheme.GetAsImVec4()), 10000.0f);
 
 
         
         // Styling & drawing float input.
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
         ImGui::PushStyleColor(ImGuiCol_Border,        m_clrTheme.GetAsImVec4());
         ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_FrameBg,       vClrSectionBoxFullAlpha);
         ImGui::PushStyleColor(ImGuiCol_FrameBgActive, m_clrTheme.GetAsImVec4());
+        RGBA_t clrText; _CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
+
 
         ImVec2 vFloatInputScreenPos(vOverrideDataPos.x + TRACK_WIDTH + INTER_FEATURE_PADDING_PXL, vOverrideDataPos.y);
         ImGui::SetCursorScreenPos(vFloatInputScreenPos);
@@ -1435,12 +1744,12 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{}", pIntFeature->m_OverrideData.m_iVal);
+        std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->m_OverrideData.m_iVal) * m_flPopupAnimation);
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
         ImVec2(vFloatInputScreenPos.x + ((flFloatInputWidth - (static_cast<float>(nDigits) * flCharWidth)) / 2.0f), vFloatInputScreenPos.y + ((ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) / 2.0f)),
-        ImColor(255, 255, 255, 255), szSliderValue.c_str());
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str());
         
 
         ImGui::PopStyleColor(6);
@@ -1450,8 +1759,9 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
     
     // Removing popup formatting.
     ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleVar(4);
 
+    ImGui::PopFont();
 }
 
 
@@ -1459,16 +1769,22 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
 {
+    ImGui::PushFont(m_pPopupFont);
+
     constexpr float nRows         = 2.0f;
     float           flPopupHeight = (SECTION_PADDING_PXL * (nRows + 1.0f)) + (nRows * ImGui::GetFrameHeight());
     ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f, flPopupHeight), ImVec2(400.0f, flPopupHeight));
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
+    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
-        ImGui::PushStyleColor(ImGuiCol_Border,  vPopClr);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, POPUP_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,  POPUP_ROUNDING);
     }
     
 
@@ -1503,16 +1819,20 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
             ImGui::SetCursorScreenPos(ImVec2(vKeyBindButtonPos.x, vKeyBindButtonPos.y + (flFrameHeight - ImGui::GetTextLineHeight()) / 2.0f));
             vKeyBindButtonPos.x += m_pFontFeatures->GetCharAdvance(' ') * szKeyBind.size();
 
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szKeyBind.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szKeyBind.c_str());
         }
 
 
         // Drawing & formatting Keybind button.
         {
             {
-                ImGui::PushStyleColor(ImGuiCol_Button,        m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                ImVec4 vButtonClr = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
+                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vButtonClr));
+
+                ImGui::PushStyleColor(ImGuiCol_Button,        vButtonClr);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vButtonClr);
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vButtonClr);
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vKeyBindButtonPos);
@@ -1524,11 +1844,13 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
                 _StartRecordingKey();
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Current keybind for this feature. ( Click to change )");
+            ImGui::PopStyleColor();
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
         
@@ -1538,9 +1860,12 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
+                RGBA_t clrButton; _CalcTextClrForBg(clrButton, m_clrPrimary);
+
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrTheme.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,          clrButton.GetAsImVec4());
             }
 
             ImGui::SetCursorScreenPos(vClearKeybindButtonPos);
@@ -1549,12 +1874,14 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
                 pFeature->m_iKey = 0;
             }
 
+            ImGui::PushStyleColor(ImGuiCol_Text, vTextClr.GetAsImVec4());
             if(ImGui::IsItemHovered() == true)
                 ImGui::SetTooltip("Clear keybind for this feature.");
+            ImGui::PopStyleColor();
 
 
             {
-                ImGui::PopStyleColor(3);
+                ImGui::PopStyleColor(4);
             }
         }
 
@@ -1573,7 +1900,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
 
             // Current Hold Setting.
             std::string szHoldStyle = std::format("Style    : [ {} ]", pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD ? " Hold " : "Toggle");
-            ImGui::TextColored(vClrSectionBoxFullAlpha, szHoldStyle.c_str());
+            ImGui::TextColored(vTextClr.GetAsImVec4(), szHoldStyle.c_str());
             
             // Hold setting toggle button.
             bool bSupportSingleStyle = (pFeature->m_iFlags & FeatureFlag_HoldOnlyKeyBind) || (pFeature->m_iFlags & FeatureFlag_ToggleOnlyKeyBind);
@@ -1584,9 +1911,13 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
                 // Styling Toggle button
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button,        bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    ImVec4 vClrActive = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
+                    RGBA_t clrButton; _CalcTextClrForBg(clrButton, RGBA_t(vClrActive));
+
+                    ImGui::PushStyleColor(ImGuiCol_Button,        vClrActive);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrActive);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrActive);
+                    ImGui::PushStyleColor(ImGuiCol_Text,          clrButton.GetAsImVec4());
                 }
 
 
@@ -1601,7 +1932,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
 
                 // Pop toggle button styles.
                 {
-                    ImGui::PopStyleColor(3);
+                    ImGui::PopStyleColor(4);
                 }
             }
         }
@@ -1612,9 +1943,9 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
     
     // Removing popup formatting.
     ImGui::PopStyleColor(2);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleVar(4);
 
-
+    ImGui::PopFont();
 }
 
 
@@ -1722,6 +2053,20 @@ void MenuGUI_t::_CalculateColors()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const
+{
+    HSVA_t hsv = vBgClr.ToHSVA();
+
+    // If color is bright enough, we use black, else white.
+    if(hsv.v <= 0.5f)
+        vTextClrOut.Set(255, 255, 255, 255);
+    else
+        vTextClrOut.Set(0, 0, 0, 255);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_StyleSideMenuBottons()
 {
     // TODO : Set active buttons color to primary.
@@ -1746,4 +2091,35 @@ void MenuGUI_t::_PopAllStyles()
 
     ImGui::PopStyleColor(m_nPushedStyleColors); m_nPushedStyleColors = 0;
     ImGui::PopStyleVar(m_nPushedStyleVars);     m_nPushedStyleVars   = 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime)
+{
+    // If nearly complete, let it go.
+    if(fabsf(ANIM_COMPLETE - flAnimationOut) < ANIM_COMPLETION_TOLERANCE)
+    {
+        flAnimationOut = ANIM_COMPLETE;
+        return;
+    }
+
+    // Current time
+    std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
+
+    double flTimeSinceReset = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - animStartTime).count()) / 1000.0f;
+    float  flTimeNormalized = static_cast<float>(flTimeSinceReset) / flAnimCompleteTime;
+
+    flAnimationOut = 1.0f - powf(1.0f - flTimeNormalized, 3.0f); // animation = 1 - (1 - time)^3
+    flAnimationOut = std::clamp<float>(flAnimationOut, ANIM_ZERO, ANIM_COMPLETE);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut)
+{
+    flAnimationOut = 0.0f;
+    animStartTime  = std::chrono::high_resolution_clock::now();
 }

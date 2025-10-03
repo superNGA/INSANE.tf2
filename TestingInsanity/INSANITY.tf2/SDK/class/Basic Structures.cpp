@@ -43,6 +43,15 @@ RGBA_t::RGBA_t(float R, float G, float B, float A)
 }
 
 
+RGBA_t::RGBA_t(const ImVec4& vClr)
+{
+    r = static_cast<unsigned char>(vClr.x * 255.0f);
+    g = static_cast<unsigned char>(vClr.y * 255.0f);
+    b = static_cast<unsigned char>(vClr.z * 255.0f);
+    a = static_cast<unsigned char>(vClr.w * 255.0f);
+}
+
+
 void RGBA_t::Init()
 {
     r = 0; g = 0; b = 0; a = 0xFF;
@@ -111,6 +120,12 @@ void RGBA_t::LerpInPlace(RGBA_t target, float flPower, bool bColors, bool bAlpha
                 static_cast<int32_t>(a) + static_cast<int32_t>(static_cast<float>(static_cast<int32_t>(target.a) - static_cast<int32_t>(a)) * flPower), 0, 0xFF)
             );
     }
+}
+
+
+void RGBA_t::Set(unsigned char _r, unsigned char _g, unsigned char _b, unsigned char _a)
+{
+    r = _r;  g = _g;  b = _b;  a = _a;
 }
 
 
