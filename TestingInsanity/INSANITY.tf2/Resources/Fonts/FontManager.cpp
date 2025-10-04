@@ -11,7 +11,7 @@ bool FontManager_t::Initialize()
         return true;
     
     // This is icon range ( should be same for all nerd fonts )
-    static const ImWchar ICON_RANGE[] = { 0xf000, 0xfaff, 0 };
+    static const ImWchar ICON_RANGE[] = { 0xE641, 0xfaff, 0 };
     
     ImFontConfig fontConfig;
     fontConfig.FontDataOwnedByAtlas = false;

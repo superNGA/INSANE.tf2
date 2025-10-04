@@ -7,6 +7,8 @@
 #include "JetBrains Mono NL/JetBrains Mono NL SemiBold.h"
 #include "JetBrains Mono NL/JetBrains Mono NL Light.h"
 #include "JetBrains Mono Nerd/JetBrainsMonoNerd.h"
+#include "ShadowIntoLight/ShadowIntoLight.h"
+#include "Montserrat/MontserratBlack.h"
 
 class Font_t;
 struct ImFont;
@@ -58,4 +60,8 @@ REGISTER_FONT(JetBrains_SemiBold_NL_Small, Resources::Fonts::jetBrainsMono_SemiB
 REGISTER_FONT(JetBrains_SemiBold_NL_Mid,   Resources::Fonts::jetBrainsMono_SemiBoldNL, 20.0f, false)
 REGISTER_FONT(JetBrains_Light_NL_MID,      Resources::Fonts::JetBrainsMono_LightNL,    20.0f, false)
 
+REGISTER_FONT(MontserratBlack,             Resources::Fonts::MontserratBlack_Data,     31.0f, false)
+REGISTER_FONT(ShadowIntoLight,             Resources::Fonts::ShadowIntoLight_Data,     30.0f, false)
+
 REGISTER_FONT(JetBrainsMonoNerd_Small,     Resources::Fonts::jetBrainsMonoNerd_Data,   16.0f, true)
+REGISTER_FONT(JetBrainsMonoNerd_Mid,       Resources::Fonts::jetBrainsMonoNerd_Data,   22.0f, true)

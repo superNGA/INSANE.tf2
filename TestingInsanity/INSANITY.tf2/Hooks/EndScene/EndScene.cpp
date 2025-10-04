@@ -98,6 +98,31 @@ HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* 
     return iResult;
 }
 
+std::string CodepointToUTF8(int cp)
+{
+    std::string out;
+    if (cp <= 0x7F)
+        out += static_cast<char>(cp);
+    else if (cp <= 0x7FF)
+    {
+        out += static_cast<char>(0xC0 | ((cp >> 6) & 0x1F));
+        out += static_cast<char>(0x80 | (cp & 0x3F));
+    }
+    else if (cp <= 0xFFFF)
+    {
+        out += static_cast<char>(0xE0 | ((cp >> 12) & 0x0F));
+        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        out += static_cast<char>(0x80 | (cp & 0x3F));
+    }
+    else // > 0xFFFF
+    {
+        out += static_cast<char>(0xF0 | ((cp >> 18) & 0x07));
+        out += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+        out += static_cast<char>(0x80 | (cp & 0x3F));
+    }
+    return out;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -137,6 +162,14 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
 
     // Just set one decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);  
+
+    // ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+    // for (int i = 0xf000; i <= 0xfaff; i++)
+    // {
+    //     std::string icon = CodepointToUTF8(i);
+    //     ImGui::Text("%s : 0x%04X", icon.c_str(), i);
+    // }
+    // ImGui::PopFont();
    
     // Drawing graphics features.
     {

@@ -2,14 +2,10 @@
 
 #include <algorithm>
 #include <chrono>
-#include <condition_variable>
 #include <cstdint>
-#include <fibersapi.h>
-#include <memory>
-#include <wingdi.h>
-#include <winscard.h>
-#include <winuser.h>
 
+
+#include "../../../Extra/math.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
 #include "../../FeatureHandler.h"
@@ -31,7 +27,7 @@ constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres w
 constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
 constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
 
-constexpr float TAB_NAME_PADDING_IN_PXL   = 5.0f; // Padding above and below a tab's name in side menu.
+constexpr float TAB_NAME_PADDING_IN_PXL   = 8.0f; // Padding above and below a tab's name in side menu.
 constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
 
 constexpr float WIDGET_ROUNDING           = 3.0f;
@@ -246,9 +242,26 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
         {
             ImGui::PushFont(m_pTitleFont);
             
-            std::string szMyName("INSANE.tf2");
-            vIntroSize = ImVec2(ImGui::GetFont()->GetCharAdvance(' ') * szMyName.size(), ImGui::GetTextLineHeight());
+            std::string szMyName("INSANE");
+            ImGui::PushFont(Resources::Fonts::MontserratBlack);
+            ImVec2 vMyNameSize(ImGui::CalcTextSize(szMyName.c_str()));
+            ImGui::PopFont();
+
+            std::string szTarget(".tf2");
+            ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+            ImVec2 vTargetTextSize(ImGui::CalcTextSize(szTarget.c_str()));
+            ImGui::PopFont();
+
+            vIntroSize = ImVec2((vMyNameSize.x + vTargetTextSize.x), vMyNameSize.y);
+
+            ImGui::PushFont(Resources::Fonts::MontserratBlack);
             pDrawList->AddText(ImVec2(x + (flWidth - vIntroSize.x) / 2.0f, y + SECTION_PADDING_PXL), ImColor(m_clrTheme.GetAsImVec4()), szMyName.c_str());
+            ImGui::PopFont();
+
+            RGBA_t clrTargetName; _CalcTextClrForBg(clrTargetName, m_clrSecondary);
+            ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+            pDrawList->AddText(ImVec2(x + ((flWidth - vIntroSize.x) / 2.0f) + vMyNameSize.x, y + SECTION_PADDING_PXL + (vMyNameSize.y - vTargetTextSize.y)), ImColor(clrTargetName.GetAsImVec4()), szTarget.c_str());
+            ImGui::PopFont();
 
             ImGui::PopFont();
         }
@@ -263,6 +276,20 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
             "Combat", "Combat", "Combat", "Combat", "Combat", "Combat", 
             "Visual", "Visual", "Visual",
             "Misc", "Misc", "Misc" 
+        };
+        std::vector<const char8_t*> vecIconList = {
+            u8"\uee15", // icon 1
+            u8"\uf1e2", // icon 2
+            u8"\uf050", // icon 3
+            u8"\uf049", // icon 4
+            u8"\uf2f1", // icon 5
+            u8"\uf21b", // icon 6 
+            u8"\uf1fc", // icon 7   
+            u8"\uf121", // icon 8
+            u8"\uf085", // icon 9
+            u8"\uef0c", // icon 10
+            u8"\uf1b2", // icon 11
+            u8"\uf520"  // icon 12
         };
         constexpr float DISTINCT_CATAGORIES = 3.0f;
         std::string szCurrCatagory = "NULL";
@@ -280,8 +307,8 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
             }
 
             const std::vector<Tab_t*> vecTabs = Config::featureHandler.GetFeatureMap();
-            float flTabCount                = static_cast<float>(vecTabs.size());
-            float flSideMenuEffectiveHeight = ((DISTINCT_CATAGORIES - 1.0f) * CTG_NAME_PADDING_IN_PXL) + (flTabCount * vButtonSize.y) + (ImGui::GetTextLineHeight() * DISTINCT_CATAGORIES);
+            float flTabCount                  = static_cast<float>(vecTabs.size());
+            float flSideMenuEffectiveHeight   = ((DISTINCT_CATAGORIES - 1.0f) * CTG_NAME_PADDING_IN_PXL) + (flTabCount * vButtonSize.y) + (ImGui::GetTextLineHeight() * DISTINCT_CATAGORIES);
 
             if(flSideMenuEffectiveHeight < flHeight)
                 vCursorScreenPos = ImVec2(x, y + (flHeight - flSideMenuEffectiveHeight) / 3.0f);
@@ -295,7 +322,7 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
                 {
                     if(szCurrCatagory != tabBundlingHelper[iTabIndex])
                     {
-                        szCurrCatagory      = tabBundlingHelper[iTabIndex];
+                        szCurrCatagory = tabBundlingHelper[iTabIndex];
 
                         // Don't increment for the first tab, causing alignment issues.
                         if(iTabIndex > 0)
@@ -340,12 +367,21 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
                     }
                 }
 
-                if (ImGui::Button(std::string("    " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
+                if (ImGui::Button(("     " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
                 {
                     m_pActiveTab = pTab;
                     _ResetAnimation(m_lastResetTime, m_flAnimation);
                 }
      
+                ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+                float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+                ImGui::GetWindowDrawList()->AddText(
+                    ImVec2(vCursorScreenPos.x + flIconWidth, vCursorScreenPos.y + (vButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+                    ImColor(m_pActiveTab == pTab ? m_clrTheme.GetAsImVec4() : clrCatagoryText.GetAsImVec4()),
+                    reinterpret_cast<const char*>(vecIconList[iTabIndex])
+                );
+                ImGui::PopFont();
+
                 if(bNoHighlighting == true)
                     ImGui::PopStyleColor(3);
 
@@ -456,9 +492,16 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
         // Drawing Theme ImGuiCol_Border
         if(Features::Menu::SectionBoxes::ThemeBorder.IsActive() == true)
         {
+            ImVec2 vThemeBorderMin = *pSectionScreenPos;
+            vThemeBorderMin.x = std::clamp<float>(vThemeBorderMin.x, x,            x + flWidth);
+            vThemeBorderMin.y = std::clamp<float>(vThemeBorderMin.y, vWindowPos.y, vWindowPos.y + flHeight);
+
+            ImVec2 vThemeBorderMax(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y);
+            vThemeBorderMax.x = std::clamp<float>(vThemeBorderMax.x, x,            x + flWidth);
+            vThemeBorderMax.y = std::clamp<float>(vThemeBorderMax.y, vWindowPos.y, vWindowPos.y + flHeight);
+
             ImGui::GetWindowDrawList()->AddRect(
-                *pSectionScreenPos, 
-                ImVec2(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y), 
+                vThemeBorderMin, vThemeBorderMax,
                 ImColor(m_clrTheme.GetAsImVec4()),
                 Features::Menu::SectionBoxes::Rounding.GetData().m_flVal);
         }
