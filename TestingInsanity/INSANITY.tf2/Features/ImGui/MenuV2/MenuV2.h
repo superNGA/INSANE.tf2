@@ -56,8 +56,7 @@ private:
     // Helper functions...
     void _CalculateColors();
     void _CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const;
-    void _StyleSideMenuBottons();
-    void _PopAllStyles();
+    void _FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const;
 
     // Animation 
     void _CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime);
@@ -90,12 +89,14 @@ private:
     ImFont*        m_pFontSideMenu      = nullptr;
     ImFont*        m_pFontCatagoryName  = nullptr;
     ImFont*        m_pPopupFont         = nullptr;
+    ImFont*        m_pTitleFont         = nullptr;
 };
 ///////////////////////////////////////////////////////////////////////////
 
 DECLARE_CUSTOM_OBJECT(menuGUI, MenuGUI_t, Render)
 
-DEFINE_TAB(Menu, 7)
+DEFINE_TAB(Menu, 9)
+
 
 ////////////////////////////// MAIN BODY ////////////////////////////////////
 DEFINE_SECTION(Menu, "Menu", 1)
@@ -113,6 +114,7 @@ DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, Menu, Menu, 8, FloatSlider_t(0.0
 DEFINE_FEATURE(Rounding,         FloatSlider_t, Menu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f)) 
 DEFINE_FEATURE(Draw_Guides,      bool,          Menu, Menu, 10, true)
 
+
 ////////////////////////////// SIDE MENU ////////////////////////////////////
 DEFINE_SECTION(SideMenu, "Menu", 2)
 DEFINE_FEATURE(Scale,            FloatSlider_t, SideMenu, Menu, 1, FloatSlider_t(1.0f, 0.25f, 2.0f))
@@ -127,6 +129,8 @@ DEFINE_FEATURE(rgb,              bool,          SideMenu, Menu, 7, false)
 DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, SideMenu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
 DEFINE_FEATURE(Rounding,         FloatSlider_t, SideMenu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f))
+DEFINE_FEATURE(AnimAccentSize,   FloatSlider_t, SideMenu, Menu, 10, FloatSlider_t(30.0f, 0.0f, 200.0f))
+
 
 ////////////////////////////// THEME ////////////////////////////////////
 DEFINE_SECTION(Theme, "Menu", 3)

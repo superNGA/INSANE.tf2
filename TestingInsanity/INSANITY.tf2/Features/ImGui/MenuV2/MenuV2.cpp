@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <fibersapi.h>
+#include <memory>
 #include <wingdi.h>
 #include <winscard.h>
 #include <winuser.h>
@@ -29,6 +31,9 @@ constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres w
 constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
 constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
 
+constexpr float TAB_NAME_PADDING_IN_PXL   = 5.0f; // Padding above and below a tab's name in side menu.
+constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
+
 constexpr float WIDGET_ROUNDING           = 3.0f;
 constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
 constexpr float POPUP_ROUNDING            = 5.0f;
@@ -38,6 +43,7 @@ constexpr float ANIM_COMPLETION_TOLERANCE = 0.005f;
 constexpr float ANIM_COMPLETE             = 1.0f;
 constexpr float ANIM_ZERO                 = 0.0f;
 constexpr float ANIM_DURATION_IN_SEC      = 0.3f;
+
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -55,11 +61,13 @@ MenuGUI_t::MenuGUI_t()
 void MenuGUI_t::_InitFonts()
 {
     // Initializing fonts.
-    m_pFontFeatures     = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pFontSectionName  = Resources::Fonts::JetBrains_SemiBold_NL_Small; 
-    m_pFontSideMenu     = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pFontCatagoryName = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pPopupFont        = Resources::Fonts::JetBrains_SemiBold_NL_Small;
+    m_pFontFeatures     = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pFontSectionName  = Resources::Fonts::JetBrainsMonoNerd_Small; 
+    m_pFontSideMenu     = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pFontCatagoryName = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pPopupFont        = Resources::Fonts::JetBrainsMonoNerd_Small;
+
+    m_pTitleFont        = Resources::Fonts::JetBrains_SemiBold_NL_Mid;
 }
 
 
@@ -201,10 +209,8 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
 {
     ImGuiWindowFlags iWindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
-    const float flSideMenuPadding = flWidth * 0.025f;
-    {
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(flSideMenuPadding, flSideMenuPadding));
-    }
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,  ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 
     ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::SetNextWindowSize(ImVec2(flWidth, flHeight));
@@ -213,7 +219,6 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
     {
         // Pos & Size
         m_pSideMenu->SetVertex(vec(x, y, 0.0f), vec(x + flWidth, y + flHeight, 0.0f));
-        ImGui::Text("INSANE.tf2");
 
         // Blur
         float flBlurAmmount = Features::Menu::SideMenu::Blur.GetData().m_flVal;
@@ -233,43 +238,130 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
         // Rounding
         m_pSideMenu->SetRounding(Features::Menu::SideMenu::Rounding.GetData().m_flVal);
 
-        
-        // Drawing tabs.
-        const ImVec2 vButtonSize(flWidth - (flSideMenuPadding * 4.0f), flHeight / 20.0f);
-        _StyleSideMenuBottons();
+        ImGui::PushFont(m_pFontSideMenu);
+
+        // Drawing MY NAME :)
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        ImVec2 vIntroSize;
         {
-            const std::vector<Tab_t*> vecTabs = Config::featureHandler.GetFeatureMap();
-            for (Tab_t* pTab : vecTabs)
+            ImGui::PushFont(m_pTitleFont);
+            
+            std::string szMyName("INSANE.tf2");
+            vIntroSize = ImVec2(ImGui::GetFont()->GetCharAdvance(' ') * szMyName.size(), ImGui::GetTextLineHeight());
+            pDrawList->AddText(ImVec2(x + (flWidth - vIntroSize.x) / 2.0f, y + SECTION_PADDING_PXL), ImColor(m_clrTheme.GetAsImVec4()), szMyName.c_str());
+
+            ImGui::PopFont();
+        }
+
+        // Drawing tabs.
+        ImVec2 vButtonSize(flWidth, ImGui::GetTextLineHeight() + (2.0f * TAB_NAME_PADDING_IN_PXL));
+        ImVec2 vCursorScreenPos(x, y + (2.0f * SECTION_PADDING_PXL) + vIntroSize.y);
+
+        // This will help us bundle tab buttons which are of same catagory.
+        // Whenever the string changes, we leave a bigger gap & write the catagory name on top.
+        std::vector<std::string> tabBundlingHelper = {
+            "Combat", "Combat", "Combat", "Combat", "Combat", "Combat", 
+            "Visual", "Visual", "Visual",
+            "Misc", "Misc", "Misc" 
+        };
+        constexpr float DISTINCT_CATAGORIES = 3.0f;
+        std::string szCurrCatagory = "NULL";
+        {
+            RGBA_t clrHighLightClr; _FindElevatedClr(clrHighLightClr, m_clrSecondary);
+            RGBA_t clrCatagoryText; _CalcTextClrForBg(clrCatagoryText, m_clrSecondary);
             {
-                bool bShouldPop = false;
-                if (pTab == m_pActiveTab)
+                ImGui::PushStyleColor(ImGuiCol_Button,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered,      clrHighLightClr.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,       clrHighLightClr.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,               clrCatagoryText.GetAsImVec4());
+
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+            }
+
+            const std::vector<Tab_t*> vecTabs = Config::featureHandler.GetFeatureMap();
+            float flTabCount                = static_cast<float>(vecTabs.size());
+            float flSideMenuEffectiveHeight = ((DISTINCT_CATAGORIES - 1.0f) * CTG_NAME_PADDING_IN_PXL) + (flTabCount * vButtonSize.y) + (ImGui::GetTextLineHeight() * DISTINCT_CATAGORIES);
+
+            if(flSideMenuEffectiveHeight < flHeight)
+                vCursorScreenPos = ImVec2(x, y + (flHeight - flSideMenuEffectiveHeight) / 3.0f);
+
+            for (int iTabIndex = 0; iTabIndex < vecTabs.size(); iTabIndex++)
+            {
+                Tab_t* pTab = vecTabs[iTabIndex];
+
+                // Drawing catagory name.
+                if(iTabIndex < tabBundlingHelper.size())
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button, m_clrSideMenuButtons.GetAsImVec4());
-                    bShouldPop = true;
+                    if(szCurrCatagory != tabBundlingHelper[iTabIndex])
+                    {
+                        szCurrCatagory      = tabBundlingHelper[iTabIndex];
+
+                        // Don't increment for the first tab, causing alignment issues.
+                        if(iTabIndex > 0)
+                            vCursorScreenPos.y += CTG_NAME_PADDING_IN_PXL;
+
+                        // finally, writting catagory text.
+                        clrCatagoryText.a = 150;
+                        pDrawList->AddText(ImVec2(vCursorScreenPos.x + SECTION_PADDING_PXL, vCursorScreenPos.y), ImColor(clrCatagoryText.GetAsImVec4()), szCurrCatagory.c_str());
+                        vCursorScreenPos.y += ImGui::GetTextLineHeight();
+                        clrCatagoryText.a = 255;
+                    }
                 }
 
+                // Maintain the cursor position strictly so padding doesn't fuck with our stuff.
+                ImGui::SetCursorScreenPos(vCursorScreenPos);
 
-                ImGui::PushFont(m_pFontSideMenu);
+                static bool bNoHighlighting = false;
+                bNoHighlighting = (m_pActiveTab == pTab);
+
+                if(m_pActiveTab != nullptr)
+                {
+                    if(m_pActiveTab == pTab)
+                    {
+                        ImVec2 vButtonAnimationMin((vCursorScreenPos.x + flWidth - (flWidth * m_flAnimation)), vCursorScreenPos.y);
+                        ImVec2 vButtonAnimationMax(vCursorScreenPos.x + flWidth + 2.0f, vCursorScreenPos.y + vButtonSize.y); 
+                        
+                        pDrawList->AddRectFilled(
+                            ImVec2(vButtonAnimationMin.x - Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal, vButtonAnimationMin.y),
+                            ImVec2(vButtonAnimationMin.x, vButtonAnimationMax.y),
+                            ImColor(m_clrTheme.GetAsImVec4()));
+
+                        pDrawList->AddRectFilled(
+                            vButtonAnimationMin,
+                            vButtonAnimationMax,
+                            ImColor(m_clrPrimary.GetAsImVec4()));
+
+                        // If we are drawing highlighting for this button ourselves, then tell ImGui to fuck off. ( no hate )
+                        bNoHighlighting = true;
+                        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                    }
+                }
+
                 if (ImGui::Button(std::string("    " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
                 {
                     m_pActiveTab = pTab;
                     _ResetAnimation(m_lastResetTime, m_flAnimation);
                 }
-                ImGui::PopFont();
+     
+                if(bNoHighlighting == true)
+                    ImGui::PopStyleColor(3);
 
+                vCursorScreenPos.y += vButtonSize.y;
+            }
 
-                if (bShouldPop == true)
-                {
-                    ImGui::PopStyleColor();
-                }
+            {
+                ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
             }
         }
-        _PopAllStyles();
 
+        ImGui::PopFont();
         ImGui::End();
     }
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 }
 
 
@@ -486,14 +578,19 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
         RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pBoolFeature->m_szTabName + pBoolFeature->m_szSectionName + pBoolFeature->m_szFeatureDisplayName).c_str(), ImVec2(flCheckBoxSide, flCheckBoxSide)) == true)
+        
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pBoolFeature->m_szTabName;
+        szButtonText += pBoolFeature->m_szSectionName;
+        szButtonText += pBoolFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flCheckBoxSide, flCheckBoxSide)) == true)
         {
             _TriggerPopup(pFeature);
         }
@@ -601,14 +698,18 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
         RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pIntFeature->m_szTabName + pIntFeature->m_szSectionName + pIntFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pIntFeature->m_szTabName;
+        szButtonText += pIntFeature->m_szSectionName;
+        szButtonText += pIntFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
             _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
@@ -755,14 +856,18 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
         RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pFloatFeature->m_szTabName;
+        szButtonText += pFloatFeature->m_szSectionName;
+        szButtonText += pFloatFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
             _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
@@ -987,16 +1092,20 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
         RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
 
-        if(ImGui::Button(("?##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str(), ImVec2(flColorPreviewSide, flColorPreviewSide)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pColorFeature->m_szTabName;
+        szButtonText += pColorFeature->m_szSectionName;
+        szButtonText += pColorFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
         }
@@ -2067,30 +2176,13 @@ void MenuGUI_t::_CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) con
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_StyleSideMenuBottons()
+void MenuGUI_t::_FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const
 {
-    // TODO : Set active buttons color to primary.
-    ImGui::PushStyleColor(ImGuiCol_Button,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,      m_clrSideMenuButtons.GetAsImVec4());
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,       m_clrSideMenuButtons.GetAsImVec4());
-    m_nPushedStyleColors += 3;
+    HSVA_t hsv = vBGClr.ToHSVA();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(0.0f, 0.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
-    m_nPushedStyleVars += 3;
-}
+    hsv.v = hsv.v >= 0.6f ? hsv.v - 0.3f : hsv.v + 0.3f;
 
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_PopAllStyles()
-{
-    assert(m_nPushedStyleColors >= 0 && "Pushed styles count is negative");
-    assert(m_nPushedStyleVars   >= 0 && "Pushed styles vars is negative");
-
-    ImGui::PopStyleColor(m_nPushedStyleColors); m_nPushedStyleColors = 0;
-    ImGui::PopStyleVar(m_nPushedStyleVars);     m_nPushedStyleVars   = 0;
+    vClrOut = hsv.ToRGBA();
 }
 
 

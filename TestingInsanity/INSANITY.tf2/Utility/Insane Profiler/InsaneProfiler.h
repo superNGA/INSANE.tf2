@@ -206,7 +206,7 @@ struct ScopeData_t
 ////////////////////////  UI  //////////////////////////////////////////
 //#if (ENABLE_INSANE_PROFILER == true)
 
-DEFINE_TAB(Insane_Profiler, 10);
+DEFINE_TAB(Insane_Profiler, 12);
 DEFINE_SECTION(Settings, "Insane_Profiler", 1);
 
 DEFINE_FEATURE(

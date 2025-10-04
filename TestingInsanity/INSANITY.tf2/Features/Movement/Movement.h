@@ -31,7 +31,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(movement, Movement_t)
 
-DEFINE_TAB(Movement, 4);
+DEFINE_TAB(Movement, 10);
 DEFINE_SECTION(Movement, "Movement", 1)
 
 DEFINE_FEATURE(Bhop,           bool, Movement, Movement, 1, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind)

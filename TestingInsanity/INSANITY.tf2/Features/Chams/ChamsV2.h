@@ -24,7 +24,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(chamsV2, ChamsV2_t)
 
-DEFINE_TAB(Materials, 12)
+DEFINE_TAB(Materials, 7)
 DEFINE_SECTION(Materials, "Materials", 1)
 
 static const char* pDummyList[] = {"NULL"};

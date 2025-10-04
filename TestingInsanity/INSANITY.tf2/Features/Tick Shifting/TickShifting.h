@@ -62,7 +62,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(tickShifter, TickShifter_t)
 
-DEFINE_TAB(TickShifter, 8)
+DEFINE_TAB(TickShifter, 3)
 DEFINE_SECTION(TickShifter, "TickShifter", 1)
 
 DEFINE_FEATURE(ForceCharge, bool, TickShifter, TickShifter, 1, false, 

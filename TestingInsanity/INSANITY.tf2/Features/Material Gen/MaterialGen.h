@@ -182,6 +182,6 @@ extern std::vector<std::string> g_vecVMTKeyWords;
 
 DECLARE_FEATURE_OBJECT(materialGen, MaterialGen_t)
 
-DEFINE_TAB(MaterialGen, 11)
+DEFINE_TAB(MaterialGen, 8)
 DEFINE_SECTION(MaterialGen, "MaterialGen", 1)
 DEFINE_FEATURE(Enable, bool, MaterialGen, MaterialGen, 1, false)

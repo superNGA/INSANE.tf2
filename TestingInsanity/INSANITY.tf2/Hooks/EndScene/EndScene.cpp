@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <format>
 #include "EndScene.h"
+#include <cwchar>
 
 // SDK
 #include "../../SDK/class/IVEngineClient.h"
@@ -135,8 +136,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
     ImGui::NewFrame();
 
     // Just set one decent font for now.
-    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
-
+    ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);  
+   
     // Drawing graphics features.
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)

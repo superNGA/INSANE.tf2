@@ -18,7 +18,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(fakeLag, FakeLag_t)
 
-DEFINE_TAB(Misc, 3)
+DEFINE_TAB(Misc, 11)
 DEFINE_SECTION(FakeLag, "Misc", 1)
 
 DEFINE_FEATURE(fakeLag,      bool,        FakeLag, Misc,   1, false,                 FeatureFlag_None)

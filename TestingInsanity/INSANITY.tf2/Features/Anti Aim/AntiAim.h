@@ -34,7 +34,7 @@ private:
 
 DECLARE_FEATURE_OBJECT(antiAim, AntiAim_t);
 
-DEFINE_TAB(AntiAim, 1)
+DEFINE_TAB(AntiAim, 5)
 DEFINE_SECTION(AntiAim, "AntiAim", 1)
 
 DEFINE_FEATURE(AntiAim, bool, AntiAim, AntiAim, 1, false, FeatureFlag_None, "Makes you harder to hit :)")
