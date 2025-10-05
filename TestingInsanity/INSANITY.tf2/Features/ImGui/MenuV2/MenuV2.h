@@ -22,6 +22,17 @@ public:
     bool ShouldRecordKey() const;
     void ReturnRecordedKey(int64_t iKey);
 
+    void GetPos(float& x, float& y) const;
+    void GetSize(float& flWidth, float& flHeight) const;
+
+    RGBA_t GetPrimaryClr()   const;
+    RGBA_t GetSecondaryClr() const;
+    RGBA_t GetThemeClr()     const;
+
+    void CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const;
+    void CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime);
+    void ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut);
+
 private:
     bool m_bVisible = true;
 
@@ -35,6 +46,8 @@ private:
     ImVec2 _DrawMainBody(float flWidth, float flHeight);
     void   _DrawTabBar(float flWidth, float flHeight, float x, float y);
     void   _DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y);
+    ImVec2 m_vMenuPos;
+    ImVec2 m_vMenuSize;
 
     ImVec2 _CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const;
 
@@ -55,12 +68,9 @@ private:
 
     // Helper functions...
     void _CalculateColors();
-    void _CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const;
     void _FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const;
 
     // Animation 
-    void _CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime);
-    void _ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut);
     std::chrono::high_resolution_clock::time_point m_lastResetTime;
     float m_flAnimation = 0.0f;
 

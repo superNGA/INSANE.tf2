@@ -18,6 +18,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/PlayerList/PlayerListV2.h"
 #include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
@@ -98,31 +99,6 @@ HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* 
     return iResult;
 }
 
-std::string CodepointToUTF8(int cp)
-{
-    std::string out;
-    if (cp <= 0x7F)
-        out += static_cast<char>(cp);
-    else if (cp <= 0x7FF)
-    {
-        out += static_cast<char>(0xC0 | ((cp >> 6) & 0x1F));
-        out += static_cast<char>(0x80 | (cp & 0x3F));
-    }
-    else if (cp <= 0xFFFF)
-    {
-        out += static_cast<char>(0xE0 | ((cp >> 12) & 0x0F));
-        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
-        out += static_cast<char>(0x80 | (cp & 0x3F));
-    }
-    else // > 0xFFFF
-    {
-        out += static_cast<char>(0xF0 | ((cp >> 18) & 0x07));
-        out += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
-        out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
-        out += static_cast<char>(0x80 | (cp & 0x3F));
-    }
-    return out;
-}
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -162,14 +138,6 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
 
     // Just set one decent font for now.
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);  
-
-    // ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
-    // for (int i = 0xf000; i <= 0xfaff; i++)
-    // {
-    //     std::string icon = CodepointToUTF8(i);
-    //     ImGui::Text("%s : 0x%04X", icon.c_str(), i);
-    // }
-    // ImGui::PopFont();
    
     // Drawing graphics features.
     {
@@ -177,13 +145,14 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         {
             F::graphicsEngine.Run(pDevice);
 
-            Render::playerList.Draw();
+            // Render::playerList.Draw();
             Render::InfoWindow.Draw();
             insaneProfiler.Render();
         }
 
         Render::uiMenu.Draw();
-        Render::menuGUI.SetVisible(UI::UI_visble); Render::menuGUI.Draw();
+        Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
+        Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
         F::materialGen.Run();
         
         // Model Rendering.

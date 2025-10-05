@@ -199,6 +199,12 @@
 },
 {
   "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerListV2.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerListV2.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerListV2.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\ImGui\\PlayerList\\PlayerListV2.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
   "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Material_Gen\\MaterialGen.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Material Gen\\MaterialGen.cpp\"",
   "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Features\\Material Gen\\MaterialGen.cpp",
   "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Features\\Material_Gen\\MaterialGen.cpp.obj"
