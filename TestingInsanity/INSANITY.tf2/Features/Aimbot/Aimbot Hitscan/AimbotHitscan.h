@@ -23,13 +23,13 @@ DECLARE_FEATURE_OBJECT(aimbotHitscan, AimbotHitscan_t)
 
 DEFINE_SECTION(HitscanAimbot, "Aimbot", 4)
 
-DEFINE_FEATURE(Enable,   bool, HitscanAimbot, Aimbot, 1, false, 
+DEFINE_FEATURE(Enable,   "Enable", bool, HitscanAimbot, Aimbot, 1, false, 
     FeatureFlag_SupportKeyBind)
 
-DEFINE_FEATURE(AutoFire, bool, HitscanAimbot, Aimbot, 2, false, 
+DEFINE_FEATURE(AutoFire, "Auto-Fire", bool, HitscanAimbot, Aimbot, 2, false, 
     FeatureFlag_SupportKeyBind)
 
-DEFINE_FEATURE(FOV, FloatSlider_t, HitscanAimbot, Aimbot, 3, FloatSlider_t(10.0f, 0.0f, 180.0f),
+DEFINE_FEATURE(FOV, "FOV", FloatSlider_t, HitscanAimbot, Aimbot, 3, FloatSlider_t(10.0f, 0.0f, 180.0f),
     FeatureFlag_SupportKeyBind, "FOV Range for aimbot to search")
 
-DEFINE_FEATURE(ForceFail_BackTrack, bool, HitscanAimbot, Aimbot, 4, false)
+DEFINE_FEATURE(ForceFail_BackTrack, "Eat turd", bool, HitscanAimbot, Aimbot, 4, false)

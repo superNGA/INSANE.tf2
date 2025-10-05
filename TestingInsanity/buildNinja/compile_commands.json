@@ -421,6 +421,24 @@
 },
 {
   "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_Nerd\\JetBrainsMonoNerd.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono Nerd\\JetBrainsMonoNerd.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\JetBrains Mono Nerd\\JetBrainsMonoNerd.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\JetBrains_Mono_Nerd\\JetBrainsMonoNerd.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\Montserrat\\MontserratBlack.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\Montserrat\\MontserratBlack.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\Montserrat\\MontserratBlack.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\Montserrat\\MontserratBlack.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
+  "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\ShadowIntoLight\\ShadowIntoLight.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\ShadowIntoLight\\ShadowIntoLight.cpp\"",
+  "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\Resources\\Fonts\\ShadowIntoLight\\ShadowIntoLight.cpp",
+  "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\Resources\\Fonts\\ShadowIntoLight\\ShadowIntoLight.cpp.obj"
+},
+{
+  "directory": "D:/Github Repos/INSANE.tf2/TestingInsanity/buildNinja",
   "command": "C:\\PROGRA~1\\LLVM\\bin\\clang.exe -DInsane_tf2_EXPORTS -I\"C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include\" -O0 -g -Xclang -gcodeview -std=gnu++20 -D_DEBUG -D_DLL -D_MT -Xclang --dependent-lib=msvcrtd /SUBSYSTEM:WINDOWS -o CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp.obj -c \"D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp\"",
   "file": "D:\\Github Repos\\INSANE.tf2\\TestingInsanity\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp",
   "output": "CMakeFiles\\Insane_tf2.dir\\INSANITY.tf2\\SDK\\Aimbot\\aimbot_t.cpp.obj"

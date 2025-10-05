@@ -73,5 +73,5 @@ DECLARE_FEATURE_OBJECT(aimbotHelper, AimbotHelper_t)
 DEFINE_TAB(Aimbot, 1)
 
 DEFINE_SECTION(View, "Misc", 2)
-DEFINE_FEATURE(FOV,           FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
-DEFINE_FEATURE(ViewModel_FOV, FloatSlider_t, View, Misc, 2, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(FOV,           "FOV",           FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(ViewModel_FOV, "ViewModel FOV", FloatSlider_t, View, Misc, 2, FloatSlider_t(90.0f, 0.0f, 180.0f));

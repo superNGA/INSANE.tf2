@@ -67,6 +67,9 @@ private:
     std::chrono::high_resolution_clock::time_point m_popupOpenTime;
     float m_flPopupAnimation = 0.0f;
 
+    std::chrono::high_resolution_clock::time_point m_colorPickerOpenTime;
+    float m_flColorPickerAnim = 0.0f;
+
     Tab_t* m_pActiveTab = nullptr;
     std::vector<BoxFilled2D_t*> m_vecSectionBoxes = {}; // Holds draw objects for secton UI boxes.
 
@@ -100,54 +103,54 @@ DEFINE_TAB(Menu, 9)
 
 ////////////////////////////// MAIN BODY ////////////////////////////////////
 DEFINE_SECTION(Menu, "Menu", 1)
-DEFINE_FEATURE(Scale,            FloatSlider_t, Menu, Menu, 1, FloatSlider_t(1.0f, 0.25f, 2.0f))
-DEFINE_FEATURE(Blur,             FloatSlider_t, Menu, Menu, 2, FloatSlider_t(0.0f, 0.0f, 8.0f))
+DEFINE_FEATURE(Scale,            "Scale", FloatSlider_t, Menu, Menu, 1, FloatSlider_t(1.0f, 0.25f, 2.0f))
+DEFINE_FEATURE(Blur,             "Blur", FloatSlider_t, Menu, Menu, 2, FloatSlider_t(0.0f, 0.0f, 8.0f))
 
-DEFINE_FEATURE(ColorTopRight,    ColorData_t,   Menu, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorTopLeft,     ColorData_t,   Menu, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomRight, ColorData_t,   Menu, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomLeft,  ColorData_t,   Menu, Menu, 6, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopRight,    "Top-Right Color", ColorData_t,   Menu, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopLeft,     "Top-Left Color", ColorData_t,   Menu, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomRight, "Bottom-Right Color", ColorData_t,   Menu, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomLeft,  "Bottom-Left Color", ColorData_t,   Menu, Menu, 6, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
 
-DEFINE_FEATURE(rgb,              bool,          Menu, Menu, 7, false)
-DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, Menu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
+DEFINE_FEATURE(rgb,              "RGB", bool,          Menu, Menu, 7, false)
+DEFINE_FEATURE(RGBSpeed,         "RGB Speed", FloatSlider_t, Menu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
-DEFINE_FEATURE(Rounding,         FloatSlider_t, Menu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f)) 
-DEFINE_FEATURE(Draw_Guides,      bool,          Menu, Menu, 10, true)
+DEFINE_FEATURE(Rounding,         "Rounding", FloatSlider_t, Menu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f)) 
+DEFINE_FEATURE(Draw_Guides,      "Draw Guides", bool,          Menu, Menu, 10, true)
 
 
 ////////////////////////////// SIDE MENU ////////////////////////////////////
 DEFINE_SECTION(SideMenu, "Menu", 2)
-DEFINE_FEATURE(Scale,            FloatSlider_t, SideMenu, Menu, 1, FloatSlider_t(1.0f, 0.25f, 2.0f))
-DEFINE_FEATURE(Blur,             FloatSlider_t, SideMenu, Menu, 2, FloatSlider_t(0.0f, 0.0f, 8.0f))
+DEFINE_FEATURE(Scale,            "Scale", FloatSlider_t, SideMenu, Menu, 1, FloatSlider_t(1.0f, 0.25f, 2.0f))
+DEFINE_FEATURE(Blur,             "Blur", FloatSlider_t, SideMenu, Menu, 2, FloatSlider_t(0.0f, 0.0f, 8.0f))
 
-DEFINE_FEATURE(ColorTopRight,    ColorData_t,   SideMenu, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorTopLeft,     ColorData_t,   SideMenu, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomRight, ColorData_t,   SideMenu, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomLeft,  ColorData_t,   SideMenu, Menu, 6, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopRight,    "Top-Right Color", ColorData_t,   SideMenu, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopLeft,     "Top-Left Color", ColorData_t,   SideMenu, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomRight, "Bottom-Right Color", ColorData_t,   SideMenu, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomLeft,  "Bottom-Left Color", ColorData_t,   SideMenu, Menu, 6, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
 
-DEFINE_FEATURE(rgb,              bool,          SideMenu, Menu, 7, false)
-DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, SideMenu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
+DEFINE_FEATURE(rgb,              "RGB", bool,          SideMenu, Menu, 7, false)
+DEFINE_FEATURE(RGBSpeed,         "RGB Speed", FloatSlider_t, SideMenu, Menu, 8, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
-DEFINE_FEATURE(Rounding,         FloatSlider_t, SideMenu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f))
-DEFINE_FEATURE(AnimAccentSize,   FloatSlider_t, SideMenu, Menu, 10, FloatSlider_t(30.0f, 0.0f, 200.0f))
+DEFINE_FEATURE(Rounding,         "Rounding", FloatSlider_t, SideMenu, Menu, 9, FloatSlider_t(15.0f, 0.0f, 100.0f))
+DEFINE_FEATURE(AnimAccentSize,   "Animation Accent Size", FloatSlider_t, SideMenu, Menu, 10, FloatSlider_t(30.0f, 0.0f, 200.0f))
 
 
 ////////////////////////////// THEME ////////////////////////////////////
 DEFINE_SECTION(Theme, "Menu", 3)
-DEFINE_FEATURE(Theme, ColorData_t, Theme, Menu, 1, ColorData_t(RGBA_t((unsigned char)255, 0, 0, 255)))
+DEFINE_FEATURE(Theme, "Theme Color", ColorData_t, Theme, Menu, 1, ColorData_t(RGBA_t((unsigned char)255, 0, 0, 255)))
 
 
 ////////////////////////////// SECTION BOXES ////////////////////////////////////
 DEFINE_SECTION(SectionBoxes, "Menu", 4)
-DEFINE_FEATURE(Blur,             FloatSlider_t, SectionBoxes, Menu, 1, FloatSlider_t(0.0f, 0.0f, 8.0f))
+DEFINE_FEATURE(Blur,             "Blur", FloatSlider_t, SectionBoxes, Menu, 1, FloatSlider_t(0.0f, 0.0f, 8.0f))
 
-DEFINE_FEATURE(ColorTopRight,    ColorData_t,   SectionBoxes, Menu, 2, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorTopLeft,     ColorData_t,   SectionBoxes, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomRight, ColorData_t,   SectionBoxes, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
-DEFINE_FEATURE(ColorBottomLeft,  ColorData_t,   SectionBoxes, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopRight,    "Top-Right Color", ColorData_t,   SectionBoxes, Menu, 2, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorTopLeft,     "Top-Left Color", ColorData_t,   SectionBoxes, Menu, 3, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomRight, "Bottom-Right Color", ColorData_t,   SectionBoxes, Menu, 4, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
+DEFINE_FEATURE(ColorBottomLeft,  "Bottom-Left Color", ColorData_t,   SectionBoxes, Menu, 5, ColorData_t(RGBA_t((unsigned char)255, 255, 255, 255)))
 
-DEFINE_FEATURE(rgb,              bool,          SectionBoxes, Menu, 6, false)
-DEFINE_FEATURE(RGBSpeed,         FloatSlider_t, SectionBoxes, Menu, 7, FloatSlider_t(0.0f, 0.0f, 10.0f))
+DEFINE_FEATURE(rgb,              "RGB", bool,          SectionBoxes, Menu, 6, false)
+DEFINE_FEATURE(RGBSpeed,         "RGB Speed", FloatSlider_t, SectionBoxes, Menu, 7, FloatSlider_t(0.0f, 0.0f, 10.0f))
 
-DEFINE_FEATURE(Rounding,         FloatSlider_t, SectionBoxes, Menu, 8, FloatSlider_t(15.0f, 0.0f, 100.0f), FeatureFlag_SupportKeyBind)
-DEFINE_FEATURE(ThemeBorder,      bool,          SectionBoxes, Menu, 9, false)
+DEFINE_FEATURE(Rounding,         "Rounding", FloatSlider_t, SectionBoxes, Menu, 8, FloatSlider_t(15.0f, 0.0f, 100.0f), FeatureFlag_SupportKeyBind)
+DEFINE_FEATURE(ThemeBorder,      "Theme Borders", bool,          SectionBoxes, Menu, 9, false)

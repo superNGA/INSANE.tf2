@@ -210,19 +210,19 @@ DEFINE_TAB(Insane_Profiler, 12);
 DEFINE_SECTION(Settings, "Insane_Profiler", 1);
 
 DEFINE_FEATURE(
-    Enable, bool, Settings, Insane_Profiler,
+    Enable, "Enable", bool, Settings, Insane_Profiler,
     1, true, FeatureFlag_SupportKeyBind,
     "Render profiler window"
 )
 
 DEFINE_FEATURE(
-    UpdateRate_InSec, FloatSlider_t, Settings, Insane_Profiler,
+    UpdateRate_InSec, "Update rate", FloatSlider_t, Settings, Insane_Profiler,
     2, FloatSlider_t(1.0f, 0.0f, 10.0f), FeatureFlag_None,
     "Will update data after this much time ( in seconds )."
 )
 
 DEFINE_FEATURE(
-    BG_Clr, ColorData_t, Settings, Insane_Profiler,
+    BG_Clr, "Color", ColorData_t, Settings, Insane_Profiler,
     3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlags::FeatureFlag_SupportKeyBind,
     "Background color for your profiler window"
 )

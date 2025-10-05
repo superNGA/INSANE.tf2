@@ -122,41 +122,41 @@ DECLARE_FEATURE_OBJECT(aimbotProjectile, AimbotProjectile_t)
 DEFINE_SECTION(Aimbot_Projectile, "Aimbot", 1);
 
 DEFINE_FEATURE(
-    ProjAimbot_Enable, bool, Aimbot_Projectile, Aimbot, 1, false,
+    ProjAimbot_Enable, "Enable", bool, Aimbot_Projectile, Aimbot, 1, false,
     FeatureFlag_SupportKeyBind, "Enables Projectile Aimbot :)"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_DebugPrediction, bool, Aimbot_Projectile, Aimbot, 2, false,
+    ProjAimbot_DebugPrediction, "Draw Prediction", bool, Aimbot_Projectile, Aimbot, 2, false,
     FeatureFlag_None, "Shows predicted position"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_MaxDistance, FloatSlider_t, Aimbot_Projectile, Aimbot, 3, FloatSlider_t(200.0f, 0.0f, 1000.0f),
+    ProjAimbot_MaxDistance, "Max Distance", FloatSlider_t, Aimbot_Projectile, Aimbot, 3, FloatSlider_t(200.0f, 0.0f, 1000.0f),
     FeatureFlag_None,
     "Max distance to target"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_FOV, FloatSlider_t, Aimbot_Projectile, Aimbot, 4,
+    ProjAimbot_FOV, "FOV", FloatSlider_t, Aimbot_Projectile, Aimbot, 4,
     FloatSlider_t(10.0f, 0.0f, 180.0f),
     FeatureFlag_SupportKeyBind,
     "FOV range for Projectile aimbot target"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_DebugMultiPoint, bool, Aimbot_Projectile, Aimbot, 5, false,
+    ProjAimbot_DebugMultiPoint, "Draw Multi Points", bool, Aimbot_Projectile, Aimbot, 5, false,
     FeatureFlag_None, "Draws all hitpoints searched for"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_MaxSimulationTime, FloatSlider_t, Aimbot_Projectile, Aimbot, 6,
+    ProjAimbot_MaxSimulationTime, "Max Simulation Time", FloatSlider_t, Aimbot_Projectile, Aimbot, 6,
     FloatSlider_t(2.0f, 0.5f, 5.0f), FeatureFlag_None,
     "Maximum future position to check for hitability. ( Affects Performance!! )"
 )
 
 DEFINE_FEATURE(
-    ProjAimbot_SimulateProjectile, bool, Aimbot_Projectile, Aimbot, 7,
+    ProjAimbot_SimulateProjectile, "Draw Projectile Path", bool, Aimbot_Projectile, Aimbot, 7,
     false, FeatureFlag_SupportKeyBind,
     "Shows the predicted path of projectiles"
 )
@@ -165,27 +165,27 @@ DEFINE_FEATURE(
 DEFINE_SECTION(Visuals, "Aimbot", 5);
 
 
-DEFINE_FEATURE(Speed, FloatSlider_t, Visuals, Aimbot,
+DEFINE_FEATURE(Speed, "Speed", FloatSlider_t, Visuals, Aimbot,
     1, FloatSlider_t(100.0f, 0.0f, 500.0f), FeatureFlag_None,
     "RGB speed")
 
-DEFINE_FEATURE(Thickness, FloatSlider_t, Visuals, Aimbot,
+DEFINE_FEATURE(Thickness, "Thickness", FloatSlider_t, Visuals, Aimbot,
     2, FloatSlider_t(5.0f, 1.0f, 100.0f), FeatureFlag_None,
     "ESP border thickness")
 
-DEFINE_FEATURE(CLR1, ColorData_t, Visuals, Aimbot,
+DEFINE_FEATURE(CLR1, "Color1", ColorData_t, Visuals, Aimbot,
     3, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
     "TOP_LEFT corner clr")
-DEFINE_FEATURE(CLR2, ColorData_t, Visuals, Aimbot,
+DEFINE_FEATURE(CLR2, "Color2", ColorData_t, Visuals, Aimbot,
     4, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
     "TOP_RIGHT corner clr")
-DEFINE_FEATURE(CLR3, ColorData_t, Visuals, Aimbot,
+DEFINE_FEATURE(CLR3, "Color3", ColorData_t, Visuals, Aimbot,
     5, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
     "BOTTON_LEFT corner clr")
-DEFINE_FEATURE(CLR4, ColorData_t, Visuals, Aimbot,
+DEFINE_FEATURE(CLR4, "Color4", ColorData_t, Visuals, Aimbot,
     6, ColorData_t(0.0f, 0.0f, 0.0f, 0.0f), FeatureFlag_None,
     "BOTTOM_RIGHT corner clr")
 
-DEFINE_FEATURE(GlowPower, FloatSlider_t, Visuals, Aimbot,
+DEFINE_FEATURE(GlowPower, "Glow Power", FloatSlider_t, Visuals, Aimbot,
     7, FloatSlider_t(3.0f, 0.0f, 25.0f), FeatureFlag_None,
     "Glow power maybe, IDK")
