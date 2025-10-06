@@ -9,9 +9,11 @@
 #include "../../../Extra/math.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
-#include "../../FeatureHandler.h"
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../SDK/class/IPanel.h"
+#include "../../../SDK/class/IVEngineClient.h"
+#include "../../FeatureHandler.h"
+#include "../../ModelPreview/ModelPreview.h"
 
 // Renderer
 #include "../../Graphics Engine V2/Graphics.h"
@@ -30,11 +32,6 @@ constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below se
 
 constexpr float TAB_NAME_PADDING_IN_PXL   = 8.0f; // Padding above and below a tab's name in side menu.
 constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
-
-constexpr float WIDGET_ROUNDING           = 3.0f;
-constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
-constexpr float POPUP_ROUNDING            = 5.0f;
-constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
 
 constexpr float ANIM_COMPLETION_TOLERANCE = 0.005f;
 constexpr float ANIM_COMPLETE             = 1.0f;
@@ -87,6 +84,7 @@ void MenuGUI_t::Draw()
     
     _CalculateColors();
     
+    // Animation calculations.
     CalculateAnim(m_lastResetTime,       m_flAnimation,       ANIM_DURATION_IN_SEC);
     CalculateAnim(m_popupOpenTime,       m_flPopupAnimation,  ANIM_DURATION_IN_SEC);
     CalculateAnim(m_colorPickerOpenTime, m_flColorPickerAnim, ANIM_DURATION_IN_SEC);
@@ -131,6 +129,14 @@ void MenuGUI_t::SetVisible(bool bVisible)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::IsVisible() const
+{
+    return m_bVisible;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool MenuGUI_t::_Initialize()
 {
     if (m_pMainMenu == nullptr)
@@ -163,16 +169,21 @@ bool MenuGUI_t::_Initialize()
 ///////////////////////////////////////////////////////////////////////////
 ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
 {
-    ImVec2           vWindowPos;
+    ImVec2           vWindowPos(0.0f, 0.0f);
     ImGuiWindowFlags iWindowFlags = 
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | 
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::SetNextWindowSize(ImVec2(flWidth, flHeight));
-    if (ImGui::Begin("##MainMenuGUI", nullptr, iWindowFlags) == true)
+    std::string szMainWindowName("##MainMenuGUI");
+    if (ImGui::Begin(szMainWindowName.c_str(), nullptr, iWindowFlags) == true)
     {
-        vWindowPos = ImGui::GetWindowPos();
+        vWindowPos = ImGui::GetWindowPos();    
+
+        // Clamp window pos
+        vWindowPos = _ClampWindowPos(vWindowPos); 
+        ImGui::SetWindowPos(vWindowPos);
 
         // Pos & Size
         m_pMainMenu->SetVertex(vec(vWindowPos.x, vWindowPos.y, 0.0f), vec(vWindowPos.x + flWidth, vWindowPos.y + flHeight, 0.0f));
@@ -196,7 +207,7 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
         m_pMainMenu->SetRounding(Features::Menu::Menu::Rounding.GetData().m_flVal);
 
         float flAnimatedScroll = (ANIM_COMPLETE - m_flAnimation) * 50.0f;
-        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll);
+        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll, vWindowPos);
 
         ImGui::End();
     }
@@ -409,12 +420,11 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y)
+void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y, ImVec2 vWindowPos)
 {
     if (pTab == nullptr)
         return;
 
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(x, y));
 
     {
@@ -472,11 +482,11 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
             ImGui::PushFont(m_pFontFeatures);
             switch (pFeature->m_iDataType)
             {
-            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean    (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_COLORDATA:   _DrawColor      (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider  (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown   (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
+            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean    (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_COLORDATA:   _DrawColor      (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider  (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown   (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
             default: break;
             }
             ImGui::PopFont();
@@ -585,7 +595,7 @@ ImVec2 MenuGUI_t::_CalculateSectionSize(int nFeatures, float flInterFeaturePaddi
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<bool>* pBoolFeature = reinterpret_cast<Feature<bool>*>(pFeature);
     
@@ -601,7 +611,6 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
     float  flCheckBoxSide  = ImGui::GetFrameHeight();
     float  flFeatureHeight = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth  = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos      = ImGui::GetWindowPos();
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
@@ -644,7 +653,7 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
             _TriggerPopup(pFeature);
         }
 
-        _DrawBooleanPopup(pFeature);
+        _DrawBooleanPopup(pFeature, vWindowPos);
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
@@ -670,7 +679,7 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<IntSlider_t>* pIntFeature = reinterpret_cast<Feature<IntSlider_t>*>(pFeature);
 
@@ -686,7 +695,6 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImGui::PushStyleColor(ImGuiCol_Text,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     // Drawing Feature's name
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y));
     constexpr float GAP_BEFORE_TRACK = 0.4f;
     ImGui::Text(pIntFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK));
@@ -764,7 +772,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
             ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
         }
 
-        _DrawIntSliderPopup(pFeature);
+        _DrawIntSliderPopup(pFeature, vWindowPos);
 
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
@@ -827,7 +835,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) 
+void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos) 
 {
     Feature<FloatSlider_t>* pFloatFeature = reinterpret_cast<Feature<FloatSlider_t>*>(pFeature);
 
@@ -843,7 +851,6 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::PushStyleColor(ImGuiCol_Text,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     // Drawing Feature's name
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y));
     constexpr float GAP_BEFORE_TRACK = 0.4f;
     ImGui::Text(pFloatFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK));
@@ -922,7 +929,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
             ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
         }
 
-        _DrawFloatSliderPopup(pFeature);
+        _DrawFloatSliderPopup(pFeature, vWindowPos);
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
@@ -984,7 +991,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     // Styling
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
@@ -1002,7 +1009,6 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
     float  flWidgetHeight     = ImGui::GetFrameHeight();
     float  flFeatureHeight    = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth     = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos         = ImGui::GetWindowPos();
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
@@ -1057,14 +1063,13 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<ColorData_t>* pColorFeature = reinterpret_cast<Feature<ColorData_t>*>(pFeature);
 
     float  flColorPreviewSide = ImGui::GetFrameHeight();
     float  flFeatureHeight    = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth     = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos         = ImGui::GetWindowPos();
     
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
@@ -1207,7 +1212,7 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
             _TriggerPopup(pFeature);
             ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
         }
-        _DrawColorPopup(pFeature);
+        _DrawColorPopup(pFeature, vWindowPos);
 
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
@@ -1256,7 +1261,7 @@ char VkToChar(int vk)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawColorPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1282,7 +1287,6 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1459,7 +1463,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1485,7 +1489,6 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1717,7 +1720,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1743,7 +1746,6 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1974,7 +1976,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -2000,7 +2002,6 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
     {
         float flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -2153,6 +2154,33 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
     ImGui::PopStyleVar(4);
 
     ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+ImVec2 MenuGUI_t::_ClampWindowPos(const ImVec2 vWindowPos)
+{
+    // Purpose : If the complete window is visible in the frame, then the vWindowPos is returned as it is. 
+    // else its clamped such that the complete window is visible in the frame.
+
+    int iModelPreviewWidth = 0, iModelPreviewHeight = 0; F::modelPreview.GetRenderViewSize(iModelPreviewHeight, iModelPreviewWidth);
+
+    ImGuiIO& io = ImGui::GetIO();
+    
+    float flMaxX = io.DisplaySize.x - (m_vMenuSize.x + iModelPreviewWidth + MENU_PADDING_IN_PXL);
+    float flMaxY = io.DisplaySize.y - m_vMenuSize.y;
+
+    ImVec2 vWindowPosClamped(vWindowPos);
+
+    // Only clamp if initialized ( else assertion fail )
+    if(flMaxX > 0.0f && flMaxY > 0.0f)
+    {
+        vWindowPosClamped.x = std::clamp<float>(vWindowPos.x, 0.0f, flMaxX);
+        vWindowPosClamped.y = std::clamp<float>(vWindowPos.y, 0.0f, flMaxY);
+    }
+
+    return vWindowPosClamped;
 }
 
 

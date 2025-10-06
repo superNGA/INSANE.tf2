@@ -40,6 +40,9 @@
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/PullFromAssembly.h"
 #include "../Graphics Engine V2/Graphics.h"
+#include "../../Resources/Fonts/FontManager.h"
+#include "../ImGui/MenuV2/MenuV2.h"
+
 
 // Debugging macros
 #define ENABLE_DEBUGGING_HOOKS  false
@@ -100,6 +103,155 @@ void ModelPreview_t::Run()
     {
         I::iPanel->SetSize(m_pPanel->GetVPanel(), m_iPanelWidth, m_iPanelHeight);
     }
+
+    _AdjustCamera();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::DrawOverlay(float flRounding)
+{
+    int x      = 0, y       = 0; GetRenderViewPos(x, y);
+    int iWidth = 0, iHeight = 0; GetRenderViewSize(iHeight, iWidth);
+
+    {
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border,   ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    }
+
+    // Size & Pos
+    ImVec2 vWindowPos (static_cast<float>(x),      static_cast<float>(y));
+    ImVec2 vWindowSize(static_cast<float>(iWidth), static_cast<float>(iHeight));
+    ImGui::SetNextWindowPos(vWindowPos); ImGui::SetNextWindowSize(vWindowSize);
+
+    int iWindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
+    if(ImGui::Begin("##ModelPreviewOverlay", nullptr, iWindowFlags) == true)
+    {
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+        float flThickness         = flRounding - (flRounding / sqrtf(2.0f));
+        float flRoundingEffective = flRounding - (flThickness / 2.0f);
+
+        pDrawList->AddRect(
+            ImVec2(vWindowPos.x + (flThickness / 2.0f),                 vWindowPos.y + (flThickness / 2.0f)), 
+            ImVec2(vWindowPos.x + vWindowSize.x - (flThickness / 2.0f), vWindowPos.y + vWindowSize.y - (flThickness / 2.0f)), 
+            ImColor(GetRenderViewClr().GetAsImVec4()), flRoundingEffective, 0, flThickness
+        );
+
+        // we are increasing thickness by one just to be safe, cause casting it might take away some precision & we might see some points n shit around the corners.
+        int iSafeThickness = static_cast<int>(flThickness) + 1;
+        SetRenderViewPos (x       + iSafeThickness,        y      + iSafeThickness);
+        SetRenderViewSize(iHeight - (2 * iSafeThickness),  iWidth - (2 * iSafeThickness));
+        SetPanelPos      (x       + iSafeThickness,        y      + iSafeThickness);
+        SetPanelSize     (iHeight - (2 * iSafeThickness),  iWidth - (2 * iSafeThickness));
+
+        // New size & pos.
+        ImVec2 vRenderViewSize(static_cast<float>(iWidth - (2.0f * iSafeThickness)), static_cast<float>(iHeight - (2.0f * iSafeThickness)));
+        ImVec2 vRenderViewPos (static_cast<float>(x + iSafeThickness)              , static_cast<float>(y + iSafeThickness));
+
+        constexpr float PADDING_IN_PXL        =  5.0f; // Padding between render view and content drawin within it.
+        constexpr float BUTTON_PADDING_ON_TOP = 20.0f; // Padding on top of setting buttons ( so it doesn't point into the rounded corner ).
+
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(0.0f,0.0f));
+
+            ImGui::PushStyleColor(ImGuiCol_Button,        Render::menuGUI.GetPrimaryClr().GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Render::menuGUI.GetSecondaryClr().GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  Render::menuGUI.GetSecondaryClr().GetAsImVec4());
+        }
+
+        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vButtonPos(vRenderViewPos.x + vRenderViewSize.x - PADDING_IN_PXL - flFrameHeight, vRenderViewPos.y + PADDING_IN_PXL + BUTTON_PADDING_ON_TOP);
+        ImGui::SetCursorScreenPos(vButtonPos);
+
+        if(ImGui::Button(reinterpret_cast<const char*>(u8"\uf400"), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        {
+        }
+
+        vButtonPos.y += flFrameHeight + PADDING_IN_PXL;
+        ImGui::SetCursorScreenPos(vButtonPos);
+        if(ImGui::Button(reinterpret_cast<const char*>(u8"\uef0c"), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        {
+        }
+
+        {
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor(3);
+        }
+
+        ImGui::End();
+    }
+
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_AdjustCamera()
+{
+    // NOTE : FOV here works in a weird way. the FOV we set in the viewsetup is always good FOV 
+    //        for horizontal view ( i.e. always good horizontal FOV ) , but we must use it to find the correct vertical FOV.
+    BaseEntity* pEnt   = GetModelEntity();
+    model_t*    pModel = GetActiveModel();
+
+    if (pEnt == nullptr || pModel == nullptr || GetActiveModelIndex() == -1)
+        return;
+    
+    pEnt->GetAbsOrigin() = vec(0.0f);
+
+    // Model dimensions.
+    float flModelHeight = fabsf(pModel->maxs.z - pModel->mins.z);
+    float flModelWidth  = pModel->mins.Dist2Dto(pModel->maxs);
+
+    // Scaling the dimensions so the model has some padding around it.
+    flModelHeight *= 1.50f;
+    flModelWidth  *= 1.10f;
+
+    // Calculating best distance for perfectly fitting height & width.
+    float flHorizontalFOVInRad = DEG2RAD(F::modelPreview.GetBaseCameraFOV());
+    float flVerticalFOVInRad   = DEG2RAD(F::modelPreview.GetVerticalFOV());
+    float flIdealDistForWidth  = 0.0f, flIdealDistForHieght = 0.0f;
+    
+    flIdealDistForWidth  = (flModelWidth  / 2.0f) / tanf(flHorizontalFOVInRad / 2.0f);
+    flIdealDistForHieght = (flModelHeight / 2.0f) / tanf(flVerticalFOVInRad   / 2.0f);
+    
+    float flIdealDist = Maths::MAX<float>(flIdealDistForWidth, flIdealDistForHieght);
+    F::modelPreview.SetCameraPos(vec(-flIdealDist, 0.0f, 0.0f));
+
+
+    // Trying to calculate position of entity origin on the screen.
+    // NOTE : We are calculating position from the botton of the screen here. i.e. 
+    //        0 at botton & 1080 ( or whatever screen height is ) at the top.
+    vec vCameraOrigin = GetCameraPos();
+    vec vModelOrigin  = GetModelEntity()->GetAbsOrigin();
+    float flModelDist2D = vCameraOrigin.Dist2Dto(vModelOrigin);
+
+    // this is max visible range at the model origin.
+    float flFrustumHeight = 2.0f * tanf(flVerticalFOVInRad / 2.0f) * flModelDist2D;
+    int iWidth = 0, iHeight = 0; GetRenderViewSize(iHeight, iWidth);
+
+    // How much height the model origin is from camera.
+    float flDeltaZ = vModelOrigin.z - vCameraOrigin.z;
+    
+    // This is the target point's height from the bottom of the frustum. We will do trignometry on this
+    // to find out where our point lies on the screen.
+    float flPosOnFrustum = flDeltaZ + (flFrustumHeight / 2.0f);
+    
+    // This is how we calculate the y coordinates of model on screen, just do it the other way to find camera height for 
+    // desired model y coordinates. That's what I have done below. :) ( cause I am smart ass ) [ There is a -1 error, and IDK where. ]
+    //float flPos = (flPosOnFrustum / flFrustumHeight) * static_cast<float>(iHeight);
+
+    constexpr float MODEL_PADDDING_BOTTOM = 100.0f;
+    float flIdealCameraHeight = ((MODEL_PADDDING_BOTTOM / static_cast<float>(iHeight)) * flFrustumHeight) - (flFrustumHeight / 2.0f) - vModelOrigin.z * -1.0f;
+
+    SetCameraPos(vec(-flIdealDist, 0.0f, -flIdealCameraHeight));
 }
 
 
@@ -618,6 +770,14 @@ void ModelPreview_t::SetPanelClr(unsigned char r, unsigned char g, unsigned char
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetPanelClr(RGBA_t clr)
+{
+    m_panelClr = clr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 RGBA_t ModelPreview_t::GetPanelClr() const
 {
     return m_panelClr;
@@ -631,6 +791,13 @@ void ModelPreview_t::SetRenderViewClr(unsigned char r, unsigned char g, unsigned
     m_renderViewClr.r = r; m_renderViewClr.g = g; m_renderViewClr.b = b; m_renderViewClr.a = a;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::SetRenderViewClr(RGBA_t clr)
+{
+    m_renderViewClr = clr;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -864,6 +1031,14 @@ void ModelPreview_t::SetVisible(bool bVisible)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+bool ModelPreview_t::IsVisible() const
+{
+    return m_bVisible;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void ModelPreview_t::SetPanelSize(int iHeight, int iWidth)
 {
     m_iPanelHeight = iHeight;
@@ -893,6 +1068,14 @@ void ModelPreview_t::SetPanelPos(int x, int y)
 void ModelPreview_t::GetPanelPos(int& x, int& y) const
 {
     x = m_iPanelX; y = m_iPanelY;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+int ModelPreview_t::GetDefaultWidth() const
+{
+    return DEFAULT_WIDTH;
 }
 
 

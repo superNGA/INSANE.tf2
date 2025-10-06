@@ -17,8 +17,7 @@
 #include "../../../SDK/class/IVEngineClient.h"
 
 
-constexpr float CENTER_GAP_IN_PXL        = 30.0f; // Gap between enemy & teammate list
-constexpr float EXTERNAL_PADDING_IN_PXL  = 10.0f; // Gap between main menu & this list
+constexpr float CENTER_GAP_IN_PXL        = 40.0f; // Gap between enemy & teammate list
 constexpr float WINDOW_PADDING_IN_PXL    =  5.0f; // Gap between window borders & its contents
 constexpr float NAME_PADDING_IN_PXL      =  4.0f; // Gap between name box & its contents
 constexpr float INTERNAME_PADDING_IN_PXL =  2.0f; // Gap between each name entry
@@ -55,7 +54,7 @@ void PlayerListV2_t::Draw()
     // Set window pos
     ImVec2 vWindowPos; Render::menuGUI.GetPos(vWindowPos.x, vWindowPos.y);
     vWindowPos.x -= vWindowSize.x;
-    vWindowPos.x -= EXTERNAL_PADDING_IN_PXL; // Padding
+    vWindowPos.x -= MENU_PADDING_IN_PXL; // Padding
     ImGui::SetNextWindowPos(vWindowPos);
 
     
@@ -70,15 +69,14 @@ void PlayerListV2_t::Draw()
     int iWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     if(ImGui::Begin("##PlayerList", nullptr, iWindowFlags) == true)
     {
+        RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetPrimaryClr());
+
         // Enemy list
         {
             std::vector<BaseEntity*>* vecAllEnemies = F::entityIterator.GetAllConnectedEnemiesList().GetReadBuffer();
             DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&F::entityIterator.GetAllConnectedEnemiesList(), vecAllEnemies); 
 
             ImVec2 vListPos(vWindowPos.x, vWindowPos.y + (vWindowSize.y / 2.0f) - (CENTER_GAP_IN_PXL / 2.0f));
-
-            RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetPrimaryClr());
-            ImGui::GetWindowDrawList()->AddText(ImVec2(vListPos.x, vListPos.y + ImGui::GetTextLineHeight()), ImColor(clrText.GetAsImVec4()), "Enemies");
             _DrawList(vListPos.x, vListPos.y, vWindowSize.x, vecAllEnemies, true);
         }
 
@@ -88,9 +86,6 @@ void PlayerListV2_t::Draw()
             DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&F::entityIterator.GetAllConnectedTeamMatesList(), vecAllTeamMates); 
 
             ImVec2 vListPos(vWindowPos.x, vWindowPos.y + (vWindowSize.y / 2.0f) + (CENTER_GAP_IN_PXL / 2.0f));
-
-            RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetPrimaryClr());
-            ImGui::GetWindowDrawList()->AddText(ImVec2(vListPos.x, vListPos.y - ImGui::GetTextLineHeight()), ImColor(clrText.GetAsImVec4()), "TeamMates");
             _DrawList(vListPos.x, vListPos.y, vWindowSize.x, vecAllTeamMates, false);
         }
 

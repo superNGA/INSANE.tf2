@@ -25,6 +25,8 @@ public:
     void Run();
     void Free();
 
+    void DrawOverlay(float flRounding);
+
     inline void* GetOriginalPaintFn() const { return m_pOriginalPaint; }
 
     // String table
@@ -43,6 +45,7 @@ public:
     std::vector<std::string>& GetModelNameList() const;
 
     void SetVisible(bool bVisible);
+    bool IsVisible() const;
 
     // Panel Pos & size
     void SetPanelSize(int  iHeight, int  iWidth);
@@ -52,9 +55,11 @@ public:
     void GetPanelPos(int& x, int& y) const;
 
     void SetPanelClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    void SetPanelClr(RGBA_t clr);
     RGBA_t GetPanelClr() const;
 
     // Render View Pos & Size
+    int GetDefaultWidth() const;
     void SetRenderViewSize(int  iHeight, int  iWidth);
     void GetRenderViewSize(int& iHeight, int& iWidth) const;
 
@@ -62,6 +67,7 @@ public:
     void GetRenderViewPos(int& x, int& y) const;
 
     void SetRenderViewClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    void SetRenderViewClr(RGBA_t clr);
     RGBA_t GetRenderViewClr() const;
 
     // Camera
@@ -101,6 +107,7 @@ private:
         "models/player/soldier.mdl"
     };
 
+    void _AdjustCamera();
 
     // init wrapper for Entity & panel.
     bool _Initialize();
@@ -128,6 +135,7 @@ private:
     int m_iPanelX = 0, m_iPanelY = 0;
     RGBA_t m_panelClr;
 
+    const int DEFAULT_WIDTH = 400;
     int m_iRenderViewHeight = 700;
     int m_iRenderViewWidth  = 700;
     int m_iRenderViewX = 0, m_iRenderViewY = 0;

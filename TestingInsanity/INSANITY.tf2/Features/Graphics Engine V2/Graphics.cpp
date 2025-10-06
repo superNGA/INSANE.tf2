@@ -11,6 +11,8 @@
 //DrawObjs
 #include "Draw Objects/BaseDrawObj.h"
 
+#include "../ImGui/MenuV2/MenuV2.h"
+
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -180,21 +182,25 @@ bool Graphics_t::_InitShaderVariables(LPDIRECT3DDEVICE9 pDevice)
         return false;
 
 
-    if (I::iEngine->IsInGame() == false)
+    if (I::iEngine->IsInGame() == false && Render::menuGUI.IsVisible() == true)
     {
         D3DSurface* pBackBuffer = nullptr;
         pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
+        // Dump whatevers captured to shader.
         m_renderTargetDup0.DumpCapture(pDevice, m_pSceneSurface);
 
-        if (directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
-        {
-            _DumpCaptureAndMaskModelPanel(pDevice, m_renderTargetDup0.m_pSurface, pBackBuffer);
-        }
-        else
-        {
-            m_renderTargetDup0.DumpCapture(pDevice, pBackBuffer);
-        }
+        // Dump captured data back to game's back buffer ( but mask it, so model preview is visible )
+        _DumpCaptureAndMaskModelPanel(pDevice, m_renderTargetDup0.m_pSurface, pBackBuffer);
+
+        // if (F::materialGen.IsVisible() == true)
+        // {
+        //     _DumpCaptureAndMaskModelPanel(pDevice, m_renderTargetDup0.m_pSurface, pBackBuffer);
+        // }
+        // else
+        // {
+        //     m_renderTargetDup0.DumpCapture(pDevice, pBackBuffer);
+        // }
 
         pBackBuffer->Release();
     }
@@ -437,6 +443,9 @@ bool Graphics_t::_CreateStateBlock(LPDIRECT3DDEVICE9 pDevice)
 ///////////////////////////////////////////////////////////////////////////
 void Graphics_t::_DumpCaptureAndMaskModelPanel(D3DDevice* pDevice, D3DSurface* pSource, D3DSurface* pBackBuffer)
 {
+    if(F::modelPreview.IsVisible() == false)
+        return;
+
     // Dumping "RenderTargetIndex" 0's data ( that we captur each frame starting from Present Fn ( PostCall )) into the back buffer,
     // such that the Model Preview Panel doesn't get hidden ( cause the model gets draw from Satan's ass somewhere before
     // Present call and the doesn't get captured in the data we captured ). This method is ass and probably 

@@ -133,12 +133,8 @@ private:
     void _ProcessTokens(std::vector<TokenInfo_t>& vecTokenOut, TokenInfo_t & activeTokenOut);
     void _CreateSuggestionList(const std::string& szToken);
     std::vector<int> m_vecSuggestions;
-
-    // It's rendering on top of my MatGen. so I removed it :).
-    void _DisableGameConsole();
     
     // Handling model.
-    void _AdjustCamera();
     void _RotateModel();
 
     std::chrono::high_resolution_clock::time_point m_lastModelRotateTime;

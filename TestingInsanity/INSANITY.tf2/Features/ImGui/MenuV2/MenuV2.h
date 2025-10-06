@@ -9,6 +9,13 @@ class BoxFilled2D_t;
 struct ImVec2;
 struct ImFont;
 
+constexpr float MENU_PADDING_IN_PXL = 10.0f; // Padding between main menu & anything near it.
+
+constexpr float WIDGET_ROUNDING           = 3.0f;
+constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
+constexpr float POPUP_ROUNDING            = 5.0f;
+constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
+
 
 ///////////////////////////////////////////////////////////////////////////
 class MenuGUI_t
@@ -18,6 +25,7 @@ public:
 
     void Draw();
     void SetVisible(bool bVisible);
+    bool IsVisible() const;
 
     bool ShouldRecordKey() const;
     void ReturnRecordedKey(int64_t iKey);
@@ -36,6 +44,8 @@ public:
 private:
     bool m_bVisible = true;
 
+    ImVec2 _ClampWindowPos(const ImVec2 vWindowPos);
+
     void _StartRecordingKey();
     bool    m_bRecordingKey = false;
     int64_t m_iRecordedKey  = 0;
@@ -45,26 +55,26 @@ private:
 
     ImVec2 _DrawMainBody(float flWidth, float flHeight);
     void   _DrawTabBar(float flWidth, float flHeight, float x, float y);
-    void   _DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y);
+    void   _DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y, ImVec2 vWindowPos);
     ImVec2 m_vMenuPos;
     ImVec2 m_vMenuSize;
 
     ImVec2 _CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const;
 
     // Feature specfic...
-    void _DrawBoolean     (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
-    void _DrawIntSlider   (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
-    void _DrawFloatSlider (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
-    void _DrawDropDown    (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
-    void _DrawColor       (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding);
+    void _DrawBoolean     (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos);
+    void _DrawIntSlider   (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos);
+    void _DrawFloatSlider (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos);
+    void _DrawDropDown    (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos);
+    void _DrawColor       (IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos);
 
     void _TriggerPopup        (IFeature* pFeature) const;
 
     // Popups :)..
-    void _DrawColorPopup      (IFeature* pFeature);
-    void _DrawFloatSliderPopup(IFeature* pFeature);
-    void _DrawIntSliderPopup  (IFeature* pFeature);
-    void _DrawBooleanPopup    (IFeature* pFeature);
+    void _DrawColorPopup      (IFeature* pFeature, ImVec2 vWindowPos);
+    void _DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos);
+    void _DrawIntSliderPopup  (IFeature* pFeature, ImVec2 vWindowPos);
+    void _DrawBooleanPopup    (IFeature* pFeature, ImVec2 vWindowPos);
 
     // Helper functions...
     void _CalculateColors();
