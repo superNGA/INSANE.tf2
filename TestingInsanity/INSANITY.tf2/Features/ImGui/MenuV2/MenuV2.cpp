@@ -12,6 +12,7 @@
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../SDK/class/IPanel.h"
 #include "../../../SDK/class/IVEngineClient.h"
+#include "../../../SDK/class/BaseEntity.h"
 #include "../../FeatureHandler.h"
 #include "../../ModelPreview/ModelPreview.h"
 
@@ -22,32 +23,12 @@
 #include "../../Graphics Engine V2/Draw Objects/Circle/Circle.h"
 
 
-constexpr float SIDEMENU_SCALE            =  0.2f; // Percentage of main body allocated to side menu.
-constexpr float FRAME_PADDING_PXL         = 15.0f; // Padding between Main body & its contents.
-constexpr float SECTION_PADDING_PXL       = 10.0f; // Padding between Section walls & its contents.
-constexpr float INTER_FEATURE_PADDING_PXL =  5.0f; // Padding between each feature.
-constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres walls & its contents.
-constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
-constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
-
-constexpr float TAB_NAME_PADDING_IN_PXL   = 8.0f; // Padding above and below a tab's name in side menu.
-constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
-
-constexpr float ANIM_COMPLETION_TOLERANCE = 0.005f;
-constexpr float ANIM_COMPLETE             = 1.0f;
-constexpr float ANIM_ZERO                 = 0.0f;
-constexpr float ANIM_DURATION_IN_SEC      = 0.3f;
-
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-MenuGUI_t::MenuGUI_t()
+MenuGUI_t::MenuGUI_t() : m_menuAnim(), m_popupAnim(), m_colorPickerAnim(), m_modelAnim(0.7f)
 {
     m_clrPrimary.Init(); m_clrSecondary.Init(); m_clrTheme.Init();
-
-    m_lastResetTime       = std::chrono::high_resolution_clock::now();
-    m_popupOpenTime       = std::chrono::high_resolution_clock::now();
-    m_colorPickerOpenTime = std::chrono::high_resolution_clock::now();
 
     m_vMenuPos.x  = 0.0f; m_vMenuPos.y  = 0.0f;
     m_vMenuSize.x = 0.0f; m_vMenuSize.y = 0.0f;
@@ -85,9 +66,11 @@ void MenuGUI_t::Draw()
     _CalculateColors();
     
     // Animation calculations.
-    CalculateAnim(m_lastResetTime,       m_flAnimation,       ANIM_DURATION_IN_SEC);
-    CalculateAnim(m_popupOpenTime,       m_flPopupAnimation,  ANIM_DURATION_IN_SEC);
-    CalculateAnim(m_colorPickerOpenTime, m_flColorPickerAnim, ANIM_DURATION_IN_SEC);
+    m_menuAnim.CalculateAnim();
+    m_popupAnim.CalculateAnim();
+    m_colorPickerAnim.CalculateAnim();
+    m_modelAnim.CalculateAnim();
+    _AnimateModel();
 
     // Drawing main body.
     float  flScaleMult = Features::Menu::Menu::Scale.GetData().m_flVal;
@@ -121,8 +104,8 @@ void MenuGUI_t::SetVisible(bool bVisible)
 
     if(bVisible == false)
     {
-        ResetAnimation(m_lastResetTime, m_flAnimation);
-        ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+        m_menuAnim.Reset(); m_popupAnim.Reset();
+        m_modelAnim.Reset();
     }
 }
 
@@ -206,7 +189,7 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
         // Rounding
         m_pMainMenu->SetRounding(Features::Menu::Menu::Rounding.GetData().m_flVal);
 
-        float flAnimatedScroll = (ANIM_COMPLETE - m_flAnimation) * 50.0f;
+        float flAnimatedScroll = (ANIM_COMPLETE - m_menuAnim.GetAnimation()) * 50.0f;
         _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll, vWindowPos);
 
         ImGui::End();
@@ -363,7 +346,7 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
                 {
                     if(m_pActiveTab == pTab)
                     {
-                        ImVec2 vButtonAnimationMin((vCursorScreenPos.x + flWidth - (flWidth * m_flAnimation)), vCursorScreenPos.y);
+                        ImVec2 vButtonAnimationMin((vCursorScreenPos.x + flWidth - (flWidth * m_menuAnim.GetAnimation())), vCursorScreenPos.y);
                         ImVec2 vButtonAnimationMax(vCursorScreenPos.x + flWidth + 2.0f, vCursorScreenPos.y + vButtonSize.y); 
                         
                         pDrawList->AddRectFilled(
@@ -387,7 +370,7 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
                 if (ImGui::Button(("     " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
                 {
                     m_pActiveTab = pTab;
-                    ResetAnimation(m_lastResetTime, m_flAnimation);
+                    m_menuAnim.Reset();
                 }
      
                 ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
@@ -732,7 +715,6 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
 
 
     // Drawing the slider manually
-    constexpr float TRACK_THICKNESS_PXL = 4.0f;
     ImVec2 vTrackStart(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK), vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) - TRACK_THICKNESS_PXL);
     ImVec2 vTrackEnd(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK) + flTrackWidth, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) + TRACK_THICKNESS_PXL);
     
@@ -769,7 +751,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
         if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
-            ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+            m_popupAnim.Reset();
         }
 
         _DrawIntSliderPopup(pFeature, vWindowPos);
@@ -779,9 +761,8 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
 
 
     // Drawing knob.
-    constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = static_cast<float>(pIntFeature->GetData().m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
-    flKnobPos      *= m_flAnimation; // Animating :)
+    flKnobPos      *= m_menuAnim.GetAnimation(); // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
     // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
@@ -820,7 +801,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->GetData().m_iVal) * m_flAnimation);
+    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->GetData().m_iVal) * m_menuAnim.GetAnimation());
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
@@ -926,7 +907,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
         if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
-            ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+            m_popupAnim.Reset();
         }
 
         _DrawFloatSliderPopup(pFeature, vWindowPos);
@@ -937,7 +918,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     // Drawing knob.
     constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = (pFloatFeature->GetData().m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
-    flKnobPos      *= m_flAnimation; // Animating :)
+    flKnobPos      *= m_menuAnim.GetAnimation(); // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
     // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
@@ -976,7 +957,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal * m_flAnimation);
+    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal * m_menuAnim.GetAnimation());
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
@@ -1109,9 +1090,9 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
                 x = std::clamp<float>(x, 0.0f, 1.0f);
                 float y = (x < 0.5f) ? x + 0.5f : x - 0.5f; // chose something @ 0.5f diffrence from orignal.
 
-                return y + ((x - y) * m_flColorPickerAnim);
+                return y + ((x - y) * m_colorPickerAnim.GetAnimation());
             };
-            if(fabsf(ANIM_COMPLETE - m_flColorPickerAnim) <= ANIM_COMPLETION_TOLERANCE)
+            if(fabsf(ANIM_COMPLETE - m_colorPickerAnim.GetAnimation()) <= ANIM_COMPLETION_TOLERANCE)
             {
                 pClrAnimated = &pColorFeature->m_Data.r;
             }
@@ -1145,7 +1126,7 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
         {
             if(bClrPickerAnimResetted == false)
             {
-                ResetAnimation(m_colorPickerOpenTime, m_flColorPickerAnim);
+                m_colorPickerAnim.Reset();
                 bClrPickerAnimResetted = true;
             }
         }
@@ -1210,7 +1191,7 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
         if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
-            ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+            m_popupAnim.Reset();
         }
         _DrawColorPopup(pFeature, vWindowPos);
 
@@ -1285,7 +1266,8 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature, ImVec2 vWindowPos)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
@@ -1487,7 +1469,8 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
@@ -1664,7 +1647,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = (pFloatFeature->m_OverrideData.m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
-        flKnobPos      *= m_flPopupAnimation;
+        flKnobPos      *= m_popupAnim.GetAnimation();
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
         // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
@@ -1697,7 +1680,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal * m_flPopupAnimation);
+        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal * m_popupAnim.GetAnimation());
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
@@ -1744,7 +1727,8 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
@@ -1920,7 +1904,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = static_cast<float>(pIntFeature->m_OverrideData.m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
-        flKnobPos      *= m_flPopupAnimation;
+        flKnobPos      *= m_popupAnim.GetAnimation();
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
         
         // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
@@ -1953,7 +1937,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->m_OverrideData.m_iVal) * m_flPopupAnimation);
+        std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->m_OverrideData.m_iVal) * m_popupAnim.GetAnimation());
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
@@ -2000,7 +1984,8 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature, ImVec2 vWindowPos)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
@@ -2354,30 +2339,349 @@ void MenuGUI_t::_FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime)
+void MenuGUI_t::_AnimateModel()
 {
-    // If nearly complete, let it go.
-    if(fabsf(ANIM_COMPLETE - flAnimationOut) < ANIM_COMPLETION_TOLERANCE)
-    {
-        flAnimationOut = ANIM_COMPLETE;
+    BaseEntity* pModelEnt = F::modelPreview.GetModelEntity();
+    if (pModelEnt == nullptr)
         return;
+
+    bool bAnimationCompleted = fabsf(ANIM_COMPLETE - m_modelAnim.GetAnimation()) <= ANIM_COMPLETION_TOLERANCE;
+    if (bAnimationCompleted == false)
+    {
+        pModelEnt->GetAbsAngles().yaw = Features::MaterialGen::ModelPreview::ModelAbsAngle.GetData().m_flVal * m_modelAnim.GetAnimation();
     }
-
-    // Current time
-    std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
-
-    double flTimeSinceReset = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - animStartTime).count()) / 1000.0f;
-    float  flTimeNormalized = static_cast<float>(flTimeSinceReset) / flAnimCompleteTime;
-
-    flAnimationOut = 1.0f - powf(1.0f - flTimeNormalized, 3.0f); // animation = 1 - (1 - time)^3
-    flAnimationOut = std::clamp<float>(flAnimationOut, ANIM_ZERO, ANIM_COMPLETE);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut)
+bool MenuGUI_t::DrawIntSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int iMin, const int iMax, RGBA_t clrBackground, const float* pTrackThickness, const float* pKnowSize, const float* pAnimationState)
 {
-    flAnimationOut = 0.0f;
-    animStartTime  = std::chrono::high_resolution_clock::now();
+    {
+        static ImVec4 vTransparent(0.0f, 0.0f, 0.0f, 0.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_Text,             vTransparent);
+    }
+
+    float flTrackThickness = (pTrackThickness == nullptr ? TRACK_THICKNESS_PXL : *pTrackThickness);
+    float flKnobSize       = (pKnowSize       == nullptr ? KNOB_SIZE_PXL       : *pKnowSize);
+    float flAnimationState = (pAnimationState == nullptr ? 1.0f                : *pAnimationState);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight  = ImGui::GetFrameHeight();
+
+    ImVec2 vSliderOrigin(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f);
+
+    ImGui::SetCursorScreenPos(vSliderOrigin); ImGui::SetNextItemWidth(vWidgetSize.x);
+    bool bDataModified = ImGui::SliderInt(szLabel, pData, iMin, iMax);
+
+    // Calculating Clr :)
+    // Don't just plain black if background color is really light, use secondary color ( assuming use is sane and sober and is not using same color 
+    // primary and secondary. )
+    RGBA_t clrTrack; CalcTextClrForBg(clrTrack, clrBackground);
+    if(clrTrack.r == 0x0 && clrTrack.g == 0x0 && clrTrack.b == 0x0)
+    {
+        if(clrBackground == m_clrSecondary)
+        {
+            clrTrack = m_clrPrimary;
+        }
+        else 
+        {
+            clrTrack = m_clrSecondary;
+        }
+    }
+
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing tha track.
+    ImVec2 vTrackOrigin(vMin.x, vMin.y + (vWidgetSize.y / 2.0f));
+    pDrawList->AddRectFilled(
+        ImVec2(vTrackOrigin.x, vTrackOrigin.y - flTrackThickness),
+        ImVec2(vMax.x, vTrackOrigin.y + flTrackThickness),
+        ImColor(clrTrack.GetAsImVec4()), 1000.0f
+    );
+
+    // Calculating knobs position ( with animation )
+    float flKnobPos = static_cast<float>(*pData - iMin) / static_cast<float>(iMax - iMin);
+    flKnobPos *= flAnimationState; // Animating.
+    float flEffectiveTrackWidth = vWidgetSize.x - (2.0f * flKnobSize); // if we don't reduce the knob size we knob will hang over the ends.
+    ImVec2 vKnowOrigin(vMin.x + flKnobSize + (flEffectiveTrackWidth * flKnobPos), vTrackOrigin.y);
+
+    pDrawList->AddRectFilled(
+        ImVec2(vKnowOrigin.x - flKnobSize, vKnowOrigin.y - flKnobSize), 
+        ImVec2(vKnowOrigin.x + flKnobSize, vKnowOrigin.y + flKnobSize), 
+        ImColor(m_clrTheme.GetAsImVec4()), 1000.0f
+    );
+
+
+    {
+        ImGui::PopStyleColor(6);
+    }
+
+    return bDataModified;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawFloatSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float flMin, const int flMax, RGBA_t clrBackground, const float* pTrackThickness, const float* pKnowSize, const float* pAnimationState)
+{
+    {
+        static ImVec4 vTransparent(0.0f, 0.0f, 0.0f, 0.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_Text,             vTransparent);
+    }
+
+    float flTrackThickness = (pTrackThickness == nullptr ? TRACK_THICKNESS_PXL : *pTrackThickness);
+    float flKnobSize       = (pKnowSize       == nullptr ? KNOB_SIZE_PXL       : *pKnowSize);
+    float flAnimationState = (pAnimationState == nullptr ? 1.0f                : *pAnimationState);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight  = ImGui::GetFrameHeight();
+
+    ImVec2 vSliderOrigin(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f);
+
+    ImGui::SetCursorScreenPos(vSliderOrigin); ImGui::SetNextItemWidth(vWidgetSize.x);
+    bool bDataModified = ImGui::SliderFloat(szLabel, pData, flMin, flMax, "%.1f");
+
+    // Calculating Clr :)
+    // Don't just plain black if background color is really light, use secondary color ( assuming use is sane and sober and is not using same color 
+    // primary and secondary. )
+    RGBA_t clrTrack; CalcTextClrForBg(clrTrack, clrBackground);
+    if(clrTrack.r == 0x0 && clrTrack.g == 0x0 && clrTrack.b == 0x0)
+    {
+        if(clrBackground == m_clrSecondary)
+        {
+            clrTrack = m_clrPrimary;
+        }
+        else 
+        {
+            clrTrack = m_clrSecondary;
+        }
+    }
+
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing tha track.
+    ImVec2 vTrackOrigin(vMin.x, vMin.y + (vWidgetSize.y / 2.0f));
+    pDrawList->AddRectFilled(
+        ImVec2(vTrackOrigin.x, vTrackOrigin.y - flTrackThickness),
+        ImVec2(vMax.x, vTrackOrigin.y + flTrackThickness),
+        ImColor(clrTrack.GetAsImVec4()), 1000.0f
+    );
+
+    // Calculating knobs position ( with animation )
+    float flKnobPos = static_cast<float>(*pData - flMin) / static_cast<float>(flMax - flMin);
+    flKnobPos *= flAnimationState; // Animating.
+    float flEffectiveTrackWidth = vWidgetSize.x - (2.0f * flKnobSize); // if we don't reduce the knob size we knob will hang over the ends.
+    ImVec2 vKnowOrigin(vMin.x + flKnobSize + (flEffectiveTrackWidth * flKnobPos), vTrackOrigin.y);
+
+    pDrawList->AddRectFilled(
+        ImVec2(vKnowOrigin.x - flKnobSize, vKnowOrigin.y - flKnobSize), 
+        ImVec2(vKnowOrigin.x + flKnobSize, vKnowOrigin.y + flKnobSize), 
+        ImColor(m_clrTheme.GetAsImVec4()), 1000.0f
+    );
+
+
+    {
+        ImGui::PopStyleColor(6);
+    }
+
+    return bDataModified;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::DrawIntInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int* pMin, const int* pMax, RGBA_t* pFrameClr, const float* pAnimation)
+{
+    RGBA_t clrFrame = (pFrameClr == nullptr ? m_clrSecondary : *pFrameClr);
+    float  flAnimation = (pAnimation == nullptr ? 1.0f : *pAnimation);
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrFrame);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight = ImGui::GetFrameHeight();
+    
+    // Styling & drawing float input.
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
+    ImGui::PushStyleColor(ImGuiCol_Border,              m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_Text,                ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,             clrFrame.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,       m_clrTheme.GetAsImVec4());
+
+    ImGui::SetCursorScreenPos(ImVec2(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f));
+    ImGui::SetNextItemWidth(vWidgetSize.x);
+    if (ImGui::InputInt(szLabel, pData, 0, 0) == true)
+    {
+        if (pMin != nullptr && pMax != nullptr)
+        {
+            *pData = std::clamp<int>(*pData, *pMin, *pMax);
+        }
+    }
+
+    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(*pData) * m_menuAnim.GetAnimation());
+    size_t      nDigits       = szSliderValue.size();
+    float       flCharWidth   = ImGui::GetFont()->GetCharAdvance(' '); // Assuming using a mono font.
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(vMin.x + (vWidgetSize.x - (flCharWidth * static_cast<float>(nDigits))) / 2.0f, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
+    );
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(4);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::DrawFloatInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float* pMin, const float* pMax, RGBA_t* pFrameClr, const float* pAnimation)
+{
+    RGBA_t clrFrame = (pFrameClr == nullptr ? m_clrSecondary : *pFrameClr);
+    float  flAnimation = (pAnimation == nullptr ? 1.0f : *pAnimation);
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrFrame);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight = ImGui::GetFrameHeight();
+    
+    // Styling & drawing float input.
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
+    ImGui::PushStyleColor(ImGuiCol_Border,              m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_Text,                ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,             clrFrame.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,       m_clrTheme.GetAsImVec4());
+
+    ImGui::SetCursorScreenPos(ImVec2(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f));
+    ImGui::SetNextItemWidth(vWidgetSize.x);
+    if (ImGui::InputFloat(szLabel, pData, 0.0f, 0.0f, "%.1f") == true)
+    {
+        if(pMin != nullptr && pMax != nullptr)
+        {
+            *pData = std::clamp<float>(*pData, *pMin, *pMax);
+        }
+    }
+
+    std::string szSliderValue = std::format("{:.1f}", static_cast<float>(*pData) * m_menuAnim.GetAnimation());
+    size_t      nDigits       = szSliderValue.size();
+    float       flCharWidth   = ImGui::GetFont()->GetCharAdvance(' '); // Assuming using a mono font.
+    
+    float flTextWidth = static_cast<float>(nDigits) * flCharWidth;
+    ImVec2 vTextOrigin(flTextWidth >= vWidgetSize.x ? vMin.x : vMin.x + (vWidgetSize.x - flTextWidth) / 2.0f, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::GetWindowDrawList()->AddText(
+        vTextOrigin,
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
+    );
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(4);
+
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawIntInputWidget(
+    const char* szText, const char* szLabel, 
+    ImVec2 vMin, ImVec2 vMax, 
+    int* pData, const int iMin, const int iMax, 
+    RGBA_t clrBackground, 
+    float flSliderPercentage, float flIntInputPercentage, 
+    const float* pTrackThickness, const float* pKnobSize, const float* pAnimationState)
+{
+    flSliderPercentage   = std::clamp<float>(flSliderPercentage,   0.0f, 1.0f);
+    flIntInputPercentage = std::clamp<float>(flIntInputPercentage, 0.0f, 1.0f);
+
+    constexpr float flPaddingFromWalls      = FEATURE_PADDING_PXL;
+    constexpr float flPaddingBetweenWidgets = FEATURE_PADDING_PXL;
+
+    // Adding padding to dimensions
+    vMin.x += flPaddingFromWalls; vMin.y += flPaddingFromWalls;
+    vMax.x -= flPaddingFromWalls; vMax.y -= flPaddingFromWalls;
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrBackground);
+    ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+    // Text.
+    ImVec2 vTextPos(vMin.x, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::SetCursorScreenPos(vTextPos);
+    ImGui::Text(szText);
+
+
+    bool bDataModified = DrawIntSlider(
+        std::string("##Slider" + std::string(szLabel)).c_str(), 
+        ImVec2(vMin.x + (1.0f - (flSliderPercentage + flIntInputPercentage)) * vWidgetSize.x, vMin.y), 
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage)                        * vWidgetSize.x, vMax.y), 
+        pData, iMin, iMax, clrBackground, pTrackThickness, pKnobSize, pAnimationState
+    );
+
+
+    DrawIntInput(
+        std::string("##IntInput" + std::string(szLabel)).c_str(),
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage) * vWidgetSize.x + flPaddingBetweenWidgets, vMin.y),
+        vMax, pData, &iMin, &iMax, nullptr, pAnimationState);
+
+
+    ImGui::PopStyleColor();
+    return bDataModified;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawFloatInputWidget(
+    const char* szText, const char* szLabel, 
+    ImVec2 vMin, ImVec2 vMax, 
+    float* pData, const float flMin, const float flMax, 
+    RGBA_t clrBackground, 
+    float flSliderPercentage, float flIntInputPercentage, 
+    const float* pTrackThickness, const float* pKnobSize, const float* pAnimationState)
+{
+    flSliderPercentage   = std::clamp<float>(flSliderPercentage,   0.0f, 1.0f);
+    flIntInputPercentage = std::clamp<float>(flIntInputPercentage, 0.0f, 1.0f);
+
+    constexpr float flPaddingFromWalls      = FEATURE_PADDING_PXL;
+    constexpr float flPaddingBetweenWidgets = FEATURE_PADDING_PXL;
+
+    // Adding padding to dimensions
+    vMin.x += flPaddingFromWalls; vMin.y += flPaddingFromWalls;
+    vMax.x -= flPaddingFromWalls; vMax.y -= flPaddingFromWalls;
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrBackground);
+    ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+    // Text.
+    ImVec2 vTextPos(vMin.x, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::SetCursorScreenPos(vTextPos);
+    ImGui::Text(szText);
+
+
+    bool bDataModified = DrawFloatSlider(
+        std::string("##Slider" + std::string(szLabel)).c_str(), 
+        ImVec2(vMin.x + (1.0f - (flSliderPercentage + flIntInputPercentage)) * vWidgetSize.x, vMin.y), 
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage)                        * vWidgetSize.x, vMax.y), 
+        pData, flMin, flMax, clrBackground, pTrackThickness, pKnobSize, pAnimationState
+    );
+
+
+    DrawFloatInput(
+        std::string("##IntInput" + std::string(szLabel)).c_str(),
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage) * vWidgetSize.x + flPaddingBetweenWidgets, vMin.y),
+        vMax, pData, &flMin, &flMax, nullptr, pAnimationState);
+
+
+    ImGui::PopStyleColor();
+    return bDataModified;
 }

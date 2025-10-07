@@ -1,2 +1,1 @@
-cmake -G "Visual Studio 17 2022" -A x64 -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake -G Ninja -S . -B buildNinja -DCMAKE_CXX_COMPILER=clang -DCMAKE_C_COMPILER=clang -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON

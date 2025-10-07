@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "../FeatureHandler.h"
 #include "../../SDK/class/Basic Structures.h"
@@ -91,6 +92,10 @@ public:
     void SetDefaultLight();
 
 private:
+    void _DrawLightingSettings();
+    void _DrawModelSettings();
+    void _RotateModel();
+
     bool _ShouldCreateStringTable();
     bool m_bJoiningMatch = false;
 
@@ -162,6 +167,9 @@ private:
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
 DEFINE_SECTION(ModelPreview, "MaterialGen", 2)
 
+DEFINE_FEATURE(ModelAbsAngle, "Angle",          FloatSlider_t, ModelPreview, MaterialGen, 1, FloatSlider_t(180.0f, -180.0f, 180.0f))
+DEFINE_FEATURE(RotationSpeed, "Rotation Speed", FloatSlider_t, ModelPreview, MaterialGen, 2, FloatSlider_t(0.0f, 0.0f, 360.0f))
+DEFINE_FEATURE(AnimSquence,   "Animation",      IntSlider_t,   ModelPreview, MaterialGen, 3, IntSlider_t(0, 0, 200))
 
 ///////////////////////////////////////////////////////////////////////////
 extern std::vector<std::string> g_vecModelNames;       // These are some predefined model names we will let the user use.

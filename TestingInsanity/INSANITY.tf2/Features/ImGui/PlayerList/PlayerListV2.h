@@ -1,8 +1,8 @@
 #pragma once
 
-#include <chrono>
 #include <vector>
 #include "../../FeatureHandler.h"
+#include "../AnimationHandler.h"
 
 class BaseEntity;
 
@@ -10,7 +10,7 @@ class BaseEntity;
 class PlayerListV2_t
 {
 public:
-    PlayerListV2_t();
+    PlayerListV2_t() : m_playerListAnim() {}
 
     void Draw();
     void SetVisible(bool bVisible);
@@ -21,8 +21,7 @@ private:
     void _DrawList(float x, float y, float flWidth, const std::vector<BaseEntity*>* vecPlayers, bool bGrowUpwards);
     void _DrawEntSetting(BaseEntity* pEnt, std::string szPopupId);
 
-    std::chrono::high_resolution_clock::time_point m_lastResetTime;
-    float m_flAnimation = 0.0f;
+    AnimationHandler_t m_playerListAnim;
 };
 
 

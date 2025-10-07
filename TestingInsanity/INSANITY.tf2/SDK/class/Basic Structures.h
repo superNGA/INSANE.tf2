@@ -208,6 +208,7 @@ struct RGBA_t
 
     // OPERATORS
     RGBA_t& operator=(RGBA_t other);
+    bool operator==(const RGBA_t other) const;
 
     RGBA_t IncreaseInPlace(int iOffset, bool bColors, bool bAlpha);
     RGBA_t IncreaseClr(int iOffset, bool bColors, bool bAlpha) const;

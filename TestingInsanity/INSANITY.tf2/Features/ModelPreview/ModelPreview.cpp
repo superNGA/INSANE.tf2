@@ -156,12 +156,19 @@ void ModelPreview_t::DrawOverlay(float flRounding)
         constexpr float BUTTON_PADDING_ON_TOP = 20.0f; // Padding on top of setting buttons ( so it doesn't point into the rounded corner ).
 
         {
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(0.0f,0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
+            // ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(0.0f,0.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
+            ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 0.0f);
 
             ImGui::PushStyleColor(ImGuiCol_Button,        Render::menuGUI.GetPrimaryClr().GetAsImVec4());
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Render::menuGUI.GetSecondaryClr().GetAsImVec4());
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  Render::menuGUI.GetSecondaryClr().GetAsImVec4());
+
+            ImGui::PushStyleColor(ImGuiCol_PopupBg,       Render::menuGUI.GetSecondaryClr().GetAsImVec4());
+
+            RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetSecondaryClr());
+            ImGui::PushStyleColor(ImGuiCol_Text,          clrText.GetAsImVec4());
         }
 
         float flFrameHeight = ImGui::GetFrameHeight();
@@ -170,17 +177,24 @@ void ModelPreview_t::DrawOverlay(float flRounding)
 
         if(ImGui::Button(reinterpret_cast<const char*>(u8"\uf400"), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
+            ImGui::OpenPopup("##ModelLightingSettings");
         }
+        _DrawLightingSettings();
+        
 
         vButtonPos.y += flFrameHeight + PADDING_IN_PXL;
         ImGui::SetCursorScreenPos(vButtonPos);
         if(ImGui::Button(reinterpret_cast<const char*>(u8"\uef0c"), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
+            ImGui::OpenPopup("ModelPreviewSettings");
         }
+        _DrawModelSettings();
+        _RotateModel();
+        
 
         {
-            ImGui::PopStyleVar(2);
-            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar(3);
+            ImGui::PopStyleColor(5);
         }
 
         ImGui::End();
@@ -189,6 +203,156 @@ void ModelPreview_t::DrawOverlay(float flRounding)
 
     ImGui::PopStyleColor(2);
     ImGui::PopFont();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_DrawLightingSettings()
+{
+    int iPopupFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
+    if (ImGui::BeginPopup("##ModelLightingSettings", iPopupFlags) == true)
+    {
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
+        ImGui::PushStyleColor(ImGuiCol_Border, Render::menuGUI.GetThemeClr().GetAsImVec4());
+            
+        static float clrUp[3]    = { 0.4f, 0.4f, 0.4f }; static float clrBottom[3] = { 0.4f, 0.4f, 0.4f };
+        static float clrRight[3] = { 0.4f, 0.4f, 0.4f }; static float clrLeft[3]   = { 0.4f, 0.4f, 0.4f };
+        static float clrFront[3] = { 0.4f, 0.4f, 0.4f }; static float clrBack[3]   = { 0.4f, 0.4f, 0.4f };
+
+        int iColorPickerFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_PickerHueWheel;
+
+        // Top light color
+        ImGui::Text("Top    : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Up", clrUp, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrUp[0], clrUp[1], clrUp[2]), ModelPreview_t::AmbientLight_t::LIGHT_TOP);
+        }
+
+        // Bottom light color
+        ImGui::Text("Bottom : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Down", clrBottom, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrBottom[0], clrBottom[1], clrBottom[2]), ModelPreview_t::AmbientLight_t::LIGHT_BOTTON);
+        }
+
+        // Right light color
+        ImGui::Text("Right  : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Right", clrRight, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrRight[0], clrRight[1], clrRight[2]), ModelPreview_t::AmbientLight_t::LIGHT_RIGHT);
+        }
+
+        // Left light color
+        ImGui::Text("Left   : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Left", clrLeft, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrLeft[0], clrLeft[1], clrLeft[2]), ModelPreview_t::AmbientLight_t::LIGHT_LEFT);
+        }
+
+        // Front light color
+        ImGui::Text("Front  : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Front", clrFront, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrFront[0], clrFront[1], clrFront[2]), ModelPreview_t::AmbientLight_t::LIGHT_FRONT);
+        }
+
+        // Back light color
+        ImGui::Text("Back   : "); ImGui::SameLine();
+        if (ImGui::ColorEdit3("##Back", clrBack, iColorPickerFlags) == true)
+        {
+            SetAmbientLight(vec(clrBack[0], clrBack[1], clrBack[2]), ModelPreview_t::AmbientLight_t::LIGHT_BACK);
+        }
+
+        ImGui::PopStyleVar(); ImGui::PopStyleColor();
+        ImGui::PopFont();
+        ImGui::EndPopup();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_DrawModelSettings()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(0.0f, 0.0f));
+    
+    static float flFeatureCount = 3.0f;
+    static float flFeatureWidth = 300.0f;
+    ImGui::SetNextWindowSize(ImVec2(flFeatureWidth + (2.0f * SECTION_PADDING_PXL), (2.0f * SECTION_PADDING_PXL) + (flFeatureCount - 1.0f) * INTER_FEATURE_PADDING_PXL + (FEATURE_HEIGHT * flFeatureCount)));
+        
+    int iPopupFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
+    if(ImGui::BeginPopup("ModelPreviewSettings", iPopupFlags) == true)
+    {
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
+
+        ImVec2 vWindowPos(ImGui::GetWindowPos());
+        ImVec2 vCursorPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
+
+        bool bDataModified = Render::menuGUI.DrawFloatInputWidget(
+            Features::MaterialGen::ModelPreview::ModelAbsAngle.m_szFeatureDisplayName.c_str(), "##ModelYawMyNigga",
+            vCursorPos, ImVec2(vCursorPos.x + flFeatureWidth, vCursorPos.y + FEATURE_HEIGHT),
+            &Features::MaterialGen::ModelPreview::ModelAbsAngle.m_Data.m_flVal,
+            Features::MaterialGen::ModelPreview::ModelAbsAngle.m_Data.m_flMin,
+            Features::MaterialGen::ModelPreview::ModelAbsAngle.m_Data.m_flMax,
+            Render::menuGUI.GetSecondaryClr(), 0.4f, 0.2f);
+
+        vCursorPos.y += FEATURE_HEIGHT + INTER_FEATURE_PADDING_PXL;
+
+        Render::menuGUI.DrawFloatInputWidget(
+            Features::MaterialGen::ModelPreview::RotationSpeed.m_szFeatureDisplayName.c_str(), "##ModelRotationSpeed",
+            vCursorPos, ImVec2(vCursorPos.x + flFeatureWidth, vCursorPos.y + FEATURE_HEIGHT),
+            &Features::MaterialGen::ModelPreview::RotationSpeed.m_Data.m_flVal,
+            Features::MaterialGen::ModelPreview::RotationSpeed.m_Data.m_flMin,
+            Features::MaterialGen::ModelPreview::RotationSpeed.m_Data.m_flMax,
+            Render::menuGUI.GetSecondaryClr(), 0.4f, 0.2f);
+
+        vCursorPos.y += FEATURE_HEIGHT + INTER_FEATURE_PADDING_PXL;
+
+        Render::menuGUI.DrawIntInputWidget(
+            Features::MaterialGen::ModelPreview::AnimSquence.m_szFeatureDisplayName.c_str(), "##ModelAnimSquence",
+            vCursorPos, ImVec2(vCursorPos.x + flFeatureWidth, vCursorPos.y + FEATURE_HEIGHT),
+            &Features::MaterialGen::ModelPreview::AnimSquence.m_Data.m_iVal,
+            Features::MaterialGen::ModelPreview::AnimSquence.m_Data.m_iMin,
+            Features::MaterialGen::ModelPreview::AnimSquence.m_Data.m_iMax,
+            Render::menuGUI.GetSecondaryClr(), 0.4f, 0.2f);
+
+        BaseEntity* pModelEnt = GetModelEntity();
+        if(pModelEnt != nullptr)
+        {
+            qangle& qModelAngles = pModelEnt->GetAbsAngles();
+
+            // Only update when modified, else it won't let the model rotate by resetting shit every frame ( below )
+            if(bDataModified == true)
+            {
+                qModelAngles.yaw = Features::MaterialGen::ModelPreview::ModelAbsAngle.GetData().m_flVal;
+            }
+        }
+
+        ImGui::PopFont();
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar(2);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void ModelPreview_t::_RotateModel()
+{
+    if (m_pEnt == nullptr)
+        return;
+
+    static std::chrono::high_resolution_clock::time_point s_lastModelRotateTime;
+
+    auto now = std::chrono::high_resolution_clock::now();
+    int64_t iTimeSinceStartInMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastModelRotateTime).count();
+    s_lastModelRotateTime = now;
+
+    float flTimeSinceLastUpdateInSec = static_cast<float>(iTimeSinceStartInMs) / 1000.0f;
+    m_pEnt->GetAbsAngles().yaw += flTimeSinceLastUpdateInSec * Features::MaterialGen::ModelPreview::RotationSpeed.GetData().m_flVal;
 }
 
 
@@ -276,6 +440,8 @@ bool ModelPreview_t::_Initialize()
             FAIL_LOG("Entity init failed");
             return false;
         }
+        
+        m_pEnt->GetAbsAngles().yaw = Features::MaterialGen::ModelPreview::ModelAbsAngle.GetData().m_flVal;
     }
 
 
@@ -416,7 +582,7 @@ void ModelPreview_t::_FreeEntity()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void __fastcall PaintHijack(Panel* a1)
+static void __fastcall PaintHijack(Panel* a1)
 {
     // Setting panel's size
     int iWidth = 0, iHeight = 0;
@@ -474,12 +640,12 @@ void __fastcall PaintHijack(Panel* a1)
     view.x      = iRenderViewX;      view.y     = iRenderViewY;
     view.height = iRenderViewHeight; view.width = iRenderViewWidth;
 
-    // Animation fix
-    /*{
+    // Animation
+    {
         pEnt->m_flAnimTime(pEnt->m_flAnimTime() + tfObject.pGlobalVar->frametime / 2.0f);
         pEnt->m_flCycle(pEnt->m_flCycle() + 0.002f);
-        pEnt->m_nSequence(0);
-    }*/
+        pEnt->m_nSequence(Features::MaterialGen::ModelPreview::AnimSquence.GetData().m_iVal);
+    }
 
 
     // Rendering model

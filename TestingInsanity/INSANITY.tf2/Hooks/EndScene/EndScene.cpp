@@ -117,22 +117,26 @@ static void HandleModelPreviewPanel()
     }
     
     F::modelPreview.SetVisible(Render::menuGUI.IsVisible());
-    F::modelPreview.SetActiveModel(0);
-    F::modelPreview.SetPanelClr(Render::menuGUI.GetPrimaryClr());
-    F::modelPreview.SetRenderViewClr(Render::menuGUI.GetPrimaryClr());
 
-    // Model preview panel's size.
-    float flHeight = 0.0f, flMenuWidth = 0.0f; Render::menuGUI.GetSize(flMenuWidth, flHeight); 
-    const int iModelPreviewWidth = F::modelPreview.GetDefaultWidth();
-    F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), iModelPreviewWidth);
-    F::modelPreview.SetPanelSize     (static_cast<int>(flHeight), iModelPreviewWidth);
-
-    // Model preview panel's pos.
-    float x = 0.0f, y = 0.0f; Render::menuGUI.GetPos(x, y); x += (flMenuWidth + MENU_PADDING_IN_PXL);
-    F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
-    F::modelPreview.SetPanelPos     (static_cast<int>(x), static_cast<int>(y));
-
-    F::modelPreview.DrawOverlay(Features::Menu::Menu::Rounding.GetData().m_flVal);
+    if(F::modelPreview.IsVisible() == true)
+    {
+        F::modelPreview.SetActiveModel(0);
+        F::modelPreview.SetPanelClr(Render::menuGUI.GetPrimaryClr());
+        F::modelPreview.SetRenderViewClr(Render::menuGUI.GetPrimaryClr());
+      
+        // Model preview panel's size.
+        float flHeight = 0.0f, flMenuWidth = 0.0f; Render::menuGUI.GetSize(flMenuWidth, flHeight); 
+        const int iModelPreviewWidth = F::modelPreview.GetDefaultWidth();
+        F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), iModelPreviewWidth);
+        F::modelPreview.SetPanelSize     (static_cast<int>(flHeight), iModelPreviewWidth);
+     
+        // Model preview panel's pos.
+        float x = 0.0f, y = 0.0f; Render::menuGUI.GetPos(x, y); x += (flMenuWidth + MENU_PADDING_IN_PXL);
+        F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
+        F::modelPreview.SetPanelPos     (static_cast<int>(x), static_cast<int>(y));
+     
+        F::modelPreview.DrawOverlay(Features::Menu::Menu::Rounding.GetData().m_flVal);
+    }
 }
 
 

@@ -3,18 +3,32 @@
 
 #include "../../../SDK/class/Basic Structures.h"
 #include "../../FeatureHandler.h"
+#include "../AnimationHandler.h"
 
 
 class BoxFilled2D_t;
 struct ImVec2;
 struct ImFont;
 
-constexpr float MENU_PADDING_IN_PXL = 10.0f; // Padding between main menu & anything near it.
+constexpr float MENU_PADDING_IN_PXL       = 10.0f; // Padding between main menu & anything near it.
 
 constexpr float WIDGET_ROUNDING           = 3.0f;
 constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
 constexpr float POPUP_ROUNDING            = 5.0f;
 constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
+constexpr float TRACK_THICKNESS_PXL       = 4.0f;
+constexpr float KNOB_SIZE_PXL             = 10.0f;
+
+constexpr float SIDEMENU_SCALE            =  0.2f; // Percentage of main body allocated to side menu.
+constexpr float FRAME_PADDING_PXL         = 15.0f; // Padding between Main body & its contents.
+constexpr float SECTION_PADDING_PXL       = 10.0f; // Padding between Section walls & its contents.
+constexpr float INTER_FEATURE_PADDING_PXL =  5.0f; // Padding between each feature.
+constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres walls & its contents.
+constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
+constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
+
+constexpr float TAB_NAME_PADDING_IN_PXL   = 8.0f; // Padding above and below a tab's name in side menu.
+constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -38,8 +52,39 @@ public:
     RGBA_t GetThemeClr()     const;
 
     void CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const;
-    void CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime);
-    void ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut);
+
+    // General purpose widget rendering functions ( takes care of all colors n stuff )
+    bool DrawIntSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int iMin, const int iMax, RGBA_t clrBackground, const float* pTrackThickness = nullptr, const float* pKnowSize = nullptr, const float* pAnimationState = nullptr);
+    void DrawIntInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int* pMin = nullptr, const int* pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
+
+    // This is just a wrapper for DrawIntSlider and DrawIntInput. 
+    bool DrawIntInputWidget(
+        const char* szText, const char* szLabel, 
+        ImVec2 vMin, ImVec2 vMax, 
+        int* pData, const int iMin, const int iMax, 
+        RGBA_t clrBackground, 
+        float flSliderPercentage, float flIntInputPercentage, 
+        const float* pTrackThickness = nullptr, const float* pKnobSize = nullptr, const float* pAnimationState = nullptr
+    );
+
+    bool DrawFloatSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float flMin, const int flMax, RGBA_t clrBackground, const float* pTrackThickness = nullptr, const float* pKnowSize = nullptr, const float* pAnimationState = nullptr);
+    void DrawFloatInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float * pMin = nullptr, const float * pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
+
+    // This is just a wrapper for DrawIntSlider and DrawIntInput. 
+    bool DrawFloatInputWidget(
+        const char* szText, const char* szLabel,  // Labels.
+        ImVec2 vMin,        ImVec2 vMax,          // Dimensions
+        float* pData,       const float flMin, const float flMax, // Data for slider & inputs feild.
+        RGBA_t clrBackground, // Used to calculate text color.
+        float flSliderPercentage, float flIntInputPercentage, 
+        const float* pTrackThickness = nullptr, const float* pKnobSize = nullptr, const float* pAnimationState = nullptr
+    );
+
+
+    // Animation 
+    AnimationHandler_t m_menuAnim;
+    AnimationHandler_t m_popupAnim;
+    AnimationHandler_t m_colorPickerAnim;
 
 private:
     bool m_bVisible = true;
@@ -80,15 +125,8 @@ private:
     void _CalculateColors();
     void _FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const;
 
-    // Animation 
-    std::chrono::high_resolution_clock::time_point m_lastResetTime;
-    float m_flAnimation = 0.0f;
-
-    std::chrono::high_resolution_clock::time_point m_popupOpenTime;
-    float m_flPopupAnimation = 0.0f;
-
-    std::chrono::high_resolution_clock::time_point m_colorPickerOpenTime;
-    float m_flColorPickerAnim = 0.0f;
+    void _AnimateModel();
+    AnimationHandler_t m_modelAnim;
 
     Tab_t* m_pActiveTab = nullptr;
     std::vector<BoxFilled2D_t*> m_vecSectionBoxes = {}; // Holds draw objects for secton UI boxes.

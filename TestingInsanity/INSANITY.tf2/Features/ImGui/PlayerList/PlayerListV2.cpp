@@ -2,8 +2,6 @@
 
 #include <chrono>
 #include <vector>
-#include <wincrypt.h>
-#include <winnt.h>
 
 #include "../MenuV2/MenuV2.h"
 #include "../../../External Libraries/ImGui/imgui.h"
@@ -26,14 +24,6 @@ constexpr float NAME_TAB_ROUNDING_IN_PXL =  4.0f; // Gap between each name entry
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-PlayerListV2_t::PlayerListV2_t()
-{
-    m_lastResetTime = std::chrono::high_resolution_clock::now();
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
 void PlayerListV2_t::Draw()
 {
     if(m_bVisible == false)
@@ -42,7 +32,7 @@ void PlayerListV2_t::Draw()
     if(I::iEngine->IsInGame() == false)
         return;
 
-    Render::menuGUI.CalculateAnim(m_lastResetTime, m_flAnimation, 0.5f);
+    m_playerListAnim.CalculateAnim();
 
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
 
@@ -105,8 +95,8 @@ void PlayerListV2_t::SetVisible(bool bVisible)
 {
     m_bVisible = bVisible;
 
-    if(bVisible == false)
-        Render::menuGUI.ResetAnimation(m_lastResetTime, m_flAnimation);
+    if (bVisible == false)
+        m_playerListAnim.Reset();
 }
 
 
@@ -186,7 +176,7 @@ void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vecto
         if(bCustomMatSet == true)
         {
             float flFlashThickness = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
-            ImVec2 vAnimatedMax(vNameTabMax.x + flFlashThickness - ((vTabSize.x + flFlashThickness) * m_flAnimation), vNameTabMax.y);
+            ImVec2 vAnimatedMax(vNameTabMax.x + flFlashThickness - ((vTabSize.x + flFlashThickness) * m_playerListAnim.GetAnimation()), vNameTabMax.y);
             ImVec2 vAnimatedMin(vAnimatedMax.x - flFlashThickness, vNameTabMin.y);
             pDrawList->AddRectFilled(
                 vAnimatedMin, vAnimatedMax,
@@ -246,7 +236,7 @@ void PlayerListV2_t::_DrawEntSetting(BaseEntity* pEnt, std::string szPopupId)
                 {
                     LOG("Trying to set mateiral for entity %p as %d", pEnt, iMatIndex);
                     F::entityIterator.SetEntityMaterial(pEnt, iMatIndex);
-                    Render::menuGUI.ResetAnimation(m_lastResetTime, m_flAnimation);
+                    m_playerListAnim.Reset();
                 }
             }
             ImGui::EndPopup();
