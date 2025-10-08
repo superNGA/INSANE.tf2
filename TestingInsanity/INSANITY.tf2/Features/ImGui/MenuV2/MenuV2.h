@@ -12,11 +12,11 @@ struct ImFont;
 
 constexpr float MENU_PADDING_IN_PXL       = 10.0f; // Padding between main menu & anything near it.
 
-constexpr float WIDGET_ROUNDING           = 3.0f;
-constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
-constexpr float POPUP_ROUNDING            = 5.0f;
-constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
-constexpr float TRACK_THICKNESS_PXL       = 4.0f;
+constexpr float WIDGET_ROUNDING           =  3.0f;
+constexpr float WIDGET_BORDER_THICKNESS   =  1.5f;
+constexpr float POPUP_ROUNDING            =  5.0f;
+constexpr float POPUP_BORDER_THICKNESS    =  1.5f;
+constexpr float TRACK_THICKNESS_PXL       =  4.0f;
 constexpr float KNOB_SIZE_PXL             = 10.0f;
 
 constexpr float SIDEMENU_SCALE            =  0.2f; // Percentage of main body allocated to side menu.
@@ -27,7 +27,7 @@ constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres w
 constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
 constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
 
-constexpr float TAB_NAME_PADDING_IN_PXL   = 8.0f; // Padding above and below a tab's name in side menu.
+constexpr float TAB_NAME_PADDING_IN_PXL   =  8.0f; // Padding above and below a tab's name in side menu.
 constexpr float CTG_NAME_PADDING_IN_PXL   = 20.0f;
 
 
@@ -55,7 +55,7 @@ public:
 
     // General purpose widget rendering functions ( takes care of all colors n stuff )
     bool DrawIntSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int iMin, const int iMax, RGBA_t clrBackground, const float* pTrackThickness = nullptr, const float* pKnowSize = nullptr, const float* pAnimationState = nullptr);
-    void DrawIntInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int* pMin = nullptr, const int* pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
+    void DrawIntInput (const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int* pMin = nullptr, const int* pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
 
     // This is just a wrapper for DrawIntSlider and DrawIntInput. 
     bool DrawIntInputWidget(
@@ -68,14 +68,14 @@ public:
     );
 
     bool DrawFloatSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float flMin, const int flMax, RGBA_t clrBackground, const float* pTrackThickness = nullptr, const float* pKnowSize = nullptr, const float* pAnimationState = nullptr);
-    void DrawFloatInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float * pMin = nullptr, const float * pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
+    void DrawFloatInput (const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float* pMin = nullptr, const float* pMax = nullptr, RGBA_t* pFrameClr = nullptr, const float* pAnimation = nullptr);
 
-    // This is just a wrapper for DrawIntSlider and DrawIntInput. 
+    // This is just a wrapper for DrawFloatSlider and DrawFloatInput. 
     bool DrawFloatInputWidget(
-        const char* szText, const char* szLabel,  // Labels.
-        ImVec2 vMin,        ImVec2 vMax,          // Dimensions
-        float* pData,       const float flMin, const float flMax, // Data for slider & inputs feild.
-        RGBA_t clrBackground, // Used to calculate text color.
+        const char* szText, const char* szLabel,                    // Labels.
+        ImVec2 vMin,        ImVec2 vMax,                            // Dimensions
+        float* pData,       const float flMin, const float flMax,   // Data for slider & inputs feild.
+        RGBA_t clrBackground,                                       // Used to calculate text color.
         float flSliderPercentage, float flIntInputPercentage, 
         const float* pTrackThickness = nullptr, const float* pKnobSize = nullptr, const float* pAnimationState = nullptr
     );
@@ -85,6 +85,7 @@ public:
     AnimationHandler_t m_menuAnim;
     AnimationHandler_t m_popupAnim;
     AnimationHandler_t m_colorPickerAnim;
+    AnimationHandler_t m_configButtonAnim;
 
 private:
     bool m_bVisible = true;
@@ -101,6 +102,8 @@ private:
     ImVec2 _DrawMainBody(float flWidth, float flHeight);
     void   _DrawTabBar(float flWidth, float flHeight, float x, float y);
     void   _DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y, ImVec2 vWindowPos);
+    void   _DrawConfigPanel(float x, float y, float flWidth, float flHeight);
+    bool   m_bConfigPanelActive = false;
     ImVec2 m_vMenuPos;
     ImVec2 m_vMenuSize;
 

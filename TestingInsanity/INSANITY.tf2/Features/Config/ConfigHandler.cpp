@@ -6,12 +6,18 @@
 #include "../FeatureHandler.h"
 #include "../../Utility/ConsoleLogging.h"
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 ConfigHandler_t::ConfigHandler_t()
 {
     m_bRefeshConfigList = true;
     m_vecConfigFiles.clear();
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::IsFileNameAvialable(const std::string& szFileName) const
 {
     std::string szAssertedFileName = _AssertFileName(szFileName);
@@ -19,6 +25,9 @@ bool ConfigHandler_t::IsFileNameAvialable(const std::string& szFileName) const
     return std::ifstream(szAssertedFileName).good() == false;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::CreateConfigFile(const std::string& szFileName)
 {
     // Creating file
@@ -37,6 +46,9 @@ bool ConfigHandler_t::CreateConfigFile(const std::string& szFileName)
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::DeleteConfigFile(const std::string& szFileName)
 {
     std::string szAssertedFileName = _AssertFileName(szFileName);
@@ -63,6 +75,9 @@ bool ConfigHandler_t::DeleteConfigFile(const std::string& szFileName)
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::IsFileSigned(const std::string szFileName) const 
 {
     std::ifstream pFile(_AssertFileName(szFileName));
@@ -75,12 +90,17 @@ bool ConfigHandler_t::IsFileSigned(const std::string szFileName) const
     return szFirstLine == m_szSignature;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::HasValidExtension(const std::string& szFileName) const 
 {
     return szFileName.find(m_szExtension) != std::string::npos;
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::ReadConfigFile(std::string szFileName) const
 {
     std::string szSource = _AssertFileName(szFileName);
@@ -270,6 +290,9 @@ bool ConfigHandler_t::ReadConfigFile(std::string szFileName) const
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool ConfigHandler_t::WriteToConfigFile(std::string szFileName) const
 {
     // Checking if file is valid or not
@@ -355,6 +378,8 @@ bool ConfigHandler_t::WriteToConfigFile(std::string szFileName) const
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 const std::vector<std::string>& ConfigHandler_t::GetAllConfigFile()
 {
     if (m_bRefeshConfigList == false)
@@ -386,6 +411,9 @@ const std::vector<std::string>& ConfigHandler_t::GetAllConfigFile()
     return m_vecConfigFiles;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 std::string ConfigHandler_t::_AssertFileName(const std::string& szFileName) const
 {
     int iValidTillIndex = 0;
@@ -402,6 +430,9 @@ std::string ConfigHandler_t::_AssertFileName(const std::string& szFileName) cons
     return szClippedFileName;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void ConfigHandler_t::_SignFile(std::ofstream& pFile) const 
 {
     if (pFile.is_open() == false)

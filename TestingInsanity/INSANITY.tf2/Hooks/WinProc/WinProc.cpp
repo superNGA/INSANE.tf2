@@ -17,6 +17,9 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool winproc::hook_winproc() {
     //finding window by name here
     target_window_handle = FindWindow(nullptr, global::target_window_name); // Replace with your game's window title
@@ -43,6 +46,9 @@ bool winproc::hook_winproc() {
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void winproc::unhook_winproc()
 {
     if (target_window_handle && O_winproc) 
@@ -56,36 +62,18 @@ void winproc::unhook_winproc()
     FAIL_LOG("Failed UnHooking WinProc");
 }
 
-// NOTE : gets called once for each input, not in batch.
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 {
+    // NOTE : gets called once for each input, not in batch.
+    
     // Handle custom input
     if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) // TODO : Make this changable from menu!!!
     {
         directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
         LOG("Set UI : [ %s ]", directX::UI::UI_visble == true ? "VISIBLE" : "NOT_VISIBLE");
-    }
-
-    // Recording key for Key-Bind
-    if (Render::uiMenu.m_bRecordingKey == true)
-    {
-        if (uMsg == WM_XBUTTONDOWN)
-        {
-            WORD xButton = GET_XBUTTON_WPARAM(wParam);
-            if(xButton == XBUTTON1 || xButton == XBUTTON2)
-            {
-                // we will be using the unofficial offset ( 0x05 & 0x06 ) for xbuttons.
-                Render::uiMenu.m_iRecordedKey  = xButton + 0x04; 
-                Render::uiMenu.m_bRecordingKey = false;
-                return TRUE;
-            }
-        }
-        else if (uMsg == WM_KEYDOWN || (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST && uMsg != WM_MOUSEMOVE))
-        {
-            Render::uiMenu.m_iRecordedKey  = wParam;
-            Render::uiMenu.m_bRecordingKey = false;
-            return TRUE;
-        }
     }
 
 
@@ -94,11 +82,11 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     {
         if (uMsg == WM_XBUTTONDOWN)
         {
-            WORD xButton = GET_XBUTTON_WPARAM(wParam);
+            uint64_t xButton = static_cast<uint64_t>(GET_XBUTTON_WPARAM(wParam));
             if(xButton == XBUTTON1 || xButton == XBUTTON2)
             {
                 // we will be using the unofficial offset ( 0x05 & 0x06 ) for xbuttons.
-                Render::menuGUI.ReturnRecordedKey(xButton + 0x04);
+                Render::menuGUI.ReturnRecordedKey(xButton + 0x04llu);
                 LOG("Recorded : %X", xButton);
                 return TRUE;
             }
@@ -139,7 +127,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         // Ditching keyBoard inputs
         if (WM_KEYFIRST <= uMsg && uMsg <= WM_KEYLAST)
         {
-            I::iInputSystem->ResetInputState();
+            I::iInputSystem->ResetInputState(); // I don't know if this makes a difference or not.
             return TRUE;
         }
 
