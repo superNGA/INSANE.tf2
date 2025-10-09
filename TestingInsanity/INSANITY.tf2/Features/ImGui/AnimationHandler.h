@@ -22,6 +22,7 @@ public:
     void  CalculateAnim();
     void  Reset();
     float GetAnimation() const;
+    bool  IsComplete() const;
 
 private:
     std::chrono::high_resolution_clock::time_point m_startTime;

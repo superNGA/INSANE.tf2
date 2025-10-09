@@ -39,3 +39,11 @@ float AnimationHandler_t::GetAnimation() const
 {
     return m_flAnimation;
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool AnimationHandler_t::IsComplete() const
+{
+    return fabsf(ANIM_COMPLETE - m_flAnimation) < ANIM_COMPLETION_TOLERANCE;
+}

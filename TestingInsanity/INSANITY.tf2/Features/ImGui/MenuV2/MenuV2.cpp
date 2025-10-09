@@ -73,6 +73,7 @@ void MenuGUI_t::Draw()
     m_modelAnim.CalculateAnim();
     m_configButtonAnim.CalculateAnim();
     m_configLoadAnim.CalculateAnim();
+    m_newFileAnim.CalculateAnim();
     _AnimateModel();
 
     // Drawing main body.
@@ -873,12 +874,17 @@ void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
             ImGui::PopStyleColor(3); ImGui::PopStyleVar();
         }
 
-        // Drawing animation if this shit got loaded.
-        if (m_iLoadedConfigIndex == iConfigIndex)
+        // Draw animation if this config is loaded or this file is newly created.
+        bool bNewlyAddedFile = m_newFileAnim.IsComplete() == false && iConfigIndex == vecAllConfigs.size() - 1;
+        if (m_iLoadedConfigIndex == iConfigIndex || bNewlyAddedFile == true)
         {
+            // Choose whose animation we are doing here. ( new file or config loaded )
+            float flAnimation = bNewlyAddedFile == true ? m_newFileAnim.GetAnimation() : m_configLoadAnim.GetAnimation();
+
+            // Drawing animation.
             float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
             ImVec2 vAnimMax(
-                vCursorPos.x + vConfigEntrySize.x + flFlashWidth - ((vConfigEntrySize.x + flFlashWidth) * m_configLoadAnim.GetAnimation()),
+                vCursorPos.x + vConfigEntrySize.x + flFlashWidth - ((vConfigEntrySize.x + flFlashWidth) * flAnimation),
                 vCursorPos.y + vConfigEntrySize.y);
             ImVec2 vAnimMin(vAnimMax.x - flFlashWidth, vCursorPos.y);
 
@@ -897,7 +903,8 @@ void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButtonSize)
 {
-    constexpr float PADDING_BETWEEN_CONFIG_BUTTONS = 4.0f; // Space between config setting buttons. ( 3 buttons on the right )
+    constexpr float PADDING_BETWEEN_CONFIG_BUTTONS = 5.0f; // Space between config setting buttons. ( 3 buttons on the right )
+    constexpr float BUTTON_ITEM_SPACING_IN_PXL     = 5.0f; // Space between config setting buttons. ( 3 buttons on the right )
 
     RGBA_t clrText;         CalcTextClrForBg(clrText, m_clrSecondary);
     RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
@@ -917,22 +924,135 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
     
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
+    // Drawing text input field for user to enter file name.
+    static char s_szFileName[0xFF] = "";
+    {
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImVec2 vIconPos(vConfigButtonPos.x, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+        float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+        pDrawList->AddText( vIconPos, ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf11c"));
+        ImGui::PopFont();
+
+        // NOTE : for some reason, this keyboard icon is taking up space for 2 character in a mono font. so notice we are using 2 * icon width below.
+        ImGui::SetNextItemWidth(vConfigButtonSize.x - ((flIconWidth * 2.0f) + BUTTON_ITEM_SPACING_IN_PXL));
+        ImGui::SetCursorScreenPos(ImVec2(vConfigButtonPos.x + ((flIconWidth * 2.0f) + BUTTON_ITEM_SPACING_IN_PXL), vConfigButtonPos.y));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, m_clrSecondary.GetAsImVec4());
+        if (ImGui::InputText("##ConfigFileName", s_szFileName, sizeof(s_szFileName), ImGuiInputTextFlags_EnterReturnsTrue) == true)
+        {
+            LOG(s_szFileName);
+        }
+        ImGui::PopStyleColor();
+    }
+
+
     // Drawing "Save Config" button.
     {
+        vConfigButtonPos.y += ImGui::GetFrameHeight() + PADDING_BETWEEN_CONFIG_BUTTONS;
+        RGBA_t clrCreateConfigHovered; _FindElevatedClr(clrCreateConfigHovered, m_clrPrimary);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  clrCreateConfigHovered.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrCreateConfigHovered.GetAsImVec4());
+
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button(("##CreateConfig"), vConfigButtonSize) == true)
+        {
+            bool bFileCreated = false;
+
+            {
+                const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+                std::string szLoadedConfigName("INVALID_FILE_NAME");
+                if(m_iLoadedConfigIndex >= 0 && m_iLoadedConfigIndex < vecAllConfigs.size())
+                {
+                    szLoadedConfigName = vecAllConfigs[m_iLoadedConfigIndex];
+                }
+
+                std::string szActiveConfigName("INVALID_FILE_NAME");
+                if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+                {
+                    szActiveConfigName = vecAllConfigs[m_iActiveConfigIndex];
+                }
+
+                // set them as "Invalid" for now, try to find then again, so we have correct indexes. :)
+                m_iLoadedConfigIndex = -1;
+                m_iActiveConfigIndex = -1;
+
+                
+                bFileCreated = configHandler.CreateConfigFile(s_szFileName);
+
+
+                // now try to find the config thats loaded.
+                const std::vector<std::string>& vecUpdatedConfigs = configHandler.GetAllConfigFile();
+                size_t nConfigs = vecUpdatedConfigs.size();
+                for (int iConfigIndex = 0; iConfigIndex < nConfigs; iConfigIndex++)
+                {
+                    if (vecUpdatedConfigs[iConfigIndex] == szActiveConfigName)
+                    {
+                        m_iActiveConfigIndex = iConfigIndex;
+                        LOG("Updated active config index to : %d", m_iLoadedConfigIndex);
+                    }
+
+                    if (vecUpdatedConfigs[iConfigIndex] == szLoadedConfigName)
+                    {
+                        m_iLoadedConfigIndex = iConfigIndex;
+                        LOG("Updated loaded config index to : %d", m_iLoadedConfigIndex);
+                    }
+                }
+            }
+
+            if (bFileCreated == true)
+            {
+                LOG("Created config file [ %s ]", s_szFileName);
+                s_szFileName[0] = '\0';
+                m_newFileAnim.Reset();
+            }
+            else
+            {
+                FAIL_LOG("Failed to create config file [ %s ]", s_szFileName);
+            }
+        }
+
+        ImGui::PopStyleColor(2);
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf4d0"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Create");
+    }
+
+
+    // Drawing "Save Config" button.
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
         ImGui::SetCursorScreenPos(vConfigButtonPos);
         if (ImGui::Button(("##SaveConfig"), vConfigButtonSize) == true)
         {
-            LOG("saved config my nigga!");
+            const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+            // Must be a valid file
+            if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+            {
+                configHandler.WriteToConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+                LOG("saved config my nigga!");
+            }
+            else
+            {
+                FAIL_LOG("Selected a file first dumb ass.");
+            }
         }
 
         ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf0c7"));
         ImGui::PopFont();
 
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), "   Save");
     }
 
@@ -943,17 +1063,17 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
         ImGui::SetCursorScreenPos(vConfigButtonPos);
         if (ImGui::Button("##SetAsDefault", vConfigButtonSize) == true)
         {
-            LOG("saved config my nigga!");
+            LOG("TODO : Make this load default config feautre");
         }
 
         ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf005"));
         ImGui::PopFont();
 
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), "   Set Default");
     }
 
@@ -964,17 +1084,55 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
         ImGui::SetCursorScreenPos(vConfigButtonPos);
         if (ImGui::Button("##DeleteConfig", vConfigButtonSize) == true)
         {
-            LOG("saved config my nigga!");
+            const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+            // Must be a valid file
+            if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+            {
+                // Incase a config file is loaded we need to maintain a valid loaded config index, 
+                // for that we need to re-aquire loaded config index after deleting current file.
+                if(m_iLoadedConfigIndex >= 0 && m_iLoadedConfigIndex < vecAllConfigs.size())
+                {
+                    std::string szLoadedConfigName = vecAllConfigs[m_iLoadedConfigIndex];
+
+                    configHandler.DeleteConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+
+                    m_iLoadedConfigIndex = -1; // set "no config loaded" by default.
+
+                    // now try to find the config thats loaded.
+                    const std::vector<std::string>& vecUpdatedConfigsList = configHandler.GetAllConfigFile();
+                    size_t nConfigs = vecUpdatedConfigsList.size();
+                    for (int iConfigIndex = 0; iConfigIndex < nConfigs; iConfigIndex++)
+                    {
+                        if (vecUpdatedConfigsList[iConfigIndex] == szLoadedConfigName)
+                        {
+                            m_iLoadedConfigIndex = iConfigIndex;
+                            LOG("Updated loaded config index to : %d", m_iLoadedConfigIndex);
+                        }
+                    }
+
+                    WIN_LOG("Deleted file @ index [ %d ]", m_iActiveConfigIndex);
+                    m_iActiveConfigIndex = -1; // since this files needs to be selected to be deleted, no file must now be selected.
+                }
+                else // if no config file is loaded, then just yank that shit.
+                {
+                    configHandler.DeleteConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+                }
+            }
+            else
+            {
+                FAIL_LOG("Selected a file first dumb ass.");
+            }
         }
 
         ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf014"));
         ImGui::PopFont();
 
         pDrawList->AddText(
-            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
             ImColor(clrText.GetAsImVec4()), "   Delete");
     }
 

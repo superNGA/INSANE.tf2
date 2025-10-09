@@ -87,6 +87,7 @@ public:
     AnimationHandler_t m_colorPickerAnim;
     AnimationHandler_t m_configButtonAnim;
     AnimationHandler_t m_configLoadAnim;
+    AnimationHandler_t m_newFileAnim;
 
 private:
     bool m_bVisible = true;
