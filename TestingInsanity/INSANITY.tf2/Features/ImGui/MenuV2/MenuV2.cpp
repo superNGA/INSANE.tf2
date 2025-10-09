@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdint>
 
-
+#include "../../../External Libraries/ImGui/imgui_internal.h"
 #include "../../../Extra/math.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
@@ -72,6 +72,7 @@ void MenuGUI_t::Draw()
     m_colorPickerAnim.CalculateAnim();
     m_modelAnim.CalculateAnim();
     m_configButtonAnim.CalculateAnim();
+    m_configLoadAnim.CalculateAnim();
     _AnimateModel();
 
     // Drawing main body.
@@ -659,26 +660,30 @@ void MenuGUI_t::_DrawConfigPanel(float x, float y, float flWidth, float flHeight
         pSectionBox->SetVisible(false);
     }
 
-    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-
+    // Constants.
     constexpr float PADDING_FROM_WALLS        = 20.0f;
     constexpr float CONFIG_INFO_HEIGHT_IN_PXL = 100.0f;
     constexpr float CONFIG_FILES_WIDTH_PERC   = 0.8f;
 
-    // Config info panel.
+
+    // Config Info Panel
     ImVec2 vConfigInfoPos (x + PADDING_FROM_WALLS, y + PADDING_FROM_WALLS);
     ImVec2 vConfigInfoSize((flWidth * CONFIG_FILES_WIDTH_PERC) - (2.0f * PADDING_FROM_WALLS), CONFIG_INFO_HEIGHT_IN_PXL);
-    pDrawList->AddRectFilled(
-        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
-        ImColor(m_clrSecondary.GetAsImVec4()),
-        Features::Menu::SectionBoxes::Rounding.GetData().m_flVal);
-    pDrawList->AddRect(
-        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
-        ImColor(m_clrTheme.GetAsImVec4()),
-        Features::Menu::SectionBoxes::Rounding.GetData().m_flVal, 0, WIDGET_BORDER_THICKNESS);
+    
+    const float flConfigInfoRounding = Features::Menu::SectionBoxes::Rounding.GetData().m_flVal;
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 1.0f, 1.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, flConfigInfoRounding);
+    ImGui::SetCursorScreenPos(vConfigInfoPos);
+    ImGui::BeginChild("##ConfigFileInfoChild", vConfigInfoSize);
+    {
+        _DrawConfigInfo(vConfigInfoPos, vConfigInfoSize);
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
 
 
-    // All config files.
+    // Config List Window
     ImVec2 vConfigListPos (vConfigInfoPos.x, vConfigInfoPos.y + CONFIG_INFO_HEIGHT_IN_PXL + PADDING_FROM_WALLS);
     ImVec2 vConfigListSize(
         vConfigInfoSize.x,
@@ -697,42 +702,283 @@ void MenuGUI_t::_DrawConfigPanel(float x, float y, float flWidth, float flHeight
     
     if (ImGui::Begin("##AllConfigFiles", nullptr, ImGuiWindowFlags_NoDecoration) == true)
     {
-        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
-
-        ImVec2 vWindowPos(ImGui::GetWindowPos());
-        ImVec2 vCursorPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
-        
-        constexpr float PADDING_FROM_WALLS        = SECTION_PADDING_PXL; // Space between config entry and surrounding n shit.
-        constexpr float PADDING_BETWEEN_ENTIRES   =  5.0f; // Space between entires.
-        constexpr float CONFIG_ENTRY_HEIGHT       = 50.0f; // Height of each config entry.
-        constexpr float CONFIG_ENTRY_ITEM_SPACING =  5.0f; // space between config entry walls & its contents.
-        ImVec2 vConfigEntrySize(vConfigListSize.x - (2.0f * PADDING_FROM_WALLS), CONFIG_ENTRY_HEIGHT);
-
-        const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
-        for (const std::string& szConfigName : vecAllConfigs)
-        {
-            pDrawList->AddRectFilled(
-                vCursorPos, ImVec2(vCursorPos.x + vConfigEntrySize.x, vCursorPos.y + vConfigEntrySize.y),
-                ImColor(m_clrPrimary.GetAsImVec4()), POPUP_ROUNDING
-            );
-
-            ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
-            ImVec2 vFileIconPos(vCursorPos.x + CONFIG_ENTRY_ITEM_SPACING, vCursorPos.y + (vConfigEntrySize.y / 2.0f) - ImGui::GetTextLineHeight());
-            pDrawList->AddText(vFileIconPos, ImColor(255, 255, 255, 255), reinterpret_cast<const char*>(u8"\uf15c"));
-            ImGui::PopFont();
-
-            ImVec2 vFileNamePos(vCursorPos.x + CONFIG_ENTRY_ITEM_SPACING, vCursorPos.y + (vConfigEntrySize.y / 2.0f) - ImGui::GetTextLineHeight());
-            pDrawList->AddText(vFileNamePos, ImColor(255, 255, 255, 255), ("  " + szConfigName).c_str());
-
-
-            // Updating cursor pos for the next entry.
-            vCursorPos.y += vConfigEntrySize.y + PADDING_BETWEEN_ENTIRES;
-        }
-
-        ImGui::End();
+        _DrawConfigList(vConfigListSize);
     }
 
     ImGui::PopStyleVar(4); ImGui::PopStyleColor();
+
+    // Config Buttons ( save, set-as-default, etc... )
+    ImVec2 vConfigButtonPos (vConfigListPos.x + vConfigListSize.x + (PADDING_FROM_WALLS / 2.0f), vConfigListPos.y);
+    ImVec2 vConfigButtonSize((x + flWidth - (PADDING_FROM_WALLS / 2.0f)) - vConfigButtonPos.x, 30.0f);
+    _DrawConfigButtons(vConfigButtonPos, vConfigButtonSize);
+
+    // Unload button.
+    {
+        ImVec2 vDeloadButtonPos(vConfigButtonPos.x, vConfigListPos.y + vConfigListSize.y - vConfigButtonSize.y);
+        ImGui::SetCursorScreenPos(vDeloadButtonPos);
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+
+        RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+        ImGui::PushStyleColor(ImGuiCol_Button,          m_clrSecondary.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,    clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,   clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Border,          m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text,            m_clrTheme.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
+
+        if (ImGui::Button(reinterpret_cast<const char*>(u8"\uf011"), vConfigButtonSize) == true)
+        {
+            directX::UI::shutdown_UI = true; // bye my nigga :)
+        }
+        ImGui::PopStyleColor(5); ImGui::PopStyleVar(2);
+        ImGui::PopFont();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize)
+{
+    const float flConfigInfoRounding = Features::Menu::SectionBoxes::Rounding.GetData().m_flVal;
+
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing Config info box
+    pDrawList->AddRectFilled(
+        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
+        ImColor(m_clrSecondary.GetAsImVec4()),
+        flConfigInfoRounding);
+
+    // outline for config info box
+    pDrawList->AddRect(
+        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
+        ImColor(m_clrTheme.GetAsImVec4()),
+        flConfigInfoRounding, 0, WIDGET_BORDER_THICKNESS);
+
+    // Config info box's animation
+    if (m_iLoadedConfigIndex >= 0)
+    {
+        const float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
+        ImVec2 vAnimMax(
+            vConfigInfoPos.x + vConfigInfoSize.x + flFlashWidth - ((vConfigInfoSize.x + flFlashWidth) * m_configLoadAnim.GetAnimation()),
+            vConfigInfoPos.y + vConfigInfoSize.y);
+        ImVec2 vAnimMin(vAnimMax.x - flFlashWidth, vConfigInfoPos.y);
+        pDrawList->AddRectFilled(vAnimMin, vAnimMax, ImColor(m_clrTheme.GetAsImVec4()));
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
+{
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    ImVec2 vWindowPos(ImGui::GetWindowPos());
+    ImVec2 vCursorPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
+
+    constexpr float PADDING_FROM_WALLS = SECTION_PADDING_PXL; // Space between config entry and surrounding n shit.
+    constexpr float PADDING_BETWEEN_ENTIRES = 5.0f; // Space between entires.
+    constexpr float CONFIG_ENTRY_HEIGHT = 50.0f; // Height of each config entry.
+    constexpr float CONFIG_ENTRY_ITEM_SPACING = 5.0f; // space between config entry walls & its contents.
+    ImVec2 vConfigEntrySize(vConfigListSize.x - (2.0f * PADDING_FROM_WALLS), CONFIG_ENTRY_HEIGHT);
+
+
+    const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+    for (int iConfigIndex = 0; iConfigIndex < vecAllConfigs.size(); iConfigIndex++)
+    {
+        const std::string& szConfigName = vecAllConfigs[iConfigIndex];
+
+        // Drawing a button behind the config entry ( we gonna draw ) so can do some logic.
+        ImGui::SetCursorScreenPos(vCursorPos);
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushItemFlag(ImGuiItemFlags_AllowOverlap, true);
+            if (ImGui::Button(("##" + szConfigName).c_str(), vConfigEntrySize) == true)
+            {
+                m_iActiveConfigIndex = iConfigIndex;
+            }
+            ImGui::PopItemFlag();
+            ImGui::PopStyleColor(3);
+        }
+
+        pDrawList->AddRectFilled(
+            vCursorPos, ImVec2(vCursorPos.x + vConfigEntrySize.x, vCursorPos.y + vConfigEntrySize.y),
+            ImColor(m_clrPrimary.GetAsImVec4()), POPUP_ROUNDING
+        );
+
+        if (iConfigIndex == m_iActiveConfigIndex)
+        {
+            pDrawList->AddRect(
+                vCursorPos, ImVec2(vCursorPos.x + vConfigEntrySize.x, vCursorPos.y + vConfigEntrySize.y),
+                ImColor(m_clrTheme.GetAsImVec4()), POPUP_ROUNDING, 0, WIDGET_BORDER_THICKNESS
+            );
+        }
+
+        // NOTE : entry is of primary color, draw on a secondary color window, which is draw on a primary color window.
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImVec2 vFileIconPos(vCursorPos.x + CONFIG_ENTRY_ITEM_SPACING, vCursorPos.y + (vConfigEntrySize.y / 2.0f) - ImGui::GetTextLineHeight());
+        ImColor clrConfigName(m_iLoadedConfigIndex == iConfigIndex ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        pDrawList->AddText(vFileIconPos, clrConfigName, reinterpret_cast<const char*>(u8"\uf15c"));
+
+        ImGui::PopFont();
+
+        vFileIconPos.y = vCursorPos.y + vConfigEntrySize.y - CONFIG_ENTRY_ITEM_SPACING - ImGui::GetTextLineHeight();
+        pDrawList->AddText(vFileIconPos, clrConfigName, szConfigName.c_str());
+
+        // Styling buttons.
+        {
+            RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+            ImGui::PushStyleColor(ImGuiCol_Button, m_clrSecondary.GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, clrButtonActive.GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrButtonActive.GetAsImVec4());
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, POPUP_ROUNDING);
+        }
+
+
+        ImGui::PushID(szConfigName.c_str());
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+        constexpr float CONFIG_BUTTON_PERCENTAGE = 0.2f;
+        ImVec2 vConfigButtonSize(
+            vConfigEntrySize.y - (2.0f * CONFIG_ENTRY_ITEM_SPACING),
+            vConfigEntrySize.y - (2.0f * CONFIG_ENTRY_ITEM_SPACING));
+
+        ImVec2 vConfigButtonPos(
+            vCursorPos.x + vConfigEntrySize.x - CONFIG_ENTRY_ITEM_SPACING - vConfigButtonSize.x,
+            vCursorPos.y + vConfigEntrySize.y - CONFIG_ENTRY_ITEM_SPACING - vConfigButtonSize.y);
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        // Load config button.
+        if (ImGui::Button(reinterpret_cast<const char*>(u8"\uf409"), vConfigButtonSize) == true)
+        {
+            configHandler.ReadConfigFile(szConfigName);
+
+            m_iLoadedConfigIndex = iConfigIndex;
+            m_iActiveConfigIndex = -1; // Don't highlight the config once loaded. ( this would give a "consumed" sort of feeling )
+            m_configLoadAnim.Reset();
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopFont();
+        ImGui::PopID();
+
+        {
+            ImGui::PopStyleColor(3); ImGui::PopStyleVar();
+        }
+
+        // Drawing animation if this shit got loaded.
+        if (m_iLoadedConfigIndex == iConfigIndex)
+        {
+            float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
+            ImVec2 vAnimMax(
+                vCursorPos.x + vConfigEntrySize.x + flFlashWidth - ((vConfigEntrySize.x + flFlashWidth) * m_configLoadAnim.GetAnimation()),
+                vCursorPos.y + vConfigEntrySize.y);
+            ImVec2 vAnimMin(vAnimMax.x - flFlashWidth, vCursorPos.y);
+
+            pDrawList->AddRectFilled(vAnimMin, vAnimMax, ImColor(m_clrTheme.GetAsImVec4()));
+        }
+
+        // Updating cursor pos for the next entry.
+        vCursorPos.y += vConfigEntrySize.y + PADDING_BETWEEN_ENTIRES;
+    }
+
+    ImGui::End();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButtonSize)
+{
+    constexpr float PADDING_BETWEEN_CONFIG_BUTTONS = 4.0f; // Space between config setting buttons. ( 3 buttons on the right )
+
+    RGBA_t clrText;         CalcTextClrForBg(clrText, m_clrSecondary);
+    RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+    {
+        //RGBA_t clrButton = m_iActiveConfigIndex == -1 ? m_clrPrimary : m_clrSecondary;
+        RGBA_t clrButton = m_clrSecondary;
+        if (m_iActiveConfigIndex == -1) // This is so that the button seems unreactive when no config is selected.
+            clrButtonActive = clrButton;
+
+        ImGui::PushStyleColor(ImGuiCol_Button, clrButton.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+    }
+    
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing "Save Config" button.
+    {
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button(("##SaveConfig"), vConfigButtonSize) == true)
+        {
+            LOG("saved config my nigga!");
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf0c7"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Save");
+    }
+
+
+    // Drawing "Set as default config" button
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button("##SetAsDefault", vConfigButtonSize) == true)
+        {
+            LOG("saved config my nigga!");
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf005"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Set Default");
+    }
+
+
+    // Drawing "Delete config" button.
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button("##DeleteConfig", vConfigButtonSize) == true)
+        {
+            LOG("saved config my nigga!");
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf014"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + 5.0f, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Delete");
+    }
+
+    ImGui::PopStyleColor(4); ImGui::PopStyleVar();
 }
 
 

@@ -86,6 +86,7 @@ public:
     AnimationHandler_t m_popupAnim;
     AnimationHandler_t m_colorPickerAnim;
     AnimationHandler_t m_configButtonAnim;
+    AnimationHandler_t m_configLoadAnim;
 
 private:
     bool m_bVisible = true;
@@ -103,7 +104,13 @@ private:
     void   _DrawTabBar(float flWidth, float flHeight, float x, float y);
     void   _DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y, ImVec2 vWindowPos);
     void   _DrawConfigPanel(float x, float y, float flWidth, float flHeight);
+    void   _DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize);
+    void   _DrawConfigList(ImVec2 vConfigListSize);
+    void   _DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButtonSize);
     bool   m_bConfigPanelActive = false;
+    // These are some important variables, they hold active config state n shit.
+    int    m_iActiveConfigIndex = -1; 
+    int    m_iLoadedConfigIndex = -1;
     ImVec2 m_vMenuPos;
     ImVec2 m_vMenuSize;
 

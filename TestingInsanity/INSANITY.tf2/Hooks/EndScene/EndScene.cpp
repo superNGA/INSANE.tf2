@@ -220,7 +220,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
             insaneProfiler.Render();
         }
 
-        Render::uiMenu.Draw();
+        //Render::uiMenu.Draw();
         F::materialGen.Run();
         Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
         Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
