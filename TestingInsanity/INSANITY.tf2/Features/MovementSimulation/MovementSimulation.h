@@ -102,11 +102,11 @@ DECLARE_FEATURE_OBJECT(movementSimulation, MovementSimulation_t)
 
 DEFINE_SECTION(MovementSim, "Aimbot", 2);
 
-DEFINE_FEATURE(Debug_MovementSim, bool, MovementSim, Aimbot, 1, false)
-DEFINE_FEATURE(Ticks_To_Simulate, IntSlider_t, MovementSim, Aimbot, 2, 
+DEFINE_FEATURE(Debug_MovementSim, "Debug Movement Sim", bool, MovementSim, Aimbot, 1, false)
+DEFINE_FEATURE(Ticks_To_Simulate, "Simulation Ticks", IntSlider_t, MovementSim, Aimbot, 2, 
     IntSlider_t(10, 1, 128))
 
-DEFINE_FEATURE(Enable_Strafe_Prediction, bool, MovementSim, Aimbot, 3, true)
+DEFINE_FEATURE(Enable_Strafe_Prediction, "Strafe Prediction", bool, MovementSim, Aimbot, 3, true)
 
 
 /*

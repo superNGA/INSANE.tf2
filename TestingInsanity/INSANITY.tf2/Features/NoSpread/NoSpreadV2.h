@@ -59,10 +59,10 @@ private:
 
 DECLARE_FEATURE_OBJECT(noSpreadV2, NoSpreadV2_t)
 
-DEFINE_TAB(NoSpreadV2, 9)
+DEFINE_TAB(NoSpreadV2, 6)
 DEFINE_SECTION(NoSpread, "NoSpreadV2", 1)
 
-DEFINE_FEATURE(NoSpread, bool, NoSpread, NoSpreadV2, 1, false)
+DEFINE_FEATURE(NoSpread, "Disable spread", bool, NoSpread, NoSpreadV2, 1, false)
 
 
 /*

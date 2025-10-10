@@ -57,30 +57,30 @@ DECLARE_FEATURE_OBJECT(aimbotMelee, AimbotMelee_t)
 DEFINE_SECTION(Melee_Aimbot, "Aimbot", 3)
 
 DEFINE_FEATURE(
-    MeleeAimbot, bool, Melee_Aimbot, Aimbot, 1, false,
+    MeleeAimbot, "Enable", bool, Melee_Aimbot, Aimbot, 1, false,
     FeatureFlag_SupportKeyBind | FeatureFlag_DisableWhileMenuOpen,
     "Aims for you when smacking someone."
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_AutoFire, bool, Melee_Aimbot, Aimbot, 2, false,
+    MeleeAimbot_AutoFire, "Auto-Fire", bool, Melee_Aimbot, Aimbot, 2, false,
     FeatureFlag_SupportKeyBind,
     "Hits as soon as a target is found"
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_HitTeammates_when_benificial, bool, Melee_Aimbot, Aimbot, 3, false,
+    MeleeAimbot_HitTeammates_when_benificial, "Target TeamMates", bool, Melee_Aimbot, Aimbot, 3, false,
     FeatureFlag_SupportKeyBind,
     "Aims for teammates with stuff like disiplinary action"
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_FOV, FloatSlider_t, Melee_Aimbot, Aimbot, 4, FloatSlider_t(10.0f, 0.0f, 180.0f),
+    MeleeAimbot_FOV, "FOV", FloatSlider_t, Melee_Aimbot, Aimbot, 4, FloatSlider_t(10.0f, 0.0f, 180.0f),
     FeatureFlag_SupportKeyBind, "Will only target entities within FOV circle"
 )
 
 DEFINE_FEATURE(
-    MeleeAimbot_OnlyDoBackStabs_Spy, bool, Melee_Aimbot, Aimbot, 9, false,
+    MeleeAimbot_OnlyDoBackStabs_Spy, "Only BackStabs", bool, Melee_Aimbot, Aimbot, 9, false,
     FeatureFlag_SupportKeyBind,
     "Only Allow back stabs with spy"
 )

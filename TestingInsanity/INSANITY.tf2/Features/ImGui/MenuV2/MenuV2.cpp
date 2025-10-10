@@ -2,17 +2,21 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
-#include <fibersapi.h>
-#include <wingdi.h>
-#include <winscard.h>
-#include <winuser.h>
+#include <filesystem>
 
+#include "../../../External Libraries/ImGui/imgui_internal.h"
+#include "../../../Extra/math.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Hooks/DirectX Hook/DirectX_hook.h"
-#include "../../FeatureHandler.h"
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../SDK/class/IPanel.h"
+#include "../../../SDK/class/IVEngineClient.h"
+#include "../../../SDK/class/BaseEntity.h"
+#include "../../FeatureHandler.h"
+#include "../../Config/ConfigHandler.h"
+#include "../../ModelPreview/ModelPreview.h"
 
 // Renderer
 #include "../../Graphics Engine V2/Graphics.h"
@@ -21,32 +25,15 @@
 #include "../../Graphics Engine V2/Draw Objects/Circle/Circle.h"
 
 
-constexpr float SIDEMENU_SCALE            =  0.2f; // Percentage of main body allocated to side menu.
-constexpr float FRAME_PADDING_PXL         = 15.0f; // Padding between Main body & its contents.
-constexpr float SECTION_PADDING_PXL       = 10.0f; // Padding between Section walls & its contents.
-constexpr float INTER_FEATURE_PADDING_PXL =  5.0f; // Padding between each feature.
-constexpr float FEATURE_PADDING_PXL       =  5.0f; // Padding between feautres walls & its contents.
-constexpr float FEATURE_HEIGHT            = 30.0f; // Height of each feature.
-constexpr float SECTION_NAME_PADDING      = 10.0f; // Padding above and below section names in main body. 
-
-constexpr float WIDGET_ROUNDING           = 3.0f;
-constexpr float WIDGET_BORDER_THICKNESS   = 1.5f;
-constexpr float POPUP_ROUNDING            = 5.0f;
-constexpr float POPUP_BORDER_THICKNESS    = 1.5f;
-
-constexpr float ANIM_COMPLETION_TOLERANCE = 0.005f;
-constexpr float ANIM_COMPLETE             = 1.0f;
-constexpr float ANIM_ZERO                 = 0.0f;
-constexpr float ANIM_DURATION_IN_SEC      = 0.3f;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-MenuGUI_t::MenuGUI_t()
+MenuGUI_t::MenuGUI_t() : m_menuAnim(), m_popupAnim(), m_colorPickerAnim(), m_modelAnim(0.7f)
 {
     m_clrPrimary.Init(); m_clrSecondary.Init(); m_clrTheme.Init();
 
-    m_lastResetTime = std::chrono::high_resolution_clock::now();
-    m_popupOpenTime = std::chrono::high_resolution_clock::now();
+    m_vMenuPos.x  = 0.0f; m_vMenuPos.y  = 0.0f;
+    m_vMenuSize.x = 0.0f; m_vMenuSize.y = 0.0f;
 }
 
 
@@ -55,11 +42,13 @@ MenuGUI_t::MenuGUI_t()
 void MenuGUI_t::_InitFonts()
 {
     // Initializing fonts.
-    m_pFontFeatures     = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pFontSectionName  = Resources::Fonts::JetBrains_SemiBold_NL_Small; 
-    m_pFontSideMenu     = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pFontCatagoryName = Resources::Fonts::JetBrains_SemiBold_NL_Small;
-    m_pPopupFont        = Resources::Fonts::JetBrains_SemiBold_NL_Small;
+    m_pFontFeatures     = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pFontSectionName  = Resources::Fonts::JetBrainsMonoNerd_Small; 
+    m_pFontSideMenu     = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pFontCatagoryName = Resources::Fonts::JetBrainsMonoNerd_Small;
+    m_pPopupFont        = Resources::Fonts::JetBrainsMonoNerd_Small;
+
+    m_pTitleFont        = Resources::Fonts::JetBrains_SemiBold_NL_Mid;
 }
 
 
@@ -78,16 +67,23 @@ void MenuGUI_t::Draw()
     
     _CalculateColors();
     
-    _CalculateAnim(m_lastResetTime, m_flAnimation, ANIM_DURATION_IN_SEC);
-    _CalculateAnim(m_popupOpenTime, m_flPopupAnimation, ANIM_DURATION_IN_SEC);
+    // Animation calculations.
+    m_menuAnim.CalculateAnim();
+    m_popupAnim.CalculateAnim();
+    m_colorPickerAnim.CalculateAnim();
+    m_modelAnim.CalculateAnim();
+    m_configButtonAnim.CalculateAnim();
+    m_configLoadAnim.CalculateAnim();
+    m_newFileAnim.CalculateAnim();
+    _AnimateModel();
 
     // Drawing main body.
     float  flScaleMult = Features::Menu::Menu::Scale.GetData().m_flVal;
-    ImVec2 vWindowSize(900.0f * flScaleMult, 650.0f * flScaleMult);
-    ImVec2 vWindowPos  = _DrawMainBody(vWindowSize.x, vWindowSize.y);
+    m_vMenuSize = ImVec2(900.0f * flScaleMult, 650.0f * flScaleMult);
+    m_vMenuPos  = _DrawMainBody(m_vMenuSize.x, m_vMenuSize.y);
 
     // Drawing side menu.
-    _DrawTabBar(vWindowSize.x * SIDEMENU_SCALE, vWindowSize.y, vWindowPos.x, vWindowPos.y);
+    _DrawTabBar(m_vMenuSize.x * SIDEMENU_SCALE, m_vMenuSize.y, m_vMenuPos.x, m_vMenuPos.y);
 
 
     {
@@ -113,9 +109,17 @@ void MenuGUI_t::SetVisible(bool bVisible)
 
     if(bVisible == false)
     {
-        _ResetAnimation(m_lastResetTime, m_flAnimation);
-        _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+        m_menuAnim.Reset(); m_popupAnim.Reset();
+        m_modelAnim.Reset();
     }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::IsVisible() const
+{
+    return m_bVisible;
 }
 
 
@@ -153,16 +157,21 @@ bool MenuGUI_t::_Initialize()
 ///////////////////////////////////////////////////////////////////////////
 ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
 {
-    ImVec2           vWindowPos;
+    ImVec2           vWindowPos(0.0f, 0.0f);
     ImGuiWindowFlags iWindowFlags = 
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | 
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::SetNextWindowSize(ImVec2(flWidth, flHeight));
-    if (ImGui::Begin("##MainMenuGUI", nullptr, iWindowFlags) == true)
+    std::string szMainWindowName("##MainMenuGUI");
+    if (ImGui::Begin(szMainWindowName.c_str(), nullptr, iWindowFlags) == true)
     {
-        vWindowPos = ImGui::GetWindowPos();
+        vWindowPos = ImGui::GetWindowPos();    
+
+        // Clamp window pos
+        vWindowPos = _ClampWindowPos(vWindowPos); 
+        ImGui::SetWindowPos(vWindowPos);
 
         // Pos & Size
         m_pMainMenu->SetVertex(vec(vWindowPos.x, vWindowPos.y, 0.0f), vec(vWindowPos.x + flWidth, vWindowPos.y + flHeight, 0.0f));
@@ -185,8 +194,17 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
         // Rounding
         m_pMainMenu->SetRounding(Features::Menu::Menu::Rounding.GetData().m_flVal);
 
-        float flAnimatedScroll = (ANIM_COMPLETE - m_flAnimation) * 50.0f;
-        _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll);
+        float flAnimatedScroll = (ANIM_COMPLETE - m_menuAnim.GetAnimation()) * 50.0f;
+        ImVec2 vWindowPosAnimated(vWindowPos.x + (flWidth * SIDEMENU_SCALE), vWindowPos.y - ImGui::GetScrollY() + flAnimatedScroll);
+        
+        if (m_pActiveTab != nullptr)
+        {
+            _DrawSections(m_pActiveTab, flWidth * (1.0f - SIDEMENU_SCALE), flHeight, vWindowPosAnimated.x, vWindowPosAnimated.y, vWindowPos);
+        }
+        else if (m_pActiveTab == nullptr && m_bConfigPanelActive == true)
+        {
+            _DrawConfigPanel(vWindowPosAnimated.x, vWindowPosAnimated.y, flWidth * (1.0f - SIDEMENU_SCALE), flHeight);
+        }
 
         ImGui::End();
     }
@@ -201,10 +219,8 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
 {
     ImGuiWindowFlags iWindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
-    const float flSideMenuPadding = flWidth * 0.025f;
-    {
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(flSideMenuPadding, flSideMenuPadding));
-    }
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,  ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 
     ImGui::SetNextWindowBgAlpha(0.0f);
     ImGui::SetNextWindowSize(ImVec2(flWidth, flHeight));
@@ -213,7 +229,6 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
     {
         // Pos & Size
         m_pSideMenu->SetVertex(vec(x, y, 0.0f), vec(x + flWidth, y + flHeight, 0.0f));
-        ImGui::Text("INSANE.tf2");
 
         // Blur
         float flBlurAmmount = Features::Menu::SideMenu::Blur.GetData().m_flVal;
@@ -233,54 +248,253 @@ void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
         // Rounding
         m_pSideMenu->SetRounding(Features::Menu::SideMenu::Rounding.GetData().m_flVal);
 
-        
-        // Drawing tabs.
-        const ImVec2 vButtonSize(flWidth - (flSideMenuPadding * 4.0f), flHeight / 20.0f);
-        _StyleSideMenuBottons();
+        ImGui::PushFont(m_pFontSideMenu);
+
+        // Drawing MY NAME :)
+        ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+        ImVec2 vIntroSize;
         {
-            const std::vector<Tab_t*> vecTabs = Config::featureHandler.GetFeatureMap();
-            for (Tab_t* pTab : vecTabs)
+            ImGui::PushFont(m_pTitleFont);
+            
+            std::string szMyName("INSANE");
+            ImGui::PushFont(Resources::Fonts::MontserratBlack);
+            ImVec2 vMyNameSize(ImGui::CalcTextSize(szMyName.c_str()));
+            ImGui::PopFont();
+
+            std::string szTarget(".tf2");
+            ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+            ImVec2 vTargetTextSize(ImGui::CalcTextSize(szTarget.c_str()));
+            ImGui::PopFont();
+
+            vIntroSize = ImVec2((vMyNameSize.x + vTargetTextSize.x), vMyNameSize.y);
+
+            ImGui::PushFont(Resources::Fonts::MontserratBlack);
+            pDrawList->AddText(ImVec2(x + (flWidth - vIntroSize.x) / 2.0f, y + SECTION_PADDING_PXL), ImColor(m_clrTheme.GetAsImVec4()), szMyName.c_str());
+            ImGui::PopFont();
+
+            RGBA_t clrTargetName; CalcTextClrForBg(clrTargetName, m_clrSecondary);
+            ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+            pDrawList->AddText(ImVec2(x + ((flWidth - vIntroSize.x) / 2.0f) + vMyNameSize.x, y + SECTION_PADDING_PXL + (vMyNameSize.y - vTargetTextSize.y)), ImColor(clrTargetName.GetAsImVec4()), szTarget.c_str());
+            ImGui::PopFont();
+
+            ImGui::PopFont();
+        }
+
+        // Drawing tabs.
+        ImVec2 vButtonSize(flWidth, ImGui::GetTextLineHeight() + (2.0f * TAB_NAME_PADDING_IN_PXL));
+        ImVec2 vCursorScreenPos(x, y + (2.0f * SECTION_PADDING_PXL) + vIntroSize.y);
+
+        // This will help us bundle tab buttons which are of same catagory.
+        // Whenever the string changes, we leave a bigger gap & write the catagory name on top.
+        std::vector<std::string> tabBundlingHelper = {
+            "Combat", "Combat", "Combat", "Combat", "Combat", "Combat", 
+            "Visual", "Visual", "Visual",
+            "Misc", "Misc", "Misc" 
+        };
+        std::vector<const char8_t*> vecIconList = {
+            u8"\uee15", // icon 1
+            u8"\uf1e2", // icon 2
+            u8"\uf050", // icon 3
+            u8"\uf049", // icon 4
+            u8"\uf2f1", // icon 5
+            u8"\uf21b", // icon 6 
+            u8"\uf1fc", // icon 7   
+            u8"\uf121", // icon 8
+            u8"\uf085", // icon 9
+            u8"\uef0c", // icon 10
+            u8"\uf1b2", // icon 11
+            u8"\uf520"  // icon 12
+        };
+        constexpr float DISTINCT_CATAGORIES = 3.0f;
+        std::string szCurrCatagory = "NULL";
+        {
+            RGBA_t clrHighLightClr; _FindElevatedClr(clrHighLightClr, m_clrSecondary);
+            RGBA_t clrCatagoryText; CalcTextClrForBg(clrCatagoryText, m_clrSecondary);
             {
-                bool bShouldPop = false;
-                if (pTab == m_pActiveTab)
+                ImGui::PushStyleColor(ImGuiCol_Button,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered,      clrHighLightClr.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,       clrHighLightClr.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text,               clrCatagoryText.GetAsImVec4());
+
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+            }
+
+            const std::vector<Tab_t*> vecTabs = Config::featureHandler.GetFeatureMap();
+            float flTabCount                  = static_cast<float>(vecTabs.size());
+            float flSideMenuEffectiveHeight   = ((DISTINCT_CATAGORIES - 1.0f) * CTG_NAME_PADDING_IN_PXL) + (flTabCount * vButtonSize.y) + (ImGui::GetTextLineHeight() * DISTINCT_CATAGORIES);
+
+            if(flSideMenuEffectiveHeight < flHeight)
+                vCursorScreenPos = ImVec2(x, y + (flHeight - flSideMenuEffectiveHeight) / 3.0f);
+
+            for (int iTabIndex = 0; iTabIndex < vecTabs.size(); iTabIndex++)
+            {
+                Tab_t* pTab = vecTabs[iTabIndex];
+
+                // Drawing catagory name.
+                if(iTabIndex < tabBundlingHelper.size())
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Button, m_clrSideMenuButtons.GetAsImVec4());
-                    bShouldPop = true;
+                    if(szCurrCatagory != tabBundlingHelper[iTabIndex])
+                    {
+                        szCurrCatagory = tabBundlingHelper[iTabIndex];
+
+                        // Don't increment for the first tab, causing alignment issues.
+                        if(iTabIndex > 0)
+                            vCursorScreenPos.y += CTG_NAME_PADDING_IN_PXL;
+
+                        // finally, writting catagory text.
+                        clrCatagoryText.a = 150;
+                        pDrawList->AddText(ImVec2(vCursorScreenPos.x + SECTION_PADDING_PXL, vCursorScreenPos.y), ImColor(clrCatagoryText.GetAsImVec4()), szCurrCatagory.c_str());
+                        vCursorScreenPos.y += ImGui::GetTextLineHeight();
+                        clrCatagoryText.a = 255;
+                    }
                 }
 
+                // Maintain the cursor position strictly so padding doesn't fuck with our stuff.
+                ImGui::SetCursorScreenPos(vCursorScreenPos);
 
-                ImGui::PushFont(m_pFontSideMenu);
-                if (ImGui::Button(std::string("    " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
+                static bool bNoHighlighting = false;
+                bNoHighlighting = (m_pActiveTab == pTab);
+
+                if(m_pActiveTab != nullptr)
+                {
+                    if(m_pActiveTab == pTab)
+                    {
+                        ImVec2 vButtonAnimationMin((vCursorScreenPos.x + flWidth - (flWidth * m_menuAnim.GetAnimation())), vCursorScreenPos.y);
+                        ImVec2 vButtonAnimationMax(vCursorScreenPos.x + flWidth + 2.0f, vCursorScreenPos.y + vButtonSize.y); 
+                        
+                        pDrawList->AddRectFilled(
+                            ImVec2(vButtonAnimationMin.x - Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal, vButtonAnimationMin.y),
+                            ImVec2(vButtonAnimationMin.x, vButtonAnimationMax.y),
+                            ImColor(m_clrTheme.GetAsImVec4()));
+
+                        pDrawList->AddRectFilled(
+                            vButtonAnimationMin,
+                            vButtonAnimationMax,
+                            ImColor(m_clrPrimary.GetAsImVec4()));
+
+                        // If we are drawing highlighting for this button ourselves, then tell ImGui to fuck off. ( no hate )
+                        bNoHighlighting = true;
+                        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+                    }
+                }
+
+                if (ImGui::Button(("     " + pTab->m_szTabDisplayName).c_str(), vButtonSize) == true)
                 {
                     m_pActiveTab = pTab;
-                    _ResetAnimation(m_lastResetTime, m_flAnimation);
+                    m_menuAnim.Reset();
                 }
+     
+                ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+                float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+                ImGui::GetWindowDrawList()->AddText(
+                    ImVec2(vCursorScreenPos.x + flIconWidth, vCursorScreenPos.y + (vButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+                    ImColor(m_pActiveTab == pTab ? m_clrTheme.GetAsImVec4() : clrCatagoryText.GetAsImVec4()),
+                    reinterpret_cast<const char*>(vecIconList[iTabIndex])
+                );
                 ImGui::PopFont();
 
+                // if we have drawn highlighting for this button ourselves, then we must remove it now.
+                if(bNoHighlighting == true)
+                    ImGui::PopStyleColor(3);
 
-                if (bShouldPop == true)
-                {
-                    ImGui::PopStyleColor();
-                }
+                vCursorScreenPos.y += vButtonSize.y;
+            }
+
+            {
+                ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
             }
         }
-        _PopAllStyles();
 
+        
+        // Drawing the config panel button.
+        constexpr float CONFIG_BUTTON_PADDING_IN_PXL = 5.0f;
+        constexpr float CONFIG_BUTTON_HEIGHT_IN_PXL = 30.0f;
+        ImVec2 vConfigButtonPos (x + CONFIG_BUTTON_PADDING_IN_PXL, y + flHeight - (CONFIG_BUTTON_PADDING_IN_PXL + CONFIG_BUTTON_HEIGHT_IN_PXL));
+        ImVec2 vConfigButtonSize(flWidth - (2.0f * CONFIG_BUTTON_PADDING_IN_PXL), CONFIG_BUTTON_HEIGHT_IN_PXL);
+        ImGui::SetNextWindowPos(vConfigButtonPos);
+
+        ImGui::BeginChild("##ConfigButtonChild", vConfigButtonSize);
+        {
+            RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSecondary);
+            {
+                ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
+                ImGui::PushStyleColor(ImGuiCol_Button, m_clrSecondary.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, m_clrPrimary.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrPrimary.GetAsImVec4());
+                ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+            }
+
+            ImGui::SetCursorScreenPos(vConfigButtonPos);
+
+            // Drawing text & button
+            if (ImGui::Button("##Config", ImVec2(flWidth - (2.0f * CONFIG_BUTTON_PADDING_IN_PXL), CONFIG_BUTTON_HEIGHT_IN_PXL)) == true)
+            {
+                m_bConfigPanelActive = true;
+                m_pActiveTab         = nullptr;
+                m_menuAnim.Reset();
+            }
+
+            const ImGuiIO& io = ImGui::GetIO();
+            static bool bLastHoverState = false;
+            bool bButtonHovered =
+                (io.MousePos.x >= vConfigButtonPos.x && io.MousePos.x <= vConfigButtonPos.x + vConfigButtonSize.x) &&
+                (io.MousePos.y >= vConfigButtonPos.y && io.MousePos.y <= vConfigButtonPos.y + vConfigButtonSize.y);
+
+            if (bLastHoverState != bButtonHovered)
+            {
+                m_configButtonAnim.Reset();
+                bLastHoverState = bButtonHovered;
+            }
+
+            // Drawing logo
+            ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+            ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+            float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+            float flHeightOffsetAnimated = (bButtonHovered == true ? m_configButtonAnim.GetAnimation() : (1.0f - m_configButtonAnim.GetAnimation()));
+            flHeightOffsetAnimated *= vConfigButtonSize.y;
+
+            pDrawList->AddText(
+                ImVec2(vConfigButtonPos.x + (vConfigButtonSize.x - flIconWidth) / 2.0f, vConfigButtonPos.y - flHeightOffsetAnimated + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+                ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf15c"));
+            ImGui::PopFont();
+            
+            std::string szText("Config");
+            float flTextWidth = szText.size() * ImGui::GetFont()->GetCharAdvance(' ');
+            pDrawList->AddText(
+                ImVec2(vConfigButtonPos.x + (vConfigButtonSize.x - flTextWidth) / 2.0f, vConfigButtonPos.y - flHeightOffsetAnimated + vConfigButtonSize.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+                ImColor(m_clrTheme.GetAsImVec4()), szText.c_str());
+
+            {
+                ImGui::PopStyleVar();
+                ImGui::PopStyleColor(4);
+                ImGui::PopFont();
+            }
+
+        }
+        ImGui::EndChild();
+
+
+        ImGui::PopFont();
         ImGui::End();
     }
 
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y)
+void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float x, float y, ImVec2 vWindowPos)
 {
     if (pTab == nullptr)
         return;
 
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(x, y));
 
     {
@@ -307,8 +521,8 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
         // Drawing Section name.
         ImGui::PushFont(m_pFontSectionName);
         ImVec2 vSectionNamePos(pSectionScreenPos->x + FEATURE_PADDING_PXL, pSectionScreenPos->y + SECTION_NAME_PADDING);
-        ImVec4 vTextClr = m_clrSectionBox.GetAsImVec4(); vTextClr.w = 1.0f;
-        ImGui::GetWindowDrawList()->AddText(vSectionNamePos, ImColor(vTextClr), pSection->m_szSectionDisplayName.c_str());
+        RGBA_t clrText; _FindElevatedClr(clrText, m_clrPrimary); clrText.a = 0xFF;
+        ImGui::GetWindowDrawList()->AddText(vSectionNamePos, ImColor(clrText.GetAsImVec4()), pSection->m_szSectionDisplayName.c_str());
         pSectionScreenPos->y += ImGui::GetTextLineHeight() + (SECTION_NAME_PADDING * 2.0f); // Compensate for the section name, so section box doesn't draw over the name.
         ImGui::PopFont();
 
@@ -333,16 +547,16 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
 
 
             // Drawing the got dayem features.
-            RGBA_t clrFetureText; _CalcTextClrForBg(clrFetureText, m_clrSectionBox);
+            RGBA_t clrFetureText; CalcTextClrForBg(clrFetureText, m_clrSectionBox);
             ImGui::PushStyleColor(ImGuiCol_Text, clrFetureText.GetAsImVec4());
             ImGui::PushFont(m_pFontFeatures);
             switch (pFeature->m_iDataType)
             {
-            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean    (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_COLORDATA:   _DrawColor      (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider  (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
-            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown   (pFeature, vFeatureMinPadded, vFeatureMaxPadded); break;
+            case IFeature::DataType::DT_BOOLEAN:     _DrawBoolean    (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_COLORDATA:   _DrawColor      (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_INTSLIDER:   _DrawIntSlider  (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_FLOATSLIDER: _DrawFloatSlider(pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
+            case IFeature::DataType::DT_DROPDOWN:    _DrawDropDown   (pFeature, vFeatureMinPadded, vFeatureMaxPadded, vWindowPos); break;
             default: break;
             }
             ImGui::PopFont();
@@ -364,9 +578,16 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
         // Drawing Theme ImGuiCol_Border
         if(Features::Menu::SectionBoxes::ThemeBorder.IsActive() == true)
         {
+            ImVec2 vThemeBorderMin = *pSectionScreenPos;
+            vThemeBorderMin.x = std::clamp<float>(vThemeBorderMin.x, x,            x + flWidth);
+            vThemeBorderMin.y = std::clamp<float>(vThemeBorderMin.y, vWindowPos.y, vWindowPos.y + flHeight);
+
+            ImVec2 vThemeBorderMax(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y);
+            vThemeBorderMax.x = std::clamp<float>(vThemeBorderMax.x, x,            x + flWidth);
+            vThemeBorderMax.y = std::clamp<float>(vThemeBorderMax.y, vWindowPos.y, vWindowPos.y + flHeight);
+
             ImGui::GetWindowDrawList()->AddRect(
-                *pSectionScreenPos, 
-                ImVec2(pSectionScreenPos->x + vSectionSize.x, pSectionScreenPos->y + vSectionSize.y), 
+                vThemeBorderMin, vThemeBorderMax,
                 ImColor(m_clrTheme.GetAsImVec4()),
                 Features::Menu::SectionBoxes::Rounding.GetData().m_flVal);
         }
@@ -433,6 +654,611 @@ void MenuGUI_t::_DrawSections(Tab_t* pTab, float flWidth, float flHeight, float 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigPanel(float x, float y, float flWidth, float flHeight)
+{
+    // First of all, disable all section boxes.
+    for (BoxFilled2D_t* pSectionBox : m_vecSectionBoxes)
+    {
+        pSectionBox->SetVisible(false);
+    }
+
+    // Constants.
+    constexpr float PADDING_FROM_WALLS        = 20.0f;
+    constexpr float CONFIG_INFO_HEIGHT_IN_PXL = 100.0f;
+    constexpr float CONFIG_FILES_WIDTH_PERC   = 0.8f;
+
+
+    // Config Info Panel
+    ImVec2 vConfigInfoPos (x + PADDING_FROM_WALLS, y + PADDING_FROM_WALLS);
+    ImVec2 vConfigInfoSize((flWidth * CONFIG_FILES_WIDTH_PERC) - (2.0f * PADDING_FROM_WALLS), CONFIG_INFO_HEIGHT_IN_PXL);
+    
+    const float flConfigInfoRounding = Features::Menu::SectionBoxes::Rounding.GetData().m_flVal;
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 1.0f, 1.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, flConfigInfoRounding);
+    ImGui::SetCursorScreenPos(vConfigInfoPos);
+    ImGui::BeginChild("##ConfigFileInfoChild", vConfigInfoSize);
+    {
+        _DrawConfigInfo(vConfigInfoPos, vConfigInfoSize, flConfigInfoRounding);
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+
+
+    // Config List Window
+    ImVec2 vConfigListPos (vConfigInfoPos.x, vConfigInfoPos.y + CONFIG_INFO_HEIGHT_IN_PXL + PADDING_FROM_WALLS);
+    ImVec2 vConfigListSize(
+        vConfigInfoSize.x,
+        (y + flHeight - PADDING_FROM_WALLS) - vConfigListPos.y);
+
+    {
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, m_clrSecondary.GetAsImVec4());
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(0.0f, 0.0f));
+    }
+
+    ImGui::SetNextWindowPos(vConfigListPos);
+    ImGui::SetNextWindowSize(vConfigListSize);
+    
+    if (ImGui::Begin("##AllConfigFiles", nullptr, ImGuiWindowFlags_NoDecoration) == true)
+    {
+        _DrawConfigList(vConfigListSize);
+    }
+
+    ImGui::PopStyleVar(4); ImGui::PopStyleColor();
+
+    // Config Buttons ( save, set-as-default, etc... )
+    ImVec2 vConfigButtonPos (vConfigListPos.x + vConfigListSize.x + (PADDING_FROM_WALLS / 2.0f), vConfigListPos.y);
+    ImVec2 vConfigButtonSize((x + flWidth - (PADDING_FROM_WALLS / 2.0f)) - vConfigButtonPos.x, 30.0f);
+    _DrawConfigButtons(vConfigButtonPos, vConfigButtonSize);
+
+    // Unload button.
+    {
+        ImVec2 vDeloadButtonPos(vConfigButtonPos.x, vConfigListPos.y + vConfigListSize.y - vConfigButtonSize.y);
+        ImGui::SetCursorScreenPos(vDeloadButtonPos);
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+
+        RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+        ImGui::PushStyleColor(ImGuiCol_Button,          m_clrSecondary.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,    clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,   clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Border,          m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text,            m_clrTheme.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
+
+        if (ImGui::Button(reinterpret_cast<const char*>(u8"\uf011"), vConfigButtonSize) == true)
+        {
+            directX::UI::shutdown_UI = true; // bye my nigga :)
+        }
+        ImGui::PopStyleColor(5); ImGui::PopStyleVar(2);
+        ImGui::PopFont();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize, const float flConfigInfoRounding)
+{
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing Config info box
+    pDrawList->AddRectFilled(
+        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
+        ImColor(m_clrSecondary.GetAsImVec4()),
+        flConfigInfoRounding);
+
+    // outline for config info box
+    pDrawList->AddRect(
+        vConfigInfoPos, ImVec2(vConfigInfoPos.x + vConfigInfoSize.x, vConfigInfoPos.y + vConfigInfoSize.y), // Min & Max
+        ImColor(m_clrTheme.GetAsImVec4()),
+        flConfigInfoRounding, 0, WIDGET_BORDER_THICKNESS);
+
+
+    // Drawing file config imfo
+    if (m_iLoadedConfigIndex >= 0)
+    {
+        constexpr float ITEM_PADDING = 5.0f;
+
+        ImVec2 vCursorPos(vConfigInfoPos.x + ITEM_PADDING, vConfigInfoPos.y + vConfigInfoSize.y - ITEM_PADDING);
+        vCursorPos.x += ITEM_PADDING;
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSecondary);
+
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Date : {}", m_szLoadedConfigLastModifyTime).c_str()
+        );
+
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Size : {} bytes", m_iLoadedConfigSize).c_str()
+        );
+
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Path : {}", m_szLoadedConfigPath).c_str()
+        );
+
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Large);
+        ImVec2 vIconPos(vCursorPos);
+        vIconPos.x += flConfigInfoRounding;
+        vIconPos.y = vConfigInfoPos.y + ((vCursorPos.y - vConfigInfoPos.y) - ImGui::GetTextLineHeight()) / 2.0f;
+        float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+        pDrawList->AddText(
+            vIconPos, ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf15c")
+        );
+        ImGui::PopFont();
+
+
+        ImGui::PushFont(Resources::Fonts::MontserratBlack);
+        std::string szFileName = m_szLoadedConfigName;
+        const std::string szExtension(".INSANE");
+        if (szFileName.ends_with(szExtension)) 
+        {
+            szFileName.erase(szFileName.size() - szExtension.size());
+        }
+        ImVec2 vTextSize = ImGui::CalcTextSize(szFileName.c_str());
+
+        ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+        ImVec2 vFileExtensionSize = ImGui::CalcTextSize(szExtension.c_str());
+        ImGui::PopFont();
+
+        ImVec2 vConfigNamePos(
+            vConfigInfoPos.x + (vConfigInfoSize.x - (vTextSize.x + vFileExtensionSize.x)) / 2.0f,
+            vConfigInfoPos.y + ((vCursorPos.y - vConfigInfoPos.y) - ImGui::GetTextLineHeight()) / 2.0f
+        );
+
+
+        pDrawList->AddText(
+            vConfigNamePos, ImColor(clrText.GetAsImVec4()), szFileName.c_str()
+        );
+        ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+        pDrawList->AddText(
+            ImVec2(vConfigNamePos.x + vTextSize.x, vConfigNamePos.y + (vTextSize.y - vFileExtensionSize.y) + 2.0f), ImColor(m_clrTheme.GetAsImVec4()), szExtension.c_str()
+        );
+        ImGui::PopFont();
+        ImGui::PopFont();
+    }
+
+    // NOTE : we draw the flash in the end so it draws over everything. 
+    //        and yes, you can notice the text over the flash & it doesn't look nice.
+    // Config info box's animation
+    if (m_iLoadedConfigIndex >= 0)
+    {
+        //const float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal * 10.0f;
+        const float flFlashWidth = 300.0f;
+        ImVec2 vAnimMax(
+            vConfigInfoPos.x + vConfigInfoSize.x + flFlashWidth - ((vConfigInfoSize.x + flFlashWidth) * m_configLoadAnim.GetAnimation()),
+            vConfigInfoPos.y + vConfigInfoSize.y);
+        ImVec2 vAnimMin(vAnimMax.x - flFlashWidth, vConfigInfoPos.y);
+        pDrawList->AddRectFilled(vAnimMin, vAnimMax, ImColor(m_clrTheme.GetAsImVec4()));
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
+{
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    ImVec2 vWindowPos(ImGui::GetWindowPos());
+    ImVec2 vCursorPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
+
+    constexpr float PADDING_FROM_WALLS = SECTION_PADDING_PXL; // Space between config entry and surrounding n shit.
+    constexpr float PADDING_BETWEEN_ENTIRES = 5.0f; // Space between entires.
+    constexpr float CONFIG_ENTRY_HEIGHT = 50.0f; // Height of each config entry.
+    constexpr float CONFIG_ENTRY_ITEM_SPACING = 5.0f; // space between config entry walls & its contents.
+    ImVec2 vConfigEntrySize(vConfigListSize.x - (2.0f * PADDING_FROM_WALLS), CONFIG_ENTRY_HEIGHT);
+
+
+    const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+    for (int iConfigIndex = 0; iConfigIndex < vecAllConfigs.size(); iConfigIndex++)
+    {
+        const std::string& szConfigName = vecAllConfigs[iConfigIndex];
+
+        // Drawing a button behind the config entry ( we gonna draw ) so can do some logic.
+        ImGui::SetCursorScreenPos(vCursorPos);
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+            ImGui::PushItemFlag(ImGuiItemFlags_AllowOverlap, true);
+            if (ImGui::Button(("##" + szConfigName).c_str(), vConfigEntrySize) == true)
+            {
+                m_iActiveConfigIndex = iConfigIndex;
+            }
+            ImGui::PopItemFlag();
+            ImGui::PopStyleColor(3);
+        }
+
+        pDrawList->AddRectFilled(
+            vCursorPos, ImVec2(vCursorPos.x + vConfigEntrySize.x, vCursorPos.y + vConfigEntrySize.y),
+            ImColor(m_clrPrimary.GetAsImVec4()), POPUP_ROUNDING
+        );
+
+        if (iConfigIndex == m_iActiveConfigIndex)
+        {
+            pDrawList->AddRect(
+                vCursorPos, ImVec2(vCursorPos.x + vConfigEntrySize.x, vCursorPos.y + vConfigEntrySize.y),
+                ImColor(m_clrTheme.GetAsImVec4()), POPUP_ROUNDING, 0, WIDGET_BORDER_THICKNESS
+            );
+        }
+
+        // NOTE : entry is of primary color, draw on a secondary color window, which is draw on a primary color window.
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImVec2 vFileIconPos(vCursorPos.x + CONFIG_ENTRY_ITEM_SPACING, vCursorPos.y + (vConfigEntrySize.y / 2.0f) - ImGui::GetTextLineHeight());
+        ImColor clrConfigName(m_iLoadedConfigIndex == iConfigIndex ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
+        pDrawList->AddText(vFileIconPos, clrConfigName, reinterpret_cast<const char*>(u8"\uf15c"));
+
+        ImGui::PopFont();
+
+        vFileIconPos.y = vCursorPos.y + vConfigEntrySize.y - CONFIG_ENTRY_ITEM_SPACING - ImGui::GetTextLineHeight();
+        pDrawList->AddText(vFileIconPos, clrConfigName, szConfigName.c_str());
+
+        // Styling buttons.
+        {
+            RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+            ImGui::PushStyleColor(ImGuiCol_Button, m_clrSecondary.GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, clrButtonActive.GetAsImVec4());
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrButtonActive.GetAsImVec4());
+
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, POPUP_ROUNDING);
+        }
+
+
+        ImGui::PushID(szConfigName.c_str());
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+        constexpr float CONFIG_BUTTON_PERCENTAGE = 0.2f;
+        ImVec2 vConfigButtonSize(
+            vConfigEntrySize.y - (2.0f * CONFIG_ENTRY_ITEM_SPACING),
+            vConfigEntrySize.y - (2.0f * CONFIG_ENTRY_ITEM_SPACING));
+
+        ImVec2 vConfigButtonPos(
+            vCursorPos.x + vConfigEntrySize.x - CONFIG_ENTRY_ITEM_SPACING - vConfigButtonSize.x,
+            vCursorPos.y + vConfigEntrySize.y - CONFIG_ENTRY_ITEM_SPACING - vConfigButtonSize.y);
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        // Load config button.
+        if (ImGui::Button(reinterpret_cast<const char*>(u8"\uf409"), vConfigButtonSize) == true)
+        {
+            configHandler.ReadConfigFile(szConfigName);
+
+            m_iLoadedConfigIndex = iConfigIndex;
+            m_iActiveConfigIndex = -1; // Don't highlight the config once loaded. ( this would give a "consumed" sort of feeling )
+            m_configLoadAnim.Reset();
+
+            _GetFileInfo(szConfigName);
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopFont();
+        ImGui::PopID();
+
+        {
+            ImGui::PopStyleColor(3); ImGui::PopStyleVar();
+        }
+
+        // Draw animation if this config is loaded or this file is newly created.
+        bool bNewlyAddedFile = m_newFileAnim.IsComplete() == false && iConfigIndex == m_iNewFileIndex;
+        if (m_iLoadedConfigIndex == iConfigIndex || bNewlyAddedFile == true)
+        {
+            // Choose whose animation we are doing here. ( new file or config loaded )
+            float flAnimation = bNewlyAddedFile == true ? m_newFileAnim.GetAnimation() : m_configLoadAnim.GetAnimation();
+
+            // Drawing animation.
+            float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
+            ImVec2 vAnimMax(
+                vCursorPos.x + vConfigEntrySize.x + flFlashWidth - ((vConfigEntrySize.x + flFlashWidth) * flAnimation),
+                vCursorPos.y + vConfigEntrySize.y);
+            ImVec2 vAnimMin(vAnimMax.x - flFlashWidth, vCursorPos.y);
+
+            pDrawList->AddRectFilled(vAnimMin, vAnimMax, ImColor(m_clrTheme.GetAsImVec4()));
+        }
+
+        // Updating cursor pos for the next entry.
+        vCursorPos.y += vConfigEntrySize.y + PADDING_BETWEEN_ENTIRES;
+    }
+
+    ImGui::End();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButtonSize)
+{
+    constexpr float PADDING_BETWEEN_CONFIG_BUTTONS = 5.0f; // Space between config setting buttons. ( 3 buttons on the right )
+    constexpr float BUTTON_ITEM_SPACING_IN_PXL     = 5.0f; // Space between config setting buttons. ( 3 buttons on the right )
+
+    RGBA_t clrText;         CalcTextClrForBg(clrText, m_clrSecondary);
+    RGBA_t clrButtonActive; _FindElevatedClr(clrButtonActive, m_clrPrimary);
+    {
+        //RGBA_t clrButton = m_iActiveConfigIndex == -1 ? m_clrPrimary : m_clrSecondary;
+        RGBA_t clrButton = m_clrSecondary;
+        if (m_iActiveConfigIndex == -1) // This is so that the button seems unreactive when no config is selected.
+            clrButtonActive = clrButton;
+
+        ImGui::PushStyleColor(ImGuiCol_Button, clrButton.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrButtonActive.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
+    }
+    
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing text input field for user to enter file name.
+    static char s_szFileName[0xFF] = "";
+    {
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        ImVec2 vIconPos(vConfigButtonPos.x, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+        float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+        pDrawList->AddText( vIconPos, ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf11c"));
+        ImGui::PopFont();
+
+        // NOTE : for some reason, this keyboard icon is taking up space for 2 character in a mono font. so notice we are using 2 * icon width below.
+        ImGui::SetNextItemWidth(vConfigButtonSize.x - ((flIconWidth * 2.0f) + BUTTON_ITEM_SPACING_IN_PXL));
+        ImGui::SetCursorScreenPos(ImVec2(vConfigButtonPos.x + ((flIconWidth * 2.0f) + BUTTON_ITEM_SPACING_IN_PXL), vConfigButtonPos.y));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, m_clrSecondary.GetAsImVec4());
+        if (ImGui::InputText("##ConfigFileName", s_szFileName, sizeof(s_szFileName), ImGuiInputTextFlags_EnterReturnsTrue) == true)
+        {
+            LOG(s_szFileName);
+        }
+        ImGui::PopStyleColor();
+    }
+
+
+    // Drawing "Save Config" button.
+    {
+        vConfigButtonPos.y += ImGui::GetFrameHeight() + PADDING_BETWEEN_CONFIG_BUTTONS;
+        RGBA_t clrCreateConfigHovered; _FindElevatedClr(clrCreateConfigHovered, m_clrPrimary);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  clrCreateConfigHovered.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, clrCreateConfigHovered.GetAsImVec4());
+
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button(("##CreateConfig"), vConfigButtonSize) == true)
+        {
+            bool bFileCreated = false;
+
+            {
+                const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+                std::string szLoadedConfigName("INVALID_FILE_NAME");
+                if(m_iLoadedConfigIndex >= 0 && m_iLoadedConfigIndex < vecAllConfigs.size())
+                {
+                    szLoadedConfigName = vecAllConfigs[m_iLoadedConfigIndex];
+                }
+
+                std::string szActiveConfigName("INVALID_FILE_NAME");
+                if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+                {
+                    szActiveConfigName = vecAllConfigs[m_iActiveConfigIndex];
+                }
+
+                // set them as "Invalid" for now, try to find then again, so we have correct indexes. :)
+                m_iLoadedConfigIndex = -1;
+                m_iActiveConfigIndex = -1;
+
+                
+                bFileCreated = configHandler.CreateConfigFile(s_szFileName);
+
+
+                // now try to find the config thats loaded.
+                const std::vector<std::string>& vecUpdatedConfigs = configHandler.GetAllConfigFile();
+                size_t nConfigs = vecUpdatedConfigs.size();
+                std::string szExpectedNewFileName = s_szFileName + configHandler.GetExtension();
+                for (int iConfigIndex = 0; iConfigIndex < nConfigs; iConfigIndex++)
+                {
+                    if (vecUpdatedConfigs[iConfigIndex] == szActiveConfigName)
+                    {
+                        m_iActiveConfigIndex = iConfigIndex;
+                        LOG("Updated active config index to : %d", m_iLoadedConfigIndex);
+                    }
+
+                    if (vecUpdatedConfigs[iConfigIndex] == szLoadedConfigName)
+                    {
+                        m_iLoadedConfigIndex = iConfigIndex;
+                        LOG("Updated loaded config index to : %d", m_iLoadedConfigIndex);
+                    }
+
+                    if (vecUpdatedConfigs[iConfigIndex] == szExpectedNewFileName)
+                    {
+                        m_iNewFileIndex = iConfigIndex;
+                        LOG("New file allocated index : %d", iConfigIndex);
+                    }
+                }
+            }
+
+            if (bFileCreated == true)
+            {
+                LOG("Created config file [ %s ]", s_szFileName);
+                s_szFileName[0] = '\0';
+                m_newFileAnim.Reset();
+            }
+            else
+            {
+                FAIL_LOG("Failed to create config file [ %s ]", s_szFileName);
+            }
+        }
+
+        ImGui::PopStyleColor(2);
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf4d0"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Create");
+    }
+
+
+    // Drawing "Save Config" button.
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button(("##SaveConfig"), vConfigButtonSize) == true)
+        {
+            const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+            // Must be a valid file
+            if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+            {
+                configHandler.WriteToConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+                LOG("saved config my nigga!");
+            }
+            else
+            {
+                FAIL_LOG("Selected a file first dumb ass.");
+            }
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf0c7"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Save");
+    }
+
+
+    // Drawing "Set as default config" button
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button("##SetAsDefault", vConfigButtonSize) == true)
+        {
+            LOG("TODO : Make this load default config feautre");
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf005"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Set Default");
+    }
+
+
+    // Drawing "Delete config" button.
+    {
+        vConfigButtonPos.y += PADDING_BETWEEN_CONFIG_BUTTONS + vConfigButtonSize.y;
+        ImGui::SetCursorScreenPos(vConfigButtonPos);
+        if (ImGui::Button("##DeleteConfig", vConfigButtonSize) == true)
+        {
+            const std::vector<std::string>& vecAllConfigs = configHandler.GetAllConfigFile();
+
+            // Must be a valid file
+            if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
+            {
+                // Incase a config file is loaded we need to maintain a valid loaded config index, 
+                // for that we need to re-aquire loaded config index after deleting current file.
+                if(m_iLoadedConfigIndex >= 0 && m_iLoadedConfigIndex < vecAllConfigs.size())
+                {
+                    std::string szLoadedConfigName = vecAllConfigs[m_iLoadedConfigIndex];
+
+                    configHandler.DeleteConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+
+                    m_iLoadedConfigIndex = -1; // set "no config loaded" by default.
+
+                    // now try to find the config thats loaded.
+                    const std::vector<std::string>& vecUpdatedConfigsList = configHandler.GetAllConfigFile();
+                    size_t nConfigs = vecUpdatedConfigsList.size();
+                    for (int iConfigIndex = 0; iConfigIndex < nConfigs; iConfigIndex++)
+                    {
+                        if (vecUpdatedConfigsList[iConfigIndex] == szLoadedConfigName)
+                        {
+                            m_iLoadedConfigIndex = iConfigIndex;
+                            LOG("Updated loaded config index to : %d", m_iLoadedConfigIndex);
+                        }
+                    }
+
+                    WIN_LOG("Deleted file @ index [ %d ]", m_iActiveConfigIndex);
+                    m_iActiveConfigIndex = -1; // since this files needs to be selected to be deleted, no file must now be selected.
+                }
+                else // if no config file is loaded, then just yank that shit.
+                {
+                    configHandler.DeleteConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+                }
+            }
+            else
+            {
+                FAIL_LOG("Selected a file first dumb ass.");
+            }
+        }
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Mid);
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf014"));
+        ImGui::PopFont();
+
+        pDrawList->AddText(
+            ImVec2(vConfigButtonPos.x + BUTTON_ITEM_SPACING_IN_PXL, vConfigButtonPos.y + (vConfigButtonSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+            ImColor(clrText.GetAsImVec4()), "   Delete");
+    }
+
+    ImGui::PopStyleColor(4); ImGui::PopStyleVar();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_GetFileInfo(const std::string& szFilePath)
+{
+    try
+    {
+        m_szLoadedConfigName = szFilePath;
+        std::filesystem::path p(szFilePath);
+
+        m_szLoadedConfigPath = std::filesystem::absolute(p).string();
+        m_iLoadedConfigSize  = std::filesystem::file_size(p);
+
+        // Last modification time
+        auto ftime = std::filesystem::last_write_time(p);
+        auto sctp  = 
+            std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                ftime - std::filesystem::file_time_type::clock::now()
+                + std::chrono::system_clock::now());
+
+        std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+        std::tm* tmLocal = std::localtime(&cftime);
+
+        std::ostringstream oss;
+        oss << std::put_time(tmLocal, "%Y-%m-%d %H:%M:%S");
+        m_szLoadedConfigLastModifyTime = oss.str();
+    }
+    catch (const std::exception& e) 
+    {
+        FAIL_LOG(e.what());
+    }
+
+    LOG("File name : %s", m_szLoadedConfigName.c_str());
+    LOG("File path : %s", m_szLoadedConfigPath.c_str());
+    LOG("Mod. time : %s", m_szLoadedConfigLastModifyTime.c_str());
+    LOG("size      : %llu bytes", m_iLoadedConfigSize);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 ImVec2 MenuGUI_t::_CalculateSectionSize(int nFeatures, float flInterFeaturePadding, float flSectionPadding, float flFeatureWidth, float flFeatureHeight) const
 {
     return ImVec2(
@@ -444,7 +1270,7 @@ ImVec2 MenuGUI_t::_CalculateSectionSize(int nFeatures, float flInterFeaturePaddi
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<bool>* pBoolFeature = reinterpret_cast<Feature<bool>*>(pFeature);
     
@@ -460,7 +1286,6 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
     float  flCheckBoxSide  = ImGui::GetFrameHeight();
     float  flFeatureHeight = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth  = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos      = ImGui::GetWindowPos();
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
@@ -484,21 +1309,26 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
         );
 
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
-        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pBoolFeature->m_szTabName + pBoolFeature->m_szSectionName + pBoolFeature->m_szFeatureDisplayName).c_str(), ImVec2(flCheckBoxSide, flCheckBoxSide)) == true)
+        
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pBoolFeature->m_szTabName;
+        szButtonText += pBoolFeature->m_szSectionName;
+        szButtonText += pBoolFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flCheckBoxSide, flCheckBoxSide)) == true)
         {
             _TriggerPopup(pFeature);
         }
 
-        _DrawBooleanPopup(pFeature);
+        _DrawBooleanPopup(pFeature, vWindowPos);
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
@@ -524,7 +1354,7 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<IntSlider_t>* pIntFeature = reinterpret_cast<Feature<IntSlider_t>*>(pFeature);
 
@@ -540,7 +1370,6 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImGui::PushStyleColor(ImGuiCol_Text,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     // Drawing Feature's name
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y));
     constexpr float GAP_BEFORE_TRACK = 0.4f;
     ImGui::Text(pIntFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK));
@@ -570,7 +1399,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
     // Drawing label for slider.
-    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+    RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
     pDrawList->AddText(
         ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f),
         ImColor(clrText.GetAsImVec4()), pIntFeature->m_szFeatureDisplayName.c_str()
@@ -578,7 +1407,6 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
 
 
     // Drawing the slider manually
-    constexpr float TRACK_THICKNESS_PXL = 4.0f;
     ImVec2 vTrackStart(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK), vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) - TRACK_THICKNESS_PXL);
     ImVec2 vTrackEnd(vWindowPos.x + vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK) + flTrackWidth, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight / 2.0f) + TRACK_THICKNESS_PXL);
     
@@ -599,31 +1427,34 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
         );
 
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
-        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pIntFeature->m_szTabName + pIntFeature->m_szSectionName + pIntFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pIntFeature->m_szTabName;
+        szButtonText += pIntFeature->m_szSectionName;
+        szButtonText += pIntFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
-            _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+            m_popupAnim.Reset();
         }
 
-        _DrawIntSliderPopup(pFeature);
+        _DrawIntSliderPopup(pFeature, vWindowPos);
 
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
 
     // Drawing knob.
-    constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = static_cast<float>(pIntFeature->GetData().m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
-    flKnobPos      *= m_flAnimation; // Animating :)
+    flKnobPos      *= m_menuAnim.GetAnimation(); // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
     // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
@@ -662,7 +1493,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->GetData().m_iVal) * m_flAnimation);
+    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->GetData().m_iVal) * m_menuAnim.GetAnimation());
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
@@ -677,7 +1508,7 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding) 
+void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos) 
 {
     Feature<FloatSlider_t>* pFloatFeature = reinterpret_cast<Feature<FloatSlider_t>*>(pFeature);
 
@@ -693,7 +1524,6 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::PushStyleColor(ImGuiCol_Text,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     // Drawing Feature's name
-    ImVec2 vWindowPos = ImGui::GetWindowPos();
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y));
     constexpr float GAP_BEFORE_TRACK = 0.4f;
     ImGui::Text(pFloatFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine(vMinWithPadding.x + (flFeatureWidth * GAP_BEFORE_TRACK));
@@ -724,7 +1554,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
     // Drawing label for slider.
-    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+    RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
     pDrawList->AddText(
         ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f),
         ImColor(clrText.GetAsImVec4()), pFloatFeature->m_szFeatureDisplayName.c_str()
@@ -753,22 +1583,26 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
         );
 
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
-        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, WIDGET_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
-        if(ImGui::Button(("?##" + pFloatFeature->m_szTabName + pFloatFeature->m_szSectionName + pFloatFeature->m_szFeatureDisplayName).c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pFloatFeature->m_szTabName;
+        szButtonText += pFloatFeature->m_szSectionName;
+        szButtonText += pFloatFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
-            _ResetAnimation(m_popupOpenTime, m_flPopupAnimation);
+            m_popupAnim.Reset();
         }
 
-        _DrawFloatSliderPopup(pFeature);
+        _DrawFloatSliderPopup(pFeature, vWindowPos);
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
 
@@ -776,7 +1610,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     // Drawing knob.
     constexpr float KNOB_SIZE_PXL = 10.0f;
     float flKnobPos = (pFloatFeature->GetData().m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
-    flKnobPos      *= m_flAnimation; // Animating :)
+    flKnobPos      *= m_menuAnim.GetAnimation(); // Animating :)
     flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
     // NOTE : We are removing 2 * knobsize from the x coordinate, to the knob stays strictly on the track & don't overlap over other features.
@@ -815,7 +1649,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(4);
 
-    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal * m_flAnimation);
+    std::string szSliderValue = std::format("{:.1f}", pFloatFeature->GetData().m_flVal * m_menuAnim.GetAnimation());
     size_t      nDigits       = szSliderValue.size();
     float       flCharWidth   = Resources::Fonts::JetBrains_SemiBold_NL_Small->GetCharAdvance(' '); // Assuming using a mono font.
     pDrawList->AddText(
@@ -830,7 +1664,7 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     // Styling
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
@@ -848,14 +1682,13 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
     float  flWidgetHeight     = ImGui::GetFrameHeight();
     float  flFeatureHeight    = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth     = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos         = ImGui::GetWindowPos();
 
     // Feature's name
     ImGui::SetCursorScreenPos(ImVec2(vWindowPos.x + vMinWithPadding.x, vWindowPos.y + vMinWithPadding.y + (flFeatureHeight - ImGui::GetTextLineHeight()) / 2.0f));
     ImGui::Text(pDropDownFeature->m_szFeatureDisplayName.c_str()); ImGui::SameLine();
 
     // Drop Down Feature
-    RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrPrimary);
+    RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
     {
         // Make sure drop down menu is completely opaque, we don't want no translucent ass drop down menu.
         ImVec4 vDropdownClr  = m_clrPrimary.GetAsImVec4();    vDropdownClr.w  = 1.0f;
@@ -903,14 +1736,13 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding)
+void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vMaxWithPadding, ImVec2 vWindowPos)
 {
     Feature<ColorData_t>* pColorFeature = reinterpret_cast<Feature<ColorData_t>*>(pFeature);
 
     float  flColorPreviewSide = ImGui::GetFrameHeight();
     float  flFeatureHeight    = fabsf(vMinWithPadding.y - vMaxWithPadding.y);
     float  flFeatureWidth     = fabsf(vMaxWithPadding.x - vMinWithPadding.x);
-    ImVec2 vWindowPos         = ImGui::GetWindowPos();
     
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   WIDGET_ROUNDING);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, WIDGET_BORDER_THICKNESS);
@@ -926,7 +1758,7 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
     {
         ImVec4 vPopclr       = m_clrPrimary.GetAsImVec4();    vPopclr.w       = 1.0f;
         ImVec4 vSecondaryClr = m_clrSectionBox.GetAsImVec4(); vSecondaryClr.w = 1.0f;
-        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrPrimary);
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
 
         ImGui::PushStyleColor(ImGuiCol_PopupBg,        vPopclr);
         ImGui::PushStyleColor(ImGuiCol_FrameBg,        vSecondaryClr);
@@ -939,13 +1771,61 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
         ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,   POPUP_ROUNDING);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,     ImVec2(2.0f, 2.0f));
 
-        std::string szColorPickerID = ("##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str();
+        std::string szColorPickerID("##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName);
+
+
+        float* pClrAnimated = nullptr;
+        if(ImGui::IsPopupOpen((szColorPickerID + "picker").c_str()) == true)
+        {
+            auto AnimateClr = [&](float x) -> float
+            {
+                x = std::clamp<float>(x, 0.0f, 1.0f);
+                float y = (x < 0.5f) ? x + 0.5f : x - 0.5f; // chose something @ 0.5f diffrence from orignal.
+
+                return y + ((x - y) * m_colorPickerAnim.GetAnimation());
+            };
+            if(fabsf(ANIM_COMPLETE - m_colorPickerAnim.GetAnimation()) <= ANIM_COMPLETION_TOLERANCE)
+            {
+                pClrAnimated = &pColorFeature->m_Data.r;
+            }
+            else 
+            {
+                HSVA_t hsv = pColorFeature->m_Data.GetAsBytes().ToHSVA();
+                 // hsv.s = AnimateClr(hsv.s);
+                hsv.v = AnimateClr(hsv.v);
+                hsv.h = AnimateClr(hsv.h / 360.0f) * 360.0f;
+
+               // LOG("Animated hue : %.2f", hsv.h);
+
+               ImVec4 vClrAnimated = hsv.ToRGBA().GetAsImVec4();
+               pClrAnimated = &vClrAnimated.x;
+            }
+        }
+        else
+        {
+            pClrAnimated = &pColorFeature->m_Data.r;
+        }
 
         // Color Picker
         ImGui::ColorEdit4(
-            szColorPickerID.c_str(), &pColorFeature->m_Data.r,
+            szColorPickerID.c_str(), pClrAnimated,
             ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_PickerHueWheel);
 
+
+        // Resetting color picker animation time, whenever the color picker widget is opened. 
+        static bool bClrPickerAnimResetted = false;
+        if(ImGui::IsPopupOpen((szColorPickerID + "_ColorPicker4").c_str(), ImGuiPopupFlags_AnyPopupId) == true)
+        {
+            if(bClrPickerAnimResetted == false)
+            {
+                m_colorPickerAnim.Reset();
+                bClrPickerAnimResetted = true;
+            }
+        }
+        else
+        {
+            bClrPickerAnimResetted = false;
+        }
 
         // Drawing custom color preview border, cause it won't let me change it properly.
         ImDrawList* pDrawList = ImGui::GetWindowDrawList();
@@ -985,22 +1865,27 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
         );
 
         ImVec4 vClrPrimary = m_clrPrimary.GetAsImVec4(); vClrPrimary.w = 1.0f;
-        RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrSectionBox);
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSectionBox);
         ImGui::PushStyleColor(ImGuiCol_Text,    bButtonHovered == true ? m_clrTheme.GetAsImVec4() : clrText.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : m_clrSectionBox.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Button,        bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  bButtonHovered == true ? vClrPrimary : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
         ImGui::SetCursorScreenPos(vKeyBindPanelButton);
 
-        if(ImGui::Button(("?##" + pColorFeature->m_szTabName + pColorFeature->m_szSectionName + pColorFeature->m_szFeatureDisplayName).c_str(), ImVec2(flColorPreviewSide, flColorPreviewSide)) == true)
+        std::string szButtonText = reinterpret_cast<const char*>(u8"\uf013##"); // icon in UTF-8
+        szButtonText += pColorFeature->m_szTabName;
+        szButtonText += pColorFeature->m_szSectionName;
+        szButtonText += pColorFeature->m_szFeatureDisplayName;
+        if(ImGui::Button(szButtonText.c_str(), ImVec2(flFrameHeight, flFrameHeight)) == true)
         {
             _TriggerPopup(pFeature);
+            m_popupAnim.Reset();
         }
-        _DrawColorPopup(pFeature);
+        _DrawColorPopup(pFeature, vWindowPos);
 
         ImGui::PopStyleColor(4); ImGui::PopStyleVar(2);
     }
@@ -1049,7 +1934,7 @@ char VkToChar(int vk)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawColorPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1059,7 +1944,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
-    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
+    RGBA_t vTextClr; CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
         ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
@@ -1073,9 +1958,9 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1109,7 +1994,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
@@ -1142,7 +2027,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
-                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
+                RGBA_t clrText; CalcTextClrForBg(clrText, m_clrTheme);
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
@@ -1194,7 +2079,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
                     ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                    RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                     ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
@@ -1235,7 +2120,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
         ImGui::SetCursorScreenPos(ImVec2(vOverrideDataPos.x + INTER_FEATURE_PADDING_PXL + (m_pFontFeatures->GetCharAdvance(' ') * szOverrideData.size()), vOverrideDataPos.y));
         ImGui::ColorEdit4(
             ("##Override" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), 
-            &pClrFeature->m_OverrideData.r, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            &pClrFeature->m_OverrideData.r, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_PickerHueWheel);
 
         ImGui::PopStyleColor(); ImGui::PopStyleVar();
 
@@ -1252,7 +2137,7 @@ void MenuGUI_t::_DrawColorPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1262,7 +2147,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
-    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
+    RGBA_t vTextClr; CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
         ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
@@ -1276,9 +2161,9 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1312,7 +2197,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
@@ -1345,7 +2230,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
-                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
+                RGBA_t clrText; CalcTextClrForBg(clrText, m_clrTheme);
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
@@ -1397,7 +2282,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
                     ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                    RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                     ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
@@ -1454,7 +2339,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = (pFloatFeature->m_OverrideData.m_flVal - pFloatFeature->m_Data.m_flMin) / (pFloatFeature->m_Data.m_flMax - pFloatFeature->m_Data.m_flMin);
-        flKnobPos      *= m_flPopupAnimation;
+        flKnobPos      *= m_popupAnim.GetAnimation();
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
 
         // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
@@ -1472,7 +2357,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_FrameBg,       vClrSectionBoxFullAlpha);
         ImGui::PushStyleColor(ImGuiCol_FrameBgActive, m_clrTheme.GetAsImVec4());
-        RGBA_t clrText; _CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
+        RGBA_t clrText; CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
 
 
         ImVec2 vFloatInputScreenPos(vOverrideDataPos.x + TRACK_WIDTH + INTER_FEATURE_PADDING_PXL, vOverrideDataPos.y);
@@ -1487,7 +2372,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal * m_flPopupAnimation);
+        std::string szSliderValue = std::format("{:.1f}", pFloatFeature->m_OverrideData.m_flVal * m_popupAnim.GetAnimation());
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
@@ -1510,7 +2395,7 @@ void MenuGUI_t::_DrawFloatSliderPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1520,7 +2405,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
-    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
+    RGBA_t vTextClr; CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
         ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
@@ -1534,9 +2419,9 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1570,7 +2455,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vClrButton = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vClrButton);
@@ -1603,7 +2488,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
-                RGBA_t clrText; _CalcTextClrForBg(clrText, m_clrTheme);
+                RGBA_t clrText; CalcTextClrForBg(clrText, m_clrTheme);
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_clrTheme.GetAsImVec4());
@@ -1654,7 +2539,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
                     ImVec4 vClrButton = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vClrButton));
+                    RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vClrButton));
 
                     ImGui::PushStyleColor(ImGuiCol_Button,        vClrButton);
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrButton);
@@ -1711,7 +2596,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         // Drawing Knob
         constexpr float KNOB_SIZE_PXL = 10.0f;
         float flKnobPos = static_cast<float>(pIntFeature->m_OverrideData.m_iVal - pIntFeature->m_Data.m_iMin) / static_cast<float>(pIntFeature->m_Data.m_iMax - pIntFeature->m_Data.m_iMin);
-        flKnobPos      *= m_flPopupAnimation;
+        flKnobPos      *= m_popupAnim.GetAnimation();
         flKnobPos       = std::clamp<float>(flKnobPos, 0.0f, 1.0f);
         
         // We are removing 2 KNOB_SIZE_PXL from x coordinates to keep the knob strictly on the track. It was overlapping onto other shit previously.
@@ -1729,7 +2614,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
         ImGui::PushStyleColor(ImGuiCol_FrameBg,       vClrSectionBoxFullAlpha);
         ImGui::PushStyleColor(ImGuiCol_FrameBgActive, m_clrTheme.GetAsImVec4());
-        RGBA_t clrText; _CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
+        RGBA_t clrText; CalcTextClrForBg(clrText, vClrSectionBoxFullAlpha);
 
 
         ImVec2 vFloatInputScreenPos(vOverrideDataPos.x + TRACK_WIDTH + INTER_FEATURE_PADDING_PXL, vOverrideDataPos.y);
@@ -1744,7 +2629,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(4);
 
-        std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->m_OverrideData.m_iVal) * m_flPopupAnimation);
+        std::string szSliderValue = std::format("{:.0f}", static_cast<float>(pIntFeature->m_OverrideData.m_iVal) * m_popupAnim.GetAnimation());
         size_t      nDigits       = szSliderValue.size();
         float       flCharWidth   = m_pFontFeatures->GetCharAdvance(' '); // Assuming using a mono font.
         pDrawList->AddText(
@@ -1767,7 +2652,7 @@ void MenuGUI_t::_DrawIntSliderPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
+void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature, ImVec2 vWindowPos)
 {
     ImGui::PushFont(m_pPopupFont);
 
@@ -1777,7 +2662,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
 
     // Formatting popup window
     ImVec4 vPopClr(m_clrPrimary.GetAsImVec4()); vPopClr.w = max(vPopClr.w, 0.8f);
-    RGBA_t vTextClr; _CalcTextClrForBg(vTextClr, m_clrPrimary);
+    RGBA_t vTextClr; CalcTextClrForBg(vTextClr, m_clrPrimary);
     {
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vPopClr);
         ImGui::PushStyleColor(ImGuiCol_Border,  m_clrTheme.GetAsImVec4());
@@ -1791,9 +2676,9 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
     ImGuiWindowFlags iPopFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
     if(ImGui::BeginPopup(("##Popup" + pFeature->m_szTabName + pFeature->m_szSectionName + pFeature->m_szFeatureDisplayName).c_str(), iPopFlags) == true)
     {
-        float flFrameHeight = ImGui::GetFrameHeight();
+        ImVec2 vWindowPos    = ImGui::GetWindowPos();
+        float  flFrameHeight = ImGui::GetFrameHeight();
 
-        ImVec2 vWindowPos = ImGui::GetWindowPos();
         ImVec2 vKeyBindButtonPos(vWindowPos.x + SECTION_PADDING_PXL, vWindowPos.y + SECTION_PADDING_PXL);
         ImVec2 vCharacterSize(m_pFontFeatures->GetCharAdvance(' '), ImGui::GetTextLineHeight());
         ImVec2 vKeyBindScreenPos(vKeyBindButtonPos.x + (flFrameHeight - vCharacterSize.x) / 2.0f, vKeyBindButtonPos.y + (flFrameHeight - vCharacterSize.y) / 2.0f);
@@ -1827,7 +2712,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vButtonClr = (m_bRecordingKey == true ? m_clrTheme.GetAsImVec4() : vClrSectionBoxFullAlpha);
-                RGBA_t clrText; _CalcTextClrForBg(clrText, RGBA_t(vButtonClr));
+                RGBA_t clrText; CalcTextClrForBg(clrText, RGBA_t(vButtonClr));
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        vButtonClr);
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, vButtonClr);
@@ -1860,7 +2745,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
         {
             {
                 ImVec4 vkeyBindButtonClr(m_clrSectionBox.GetAsImVec4()); vkeyBindButtonClr.w = 1.0f;
-                RGBA_t clrButton; _CalcTextClrForBg(clrButton, m_clrPrimary);
+                RGBA_t clrButton; CalcTextClrForBg(clrButton, m_clrPrimary);
 
                 ImGui::PushStyleColor(ImGuiCol_Button,        m_clrTheme.GetAsImVec4());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  m_clrTheme.GetAsImVec4());
@@ -1912,7 +2797,7 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
                 bool bIsHold = pFeature->m_iOverrideType == IFeature::OverrideType::OVERRIDE_HOLD;
                 {
                     ImVec4 vClrActive = (bIsHold == true ? vClrSectionBoxFullAlpha : m_clrTheme.GetAsImVec4());
-                    RGBA_t clrButton; _CalcTextClrForBg(clrButton, RGBA_t(vClrActive));
+                    RGBA_t clrButton; CalcTextClrForBg(clrButton, RGBA_t(vClrActive));
 
                     ImGui::PushStyleColor(ImGuiCol_Button,        vClrActive);
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  vClrActive);
@@ -1951,6 +2836,33 @@ void MenuGUI_t::_DrawBooleanPopup(IFeature* pFeature)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+ImVec2 MenuGUI_t::_ClampWindowPos(const ImVec2 vWindowPos)
+{
+    // Purpose : If the complete window is visible in the frame, then the vWindowPos is returned as it is. 
+    // else its clamped such that the complete window is visible in the frame.
+
+    int iModelPreviewWidth = 0, iModelPreviewHeight = 0; F::modelPreview.GetRenderViewSize(iModelPreviewHeight, iModelPreviewWidth);
+
+    ImGuiIO& io = ImGui::GetIO();
+    
+    float flMaxX = io.DisplaySize.x - (m_vMenuSize.x + iModelPreviewWidth + MENU_PADDING_IN_PXL);
+    float flMaxY = io.DisplaySize.y - m_vMenuSize.y;
+
+    ImVec2 vWindowPosClamped(vWindowPos);
+
+    // Only clamp if initialized ( else assertion fail )
+    if(flMaxX > 0.0f && flMaxY > 0.0f)
+    {
+        vWindowPosClamped.x = std::clamp<float>(vWindowPos.x, 0.0f, flMaxX);
+        vWindowPosClamped.y = std::clamp<float>(vWindowPos.y, 0.0f, flMaxY);
+    }
+
+    return vWindowPosClamped;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_StartRecordingKey()
 {
     m_iRecordedKey  = 0;
@@ -1972,6 +2884,46 @@ void MenuGUI_t::ReturnRecordedKey(int64_t iKey)
 {
     m_iRecordedKey  = iKey;
     m_bRecordingKey = false;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::GetPos(float& x, float& y) const
+{
+    x = m_vMenuPos.x; y = m_vMenuPos.y;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::GetSize(float& flWidth, float& flHeight) const
+{
+    flWidth = m_vMenuSize.x; flHeight = m_vMenuSize.y;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+RGBA_t MenuGUI_t::GetPrimaryClr() const
+{
+    return m_clrPrimary;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+RGBA_t MenuGUI_t::GetSecondaryClr() const
+{
+    return m_clrSecondary;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+RGBA_t MenuGUI_t::GetThemeClr() const
+{
+    return m_clrTheme;
 }
 
 
@@ -2053,7 +3005,7 @@ void MenuGUI_t::_CalculateColors()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const
+void MenuGUI_t::CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const
 {
     HSVA_t hsv = vBgClr.ToHSVA();
 
@@ -2067,59 +3019,361 @@ void MenuGUI_t::_CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) con
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_StyleSideMenuBottons()
+void MenuGUI_t::_FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const
 {
-    // TODO : Set active buttons color to primary.
-    ImGui::PushStyleColor(ImGuiCol_Button,             ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,      m_clrSideMenuButtons.GetAsImVec4());
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,       m_clrSideMenuButtons.GetAsImVec4());
-    m_nPushedStyleColors += 3;
+    HSVA_t hsv = vBGClr.ToHSVA();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(0.0f, 0.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   5.0f);
-    m_nPushedStyleVars += 3;
+    hsv.v = hsv.v >= 0.6f ? hsv.v - 0.3f : hsv.v + 0.3f;
+
+    vClrOut = hsv.ToRGBA();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_PopAllStyles()
+void MenuGUI_t::_AnimateModel()
 {
-    assert(m_nPushedStyleColors >= 0 && "Pushed styles count is negative");
-    assert(m_nPushedStyleVars   >= 0 && "Pushed styles vars is negative");
-
-    ImGui::PopStyleColor(m_nPushedStyleColors); m_nPushedStyleColors = 0;
-    ImGui::PopStyleVar(m_nPushedStyleVars);     m_nPushedStyleVars   = 0;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_CalculateAnim(const std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut, const float flAnimCompleteTime)
-{
-    // If nearly complete, let it go.
-    if(fabsf(ANIM_COMPLETE - flAnimationOut) < ANIM_COMPLETION_TOLERANCE)
-    {
-        flAnimationOut = ANIM_COMPLETE;
+    BaseEntity* pModelEnt = F::modelPreview.GetModelEntity();
+    if (pModelEnt == nullptr)
         return;
+
+    bool bAnimationCompleted = fabsf(ANIM_COMPLETE - m_modelAnim.GetAnimation()) <= ANIM_COMPLETION_TOLERANCE;
+    if (bAnimationCompleted == false)
+    {
+        pModelEnt->GetAbsAngles().yaw = Features::MaterialGen::ModelPreview::ModelAbsAngle.GetData().m_flVal * m_modelAnim.GetAnimation();
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawIntSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int iMin, const int iMax, RGBA_t clrBackground, const float* pTrackThickness, const float* pKnowSize, const float* pAnimationState)
+{
+    {
+        static ImVec4 vTransparent(0.0f, 0.0f, 0.0f, 0.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_Text,             vTransparent);
     }
 
-    // Current time
-    std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
+    float flTrackThickness = (pTrackThickness == nullptr ? TRACK_THICKNESS_PXL : *pTrackThickness);
+    float flKnobSize       = (pKnowSize       == nullptr ? KNOB_SIZE_PXL       : *pKnowSize);
+    float flAnimationState = (pAnimationState == nullptr ? 1.0f                : *pAnimationState);
 
-    double flTimeSinceReset = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - animStartTime).count()) / 1000.0f;
-    float  flTimeNormalized = static_cast<float>(flTimeSinceReset) / flAnimCompleteTime;
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight  = ImGui::GetFrameHeight();
 
-    flAnimationOut = 1.0f - powf(1.0f - flTimeNormalized, 3.0f); // animation = 1 - (1 - time)^3
-    flAnimationOut = std::clamp<float>(flAnimationOut, ANIM_ZERO, ANIM_COMPLETE);
+    ImVec2 vSliderOrigin(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f);
+
+    ImGui::SetCursorScreenPos(vSliderOrigin); ImGui::SetNextItemWidth(vWidgetSize.x);
+    bool bDataModified = ImGui::SliderInt(szLabel, pData, iMin, iMax);
+
+    // Calculating Clr :)
+    // Don't just plain black if background color is really light, use secondary color ( assuming use is sane and sober and is not using same color 
+    // primary and secondary. )
+    RGBA_t clrTrack; CalcTextClrForBg(clrTrack, clrBackground);
+    if(clrTrack.r == 0x0 && clrTrack.g == 0x0 && clrTrack.b == 0x0)
+    {
+        if(clrBackground == m_clrSecondary)
+        {
+            clrTrack = m_clrPrimary;
+        }
+        else 
+        {
+            clrTrack = m_clrSecondary;
+        }
+    }
+
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing tha track.
+    ImVec2 vTrackOrigin(vMin.x, vMin.y + (vWidgetSize.y / 2.0f));
+    pDrawList->AddRectFilled(
+        ImVec2(vTrackOrigin.x, vTrackOrigin.y - flTrackThickness),
+        ImVec2(vMax.x, vTrackOrigin.y + flTrackThickness),
+        ImColor(clrTrack.GetAsImVec4()), 1000.0f
+    );
+
+    // Calculating knobs position ( with animation )
+    float flKnobPos = static_cast<float>(*pData - iMin) / static_cast<float>(iMax - iMin);
+    flKnobPos *= flAnimationState; // Animating.
+    float flEffectiveTrackWidth = vWidgetSize.x - (2.0f * flKnobSize); // if we don't reduce the knob size we knob will hang over the ends.
+    ImVec2 vKnowOrigin(vMin.x + flKnobSize + (flEffectiveTrackWidth * flKnobPos), vTrackOrigin.y);
+
+    pDrawList->AddRectFilled(
+        ImVec2(vKnowOrigin.x - flKnobSize, vKnowOrigin.y - flKnobSize), 
+        ImVec2(vKnowOrigin.x + flKnobSize, vKnowOrigin.y + flKnobSize), 
+        ImColor(m_clrTheme.GetAsImVec4()), 1000.0f
+    );
+
+
+    {
+        ImGui::PopStyleColor(6);
+    }
+
+    return bDataModified;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_ResetAnimation(std::chrono::high_resolution_clock::time_point& animStartTime, float& flAnimationOut)
+bool MenuGUI_t::DrawFloatSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float flMin, const int flMax, RGBA_t clrBackground, const float* pTrackThickness, const float* pKnowSize, const float* pAnimationState)
 {
-    flAnimationOut = 0.0f;
-    animStartTime  = std::chrono::high_resolution_clock::now();
+    {
+        static ImVec4 vTransparent(0.0f, 0.0f, 0.0f, 0.0f);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,          vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive,    vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,   vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab,       vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, vTransparent);
+        ImGui::PushStyleColor(ImGuiCol_Text,             vTransparent);
+    }
+
+    float flTrackThickness = (pTrackThickness == nullptr ? TRACK_THICKNESS_PXL : *pTrackThickness);
+    float flKnobSize       = (pKnowSize       == nullptr ? KNOB_SIZE_PXL       : *pKnowSize);
+    float flAnimationState = (pAnimationState == nullptr ? 1.0f                : *pAnimationState);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight  = ImGui::GetFrameHeight();
+
+    ImVec2 vSliderOrigin(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f);
+
+    ImGui::SetCursorScreenPos(vSliderOrigin); ImGui::SetNextItemWidth(vWidgetSize.x);
+    bool bDataModified = ImGui::SliderFloat(szLabel, pData, flMin, flMax, "%.1f");
+
+    // Calculating Clr :)
+    // Don't just plain black if background color is really light, use secondary color ( assuming use is sane and sober and is not using same color 
+    // primary and secondary. )
+    RGBA_t clrTrack; CalcTextClrForBg(clrTrack, clrBackground);
+    if(clrTrack.r == 0x0 && clrTrack.g == 0x0 && clrTrack.b == 0x0)
+    {
+        if(clrBackground == m_clrSecondary)
+        {
+            clrTrack = m_clrPrimary;
+        }
+        else 
+        {
+            clrTrack = m_clrSecondary;
+        }
+    }
+
+    ImDrawList* pDrawList = ImGui::GetWindowDrawList();
+
+    // Drawing tha track.
+    ImVec2 vTrackOrigin(vMin.x, vMin.y + (vWidgetSize.y / 2.0f));
+    pDrawList->AddRectFilled(
+        ImVec2(vTrackOrigin.x, vTrackOrigin.y - flTrackThickness),
+        ImVec2(vMax.x, vTrackOrigin.y + flTrackThickness),
+        ImColor(clrTrack.GetAsImVec4()), 1000.0f
+    );
+
+    // Calculating knobs position ( with animation )
+    float flKnobPos = static_cast<float>(*pData - flMin) / static_cast<float>(flMax - flMin);
+    flKnobPos *= flAnimationState; // Animating.
+    float flEffectiveTrackWidth = vWidgetSize.x - (2.0f * flKnobSize); // if we don't reduce the knob size we knob will hang over the ends.
+    ImVec2 vKnowOrigin(vMin.x + flKnobSize + (flEffectiveTrackWidth * flKnobPos), vTrackOrigin.y);
+
+    pDrawList->AddRectFilled(
+        ImVec2(vKnowOrigin.x - flKnobSize, vKnowOrigin.y - flKnobSize), 
+        ImVec2(vKnowOrigin.x + flKnobSize, vKnowOrigin.y + flKnobSize), 
+        ImColor(m_clrTheme.GetAsImVec4()), 1000.0f
+    );
+
+
+    {
+        ImGui::PopStyleColor(6);
+    }
+
+    return bDataModified;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::DrawIntInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int* pMin, const int* pMax, RGBA_t* pFrameClr, const float* pAnimation)
+{
+    RGBA_t clrFrame = (pFrameClr == nullptr ? m_clrSecondary : *pFrameClr);
+    float  flAnimation = (pAnimation == nullptr ? 1.0f : *pAnimation);
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrFrame);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight = ImGui::GetFrameHeight();
+    
+    // Styling & drawing float input.
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
+    ImGui::PushStyleColor(ImGuiCol_Border,              m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_Text,                ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,             clrFrame.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,       m_clrTheme.GetAsImVec4());
+
+    ImGui::SetCursorScreenPos(ImVec2(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f));
+    ImGui::SetNextItemWidth(vWidgetSize.x);
+    if (ImGui::InputInt(szLabel, pData, 0, 0) == true)
+    {
+        if (pMin != nullptr && pMax != nullptr)
+        {
+            *pData = std::clamp<int>(*pData, *pMin, *pMax);
+        }
+    }
+
+    std::string szSliderValue = std::format("{:.0f}", static_cast<float>(*pData) * m_menuAnim.GetAnimation());
+    size_t      nDigits       = szSliderValue.size();
+    float       flCharWidth   = ImGui::GetFont()->GetCharAdvance(' '); // Assuming using a mono font.
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(vMin.x + (vWidgetSize.x - (flCharWidth * static_cast<float>(nDigits))) / 2.0f, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f),
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
+    );
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(4);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::DrawFloatInput(const char* szLabel, ImVec2 vMin, ImVec2 vMax, float* pData, const float* pMin, const float* pMax, RGBA_t* pFrameClr, const float* pAnimation)
+{
+    RGBA_t clrFrame = (pFrameClr == nullptr ? m_clrSecondary : *pFrameClr);
+    float  flAnimation = (pAnimation == nullptr ? 1.0f : *pAnimation);
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrFrame);
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+    float flFrameHeight = ImGui::GetFrameHeight();
+    
+    // Styling & drawing float input.
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  WIDGET_BORDER_THICKNESS);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    5.0f);
+    ImGui::PushStyleColor(ImGuiCol_Border,              m_clrTheme.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_Text,                ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,             clrFrame.GetAsImVec4());
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,       m_clrTheme.GetAsImVec4());
+
+    ImGui::SetCursorScreenPos(ImVec2(vMin.x, vWidgetSize.y <= flFrameHeight ? vMin.y : vMin.y + (vWidgetSize.y - flFrameHeight) / 2.0f));
+    ImGui::SetNextItemWidth(vWidgetSize.x);
+    if (ImGui::InputFloat(szLabel, pData, 0.0f, 0.0f, "%.1f") == true)
+    {
+        if(pMin != nullptr && pMax != nullptr)
+        {
+            *pData = std::clamp<float>(*pData, *pMin, *pMax);
+        }
+    }
+
+    std::string szSliderValue = std::format("{:.1f}", static_cast<float>(*pData) * m_menuAnim.GetAnimation());
+    size_t      nDigits       = szSliderValue.size();
+    float       flCharWidth   = ImGui::GetFont()->GetCharAdvance(' '); // Assuming using a mono font.
+    
+    float flTextWidth = static_cast<float>(nDigits) * flCharWidth;
+    ImVec2 vTextOrigin(flTextWidth >= vWidgetSize.x ? vMin.x : vMin.x + (vWidgetSize.x - flTextWidth) / 2.0f, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::GetWindowDrawList()->AddText(
+        vTextOrigin,
+        ImColor(clrText.GetAsImVec4()), szSliderValue.c_str()
+    );
+
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(4);
+
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawIntInputWidget(
+    const char* szText, const char* szLabel, 
+    ImVec2 vMin, ImVec2 vMax, 
+    int* pData, const int iMin, const int iMax, 
+    RGBA_t clrBackground, 
+    float flSliderPercentage, float flIntInputPercentage, 
+    const float* pTrackThickness, const float* pKnobSize, const float* pAnimationState)
+{
+    flSliderPercentage   = std::clamp<float>(flSliderPercentage,   0.0f, 1.0f);
+    flIntInputPercentage = std::clamp<float>(flIntInputPercentage, 0.0f, 1.0f);
+
+    constexpr float flPaddingFromWalls      = FEATURE_PADDING_PXL;
+    constexpr float flPaddingBetweenWidgets = FEATURE_PADDING_PXL;
+
+    // Adding padding to dimensions
+    vMin.x += flPaddingFromWalls; vMin.y += flPaddingFromWalls;
+    vMax.x -= flPaddingFromWalls; vMax.y -= flPaddingFromWalls;
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrBackground);
+    ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+    // Text.
+    ImVec2 vTextPos(vMin.x, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::SetCursorScreenPos(vTextPos);
+    ImGui::Text(szText);
+
+
+    bool bDataModified = DrawIntSlider(
+        std::string("##Slider" + std::string(szLabel)).c_str(), 
+        ImVec2(vMin.x + (1.0f - (flSliderPercentage + flIntInputPercentage)) * vWidgetSize.x, vMin.y), 
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage)                        * vWidgetSize.x, vMax.y), 
+        pData, iMin, iMax, clrBackground, pTrackThickness, pKnobSize, pAnimationState
+    );
+
+
+    DrawIntInput(
+        std::string("##IntInput" + std::string(szLabel)).c_str(),
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage) * vWidgetSize.x + flPaddingBetweenWidgets, vMin.y),
+        vMax, pData, &iMin, &iMax, nullptr, pAnimationState);
+
+
+    ImGui::PopStyleColor();
+    return bDataModified;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool MenuGUI_t::DrawFloatInputWidget(
+    const char* szText, const char* szLabel, 
+    ImVec2 vMin, ImVec2 vMax, 
+    float* pData, const float flMin, const float flMax, 
+    RGBA_t clrBackground, 
+    float flSliderPercentage, float flIntInputPercentage, 
+    const float* pTrackThickness, const float* pKnobSize, const float* pAnimationState)
+{
+    flSliderPercentage   = std::clamp<float>(flSliderPercentage,   0.0f, 1.0f);
+    flIntInputPercentage = std::clamp<float>(flIntInputPercentage, 0.0f, 1.0f);
+
+    constexpr float flPaddingFromWalls      = FEATURE_PADDING_PXL;
+    constexpr float flPaddingBetweenWidgets = FEATURE_PADDING_PXL;
+
+    // Adding padding to dimensions
+    vMin.x += flPaddingFromWalls; vMin.y += flPaddingFromWalls;
+    vMax.x -= flPaddingFromWalls; vMax.y -= flPaddingFromWalls;
+
+    ImVec2 vWidgetSize(vMax.x - vMin.x, vMax.y - vMin.y);
+
+    RGBA_t clrText; CalcTextClrForBg(clrText, clrBackground);
+    ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
+
+    // Text.
+    ImVec2 vTextPos(vMin.x, vMin.y + (vWidgetSize.y - ImGui::GetTextLineHeight()) / 2.0f);
+    ImGui::SetCursorScreenPos(vTextPos);
+    ImGui::Text(szText);
+
+
+    bool bDataModified = DrawFloatSlider(
+        std::string("##Slider" + std::string(szLabel)).c_str(), 
+        ImVec2(vMin.x + (1.0f - (flSliderPercentage + flIntInputPercentage)) * vWidgetSize.x, vMin.y), 
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage)                        * vWidgetSize.x, vMax.y), 
+        pData, flMin, flMax, clrBackground, pTrackThickness, pKnobSize, pAnimationState
+    );
+
+
+    DrawFloatInput(
+        std::string("##IntInput" + std::string(szLabel)).c_str(),
+        ImVec2(vMin.x + (1.0f - flIntInputPercentage) * vWidgetSize.x + flPaddingBetweenWidgets, vMin.y),
+        vMax, pData, &flMin, &flMax, nullptr, pAnimationState);
+
+
+    ImGui::PopStyleColor();
+    return bDataModified;
 }

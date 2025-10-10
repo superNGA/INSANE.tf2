@@ -28,6 +28,7 @@ public:
     bool WriteToConfigFile(std::string szFileName) const;
 
     const std::vector<std::string>& GetAllConfigFile();
+    inline std::string GetExtension() { return m_szExtension; }
 
 private:
     std::string m_szSignature   = "INSANE.TF2 CONFIG FILE";

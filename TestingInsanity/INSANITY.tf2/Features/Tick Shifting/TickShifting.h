@@ -62,26 +62,26 @@ private:
 
 DECLARE_FEATURE_OBJECT(tickShifter, TickShifter_t)
 
-DEFINE_TAB(TickShifter, 8)
+DEFINE_TAB(TickShifter, 3)
 DEFINE_SECTION(TickShifter, "TickShifter", 1)
 
-DEFINE_FEATURE(ForceCharge, bool, TickShifter, TickShifter, 1, false, 
+DEFINE_FEATURE(ForceCharge, "Force charge", bool, TickShifter, TickShifter, 1, false, 
     FeatureFlag_HoldOnlyKeyBind | FeatureFlag_SupportKeyBind, 
     "Charges aggresively ( will cause a little glitching )")
 
-DEFINE_FEATURE(RechargeDelay_InSec, FloatSlider_t, TickShifter, TickShifter, 2, 
+DEFINE_FEATURE(RechargeDelay_InSec, "Recharge delay", FloatSlider_t, TickShifter, TickShifter, 2, 
     FloatSlider_t(1.0f, 0.0f, 10.0f),
     FeatureFlag_SupportKeyBind, 
     "Waits for some time before recharging.")
 
-DEFINE_FEATURE(Recharge_Aggression, IntSlider_t, TickShifter, TickShifter, 3, 
+DEFINE_FEATURE(Recharge_Aggression, "Recharge aggresion", IntSlider_t, TickShifter, TickShifter, 3, 
     IntSlider_t(2, 1, 66),
     FeatureFlag_SupportKeyBind, 
     "How aggesively do you wanna recharge ( How much time u willing to spend recharging )")
 
-DEFINE_FEATURE(DoubleTap, bool, TickShifter, TickShifter, 4, false,
+DEFINE_FEATURE(DoubleTap, "DoubleTap", bool, TickShifter, TickShifter, 4, false,
     FeatureFlag_SupportKeyBind, "Fire multiple bullets at once")
 
-DEFINE_FEATURE(Force_ChargeDump, bool, TickShifter, TickShifter, 5, false,
+DEFINE_FEATURE(Force_ChargeDump, "Dump charge", bool, TickShifter, TickShifter, 5, false,
     FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind, 
     "Dump whatever charge we have build up. ( can be used creativly :) )")

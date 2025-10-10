@@ -65,6 +65,12 @@ RGBA_t& RGBA_t::operator=(RGBA_t other)
 }
 
 
+bool RGBA_t::operator==(const RGBA_t other) const
+{
+    return (r == other.r && g == other.g && b == other.b && a == other.a);
+}
+
+
 RGBA_t RGBA_t::IncreaseInPlace(int iOffset, bool bColors, bool bAlpha)
 {
     if (bColors == true)

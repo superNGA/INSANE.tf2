@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "../FeatureHandler.h"
 #include "../../SDK/class/Basic Structures.h"
@@ -24,6 +25,8 @@ class ModelPreview_t
 public:
     void Run();
     void Free();
+
+    void DrawOverlay(float flRounding);
 
     inline void* GetOriginalPaintFn() const { return m_pOriginalPaint; }
 
@@ -43,6 +46,7 @@ public:
     std::vector<std::string>& GetModelNameList() const;
 
     void SetVisible(bool bVisible);
+    bool IsVisible() const;
 
     // Panel Pos & size
     void SetPanelSize(int  iHeight, int  iWidth);
@@ -52,9 +56,11 @@ public:
     void GetPanelPos(int& x, int& y) const;
 
     void SetPanelClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    void SetPanelClr(RGBA_t clr);
     RGBA_t GetPanelClr() const;
 
     // Render View Pos & Size
+    int GetDefaultWidth() const;
     void SetRenderViewSize(int  iHeight, int  iWidth);
     void GetRenderViewSize(int& iHeight, int& iWidth) const;
 
@@ -62,6 +68,7 @@ public:
     void GetRenderViewPos(int& x, int& y) const;
 
     void SetRenderViewClr(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    void SetRenderViewClr(RGBA_t clr);
     RGBA_t GetRenderViewClr() const;
 
     // Camera
@@ -85,6 +92,10 @@ public:
     void SetDefaultLight();
 
 private:
+    void _DrawLightingSettings();
+    void _DrawModelSettings();
+    void _RotateModel();
+
     bool _ShouldCreateStringTable();
     bool m_bJoiningMatch = false;
 
@@ -101,6 +112,7 @@ private:
         "models/player/soldier.mdl"
     };
 
+    void _AdjustCamera();
 
     // init wrapper for Entity & panel.
     bool _Initialize();
@@ -128,6 +140,7 @@ private:
     int m_iPanelX = 0, m_iPanelY = 0;
     RGBA_t m_panelClr;
 
+    const int DEFAULT_WIDTH = 400;
     int m_iRenderViewHeight = 700;
     int m_iRenderViewWidth  = 700;
     int m_iRenderViewX = 0, m_iRenderViewY = 0;
@@ -154,6 +167,9 @@ private:
 DECLARE_FEATURE_OBJECT(modelPreview, ModelPreview_t)
 DEFINE_SECTION(ModelPreview, "MaterialGen", 2)
 
+DEFINE_FEATURE(ModelAbsAngle, "Angle",          FloatSlider_t, ModelPreview, MaterialGen, 1, FloatSlider_t(180.0f, -180.0f, 180.0f))
+DEFINE_FEATURE(RotationSpeed, "Rotation Speed", FloatSlider_t, ModelPreview, MaterialGen, 2, FloatSlider_t(0.0f, 0.0f, 360.0f))
+DEFINE_FEATURE(AnimSquence,   "Animation",      IntSlider_t,   ModelPreview, MaterialGen, 3, IntSlider_t(0, 0, 200))
 
 ///////////////////////////////////////////////////////////////////////////
 extern std::vector<std::string> g_vecModelNames;       // These are some predefined model names we will let the user use.

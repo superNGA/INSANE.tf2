@@ -34,8 +34,8 @@ private:
 
 DECLARE_FEATURE_OBJECT(antiAim, AntiAim_t);
 
-DEFINE_TAB(AntiAim, 1)
+DEFINE_TAB(AntiAim, 5)
 DEFINE_SECTION(AntiAim, "AntiAim", 1)
 
-DEFINE_FEATURE(AntiAim, bool, AntiAim, AntiAim, 1, false, FeatureFlag_None, "Makes you harder to hit :)")
-DEFINE_FEATURE(Cham,    bool, AntiAim, AntiAim, 2, false, FeatureFlag_None, "Draw what enemies see")
+DEFINE_FEATURE(AntiAim, "AntiAim", bool, AntiAim, AntiAim, 1, false, FeatureFlag_None, "Makes you harder to hit :)")
+DEFINE_FEATURE(Cham,    "Cham", bool, AntiAim, AntiAim, 2, false, FeatureFlag_None, "Draw what enemies see")

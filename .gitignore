@@ -56,3 +56,4 @@ _ReSharper*/
 /TestingInsanity/build
 *.yaml
 *.depend
+/TestingInsanity/build

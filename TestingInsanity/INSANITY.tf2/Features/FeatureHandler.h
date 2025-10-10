@@ -364,43 +364,43 @@ public:
 #define DEFINE_TAB(DisplayName, index) namespace Tabs{inline Tab_t DisplayName(#DisplayName, index); }
 #define DEFINE_SECTION(DisplayName, TabName, index) namespace Sections{inline Section_t DisplayName(#DisplayName, TabName, index); }
 
-#define DEFINE_FEATURE_NOFLAG(DisplayName, type, SectionName, TabName, index, defaultData)\
+#define DEFINE_FEATURE_NOFLAG(varName, DisplayName, type, SectionName, TabName, index, defaultData)\
 namespace Features{\
     namespace TabName{\
         namespace SectionName{\
-            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+            inline Feature<type> varName(defaultData, DisplayName, \
                 #SectionName, #TabName, index, 0, FeatureFlags::FeatureFlag_None , "");\
         }\
     }\
 }
 
-#define DEFINE_FEATURE_FLAG(DisplayName, type, SectionName, TabName, index, defaultData, Flags)\
+#define DEFINE_FEATURE_FLAG(varName, DisplayName, type, SectionName, TabName, index, defaultData, Flags)\
 namespace Features{\
     namespace TabName{\
         namespace SectionName{\
-            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+            inline Feature<type> varName(defaultData, DisplayName, \
                 #SectionName, #TabName, index, 0, Flags, "");\
         }\
     }\
 }
 
-#define DEFINE_FEATURE_TOOLTIP(DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)\
+#define DEFINE_FEATURE_TOOLTIP(varName, DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)\
 namespace Features{\
     namespace TabName{\
         namespace SectionName{\
-            inline Feature<type> DisplayName(defaultData, #DisplayName, \
+            inline Feature<type> varName(defaultData, DisplayName, \
                 #SectionName, #TabName, index, 0, Flags, szToolTip);\
         }\
     }\
 }
 
-#define GET_9TH_ARGUMENT(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, ...) arg9
+#define GET_10TH_ARGUMENT(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, ...) arg10
 
 #define EXPAND(x) x
 // A Macro won't expand if its the result / output of another macro unless its being passed in as argument into a Macro ?!
 // (DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)
 #define DEFINE_FEATURE(...)\
-        EXPAND(GET_9TH_ARGUMENT(__VA_ARGS__, DEFINE_FEATURE_TOOLTIP, DEFINE_FEATURE_FLAG, DEFINE_FEATURE_NOFLAG)(__VA_ARGS__))
+        EXPAND(GET_10TH_ARGUMENT(__VA_ARGS__, DEFINE_FEATURE_TOOLTIP, DEFINE_FEATURE_FLAG, DEFINE_FEATURE_NOFLAG)(__VA_ARGS__))
 
 class FeatureHandler_t
 {

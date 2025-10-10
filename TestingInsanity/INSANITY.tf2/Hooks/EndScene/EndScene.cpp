@@ -1,10 +1,14 @@
+#include <ppltasks.h>
 #define _CRT_SECURE_NO_WARNINGS
 #include <format>
 #include "EndScene.h"
+#include <cwchar>
 
 // SDK
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IRender.h"
+#include "../../SDK/class/ISurface.h"
+#include "../../SDK/class/IPanel.h"
 
 #include "../../Utility/Hook Handler/Hook_t.h"
 
@@ -17,6 +21,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/PlayerList/PlayerListV2.h"
 #include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
@@ -67,6 +72,7 @@ HRESULT directX::H_StretchRect(LPDIRECT3DDEVICE9 pDevice, IDirect3DSurface9* pSr
     D3DSurface* pBackBuffer = nullptr;
     pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 
+    // Only copy if somethings being written from the back buffer. 
     if (pSrcSurface == pBackBuffer)
     {
         if(g_rtCopyCallIndex >= RTCopyCallIndex_ProjectilesAndDoors && g_rtCopyCallIndex <= RTCopyCallIndex_ViewModel)
@@ -74,6 +80,7 @@ HRESULT directX::H_StretchRect(LPDIRECT3DDEVICE9 pDevice, IDirect3DSurface9* pSr
             O_stretchRect(pDevice, pSrcSurface, nullptr, F::graphics.GetBlurSample(), nullptr, D3DTEXF_NONE);
         }
 
+        // NOTE : This gets resetted to 0 after each frame at the end of the EndScene hook.
         g_rtCopyCallIndex++;
     }
 
@@ -89,12 +96,78 @@ HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* 
     HRESULT iResult = O_present(pDevice, a1, a2, a3, a4);
 
 
-    if (I::iEngine->IsInGame() == false)
+    if (I::iEngine->IsInGame() == false && Render::menuGUI.IsVisible() == true)
     {
         F::graphics.m_renderTargetDup0.StartCapture(pDevice);
     }
 
     return iResult;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+static void HandleModelPreviewPanel()
+{
+    // don't mess if matGen is active.
+    if(F::materialGen.IsVisible() == true)
+    {
+        F::modelPreview.SetVisible(true);
+        return;
+    }
+    
+    F::modelPreview.SetVisible(Render::menuGUI.IsVisible());
+
+    if(F::modelPreview.IsVisible() == true)
+    {
+        F::modelPreview.SetActiveModel(0);
+        F::modelPreview.SetPanelClr(Render::menuGUI.GetPrimaryClr());
+        F::modelPreview.SetRenderViewClr(Render::menuGUI.GetPrimaryClr());
+      
+        // Model preview panel's size.
+        float flHeight = 0.0f, flMenuWidth = 0.0f; Render::menuGUI.GetSize(flMenuWidth, flHeight); 
+        const int iModelPreviewWidth = F::modelPreview.GetDefaultWidth();
+        F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), iModelPreviewWidth);
+        F::modelPreview.SetPanelSize     (static_cast<int>(flHeight), iModelPreviewWidth);
+     
+        // Model preview panel's pos.
+        float x = 0.0f, y = 0.0f; Render::menuGUI.GetPos(x, y); x += (flMenuWidth + MENU_PADDING_IN_PXL);
+        F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
+        F::modelPreview.SetPanelPos     (static_cast<int>(x), static_cast<int>(y));
+     
+        F::modelPreview.DrawOverlay(Features::Menu::Menu::Rounding.GetData().m_flVal);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+static void HandleDevelopersConsole()
+{
+    // if we our stuff is not open, then let developers console open.
+    if(Render::menuGUI.IsVisible() == false && F::materialGen.IsVisible() == false)
+        return;
+
+    static vgui::VPANEL hGameConsole = NULL;
+    if (hGameConsole == NULL)
+    {
+        hGameConsole = I::iPanel->FindChildByName(I::iSurface->GetEmbeddedPanel(), "GameConsole", true);
+
+        if (hGameConsole == NULL)
+        {
+            FAIL_LOG("Failed to find console panel");
+            return;
+        }
+        
+        WIN_LOG("Found panel \"GameConsole\" @ ID : %llu", hGameConsole);
+    }
+
+    // Is console open ?
+    if (I::iPanel->IsVisible(hGameConsole) == true)
+    {
+        I::iPanel->SetVisible(hGameConsole, false);
+        LOG("Stopped GameConsole from opening");
+    }
 }
 
 
@@ -122,7 +195,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
     }
 
 
-    if(I::iEngine->IsInGame() == false)
+    if(I::iEngine->IsInGame() == false && Render::menuGUI.IsVisible() == true)
     {
         F::graphics.m_renderTargetDup0.EndCapture(pDevice);
     }
@@ -135,49 +208,29 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
     ImGui::NewFrame();
 
     // Just set one decent font for now.
-    ImGui::PushFont(Resources::Fonts::JetBrains_SemiBold_NL_Small);
-
+    ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);  
+   
     // Drawing graphics features.
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
             F::graphicsEngine.Run(pDevice);
 
-            Render::playerList.Draw();
             Render::InfoWindow.Draw();
             insaneProfiler.Render();
         }
 
-        Render::uiMenu.Draw();
-        Render::menuGUI.SetVisible(UI::UI_visble); Render::menuGUI.Draw();
+        //Render::uiMenu.Draw();
         F::materialGen.Run();
+        Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
+        Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
         
         // Model Rendering.
-        {
-            F::modelPreview.Run();
+        F::modelPreview.Run();
+        HandleModelPreviewPanel();
 
-            // if mat gen is disabled, sync the model panel to our menu.
-            if(Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
-            {
-                F::modelPreview.SetActiveModel(0);
-                F::modelPreview.SetVisible(UI::UI_visble);
-                F::modelPreview.SetPanelClr(255, 255, 255, 255);
-                F::modelPreview.SetRenderViewClr(0, 0, 0, 255);
-
-                float flHeight = 0.0f, flWidth = 0.0f; Render::uiMenu.GetWindowSize(flHeight, flWidth);
-                F::modelPreview.SetRenderViewSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
-                F::modelPreview.SetPanelSize(static_cast<int>(flHeight), static_cast<int>(flWidth));
-
-                float x = 0.0f, y = 0.0f; Render::uiMenu.GetWindowPos(x, y); x += flWidth;
-                F::modelPreview.SetRenderViewPos(static_cast<int>(x), static_cast<int>(y));
-                F::modelPreview.SetPanelPos(static_cast<int>(x), static_cast<int>(y));
-            }
-            else
-            {
-                F::modelPreview.SetVisible(true);
-            }
-        }
-
+        // Don't let InGame console come in the way.
+        HandleDevelopersConsole();
     }
 
     ImGui::PopFont();

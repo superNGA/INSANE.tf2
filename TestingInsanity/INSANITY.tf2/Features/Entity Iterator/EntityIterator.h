@@ -133,8 +133,8 @@ private:
 
 DECLARE_FEATURE_OBJECT(entityIterator, EntityIterator_t)
 
-DEFINE_TAB(BackTrack, 5)
+DEFINE_TAB(BackTrack, 4)
 DEFINE_SECTION(BackTrack, "BackTrack", 6)
 DEFINE_FEATURE(
-    BackTrack_In_Ms, FloatSlider_t, BackTrack, BackTrack, 1, FloatSlider_t(0.0f, 0.0f, 1000.0f)
+    BackTrack_In_Ms, "BackTrack", FloatSlider_t, BackTrack, BackTrack, 1, FloatSlider_t(0.0f, 0.0f, 1000.0f)
 )

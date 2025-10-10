@@ -9,7 +9,10 @@ bool FontManager_t::Initialize()
 {
     if (m_bInitialized == true)
         return true;
-
+    
+    // This is icon range ( should be same for all nerd fonts )
+    static const ImWchar ICON_RANGE[] = { 0xE641, 0xfaff, 0 };
+    
     ImFontConfig fontConfig;
     fontConfig.FontDataOwnedByAtlas = false;
 
@@ -18,6 +21,16 @@ bool FontManager_t::Initialize()
     for (const Font_t* pFont : m_vecFonts)
     {
         *pFont->m_pDestination = io.Fonts->AddFontFromMemoryTTF(pFont->m_pFontData, pFont->m_iFontDataSize, pFont->m_flSize, &fontConfig);
+
+        // if nerd font, then merge the "Private use area" ( icon area ? ) into the atlas too.
+        if(pFont->m_bNerdFont == true)
+        {
+            fontConfig.MergeMode = true;
+
+            io.Fonts->AddFontFromMemoryTTF(pFont->m_pFontData, pFont->m_iFontDataSize, pFont->m_flSize, &fontConfig, ICON_RANGE);
+
+            fontConfig.MergeMode = false;
+        }
 
         if (*pFont->m_pDestination == nullptr)
         {
@@ -59,7 +72,7 @@ void FontManager_t::RegisterFont(Font_t* pFont)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-Font_t::Font_t(const char* szFontName, unsigned char* pFontData, unsigned int iFontDataSize, float flSize, ImFont** pDestination)
+Font_t::Font_t(const char* szFontName, unsigned char* pFontData, unsigned int iFontDataSize, float flSize, ImFont** pDestination, bool bNerdFont)
 {
     assert(
         pFontData != nullptr    && // No bullshit data
@@ -74,6 +87,7 @@ Font_t::Font_t(const char* szFontName, unsigned char* pFontData, unsigned int iF
     m_pDestination  = pDestination;
     m_pFontData     = pFontData;
     m_iFontDataSize = iFontDataSize;
+    m_bNerdFont     = bNerdFont; 
 
     Resources::Fonts::fontManager.RegisterFont(this);
 }
