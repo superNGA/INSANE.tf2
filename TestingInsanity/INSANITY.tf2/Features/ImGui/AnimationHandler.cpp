@@ -13,13 +13,20 @@ void AnimationHandler_t::CalculateAnim()
         return;
     }
 
-    // Current time
-    std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
+    switch (m_iAnimationType)
+    {
+    case AnimationHandler_t::AnimType_Linear:
+        _CalculateLinearAnim();
+        break;
 
-    double flTimeSinceReset = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - m_startTime).count()) / 1000.0f;
-    float  flTimeNormalized = static_cast<float>(flTimeSinceReset) / m_flAnimationCompleteTime;
+    case AnimationHandler_t::AnimType_Cubic:
+        _CalculateCubicAnim();
+        break;
 
-    m_flAnimation = 1.0f - powf(1.0f - flTimeNormalized, 3.0f); // animation = 1 - (1 - time)^3
+    case AnimationHandler_t::AnimType_Quadratic:
+    default: break;
+    }
+    
     m_flAnimation = std::clamp<float>(m_flAnimation, ANIM_ZERO, ANIM_COMPLETE);
 }
 
@@ -46,4 +53,26 @@ float AnimationHandler_t::GetAnimation() const
 bool AnimationHandler_t::IsComplete() const
 {
     return fabsf(ANIM_COMPLETE - m_flAnimation) < ANIM_COMPLETION_TOLERANCE;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AnimationHandler_t::_CalculateLinearAnim()
+{
+    m_flAnimation += (ANIM_COMPLETE - m_flAnimation) /  2.0f;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AnimationHandler_t::_CalculateCubicAnim()
+{
+    // Current time
+    std::chrono::high_resolution_clock::time_point timeNow = std::chrono::high_resolution_clock::now();
+
+    double flTimeSinceReset = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - m_startTime).count()) / 1000.0f;
+    float  flTimeNormalized = static_cast<float>(flTimeSinceReset) / m_flAnimationCompleteTime;
+
+    m_flAnimation = 1.0f - powf(1.0f - flTimeNormalized, 3.0f); // animation = 1 - (1 - time)^3
 }

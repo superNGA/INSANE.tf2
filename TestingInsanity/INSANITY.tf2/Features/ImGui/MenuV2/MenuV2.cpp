@@ -15,6 +15,7 @@
 #include "../../../SDK/class/IVEngineClient.h"
 #include "../../../SDK/class/BaseEntity.h"
 #include "../../FeatureHandler.h"
+#include "../NotificationSystem/NotificationSystem.h"
 #include "../../Config/ConfigHandler.h"
 #include "../../ModelPreview/ModelPreview.h"
 
@@ -931,6 +932,7 @@ void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
         if (ImGui::Button(reinterpret_cast<const char*>(u8"\uf409"), vConfigButtonSize) == true)
         {
             configHandler.ReadConfigFile(szConfigName);
+            Render::notificationSystem.PushBack("successfully loaded config %s", szConfigName.c_str());
 
             m_iLoadedConfigIndex = iConfigIndex;
             m_iActiveConfigIndex = -1; // Don't highlight the config once loaded. ( this would give a "consumed" sort of feeling )
@@ -1081,12 +1083,14 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
             if (bFileCreated == true)
             {
                 LOG("Created config file [ %s ]", s_szFileName);
+                Render::notificationSystem.PushBack("Created config file %s", s_szFileName);
                 s_szFileName[0] = '\0';
                 m_newFileAnim.Reset();
             }
             else
             {
                 FAIL_LOG("Failed to create config file [ %s ]", s_szFileName);
+                Render::notificationSystem.PushBack("Failed to Created config file %s", s_szFileName);
             }
         }
 
@@ -1116,11 +1120,13 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
             if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
             {
                 configHandler.WriteToConfigFile(vecAllConfigs[m_iActiveConfigIndex]);
+                Render::notificationSystem.PushBack("Saved to config %s", vecAllConfigs[m_iActiveConfigIndex].c_str());
                 LOG("saved config my nigga!");
             }
             else
             {
                 FAIL_LOG("Selected a file first dumb ass.");
+                Render::notificationSystem.PushBack("Select a file first, dumb ass.");
             }
         }
 
@@ -1168,6 +1174,8 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
             // Must be a valid file
             if (m_iActiveConfigIndex >= 0 && m_iActiveConfigIndex < vecAllConfigs.size())
             {
+                Render::notificationSystem.PushBack("Deleted config file %s", vecAllConfigs[m_iActiveConfigIndex].c_str());
+
                 // Incase a config file is loaded we need to maintain a valid loaded config index, 
                 // for that we need to re-aquire loaded config index after deleting current file.
                 if(m_iLoadedConfigIndex >= 0 && m_iLoadedConfigIndex < vecAllConfigs.size())
@@ -1201,6 +1209,7 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
             else
             {
                 FAIL_LOG("Selected a file first dumb ass.");
+                Render::notificationSystem.PushBack("No file selected");
             }
         }
 

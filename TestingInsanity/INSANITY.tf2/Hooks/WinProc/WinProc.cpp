@@ -2,6 +2,7 @@
 #include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Material Gen/MaterialGen.h"
+#include "../../Features/ImGui/NotificationSystem/NotificationSystem.h" // Delete this, just for testing
 
 // Utility
 #include "../../Utility/ConsoleLogging.h"
@@ -74,6 +75,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     {
         directX::UI::UI_visble = !directX::UI::UI_visble; // Toggle menu
         LOG("Set UI : [ %s ]", directX::UI::UI_visble == true ? "VISIBLE" : "NOT_VISIBLE");
+        Render::notificationSystem.PushBack("Set UI : [ %s ]", directX::UI::UI_visble == true ? "VISIBLE" : "NOT_VISIBLE");
     }
 
 
