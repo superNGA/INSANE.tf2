@@ -65,3 +65,4 @@ REGISTER_FONT(ShadowIntoLight,             Resources::Fonts::ShadowIntoLight_Dat
 
 REGISTER_FONT(JetBrainsMonoNerd_Small,     Resources::Fonts::jetBrainsMonoNerd_Data,   16.0f, true)
 REGISTER_FONT(JetBrainsMonoNerd_Mid,       Resources::Fonts::jetBrainsMonoNerd_Data,   22.0f, true)
+REGISTER_FONT(JetBrainsMonoNerd_Large,     Resources::Fonts::jetBrainsMonoNerd_Data,   40.0f, true)

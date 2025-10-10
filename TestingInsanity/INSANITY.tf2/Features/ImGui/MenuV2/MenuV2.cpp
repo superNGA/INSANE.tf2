@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 
 #include "../../../External Libraries/ImGui/imgui_internal.h"
 #include "../../../Extra/math.h"
@@ -677,7 +678,7 @@ void MenuGUI_t::_DrawConfigPanel(float x, float y, float flWidth, float flHeight
     ImGui::SetCursorScreenPos(vConfigInfoPos);
     ImGui::BeginChild("##ConfigFileInfoChild", vConfigInfoSize);
     {
-        _DrawConfigInfo(vConfigInfoPos, vConfigInfoSize);
+        _DrawConfigInfo(vConfigInfoPos, vConfigInfoSize, flConfigInfoRounding);
     }
     ImGui::EndChild();
     ImGui::PopStyleVar();
@@ -741,10 +742,8 @@ void MenuGUI_t::_DrawConfigPanel(float x, float y, float flWidth, float flHeight
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void MenuGUI_t::_DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize)
+void MenuGUI_t::_DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize, const float flConfigInfoRounding)
 {
-    const float flConfigInfoRounding = Features::Menu::SectionBoxes::Rounding.GetData().m_flVal;
-
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
 
     // Drawing Config info box
@@ -759,10 +758,81 @@ void MenuGUI_t::_DrawConfigInfo(ImVec2 vConfigInfoPos, ImVec2 vConfigInfoSize)
         ImColor(m_clrTheme.GetAsImVec4()),
         flConfigInfoRounding, 0, WIDGET_BORDER_THICKNESS);
 
+
+    // Drawing file config imfo
+    if (m_iLoadedConfigIndex >= 0)
+    {
+        constexpr float ITEM_PADDING = 5.0f;
+
+        ImVec2 vCursorPos(vConfigInfoPos.x + ITEM_PADDING, vConfigInfoPos.y + vConfigInfoSize.y - ITEM_PADDING);
+        vCursorPos.x += ITEM_PADDING;
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrSecondary);
+
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Date : {}", m_szLoadedConfigLastModifyTime).c_str()
+        );
+
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Size : {} bytes", m_iLoadedConfigSize).c_str()
+        );
+
+        vCursorPos.y -= ImGui::GetTextLineHeight();
+        pDrawList->AddText(
+            vCursorPos, ImColor(clrText.GetAsImVec4()), std::format("Path : {}", m_szLoadedConfigPath).c_str()
+        );
+
+
+        ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Large);
+        ImVec2 vIconPos(vCursorPos);
+        vIconPos.x += flConfigInfoRounding;
+        vIconPos.y = vConfigInfoPos.y + ((vCursorPos.y - vConfigInfoPos.y) - ImGui::GetTextLineHeight()) / 2.0f;
+        float flIconWidth = ImGui::GetFont()->GetCharAdvance(' ');
+        pDrawList->AddText(
+            vIconPos, ImColor(clrText.GetAsImVec4()), reinterpret_cast<const char*>(u8"\uf15c")
+        );
+        ImGui::PopFont();
+
+
+        ImGui::PushFont(Resources::Fonts::MontserratBlack);
+        std::string szFileName = m_szLoadedConfigName;
+        const std::string szExtension(".INSANE");
+        if (szFileName.ends_with(szExtension)) 
+        {
+            szFileName.erase(szFileName.size() - szExtension.size());
+        }
+        ImVec2 vTextSize = ImGui::CalcTextSize(szFileName.c_str());
+
+        ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+        ImVec2 vFileExtensionSize = ImGui::CalcTextSize(szExtension.c_str());
+        ImGui::PopFont();
+
+        ImVec2 vConfigNamePos(
+            vConfigInfoPos.x + (vConfigInfoSize.x - (vTextSize.x + vFileExtensionSize.x)) / 2.0f,
+            vConfigInfoPos.y + ((vCursorPos.y - vConfigInfoPos.y) - ImGui::GetTextLineHeight()) / 2.0f
+        );
+
+
+        pDrawList->AddText(
+            vConfigNamePos, ImColor(clrText.GetAsImVec4()), szFileName.c_str()
+        );
+        ImGui::PushFont(Resources::Fonts::ShadowIntoLight);
+        pDrawList->AddText(
+            ImVec2(vConfigNamePos.x + vTextSize.x, vConfigNamePos.y + (vTextSize.y - vFileExtensionSize.y) + 2.0f), ImColor(m_clrTheme.GetAsImVec4()), szExtension.c_str()
+        );
+        ImGui::PopFont();
+        ImGui::PopFont();
+    }
+
+    // NOTE : we draw the flash in the end so it draws over everything. 
+    //        and yes, you can notice the text over the flash & it doesn't look nice.
     // Config info box's animation
     if (m_iLoadedConfigIndex >= 0)
     {
-        const float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal;
+        //const float flFlashWidth = Features::Menu::SideMenu::AnimAccentSize.GetData().m_flVal * 10.0f;
+        const float flFlashWidth = 300.0f;
         ImVec2 vAnimMax(
             vConfigInfoPos.x + vConfigInfoSize.x + flFlashWidth - ((vConfigInfoSize.x + flFlashWidth) * m_configLoadAnim.GetAnimation()),
             vConfigInfoPos.y + vConfigInfoSize.y);
@@ -865,6 +935,8 @@ void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
             m_iLoadedConfigIndex = iConfigIndex;
             m_iActiveConfigIndex = -1; // Don't highlight the config once loaded. ( this would give a "consumed" sort of feeling )
             m_configLoadAnim.Reset();
+
+            _GetFileInfo(szConfigName);
         }
         ImGui::PopStyleVar();
         ImGui::PopFont();
@@ -875,7 +947,7 @@ void MenuGUI_t::_DrawConfigList(ImVec2 vConfigListSize)
         }
 
         // Draw animation if this config is loaded or this file is newly created.
-        bool bNewlyAddedFile = m_newFileAnim.IsComplete() == false && iConfigIndex == vecAllConfigs.size() - 1;
+        bool bNewlyAddedFile = m_newFileAnim.IsComplete() == false && iConfigIndex == m_iNewFileIndex;
         if (m_iLoadedConfigIndex == iConfigIndex || bNewlyAddedFile == true)
         {
             // Choose whose animation we are doing here. ( new file or config loaded )
@@ -983,6 +1055,7 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
                 // now try to find the config thats loaded.
                 const std::vector<std::string>& vecUpdatedConfigs = configHandler.GetAllConfigFile();
                 size_t nConfigs = vecUpdatedConfigs.size();
+                std::string szExpectedNewFileName = s_szFileName + configHandler.GetExtension();
                 for (int iConfigIndex = 0; iConfigIndex < nConfigs; iConfigIndex++)
                 {
                     if (vecUpdatedConfigs[iConfigIndex] == szActiveConfigName)
@@ -995,6 +1068,12 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
                     {
                         m_iLoadedConfigIndex = iConfigIndex;
                         LOG("Updated loaded config index to : %d", m_iLoadedConfigIndex);
+                    }
+
+                    if (vecUpdatedConfigs[iConfigIndex] == szExpectedNewFileName)
+                    {
+                        m_iNewFileIndex = iConfigIndex;
+                        LOG("New file allocated index : %d", iConfigIndex);
                     }
                 }
             }
@@ -1137,6 +1216,44 @@ void MenuGUI_t::_DrawConfigButtons(ImVec2 vConfigButtonPos, ImVec2 vConfigButton
     }
 
     ImGui::PopStyleColor(4); ImGui::PopStyleVar();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void MenuGUI_t::_GetFileInfo(const std::string& szFilePath)
+{
+    try
+    {
+        m_szLoadedConfigName = szFilePath;
+        std::filesystem::path p(szFilePath);
+
+        m_szLoadedConfigPath = std::filesystem::absolute(p).string();
+        m_iLoadedConfigSize  = std::filesystem::file_size(p);
+
+        // Last modification time
+        auto ftime = std::filesystem::last_write_time(p);
+        auto sctp  = 
+            std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                ftime - std::filesystem::file_time_type::clock::now()
+                + std::chrono::system_clock::now());
+
+        std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+        std::tm* tmLocal = std::localtime(&cftime);
+
+        std::ostringstream oss;
+        oss << std::put_time(tmLocal, "%Y-%m-%d %H:%M:%S");
+        m_szLoadedConfigLastModifyTime = oss.str();
+    }
+    catch (const std::exception& e) 
+    {
+        FAIL_LOG(e.what());
+    }
+
+    LOG("File name : %s", m_szLoadedConfigName.c_str());
+    LOG("File path : %s", m_szLoadedConfigPath.c_str());
+    LOG("Mod. time : %s", m_szLoadedConfigLastModifyTime.c_str());
+    LOG("size      : %llu bytes", m_iLoadedConfigSize);
 }
 
 
