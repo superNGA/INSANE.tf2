@@ -398,7 +398,7 @@ namespace Features{\
 
 #define EXPAND(x) x
 // A Macro won't expand if its the result / output of another macro unless its being passed in as argument into a Macro ?!
-// (DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)
+// (VarName, DisplayName, type, SectionName, TabName, index, defaultData, Flags, szToolTip)
 #define DEFINE_FEATURE(...)\
         EXPAND(GET_10TH_ARGUMENT(__VA_ARGS__, DEFINE_FEATURE_TOOLTIP, DEFINE_FEATURE_FLAG, DEFINE_FEATURE_NOFLAG)(__VA_ARGS__))
 

@@ -21,6 +21,7 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/NotificationSystem/NotificationSystem.h"
 #include "../../Features/ImGui/PlayerList/PlayerListV2.h"
 #include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
@@ -224,6 +225,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         F::materialGen.Run();
         Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
         Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
+        Render::notificationSystem.Draw();
         
         // Model Rendering.
         F::modelPreview.Run();

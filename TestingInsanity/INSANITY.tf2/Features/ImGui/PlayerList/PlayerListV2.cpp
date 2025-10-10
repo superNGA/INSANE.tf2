@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../MenuV2/MenuV2.h"
+#include "../NotificationSystem/NotificationSystem.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../Utility/Containers/DoubleBuffer.h"
@@ -163,7 +164,7 @@ void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vecto
             {
                 ImGui::OpenPopup(("Popup" + std::string(playerInfo.name)).c_str());
             }
-            _DrawEntSetting(pEnt, ("Popup" + std::string(playerInfo.name)).c_str());
+            _DrawEntSetting(pEnt, ("Popup" + std::string(playerInfo.name)).c_str(), playerInfo.name);
 
 
             if(bButtonHovered == true)
@@ -206,7 +207,7 @@ void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vecto
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void PlayerListV2_t::_DrawEntSetting(BaseEntity* pEnt, std::string szPopupId)
+void PlayerListV2_t::_DrawEntSetting(BaseEntity* pEnt, std::string szPopupId, const char* szPlayerName)
 {
     {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,  ImVec2(0.0f, 0.0f));
@@ -237,6 +238,15 @@ void PlayerListV2_t::_DrawEntSetting(BaseEntity* pEnt, std::string szPopupId)
                     LOG("Trying to set mateiral for entity %p as %d", pEnt, iMatIndex);
                     F::entityIterator.SetEntityMaterial(pEnt, iMatIndex);
                     m_playerListAnim.Reset();
+
+                    if (iMatIndex < 0)
+                    {
+                        Render::notificationSystem.PushBack("Resetted %s 's material", szPlayerName);
+                    }
+                    else
+                    {
+                        Render::notificationSystem.PushBack("Set %s 's material to %s", szPlayerName, vecMaterials[iMatIndex].m_szMatBundleName.c_str());
+                    }
                 }
             }
             ImGui::EndPopup();

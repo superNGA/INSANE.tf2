@@ -19,7 +19,7 @@ private:
     bool m_bVisible = true;
 
     void _DrawList(float x, float y, float flWidth, const std::vector<BaseEntity*>* vecPlayers, bool bGrowUpwards);
-    void _DrawEntSetting(BaseEntity* pEnt, std::string szPopupId);
+    void _DrawEntSetting(BaseEntity* pEnt, std::string szPopupId, const char* szPlayerName);
 
     AnimationHandler_t m_playerListAnim;
 };
