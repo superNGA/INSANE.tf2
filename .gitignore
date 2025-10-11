@@ -57,3 +57,4 @@ _ReSharper*/
 *.yaml
 *.depend
 /TestingInsanity/build
+*.obj

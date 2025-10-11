@@ -11,9 +11,9 @@ add_library(Insane_tf2 SHARED ${SOURCES})
 
 
 # Yes, it must be msvc, cause I am not smart enough to make it work with clang-cl or gcc. ( I tried. )
-# if(NOT MSVC)
-  # message(FATAL_ERROR "This project must be built with MSVC (cl.exe).")
-# endif()
+if(NOT MSVC)
+  message(FATAL_ERROR "This project must be built with MSVC (cl.exe).")
+endif()
 
 
 #//////////////////////////////////////////////////

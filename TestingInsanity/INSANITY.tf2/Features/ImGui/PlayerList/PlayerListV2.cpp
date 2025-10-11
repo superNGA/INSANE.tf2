@@ -128,6 +128,7 @@ void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vecto
 
 
     static player_info_t playerInfo;
+    memset(&playerInfo, 0, sizeof(player_info_t)); playerInfo.name[0] = '\0';
     for(BaseEntity* pEnt : *vecPlayers)
     {
         if(pEnt == nullptr)
@@ -241,11 +242,11 @@ void PlayerListV2_t::_DrawEntSetting(BaseEntity* pEnt, std::string szPopupId, co
 
                     if (iMatIndex < 0)
                     {
-                        Render::notificationSystem.PushBack("Resetted %s 's material", szPlayerName);
+                        Render::notificationSystem.PushBack("Resetted %s's material", szPlayerName);
                     }
                     else
                     {
-                        Render::notificationSystem.PushBack("Set %s 's material to %s", szPlayerName, vecMaterials[iMatIndex].m_szMatBundleName.c_str());
+                        Render::notificationSystem.PushBack("Set %s's material to %s", szPlayerName, vecMaterials[iMatIndex].m_szMatBundleName.c_str());
                     }
                 }
             }

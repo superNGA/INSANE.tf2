@@ -438,6 +438,8 @@ struct player_info_t
     char		friendsName[32];
     bool		fakeplayer;
     bool		ishltv;
+    int			customFiles[4];
+    unsigned char	filesDownloaded;
 };
 
 typedef unsigned char byte;

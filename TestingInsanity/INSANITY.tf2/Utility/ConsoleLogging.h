@@ -8,6 +8,7 @@
 #define CONCAT_HELPER(x,y)      x##y
 #define CONCAT(x,y)             CONCAT_HELPER(x,y)
 
+
 #ifdef _DEBUG
 
 #define INITIALIZE_CONSOLE()    EXPAND(CONS_INITIALIZE())
