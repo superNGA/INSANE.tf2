@@ -31,6 +31,7 @@ public:
     void  Reset();
     float GetAnimation() const;
     bool  IsComplete() const;
+    float GetCompletionTime() const;
 
 private:
     void _CalculateLinearAnim();

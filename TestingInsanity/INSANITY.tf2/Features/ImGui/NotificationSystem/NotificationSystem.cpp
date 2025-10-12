@@ -149,16 +149,23 @@ void NotificationSystem_t::_RemoveExpiredNtfsAndAnimate()
 {
     for (auto it = m_qNotifications.begin(); it != m_qNotifications.end(); )
     {
-        auto   now       = std::chrono::high_resolution_clock::now();
-        double flNtfLife = std::chrono::duration_cast<std::chrono::duration<double>>(now - (*it).GetStartTime()).count();
+        auto   now          = std::chrono::high_resolution_clock::now();
+        double flNtfLife    = std::chrono::duration_cast<std::chrono::duration<double>>(now - (*it).GetStartTime()).count();
+        float  flNtfMaxLife = Features::Menu::Notification::NotificationLifeTime.GetData().m_flVal;
 
-        if (flNtfLife > Features::Menu::Notification::NotificationLifeTime.GetData().m_flVal)
+        if (flNtfLife > flNtfMaxLife)
         {
             it = m_qNotifications.erase(it);
             _CalcTargetAnchorPos();
         }
         else
         {
+            if ((*it).m_bExiting == false && flNtfLife > flNtfMaxLife - (*it).m_animation.GetCompletionTime())
+            {
+                (*it).m_bExiting = true;
+                (*it).m_animation.Reset();
+            }
+
             (*it).CalculateAnim(); // Animate this shit
             it++;
         }
@@ -221,21 +228,36 @@ void NotificationSystem_t::_DrawImGui()
         {
             vNotificationSize.x = (ntf.m_szMessage.size() * flCharWidth) + (2.0f * m_flPaddingInPxl);
 
+            float flAnimation = ntf.m_bExiting == true ? 1.0f - ntf.m_animation.GetAnimation() : ntf.m_animation.GetAnimation();
+
             ImVec2 vMaxAnimated(
-                vCursorPos.x + (vNotificationSize.x * flAwayFromCenterDirection) - (vNotificationSize.x * flAwayFromCenterDirection * ntf.GetAnimation()), 
+                vCursorPos.x + (vNotificationSize.x * flAwayFromCenterDirection) - (vNotificationSize.x * flAwayFromCenterDirection * flAnimation), 
                 vCursorPos.y + (m_flGrowthDirection < 0.0f ? 0.0f : vNotificationSize.y));
             ImVec2 vMinAnimated(
                 vMaxAnimated.x + (vNotificationSize.x * flAwayFromCenterDirection * -1.0f), 
                 vCursorPos.y + (m_flGrowthDirection < 0.0f ? -1.0f * vNotificationSize.y : 0.0f));
 
-            // Box for text.
-            ImVec2 vFlashMin(vMinAnimated.x + (200.0f * flAwayFromCenterDirection * -1.0f), vMinAnimated.y);
-            if (vFlashMin.x > vCursorPos.x + ((vNotificationSize.x + 10.0f) * flAwayFromCenterDirection * -1.0f) && flAwayFromCenterDirection < 0.0f)
-                vFlashMin.x = vCursorPos.x + ((vNotificationSize.x + 10.0f) * flAwayFromCenterDirection * -1.0f);
-            if (vFlashMin.x < vCursorPos.x + ((vNotificationSize.x + 10.0f) * flAwayFromCenterDirection * -1.0f) && flAwayFromCenterDirection > 0.0f)
-                vFlashMin.x = vCursorPos.x + ((vNotificationSize.x + 10.0f) * flAwayFromCenterDirection * -1.0f);
+            constexpr float THEME_ACCENT_FINAL_SIZE = 10.0f; // The final width of the theme colored stip at the end of the notification.
 
+            // Adjust flashmin such that when coming in its ahead reaches before the animation and when exiting, it stick to the notification nicely.
+            ImVec2 vFlashMin(vMinAnimated.x, vMinAnimated.y);
+            vFlashMin.x += ntf.m_bExiting == true ? (THEME_ACCENT_FINAL_SIZE * flAwayFromCenterDirection * -1.0f) : (200.0f * flAwayFromCenterDirection * -1.0f);
+
+            // Clamping the "Flash" or theme accent so that it doens't go out of bound ( 10 pixels in this case ).
+            float flFlashMaxX = vCursorPos.x + ((vNotificationSize.x + THEME_ACCENT_FINAL_SIZE) * flAwayFromCenterDirection * -1.0f);
+
+            // When notification is on the right side of the screen, flAwayFromCenterDirection > 0 and whenever flashmin goes more off than
+            // 10 pixels from notification size its clamped. But when notification is on the left side of the screen, 
+            // flAwayFromCenterDirection < 0 ( negative ) so we going towards the center decreases the values. And whenever 
+            // the values go more than 10 pixel offset, its clamped.
+            //
+            if (vFlashMin.x * flAwayFromCenterDirection < flFlashMaxX * flAwayFromCenterDirection)
+                vFlashMin.x = flFlashMaxX;
+
+            // Flash effect ( theme colored shit thats on the far end of the notification )
             pDrawList->AddRectFilled(vFlashMin,    vMaxAnimated, ImColor(Render::menuGUI.GetThemeClr().GetAsImVec4()));
+
+            // Box for text.
             pDrawList->AddRectFilled(vMinAnimated, vMaxAnimated, ImColor(Render::menuGUI.GetPrimaryClr().GetAsImVec4()));
 
             // Drawing text.
