@@ -228,6 +228,7 @@ void NotificationSystem_t::_DrawImGui()
         {
             vNotificationSize.x = (ntf.m_szMessage.size() * flCharWidth) + (2.0f * m_flPaddingInPxl);
 
+            // If exitting, play animation in reverse.
             float flAnimation = ntf.m_bExiting == true ? 1.0f - ntf.m_animation.GetAnimation() : ntf.m_animation.GetAnimation();
 
             ImVec2 vMaxAnimated(

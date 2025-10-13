@@ -129,6 +129,7 @@ public:
         std::is_same_v<T, IntSlider_t>   ||
         std::is_same_v<T, FloatSlider_t> ||
         std::is_same_v<T, ColorData_t>   ||
+        std::is_same_v<T, bool>          ||
         std::is_same_v<T, std::vector<void*>*>,
         "DataType not supported");
     
