@@ -21,14 +21,13 @@
 #include "../../Features/Graphics Engine V2/Draw Objects/Cube/Cube.h"
 
 // To render here.
+#include "../../Features/ImGui/KeybindPanel/KeybindPanel.h"
 #include "../../Features/ImGui/NotificationSystem/NotificationSystem.h"
 #include "../../Features/ImGui/PlayerList/PlayerListV2.h"
 #include "../../Features/ImGui/MenuV2/MenuV2.h"
 #include "../../Features/Graphics Engine V2/Graphics.h"
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
-#include "../../Features/ImGui/PlayerList/PlayerList.h"
 #include "../../Features/ImGui/InfoWindow/InfoWindow_t.h"
-#include "../../Features/ImGui/Menu/Menu.h"
 #include "../../Features/ModelPreview/ModelPreview.h"
 #include "../../Features/Material Gen/MaterialGen.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
@@ -223,9 +222,10 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
 
         //Render::uiMenu.Draw();
         F::materialGen.Run();
-        Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
-        Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
         Render::notificationSystem.Draw();
+        Render::KeybindPanel.Draw(); // Note : Keybind panel is given more priority than notifications, to prevent it from hidding shit in intense moments?
+        Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
+        Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
         
         // Model Rendering.
         F::modelPreview.Run();

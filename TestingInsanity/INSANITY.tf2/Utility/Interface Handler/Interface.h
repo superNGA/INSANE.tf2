@@ -12,14 +12,14 @@ public:
     Interface_t(const char* signature, const char* szDll, void** ppDestination, uint32_t offset, uint32_t iCurInstructionSize, const char* name);
     bool Initialize();
 
-    uintptr_t m_pInterface    = NULL;
-    const char* m_szIdentifier   = "NULL"; // version or signature
-    const char* m_szDll       = "NULL";
-    void** m_pDestination     = nullptr;
-    bool m_bToBeScanned       = false;
-    const char* m_szInterfaceName = "NULL";
-    uint32_t m_iOffset = 0;
-    uint32_t m_iCurInstrutionSize = 0;
+    uintptr_t   m_pInterface         = NULL;
+    const char* m_szIdentifier       = "NULL"; // version or signature
+    const char* m_szDll              = "NULL";
+    void**      m_pDestination       = nullptr;
+    bool        m_bToBeScanned       = false;
+    const char* m_szInterfaceName    = "NULL";
+    uint32_t    m_iOffset            = 0;
+    uint32_t    m_iCurInstrutionSize = 0;
 };
 
 #define MAKE_INTERFACE_VERSION(name, version, type, dll) namespace I{inline type* name = nullptr;} \

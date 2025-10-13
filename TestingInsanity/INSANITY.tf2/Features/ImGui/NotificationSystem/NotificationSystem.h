@@ -21,13 +21,13 @@ public:
 
     inline std::chrono::high_resolution_clock::time_point GetStartTime() const { return m_startTime;          }
     inline void                                           CalculateAnim()      { m_animation.CalculateAnim(); }
-    inline float                                          GetAnimation() const { return m_animation.GetAnimation(); }
 
-    std::string m_szMessage;
+    std::string        m_szMessage;
+    AnimationHandler_t m_animation;
+    bool               m_bExiting = false;
 
 private:
     std::chrono::high_resolution_clock::time_point m_startTime;
-    AnimationHandler_t                             m_animation;
 };
 ///////////////////////////////////////////////////////////////////////////
 

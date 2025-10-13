@@ -7,7 +7,7 @@
 Interface_t::Interface_t(const char* szVersion, const char* szDll, void** pDestination)
 {
     m_szIdentifier = szVersion;
-    m_szDll = szDll;
+    m_szDll        = szDll;
     m_pDestination = pDestination;
     m_bToBeScanned = false;
 
@@ -51,8 +51,6 @@ bool Interface_t::Initialize()
     if (pInterface == NULL)
         return false;
 
-    LOG("Target instruction found @ [ %p ]", (void*)pInterface);
-
     // This is done to prevent unflowing int when adding an negative offset to adrs ( unsigned 8 byte int )
     int64_t pTargetSafe = static_cast<int64_t>(pInterface);
 
@@ -60,11 +58,14 @@ bool Interface_t::Initialize()
     int64_t iAdrsOffset = static_cast<int64_t>(*reinterpret_cast<int32_t*>(pTargetSafe + static_cast<int64_t>(m_iOffset)));
     int64_t iAdrsBase   = pTargetSafe + static_cast<int64_t>(m_iCurInstrutionSize);
     *m_pDestination     = reinterpret_cast<void*>(iAdrsBase + iAdrsOffset);
+
+    LOG("Target instruction found @ [ %p ] Storing @ [ %p ]", (void*)pInterface, m_pDestination);
+
     return true;
 
     // this is custom made for extracting adresses form lea instruction ( load effective adrs ), if required we shall expand it much more.
-    *m_pDestination = reinterpret_cast<void*>((pInterface + m_iCurInstrutionSize) + (*reinterpret_cast<int32_t*>(pInterface + m_iOffset)));
-    return true;
+    // *m_pDestination = reinterpret_cast<void*>((pInterface + m_iCurInstrutionSize) + (*reinterpret_cast<int32_t*>(pInterface + m_iOffset)));
+    // return true;
 }
 
 
@@ -79,9 +80,15 @@ bool InterfaceInitialize_t::Initialize()
             FAIL_LOG("FAILED TO GET INTERFACE : %s FROM %s" , I->m_szIdentifier, I->m_szDll);
             return false;
         }
-        I->m_bToBeScanned ?
-            WIN_LOG("found %s [ %s ] from %s @ [ %p ]", I->m_szInterfaceName, I->m_szIdentifier, I->m_szDll, *I->m_pDestination) :
-            WIN_LOG("found %s from %s @ [ %p ]", I->m_szIdentifier, I->m_szDll, *I->m_pDestination);
+
+        if (I->m_bToBeScanned == true)
+        {
+            WIN_LOG("found %s [ %s ] from %s @ [ %p ] Stored @ [ %p ]", I->m_szInterfaceName, I->m_szIdentifier, I->m_szDll, *I->m_pDestination, I->m_pDestination);
+        }
+        else
+        {
+            WIN_LOG("found %s from %s @ [ %p ] Stored @ [ %p ]", I->m_szIdentifier, I->m_szDll, *I->m_pDestination, I->m_pDestination);
+        }
     }
     
     return true;

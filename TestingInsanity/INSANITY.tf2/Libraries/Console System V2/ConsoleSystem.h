@@ -53,8 +53,6 @@ enum consTextFormat_t
 };
 
 //======================= FN MACROS =======================
-#if ENABLE_CONSOLE == 1
-
 #define CONS_INITIALIZE()   CONS.inititalize()
 #define CONS_UNINITIALIZE() CONS.uninitialize()
 #define DRAW_DEVIDER()      CONS.drawDevider()
@@ -75,25 +73,6 @@ enum consTextFormat_t
 #define CONS_FASTLOG_FLOAT_ARRWT(pFloatArr) CONS.LogFloatArr(FG_CYAN, BG_BLACK, BOLD, __FUNCTION__, true, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
 #define CONS_LOG_FLOAT_ARR(textColor, BGColor, textFormat, pFloatArr) CONS.LogFloatArr(textColor, BGColor, textFormat, __FUNCTION__, false, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
 #define CONS_LOG_FLOAT_ARRWT(textColor, BGColor, textFormat, pFloatArr) CONS.LogFloatArr(textColor, BGColor, textFormat, __FUNCTION__, true, #pFloatArr, (void*)&pFloatArr, sizeof(pFloatArr))
-
-#else
-
-#define CONS_INITIALIZE(introClr)                                       void(0)
-#define CONS_INITIALIZE()                                               void(0)
-#define CONS_UNINITIALIZE()                                             void(0)
-#define DRAW_DEVIDER()                                                  void(0)
-#define CONS_LOG_ERROR(errorMessage)                                    void(0)
-#define CONS_LOG_SUCCESS(Message)                                       void(0)
-#define CONS_FASTLOG(textColor, logMessage, ...)                        void(0)
-#define CONS_FASTLOGWT(textColor, logMessage, ...)                      void(0)
-#define CONS_LOG(textColor, BGColor, textFormat, logmessage, ...)       void(0)
-#define CONS_LOGWT(textColor, BGColor, textFormat, logmessage, ...)     void(0)
-#define CONS_FASTLOG_FLOAT_ARR(pFloatArr)                               void(0)
-#define CONS_FASTLOG_FLOAT_ARRWT(pFloatArr)                             void(0)
-#define CONS_LOG_FLOAT_ARR(textColor, BGColor, textFormat, pFloatArr)   void(0)
-#define CONS_LOG_FLOAT_ARRWT(textColor, BGColor, textFormat, pFloatArr) void(0)
-
-#endif // ENABLE_CONSOLE
 
 
 #include <iostream>

@@ -18,6 +18,7 @@
 #include "../NotificationSystem/NotificationSystem.h"
 #include "../../Config/ConfigHandler.h"
 #include "../../ModelPreview/ModelPreview.h"
+#include "../KeybindPanel/KeybindPanel.h"
 
 // Renderer
 #include "../../Graphics Engine V2/Graphics.h"
@@ -97,6 +98,12 @@ void MenuGUI_t::Draw()
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::SetVisible(bool bVisible)
 {
+    // Whenever trying to close menu, iterate over all features and find all features with keybinds.
+    if (bVisible == false && m_bVisible == true)
+    {
+        Render::KeybindPanel.RefreshFeatureList();
+    }
+
     m_bVisible = bVisible;
 
     if(m_pMainMenu != nullptr)

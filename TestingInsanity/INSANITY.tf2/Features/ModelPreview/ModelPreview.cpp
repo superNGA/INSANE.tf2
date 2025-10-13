@@ -554,7 +554,7 @@ bool ModelPreview_t::_InitializeEntity()
 
     // Model we set here doesn't matter, We can change it later.
     auto* pTable = I::iNetworkStringTableContainer->FindTable(MODEL_PRECACHE_TABLENAME);
-    if (pTable)
+    if (pTable != nullptr)
     {
         int iIndex = pTable->FindStringIndex(m_vecModels[0].c_str());
         Sig::CBaseEntity_SetModelByIndex(m_pEnt, iIndex);
