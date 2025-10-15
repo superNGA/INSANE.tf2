@@ -20,7 +20,6 @@
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../SDK/NetVars/NetVarHandler.h"
 #include "../Features/FeatureHandler.h"
-#include "../Features/ImGui/InfoWindow/InfoWindow_t.h"
 
 // SDK
 #include "../SDK/class/IGameEventManager.h"

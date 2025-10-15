@@ -23,7 +23,7 @@
 #include "../../SDK/class/IVEngineClient.h"
 
 // DEUBG related
-#include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../ImGui/InfoWindowV2/InfoWindow.h"
 #include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 #define TF_DAMAGE_CRIT_CHANCE_MELEE     0.15f
@@ -170,22 +170,32 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         // This is just a rough cost evaluation, cause for non melee weapons, the cost also depends on your 
         // Crit Requests / Crit Checks.
         float flLooseCost = (pWeaponCritData->m_iSlot == WPN_SLOT_MELLE ? 0.5f : 1.0f) * pWeaponCritData->m_flCritCostBase * TF_DAMAGE_CRIT_MULTIPLIER;
-        Render::InfoWindow.AddToCenterConsole("CritsLeft",
-            std::format("{} / {}",
+        Render::infoWindowV2.AddOrUpdate("CritHack", "Crits Left", 0, InfoWindowWidget_t::Alignment_Left);
+        Render::infoWindowV2.AddOrUpdate("CritHack", 
+            std::format("{} / {}", 
                 static_cast<int32_t>(pWeaponCritData->m_flCritBucket / flLooseCost),          // Crits Left
-                static_cast<int32_t>(CVars::tf_weapon_criticals_bucket_cap / flLooseCost))); // Total Potential Crits
+                static_cast<int32_t>(CVars::tf_weapon_criticals_bucket_cap / flLooseCost)), 
+            0, InfoWindowWidget_t::Alignment_Middle);
+
+        //Render::InfoWindow.AddToCenterConsole("CritsLeft",
+        //    std::format("{} / {}",
+        //        static_cast<int32_t>(pWeaponCritData->m_flCritBucket / flLooseCost),          // Crits Left
+        //        static_cast<int32_t>(CVars::tf_weapon_criticals_bucket_cap / flLooseCost))); // Total Potential Crits
 
         // CRIT BAN STATUS
         switch (iBanStatus)
         {
         case CritHack_t::CRIT_ALLOWED:
-            Render::InfoWindow.AddToCenterConsole("Ban Status", "CRIT-ALLOWED", GREEN);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Crits Allowed", 1, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("Ban Status", "CRIT-ALLOWED", GREEN);
             break;
         case CritHack_t::CRIT_BANNED:
-            Render::InfoWindow.AddToCenterConsole("Ban Status", std::format("CRIT-BANNED, {}dmg left", iPendingDamage), RED);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Crits Banned", 1, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("Ban Status", std::format("CRIT-BANNED, {}dmg left", iPendingDamage), RED);
             break;
         case CritHack_t::CRIT_TOO_EXPENSIVE:
-            Render::InfoWindow.AddToCenterConsole("Ban Status", std::format("CRIT-TOO_EXPENSIVE, {}dmg left", iPendingDamage), YELLOW);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Too-Expensive", 1, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("Ban Status", std::format("CRIT-TOO_EXPENSIVE, {}dmg left", iPendingDamage), YELLOW);
             break;
         default:
             break;
@@ -195,39 +205,43 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         switch (iCritHackStatus)
         {
         case CritHack_t::CRITHACK_WPN_NOT_ELLIGIBLE:
-            Render::InfoWindow.AddToCenterConsole("CritHack Status", "NA", RED);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "NA", 2, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("CritHack Status", "NA", RED);
             break;
         case CritHack_t::CRITHACK_DISABLED:
-            Render::InfoWindow.AddToCenterConsole("CritHack Status", "Disabled", RED);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Diabled", 2, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("CritHack Status", "Disabled", RED);
             break;
         case CritHack_t::CRITHACK_INACTIVE:
-            Render::InfoWindow.AddToCenterConsole("CritHack Status", "In-Active", YELLOW);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "In-Active", 2, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("CritHack Status", "In-Active", YELLOW);
             break;
         case CritHack_t::CRITHACK_ACTIVE:
-            Render::InfoWindow.AddToCenterConsole("CritHack Status", "Active", GREEN);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Active", 2, InfoWindowWidget_t::Alignment_Middle);
+            //Render::InfoWindow.AddToCenterConsole("CritHack Status", "Active", GREEN);
             break;
         default:
             break;
         }
 
         // Crit Reserve info...
-        Render::InfoWindow.AddToCenterConsole("ReserveCritSeeds", std::format("{} Crit Seeds in reserve", m_qCritCommands.size()), m_qCritCommands.size() == 0 ? RED : GREEN);
+        //Render::InfoWindow.AddToCenterConsole("ReserveCritSeeds", std::format("{} Crit Seeds in reserve", m_qCritCommands.size()), m_qCritCommands.size() == 0 ? RED : GREEN);
     }
 
     // Draw Debuging Info ( Top-left i.e. Info Window )
-    if (Features::CritHack::CritHack::Draw_Debug_Info.IsActive() == true)
-    {
-        // Weapon's bucket's stats info...
-        Render::InfoWindow.AddToInfoWindow("bucket", std::format("Weapon Bucket : {}", pWeaponCritData->m_flCritBucket));
-        Render::InfoWindow.AddToInfoWindow("critRequests", std::format("Crit Requests : {}", pWeaponCritData->m_nCritRequests));
-        Render::InfoWindow.AddToInfoWindow("BaseCritCost", std::format("Base CritCost : {}", pWeaponCritData->m_flCritCostBase));
-        Render::InfoWindow.AddToInfoWindow("dmgPerBullet", std::format("DMG. per bullet : {}", pWeaponCritData->m_flDamagePerShot));
-        Render::InfoWindow.AddToInfoWindow("WeaponID", std::format("Cur Weapon ID : {}", pWeaponCritData->m_iWeaponID));
-        Render::InfoWindow.AddToInfoWindow("CritChecks", std::format("Crit Checks   : {}", pWeaponCritData->m_pWeapon->m_nCritChecks()));
-        Render::InfoWindow.AddToInfoWindow("CritOccuered", std::format("Crit Occured accoding to game : {}", pWeaponCritData->m_pWeapon->m_nCritSeedRequests()));
-        Render::InfoWindow.AddToInfoWindow("GamesBucket ", std::format("Weapon Bucket ( game's ): {}", pWeaponCritData->m_pWeapon->m_flCritTokenBucket()));
-        Render::InfoWindow.AddToInfoWindow("WeaponID", std::format("{} <- Weapon ID", static_cast<int>(pWeaponCritData->m_iSlot)));
-    }
+    //if (Features::CritHack::CritHack::Draw_Debug_Info.IsActive() == true)
+    //{
+    //    // Weapon's bucket's stats info...
+    //    Render::InfoWindow.AddToInfoWindow("bucket", std::format("Weapon Bucket : {}", pWeaponCritData->m_flCritBucket));
+    //    Render::InfoWindow.AddToInfoWindow("critRequests", std::format("Crit Requests : {}", pWeaponCritData->m_nCritRequests));
+    //    Render::InfoWindow.AddToInfoWindow("BaseCritCost", std::format("Base CritCost : {}", pWeaponCritData->m_flCritCostBase));
+    //    Render::InfoWindow.AddToInfoWindow("dmgPerBullet", std::format("DMG. per bullet : {}", pWeaponCritData->m_flDamagePerShot));
+    //    Render::InfoWindow.AddToInfoWindow("WeaponID", std::format("Cur Weapon ID : {}", pWeaponCritData->m_iWeaponID));
+    //    Render::InfoWindow.AddToInfoWindow("CritChecks", std::format("Crit Checks   : {}", pWeaponCritData->m_pWeapon->m_nCritChecks()));
+    //    Render::InfoWindow.AddToInfoWindow("CritOccuered", std::format("Crit Occured accoding to game : {}", pWeaponCritData->m_pWeapon->m_nCritSeedRequests()));
+    //    Render::InfoWindow.AddToInfoWindow("GamesBucket ", std::format("Weapon Bucket ( game's ): {}", pWeaponCritData->m_pWeapon->m_flCritTokenBucket()));
+    //    Render::InfoWindow.AddToInfoWindow("WeaponID", std::format("{} <- Weapon ID", static_cast<int>(pWeaponCritData->m_iSlot)));
+    //}
 }
 
 void CritHack_t::CalcIsAttackCriticalHandler()

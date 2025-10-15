@@ -27,7 +27,7 @@
 #include "../../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
-#include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../ImGui/InfoWindowV2/InfoWindow.h"
 
 
 // EXPORT FNS
@@ -246,8 +246,10 @@ void NoSpreadV2_t::_Draw()
     float flLeastCount       = _GetLeastCount(flTime);
     float flMantissaStepSize = _GetMantissaStep(ExportFn::Plat_FloatTime() + m_dServerClientDelta);
 
-    Render::InfoWindow.AddToCenterConsole("LeastCount", std::format("STEP-SIZE : {} | LC : {:.3}", flMantissaStepSize, flLeastCount), flMantissaStepSize > 1.0f ? GREEN : RED);
-    Render::InfoWindow.AddToCenterConsole("SYNC_Status", std::format("Sync : {}", m_bSynced == true ? "SYNCED" : "not-synced"), m_bSynced == true ? GREEN : RED);
+    Render::infoWindowV2.AddOrUpdate("NoSpread", std::format("STEP-SIZE : {} | LC : {:.3}", flMantissaStepSize, flLeastCount), 0, InfoWindowWidget_t::Alignment_Left);
+    Render::infoWindowV2.AddOrUpdate("NoSpread", std::format("Sync : {}", m_bSynced == true ? "SYNCED" : "not-synced"), 0, InfoWindowWidget_t::Alignment_Right);
+    //Render::InfoWindow.AddToCenterConsole("LeastCount", std::format("STEP-SIZE : {} | LC : {:.3}", flMantissaStepSize, flLeastCount), flMantissaStepSize > 1.0f ? GREEN : RED);
+    //Render::InfoWindow.AddToCenterConsole("SYNC_Status", std::format("Sync : {}", m_bSynced == true ? "SYNCED" : "not-synced"), m_bSynced == true ? GREEN : RED);
 }
 
 

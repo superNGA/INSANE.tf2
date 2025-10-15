@@ -18,7 +18,7 @@
 #include "../../SDK/class/CommonFns.h"
 #include "../../SDK/class/CClientState.h"
 #include "../../SDK/class/FileWeaponInfo.h"
-#include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../ImGui/InfoWindowV2/InfoWindow.h"
 
 // UTILITY
 #include "../../Utility/Interface Handler/Interface.h"
@@ -271,13 +271,20 @@ void TickShifter_t::_DumpCharge(int nTicks, void* pOriginalCLMove, float flAccum
 
 void TickShifter_t::_Draw()
 {
-    // Drawing Charge
-    Render::InfoWindow.AddToCenterConsole("TS_Charge", std::format("Charge: {}", m_iChargeLevel), m_iChargeLevel < CVars::sv_maxusrcmdprocessticks ? RED : GREEN);
-    
-    // Drawing Charge delay
     int64_t iTimeSinceDumpInMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_lastChargeDumpTime).count();
-    Render::InfoWindow.AddToCenterConsole("TS_ChargeWait", std::format("waiting {:.2}", 
-        Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))));
+
+    Render::infoWindowV2.AddOrUpdate("TickShifter", std::format("{} / {}", m_iChargeLevel, CVars::sv_maxusrcmdprocessticks), 0, InfoWindowWidget_t::Alignment_Middle);
+    Render::infoWindowV2.AddOrUpdate("TickShifter", m_iChargeLevel, 0, CVars::sv_maxusrcmdprocessticks, 0);
+    Render::infoWindowV2.AddOrUpdate("TickShifter", 
+        std::format("waiting {:.2}",
+        Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))), 1, InfoWindowWidget_t::Alignment_Middle);
+
+    //// Drawing Charge
+    //Render::InfoWindow.AddToCenterConsole("TS_Charge", std::format("Charge: {}", m_iChargeLevel), m_iChargeLevel < CVars::sv_maxusrcmdprocessticks ? RED : GREEN);
+    //
+    //// Drawing Charge delay
+    //Render::InfoWindow.AddToCenterConsole("TS_ChargeWait", std::format("waiting {:.2}", 
+    //    Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))));
 }
 
 
