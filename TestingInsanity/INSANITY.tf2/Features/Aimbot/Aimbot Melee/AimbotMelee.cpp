@@ -35,7 +35,7 @@
 #include "../../../Utility/Hook Handler/Hook_t.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
-#include "../../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../../ImGui/InfoWindowV2/InfoWindow.h"
 
 
 #define DEBUG_BACKSTAB_CHECK false

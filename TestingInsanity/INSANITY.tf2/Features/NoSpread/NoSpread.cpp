@@ -27,7 +27,7 @@
 #include "../../Extra/math.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/Export Fn Handler/ExportFnHelper.h"
-#include "../ImGui/InfoWindow/InfoWindow_t.h"
+//#include "../ImGui/InfoWindow/InfoWindow_t.h"
 
 GET_EXPORT_FN_NO_ARGS(Plat_FloatTime, "tier0.dll", double)
 GET_EXPORT_FN(RandomSeed, VSTDLIB_DLL, void, int)
@@ -55,10 +55,10 @@ void NoSpread_t::Run(CUserCmd* cmd, bool& result)
 	_RequestPlayerPerf(cmd);
 
 #ifdef DEBUG_NOSPREAD
-	Render::InfoWindow.AddToInfoWindow("sync status",	m_eSyncState == SYNC_DONE ? "SYNCED :)" : "sync-ing :(");
-	Render::InfoWindow.AddToInfoWindow("delta",			std::format("delta : {:.6f}", m_flDelta));
-	Render::InfoWindow.AddToInfoWindow("offset",		std::format("offset : {:.6f}", m_flOffset));
-	Render::InfoWindow.AddToInfoWindow("Mantissa step", std::format("Mantisa step : {:.3f}", _CalcMantissaStep(m_flServerTime)));
+	//Render::InfoWindow.AddToInfoWindow("sync status",	m_eSyncState == SYNC_DONE ? "SYNCED :)" : "sync-ing :(");
+	//Render::InfoWindow.AddToInfoWindow("delta",			std::format("delta : {:.6f}", m_flDelta));
+	//Render::InfoWindow.AddToInfoWindow("offset",		std::format("offset : {:.6f}", m_flOffset));
+	//Render::InfoWindow.AddToInfoWindow("Mantissa step", std::format("Mantisa step : {:.3f}", _CalcMantissaStep(m_flServerTime)));
 #endif
 
 	if (_ShouldRun(cmd) == false)
