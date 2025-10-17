@@ -33,6 +33,7 @@ namespace filesystem = std::filesystem;
 #include "../../Extra/math.h"
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 // External Dependencies
 #include "../../External Libraries/ImGui/imgui.h"
@@ -66,6 +67,8 @@ MaterialGen_t::MaterialGen_t()
 ///////////////////////////////////////////////////////////////////////////
 void MaterialGen_t::Run()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     m_bVisible = Features::MaterialGen::MaterialGen::Enable.IsActive();
     if (m_bVisible == false)
         return;

@@ -8,6 +8,8 @@
 // Globals
 #include "GlobalVars.h"
 
+#include "Utility/ConsoleLogging.h"
+
 //threads
 #include "Threads/thread1.h"
 

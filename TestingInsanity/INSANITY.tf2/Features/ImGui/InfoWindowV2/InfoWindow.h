@@ -7,7 +7,8 @@
 #include "../../FeatureHandler.h"
 #include "../../../External Libraries/ImGui/imgui.h"
 
-struct InfoWindowWidget_t; 
+
+struct InfoWindowWidget_t;
 struct InfoWindowSliderWidget_t;
 struct InfoWindowInstance_t;
 class  InfoWindowV2_t;

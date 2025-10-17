@@ -8,6 +8,7 @@
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../Utility/ConsoleLogging.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 
 std::string VkToString(DWORD vk);
@@ -17,6 +18,9 @@ std::string VkToString(DWORD vk);
 ///////////////////////////////////////////////////////////////////////////
 void KeybindPanel_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
+
     if (Features::Menu::KeybindPanel::KeybindPanel.IsActive() == false)
         return;
 

@@ -6,6 +6,7 @@
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../SDK/class/IVEngineClient.h"
 #include "../../../SDK/class/Basic Structures.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 
 constexpr float flPaddingInPxl   = 2.0f;
@@ -25,6 +26,8 @@ InfoWindowV2_t::InfoWindowV2_t()
 ///////////////////////////////////////////////////////////////////////////
 void InfoWindowV2_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if (Features::Menu::FeatureInfo::FeatureInfo_Render.IsActive() == false)
         return;
 

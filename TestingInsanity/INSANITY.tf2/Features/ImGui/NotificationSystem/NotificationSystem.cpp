@@ -8,6 +8,7 @@
 #include "../../../Utility/ConsoleLogging.h"
 #include "../../../Extra/math.h"
 #include "../../../Resources/Fonts/FontManager.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 // SDK
 #include "../../../SDK/class/IVEngineClient.h"
@@ -30,6 +31,8 @@ NotificationSystem_t::NotificationSystem_t()
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if (Features::Menu::Notification::RenderNotification.IsActive() == false)
         return;
 

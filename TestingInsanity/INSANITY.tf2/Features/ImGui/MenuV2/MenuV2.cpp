@@ -19,6 +19,8 @@
 #include "../../Config/ConfigHandler.h"
 #include "../../ModelPreview/ModelPreview.h"
 #include "../KeybindPanel/KeybindPanel.h"
+#include "../../../Utility/Profiler/Profiler.h"
+
 
 // Renderer
 #include "../../Graphics Engine V2/Graphics.h"
@@ -58,6 +60,8 @@ void MenuGUI_t::_InitFonts()
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if (m_bVisible == false)
         return;
 
@@ -165,6 +169,8 @@ bool MenuGUI_t::_Initialize()
 ///////////////////////////////////////////////////////////////////////////
 ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImVec2           vWindowPos(0.0f, 0.0f);
     ImGuiWindowFlags iWindowFlags = 
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | 
@@ -225,6 +231,8 @@ ImVec2 MenuGUI_t::_DrawMainBody(float flWidth, float flHeight)
 ///////////////////////////////////////////////////////////////////////////
 void MenuGUI_t::_DrawTabBar(float flWidth, float flHeight, float x, float y)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImGuiWindowFlags iWindowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,  ImVec2(0.0f, 0.0f));

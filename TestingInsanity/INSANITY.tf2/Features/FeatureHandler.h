@@ -326,6 +326,11 @@ public:
     {
         return m_iActiveData;
     }
+
+    inline const char* GetString()
+    {
+        return m_data.m_pItems[GetData()];
+    }
 };
 
 

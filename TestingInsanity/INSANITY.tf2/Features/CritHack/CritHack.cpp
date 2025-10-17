@@ -24,7 +24,6 @@
 
 // DEUBG related
 #include "../ImGui/InfoWindowV2/InfoWindow.h"
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 #define TF_DAMAGE_CRIT_CHANCE_MELEE     0.15f
 #define TF_DAMAGE_CRIT_CHANCE           0.02f
@@ -68,8 +67,6 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //=========================================================================
 void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
-    PROFILE_FUNCTION();
-
     // Storing some basic info.. ( nothing to look at here )
     m_pLocalPlayer         = pLocalPlayer;
     m_iLocalPlayerEntIndex = pLocalPlayer->entindex();
@@ -205,19 +202,19 @@ void CritHack_t::_Draw(CritBanStatus_t iBanStatus, CritHackStatus_t iCritHackSta
         switch (iCritHackStatus)
         {
         case CritHack_t::CRITHACK_WPN_NOT_ELLIGIBLE:
-            Render::infoWindowV2.AddOrUpdate("CritHack", "NA", 2, InfoWindowWidget_t::Alignment_Middle);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "NA", 2, InfoWindowWidget_t::Alignment_Middle, RGBA_t(1.0f, 0.0f, 0.0f, 1.0f));
             //Render::InfoWindow.AddToCenterConsole("CritHack Status", "NA", RED);
             break;
         case CritHack_t::CRITHACK_DISABLED:
-            Render::infoWindowV2.AddOrUpdate("CritHack", "Diabled", 2, InfoWindowWidget_t::Alignment_Middle);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Diabled", 2, InfoWindowWidget_t::Alignment_Middle, RGBA_t(1.0f, 0.0f, 0.0f, 1.0f));
             //Render::InfoWindow.AddToCenterConsole("CritHack Status", "Disabled", RED);
             break;
         case CritHack_t::CRITHACK_INACTIVE:
-            Render::infoWindowV2.AddOrUpdate("CritHack", "In-Active", 2, InfoWindowWidget_t::Alignment_Middle);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "In-Active", 2, InfoWindowWidget_t::Alignment_Middle, RGBA_t(1.0f, 1.0f, 0.0f, 1.0f));
             //Render::InfoWindow.AddToCenterConsole("CritHack Status", "In-Active", YELLOW);
             break;
         case CritHack_t::CRITHACK_ACTIVE:
-            Render::infoWindowV2.AddOrUpdate("CritHack", "Active", 2, InfoWindowWidget_t::Alignment_Middle);
+            Render::infoWindowV2.AddOrUpdate("CritHack", "Active", 2, InfoWindowWidget_t::Alignment_Middle, RGBA_t(0.0f, 1.0f, 0.0f, 1.0f));
             //Render::InfoWindow.AddToCenterConsole("CritHack Status", "Active", GREEN);
             break;
         default:

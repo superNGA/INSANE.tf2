@@ -32,6 +32,7 @@ target_link_directories(Insane_tf2 PRIVATE
 # Linking MinHook.lib x64 
 #//////////////////////////////////////////////////
 target_link_libraries(Insane_tf2 PRIVATE "${CMAKE_SOURCE_DIR}/MinHook.lib")
+target_link_libraries(Insane_tf2 PRIVATE "${CMAKE_SOURCE_DIR}/INSANITY.tf2/Utility/Profiler")
 # NOTE : CMAKE_SOURCE_DIR -> Where CMakeLists.txt is.
 # NOTE : CMAKE_BINARY_DIR -> Where build files are.
 

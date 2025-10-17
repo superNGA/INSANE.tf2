@@ -9,7 +9,6 @@
 #include "../../SDK/TF object manager/TFOjectManager.h"
 
 // UTILITY
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../Utility/CVar Handler/CVarHandler.h"
 #include "../../Extra/math.h"
 
@@ -28,8 +27,6 @@ Movement_t::Movement_t()
 //=========================================================================
 void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
-	PROFILE_FUNCTION();
-
 	_InitializeKeyCodes();
 
 	_Bhop(pCmd, result, pLocalPlayer);

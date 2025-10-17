@@ -30,8 +30,8 @@
 #include "../../Features/Graphics Engine/Graphics Engine/GraphicsEngine.h"
 #include "../../Features/ModelPreview/ModelPreview.h"
 #include "../../Features/Material Gen/MaterialGen.h"
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../Features/ESP/ESPV2.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 
 namespace directX {
@@ -109,6 +109,8 @@ HRESULT directX::H_present(LPDIRECT3DDEVICE9 pDevice, void* a1, void* a2, void* 
 ///////////////////////////////////////////////////////////////////////////
 static void HandleModelPreviewPanel()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     // don't mess if matGen is active.
     if(F::materialGen.IsVisible() == true)
     {
@@ -144,6 +146,8 @@ static void HandleModelPreviewPanel()
 ///////////////////////////////////////////////////////////////////////////
 static void HandleDevelopersConsole()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     // if we our stuff is not open, then let developers console open.
     if(Render::menuGUI.IsVisible() == false && F::materialGen.IsVisible() == false)
         return;
@@ -211,12 +215,13 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);  
    
     // Drawing graphics features.
+    PROFILER_START_SCOPE_NAMED("EndScene");
     {
         if (Features::MaterialGen::MaterialGen::Enable.IsActive() == false)
         {
             F::graphicsEngine.Run(pDevice);
-            insaneProfiler.Render();
         }
+        
 
         F::materialGen.Run();
         Render::notificationSystem.Draw();
@@ -224,7 +229,7 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         Render::infoWindowV2.Draw();
         Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
         Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
-
+        F::profiler.Draw();
         
         // Model Rendering.
         F::modelPreview.Run();
@@ -233,6 +238,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         // Don't let InGame console come in the way.
         HandleDevelopersConsole();
     }
+    PROFILER_END_SCOPE_NAMED("EndScene");
+
 
     ImGui::PopFont();
 

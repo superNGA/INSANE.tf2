@@ -39,6 +39,7 @@
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/PullFromAssembly.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../Graphics Engine V2/Graphics.h"
 #include "../../Resources/Fonts/FontManager.h"
 #include "../ImGui/MenuV2/MenuV2.h"
@@ -77,6 +78,8 @@ MAKE_HOOK(CModelInfoClient_GetModel, "83 FA ? 0F 8C ? ? ? ? 48 8D 0D ? ? ? ? E9 
 //=========================================================================
 void ModelPreview_t::Run()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if (m_bVisible == false)
         return;
 

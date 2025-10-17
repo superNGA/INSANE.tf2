@@ -6,6 +6,8 @@
 #include "../../../Extra/math.h"
 
 #include "../DirectX Handler/DirectXHandler.h"
+#include "../../../Utility/Profiler/Profiler.h"
+
 
 //=========================================================================
 //                     GRAPHICS ENGINE
@@ -13,6 +15,8 @@
 
 void GraphicsEngine_t::Run(LPDIRECT3DDEVICE9 pDevice)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     // Setting up
     F::directxHandler.Initialize(pDevice);
     F::directxHandler.CaptureState();

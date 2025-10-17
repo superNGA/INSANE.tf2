@@ -1,12 +1,9 @@
 #include "FakeLag.h"
 #include "../../SDK/class/CUserCmd.h"
 
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
 {
-    PROFILE_FUNCTION();
-
     if (bSendPacket == nullptr || pCmd == nullptr)
         return;
 

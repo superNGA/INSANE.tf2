@@ -8,7 +8,7 @@
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
-//#include "../ImGui/InfoWindow/InfoWindow_t.h"
+#include "../../Utility/ConsoleLogging.h"
 
 //SDK
 #include "../../SDK/class/CUserCmd.h"
