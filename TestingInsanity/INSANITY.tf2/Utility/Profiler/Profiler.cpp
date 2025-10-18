@@ -474,16 +474,17 @@ void Profiler_t::_DrawInfoPanel()
     ImGuiWindowFlags iWindowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoBringToFrontOnFocus;
     if (ImGui::Begin("##Profiler_InfoPanel", nullptr, iWindowFlags) == true)
     {
-        constexpr float GRAPH_WIDTH_FRACTION     = 0.7f;
-        constexpr float SCOPE_INFO_WINDOW_HEIGHT = 100.0f;
-        ImVec2 vGraphWindowPos    (vWindowPos.x + (vWindowSize.x * (1.0f - GRAPH_WIDTH_FRACTION)), vWindowPos.y);
-        ImVec2 vGraphWindowSize   (vWindowSize.x * GRAPH_WIDTH_FRACTION, vWindowSize.y);
+        const     float flGraphWidthFraction     = Features::Performance::InfoPanel::Profiler_GraphWidth.GetData().m_flVal;
+        constexpr float FUNC_LIST_OFFSET_IN_PXL  = 100.0f;
+        constexpr float SCOPE_INFO_WIDTH         = 300.0f;
+        ImVec2 vGraphWindowPos    (vWindowPos.x + (vWindowSize.x * (1.0f - flGraphWidthFraction)), vWindowPos.y);
+        ImVec2 vGraphWindowSize   (vWindowSize.x * flGraphWidthFraction, vWindowSize.y);
 
-        ImVec2 vFuncListWindowSize(vWindowSize.x * (1.0f - GRAPH_WIDTH_FRACTION), vWindowSize.y - SCOPE_INFO_WINDOW_HEIGHT);
-        ImVec2 vFuncListWindowPos (vWindowPos.x, vWindowPos.y + SCOPE_INFO_WINDOW_HEIGHT);
+        ImVec2 vFuncListWindowSize(vWindowSize.x * (1.0f - flGraphWidthFraction), vWindowSize.y - FUNC_LIST_OFFSET_IN_PXL);
+        ImVec2 vFuncListWindowPos (vWindowPos.x, vWindowPos.y + FUNC_LIST_OFFSET_IN_PXL);
 
-        ImVec2 vScopeInfoPos      (vWindowPos);
-        ImVec2 vScopeInfoSize     (vWindowSize.x * (1.0f - GRAPH_WIDTH_FRACTION), SCOPE_INFO_WINDOW_HEIGHT);
+        ImVec2 vScopeInfoPos      (vGraphWindowPos.x + 10.0f, vGraphWindowPos.y + 10.0f);
+        ImVec2 vScopeInfoSize     (SCOPE_INFO_WIDTH, -1.0f); // Height gets calculated in the function  _DrawScopeInfo();
 
 
         // Drawing all functions in the scope...
@@ -557,10 +558,6 @@ void Profiler_t::_DrawGraph(ImVec2 vWindowSize, ImVec2 vWindowPos)
         }
 
 
-        // Important graph variables.
-        static uint64_t s_iGraphRange      = 0llu;
-        static uint64_t s_iGraphBottomTime = 0llu;
-
         const std::deque<uint64_t>* pQTimeRecords = m_pActiveGraphProfile->GetTimeRecords();
 
         // Drawing data on the graph...
@@ -571,8 +568,8 @@ void Profiler_t::_DrawGraph(ImVec2 vWindowSize, ImVec2 vWindowPos)
 
         uint64_t iSmallestTime      = 0xFFffFFffFFffFFffLLU;
         uint64_t iLargestTime       = 0llu;
-        //uint64_t iSmallestTime      = s_iGraphBottomTime;
-        //uint64_t iLargestTime       = s_iGraphBottomTime + 1LLU;
+        //uint64_t iSmallestTime      = m_iGraphBottomTime;
+        //uint64_t iLargestTime       = m_iGraphBottomTime + 1LLU;
 
         size_t   nRecords           = pQTimeRecords->size();
         size_t   nWishRecords       = static_cast<size_t>(Features::Performance::InfoPanel::Profiler_GraphRange.GetData().m_iVal);
@@ -593,10 +590,10 @@ void Profiler_t::_DrawGraph(ImVec2 vWindowSize, ImVec2 vWindowPos)
                 iLargestTime = iNodeTime;
             }
 
-            iNodeTime -= s_iGraphBottomTime;
+            iNodeTime -= m_iGraphBottomTime;
 
             ImVec2 vNodePos( vCursorPos.x,
-                (vCursorPos.y /*- flMarginInPxl*/) - ((vWindowSize.y/* - flMarginInPxl*/) * static_cast<float>(static_cast<double>(iNodeTime) / static_cast<double>(s_iGraphRange))));
+                (vCursorPos.y /*- flMarginInPxl*/) - ((vWindowSize.y/* - flMarginInPxl*/) * static_cast<float>(static_cast<double>(iNodeTime) / static_cast<double>(m_iGraphRange))));
 
             // If not first record, the draw line connect this point to last one.
             if (iRecordIndex != nRecords - 1LLU)
@@ -608,8 +605,8 @@ void Profiler_t::_DrawGraph(ImVec2 vWindowSize, ImVec2 vWindowPos)
             pDrawList->AddCircleFilled(vNodePos, flNodeRadius, ImColor(Render::menuGUI.GetThemeClr().GetAsImVec4()), 10);
 
             bool bNodeHovered = ImGui::IsMouseHoveringRect(
-                ImVec2(vNodePos.x - flNodeRadius, vNodePos.y - flNodeRadius),
-                ImVec2(vNodePos.x + flNodeRadius, vNodePos.y + flNodeRadius),
+                ImVec2(vNodePos.x - (flNodeRadius * 2.0f), vNodePos.y - (flNodeRadius * 2.0f)),
+                ImVec2(vNodePos.x + (flNodeRadius * 2.0f), vNodePos.y + (flNodeRadius * 2.0f)),
                 false);
             if (bNodeHovered == true)
             {
@@ -636,60 +633,21 @@ void Profiler_t::_DrawGraph(ImVec2 vWindowSize, ImVec2 vWindowPos)
         const double flRangeUpperBound = static_cast<double>(Features::Performance::InfoPanel::Profiler_GraphRangeUpdateMax.GetData().m_iVal) / 100.0;
         const double flRangeLowerBound = static_cast<double>(Features::Performance::InfoPanel::Profiler_GraphRangeUpdateMin.GetData().m_iVal) / 100.0;
         bool bUpdateGraphRange =
-            static_cast<double>(iGraphRange) > static_cast<double>(s_iGraphRange) * flRangeUpperBound ||
-            static_cast<double>(iGraphRange) < static_cast<double>(s_iGraphRange) * flRangeLowerBound;
+            static_cast<double>(iGraphRange) > static_cast<double>(m_iGraphRange) * flRangeUpperBound ||
+            static_cast<double>(iGraphRange) < static_cast<double>(m_iGraphRange) * flRangeLowerBound;
         if (bUpdateGraphRange == true)
         {
             // Since, we know that the range now is not withing the desired section of the graph's current range.
             // we will move the graph's range towards the new range. This way there won't be any sudden snap's n shit.
             // and veiwer won't loose focus immediatly upon range changes.
             double flRangeSmoothing = static_cast<double>(Features::Performance::InfoPanel::Profiler_GraphRangeSmoothing.GetData().m_flVal);
-            s_iGraphRange = static_cast<uint64_t>(
-                static_cast<double>(s_iGraphRange) * (1.0 - flRangeSmoothing) + static_cast<double>(iGraphRange) * flRangeSmoothing
+            m_iGraphRange = static_cast<uint64_t>(
+                static_cast<double>(m_iGraphRange) * (1.0 - flRangeSmoothing) + static_cast<double>(iGraphRange) * flRangeSmoothing
             );
 
-            s_iGraphBottomTime = iSmallestTime;
+            m_iGraphBottomTime = iSmallestTime;
         }
 
-        constexpr float PADDING_GRAPH_TEXT = 10.0f;
-        ImVec2 vGraphTextCursor(vWindowPos.x + PADDING_GRAPH_TEXT, vWindowPos.y + PADDING_GRAPH_TEXT);
-        std::string szGraphTimeString(""); _GetTimeString(static_cast<double>(s_iGraphBottomTime), szGraphTimeString);
-        
-        pDrawList->AddText( vGraphTextCursor, ImColor(clrText.GetAsImVec4()), 
-            std::format("Least Time  : {}", szGraphTimeString).c_str());
-
-        vGraphTextCursor.y += ImGui::GetTextLineHeight() + PADDING_GRAPH_TEXT;
-
-        _GetTimeString(static_cast<double>(s_iGraphRange), szGraphTimeString);
-        pDrawList->AddText( vGraphTextCursor, ImColor(clrText.GetAsImVec4()), 
-            std::format("Graph Range : {}", szGraphTimeString).c_str());
-
-        for (int i = 16; i <= 1024; i *= 2)
-        {
-            _GetTimeString(m_pActiveGraphProfile->GetAvgOf(i), szGraphTimeString);
-            
-            vGraphTextCursor.y += ImGui::GetTextLineHeight() + PADDING_GRAPH_TEXT;
-
-            // NOTE: this is just so the 'i' variable stays in line with others, like smaller n bigger numbers shit.
-            if(i > 1000)
-            {
-                pDrawList->AddText(
-                    vGraphTextCursor, ImColor(clrText.GetAsImVec4()),
-                    std::format("{} tick avg. {}", i, szGraphTimeString).c_str());
-            }
-            else if(i > 100)
-            {
-                pDrawList->AddText(
-                    vGraphTextCursor, ImColor(clrText.GetAsImVec4()),
-                    std::format("{}  tick avg. {}", i, szGraphTimeString).c_str());
-            }
-            else
-            {
-                pDrawList->AddText(
-                    vGraphTextCursor, ImColor(clrText.GetAsImVec4()),
-                    std::format("{}   tick avg. {}", i, szGraphTimeString).c_str());
-            }
-        }
     }
     ImGui::EndChild();
 
@@ -746,6 +704,7 @@ void Profiler_t::_DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize
             {
                 // Now this will be rendered on the graph.
                 m_pActiveGraphProfile = &pScope->m_profileRecords;
+                m_pActiveScopeName    = pScope->m_szScopeName;
                 Render::notificationSystem.PushBack("Plotting [ %s ]'s profile on graph.", pScope->m_szScopeName);
 
                 // Animations to make it look pretty.
@@ -758,7 +717,7 @@ void Profiler_t::_DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize
 
 
             // Drawing outline if selected...
-            if (m_pActiveGraphProfile == &pScope->m_profileRecords)
+            if (m_pActiveScopeName == pScope->m_szScopeName)
             {
                 pDrawList->AddRect(vScopeBoxMin, vScopeBoxMax, ImColor(Render::menuGUI.GetThemeClr().GetAsImVec4()), WIDGET_ROUNDING);
             }
@@ -781,6 +740,7 @@ void Profiler_t::_DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize
             {
                 // Now this will be rendered on the graph.
                 m_pActiveGraphProfile = funcProfile.m_pInfoStorage;
+                m_pActiveScopeName    = funcProfile.m_szFuncName;
                 Render::notificationSystem.PushBack("Plotting [ %s ]'s profile on graph.", funcProfile.m_szFuncName);
 
                 // Animations to make it look pretty.
@@ -791,7 +751,7 @@ void Profiler_t::_DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize
             // Drawing function's name...
             ImVec2 vTextPos(vWidgetMin.x + PADDING, vWidgetMin.y + (PROFILER_WIDGET_HEIGHT_IN_PXL - ImGui::GetTextLineHeight()) / 2.0f);
             pDrawList->AddText(vTextPos, ImColor(clrText.GetAsImVec4()), funcProfile.m_szFuncName);
-        
+
 
             // Drawing outline if selected...
             if (m_pActiveGraphProfile == funcProfile.m_pInfoStorage)
@@ -813,12 +773,48 @@ void Profiler_t::_DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize
 ///////////////////////////////////////////////////////////////////////////
 void Profiler_t::_DrawScopeInfo(ImVec2 vWindowSize, ImVec2 vWindowPos)
 {
+    if (m_pActiveGraphProfile == nullptr)
+        return;
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, Render::menuGUI.GetPrimaryClr().GetAsImVec4());
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, POPUP_ROUNDING);
+
+    constexpr float flPaddingFromWalls = 10.0f;
+    vWindowSize.y = (9.0f * ImGui::GetTextLineHeight()) + (2.0f * flPaddingFromWalls); // We will be drawing 9 lines of text, and these fucing "resizeY n X " flags don't seem to work.
     ImGui::SetNextWindowPos(vWindowPos);
-    ImGui::BeginChild("##Profiler_InfoPanel_ScopeInfo", vWindowSize);
+    ImGui::BeginChild("##Profiler_InfoPanel_ScopeInfo", vWindowSize, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_ResizeY);
     {
-        
+        RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetPrimaryClr());
+
+        const     float flLineHeight       = ImGui::GetTextLineHeight();
+        ImVec2 vCursorPos(vWindowPos.x + flPaddingFromWalls, vWindowPos.y + flPaddingFromWalls);
+
+        // Graph's min time...
+        std::string szGraphTimeString(""); 
+        ImGui::SetCursorScreenPos(vCursorPos);
+        _GetTimeString(static_cast<double>(m_iGraphBottomTime), szGraphTimeString);
+        ImGui::TextColored(clrText.GetAsImVec4(), "Graph Min Time : %s", szGraphTimeString.c_str());
+        vCursorPos.y += flLineHeight;
+
+        // Graph's range...
+        ImGui::SetCursorScreenPos(vCursorPos);
+        _GetTimeString(static_cast<double>(m_iGraphRange), szGraphTimeString);
+        ImGui::TextColored(clrText.GetAsImVec4(), "Graph Range    : %s", szGraphTimeString.c_str());
+        vCursorPos.y += flLineHeight;
+
+        // Average time for 16, 32, 64, 128, 256, 512, 1024 ticks...
+        for (int i = 16; i <= 1024; i *= 2)
+        {
+            ImGui::SetCursorScreenPos(vCursorPos);
+            _GetTimeString(m_pActiveGraphProfile->GetAvgOf(i), szGraphTimeString);
+            ImGui::TextColored(clrText.GetAsImVec4(), "%d ticks avg.  %s", i, szGraphTimeString.c_str());
+            vCursorPos.y += flLineHeight;
+        }
     }
     ImGui::EndChild();
+
+    ImGui::PopStyleVar(2); ImGui::PopStyleColor();
 }
 
 

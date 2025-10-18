@@ -88,8 +88,19 @@ private:
     void _DrawFuncList(const ProfilerScope_t* pScope, ImVec2 vWindowSize, ImVec2 vWindowPos);
     void _DrawScopeInfo(ImVec2 vWindowSize, ImVec2 vWindowPos);
 
+    // Important graph variables.
+    uint64_t m_iGraphRange      = 0llu;
+    uint64_t m_iGraphBottomTime = 0llu;
+
+    // NOTE : IMPORTANT : 
+    //       This variable is only and only used the Draw() function of the profiler.
+    // where we mutex lock the object who is holding pointer to this shit.
+    // Race conditions can still occur, when some tries to store something into that object,
+    // while we are reading :( . But this shouldn't cause a crash. :)
+    //
     const FuncInfoStorage_t* m_pActiveGraphProfile = nullptr;
-    AnimationHandler_t m_profilerAnim;
+    const char* m_pActiveScopeName = nullptr;
+    AnimationHandler_t       m_profilerAnim;
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -113,6 +124,7 @@ DEFINE_FEATURE(Profiler_GraphRangeUpdateMin, "Range Update Min",  IntSlider_t,  
 DEFINE_FEATURE(Profiler_GraphRangeSmoothing, "Range Smoothing",   FloatSlider_t, InfoPanel, Performance, 10, FloatSlider_t(0.1f, 0.0f, 1.0f), FeatureFlag_None)
 DEFINE_FEATURE(Profiler_GraphGrid,           "Grid",              bool,          InfoPanel, Performance, 11, true, FeatureFlag_None)
 DEFINE_FEATURE(Profiler_GraphGridSize,       "Grid Size",         FloatSlider_t, InfoPanel, Performance, 12, FloatSlider_t(40.0f, 10.0f, 100.0f), FeatureFlag_None)
+DEFINE_FEATURE(Profiler_GraphWidth,          "Graph Size",        FloatSlider_t, InfoPanel, Performance, 13, FloatSlider_t(0.7f, 0.2f, 0.7f), FeatureFlag_None)
 
 
 ///////////////////////////////////////////////////////////////////////////
