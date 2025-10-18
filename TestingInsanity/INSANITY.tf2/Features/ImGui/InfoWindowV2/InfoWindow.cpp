@@ -109,6 +109,8 @@ void InfoWindowV2_t::AddOrUpdate(std::string szKey, std::string&& szMessage, int
 ///////////////////////////////////////////////////////////////////////////
 void InfoWindowV2_t::_DrawWindow(InfoWindowInstance_t& window, float flRowHeight)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
     RGBA_t clrText; Render::menuGUI.CalcTextClrForBg(clrText, Render::menuGUI.GetPrimaryClr());
 

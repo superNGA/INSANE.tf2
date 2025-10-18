@@ -53,7 +53,7 @@ void FuncInfoStorage_t::PushRecord(uint64_t iTimeInNs)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-double FuncInfoStorage_t::GetAvgOf(int nSamples)
+double FuncInfoStorage_t::GetAvgOf(int nSamples) const
 {
     if (m_bInitialized == false)
         return -1.0;
@@ -70,6 +70,22 @@ double FuncInfoStorage_t::GetAvgOf(int nSamples)
     uint64_t iTimeMin = (*m_pQPrefixSum)[m_pQPrefixSum->size() - 1LLU - (nSamplesSafe - 1LLU)];
 
     return static_cast<double>(iTimeMax - iTimeMin) / static_cast<double>(nSamplesSafe);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+uint64_t FuncInfoStorage_t::Latest() const
+{
+    return m_pQPrefixSum->back();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+const std::deque<uint64_t>* FuncInfoStorage_t::GetTimeRecords() const
+{
+    return m_pQTimeRecords;
 }
 
 

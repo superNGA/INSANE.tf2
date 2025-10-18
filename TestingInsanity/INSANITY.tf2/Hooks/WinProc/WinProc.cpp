@@ -7,6 +7,7 @@
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Hook Handler/Hook_t.h"
 #include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../Libraries/Utility/Utility.h"
 
 // SDK
@@ -103,7 +104,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 
     // Checking if menu has been toggled
     static bool bLastMenuVisibility    = true;
-    bool        bNeedMouseVisible      = directX::UI::UI_visble == true || F::materialGen.IsVisible() == true;
+    bool        bNeedMouseVisible      = directX::UI::UI_visble == true || F::materialGen.IsVisible() == true || F::profiler.IsInfoPanelVisible() == true;
     bool        bToggleMouseVisibility = (bLastMenuVisibility != bNeedMouseVisible);
     bLastMenuVisibility                = bNeedMouseVisible;
     
@@ -121,7 +122,7 @@ LRESULT __stdcall winproc::H_winproc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     }
 
     // No inputs to game if menu OPEN
-    if (directX::UI::UI_visble == true || F::materialGen.IsVisible() == true)
+    if (bNeedMouseVisible == true)
     {
         ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
 

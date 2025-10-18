@@ -108,6 +108,8 @@ void PlayerListV2_t::SetVisible(bool bVisible)
 ///////////////////////////////////////////////////////////////////////////
 void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vector<BaseEntity*>* vecPlayers, bool bGrowUpwards)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
     ImVec2 vCursorScreenPos(x + WINDOW_PADDING_IN_PXL, y);
 

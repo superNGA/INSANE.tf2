@@ -29,8 +29,10 @@ public:
 
     FuncInfoStorage_t();
 
-    void   PushRecord(uint64_t iTimeInNs);
-    double GetAvgOf(int nSamples);
+    void     PushRecord(uint64_t iTimeInNs);
+    double   GetAvgOf(int nSamples) const;
+    uint64_t Latest() const;
+    const std::deque<uint64_t>* GetTimeRecords() const;
 
 private:
     bool _Init();
@@ -73,8 +75,9 @@ public:
     {
         m_vecProfiledFuncs.clear();
         m_qHelperStack.clear();
-        m_szScopeName = szDefaultProfilerHelperName;
-        m_bActive     = false;
+        m_szScopeName  = szDefaultProfilerHelperName;
+        m_iCallCounter = 0;
+        m_bActive      = false;
 
         m_startTime   = std::chrono::high_resolution_clock::now();
         m_endTime     = std::chrono::high_resolution_clock::now();
@@ -82,9 +85,13 @@ public:
 
     std::deque <ProfilerFunc_t>                    m_qHelperStack;
     std::vector<ProfilerFunc_t>                    m_vecProfiledFuncs;
+    
     std::chrono::high_resolution_clock::time_point m_startTime;
     std::chrono::high_resolution_clock::time_point m_endTime;
+    FuncInfoStorage_t                              m_profileRecords;
+    
     const char*                                    m_szScopeName;
+    int32_t                                        m_iCallCounter;
     bool                                           m_bActive;
 };
 ///////////////////////////////////////////////////////////////////////////
