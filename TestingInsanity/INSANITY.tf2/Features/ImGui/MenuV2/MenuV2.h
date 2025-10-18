@@ -1,3 +1,11 @@
+//=========================================================================
+//                      MENU UI
+//=========================================================================
+// by      : INSANE
+// created : 01/10/2025
+// 
+// purpose : Renders UI and stores useful info. to keep UI consistent across all widgets.
+//-------------------------------------------------------------------------
 #pragma once
 #include <chrono>
 
@@ -52,6 +60,7 @@ public:
     RGBA_t GetThemeClr()     const;
 
     void CalcTextClrForBg(RGBA_t& vTextClrOut, const RGBA_t& vBgClr) const;
+    void _FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const;
 
     // General purpose widget rendering functions ( takes care of all colors n stuff )
     bool DrawIntSlider(const char* szLabel, ImVec2 vMin, ImVec2 vMax, int* pData, const int iMin, const int iMax, RGBA_t clrBackground, const float* pTrackThickness = nullptr, const float* pKnowSize = nullptr, const float* pAnimationState = nullptr);
@@ -141,7 +150,6 @@ private:
 
     // Helper functions...
     void _CalculateColors();
-    void _FindElevatedClr(RGBA_t& vClrOut, const RGBA_t& vBGClr) const;
 
     void _AnimateModel();
     AnimationHandler_t m_modelAnim;

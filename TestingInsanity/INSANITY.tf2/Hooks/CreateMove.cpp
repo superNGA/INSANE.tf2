@@ -7,7 +7,7 @@
 #include "../Utility/Signature Handler/signatures.h"
 #include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
-#include "../Utility/Insane Profiler/InsaneProfiler.h"
+#include "../Utility/Profiler/Profiler.h"
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../Utility/CVar Handler/CVarHandler.h"
 #include "../SDK/TF object manager/TFOjectManager.h"
@@ -43,8 +43,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 	if ( pCmd == nullptr || pCmd->command_number == 0)
 		return result;
-
-	PROFILE_THREAD();
 
 	// Getting Local Player
 	BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
@@ -98,8 +96,6 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	// Testing Strafe prediction
 	if(false)
 	{
-		// PROFILE_FUNCTION("Strafe_Pred_Test");
-	
 		F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
 		if (F::movementSimulation.Initialize(pLocalPlayer) == true)
 		{

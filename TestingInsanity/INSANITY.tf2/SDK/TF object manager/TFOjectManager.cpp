@@ -8,6 +8,7 @@
 
 #include "TFOjectManager.h"
 #include "../FN index Manager/FN index manager.h"
+#include "../../Utility/ConsoleLogging.h"
 
 TFObjectManager_t tfObject;
 

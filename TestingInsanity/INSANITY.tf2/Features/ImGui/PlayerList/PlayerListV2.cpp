@@ -8,6 +8,7 @@
 #include "../../../External Libraries/ImGui/imgui.h"
 #include "../../../Resources/Fonts/FontManager.h"
 #include "../../../Utility/Containers/DoubleBuffer.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 // SDK
 #include "../../Entity Iterator/EntityIterator.h"
@@ -27,6 +28,8 @@ constexpr float NAME_TAB_ROUNDING_IN_PXL =  4.0f; // Gap between each name entry
 ///////////////////////////////////////////////////////////////////////////
 void PlayerListV2_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if(m_bVisible == false)
         return;
 
@@ -105,6 +108,8 @@ void PlayerListV2_t::SetVisible(bool bVisible)
 ///////////////////////////////////////////////////////////////////////////
 void PlayerListV2_t::_DrawList(float x, float y, float flWidth, const std::vector<BaseEntity*>* vecPlayers, bool bGrowUpwards)
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImDrawList* pDrawList = ImGui::GetWindowDrawList();
     ImVec2 vCursorScreenPos(x + WINDOW_PADDING_IN_PXL, y);
 

@@ -16,7 +16,6 @@
 #include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../Utility/PullFromAssembly.h"
-#include "../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../SDK/NetVars/NetVarHandler.h"
 #include "../Features/FeatureHandler.h"

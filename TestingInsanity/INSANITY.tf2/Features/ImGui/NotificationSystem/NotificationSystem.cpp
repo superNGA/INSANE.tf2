@@ -8,6 +8,7 @@
 #include "../../../Utility/ConsoleLogging.h"
 #include "../../../Extra/math.h"
 #include "../../../Resources/Fonts/FontManager.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 // SDK
 #include "../../../SDK/class/IVEngineClient.h"
@@ -15,7 +16,7 @@
 
 constexpr float ANCHOR_POS_TOLERANCE_IN_PXL      = 2.0f;
 constexpr float ANIMATION_RESET_TOLERANCE_IN_PXL = 2.0f;
-constexpr float NOTIFICATION_WINDOW_WIDTH        = 400.0f;
+constexpr float NOTIFICATION_WINDOW_WIDTH        = 600.0f;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -30,6 +31,8 @@ NotificationSystem_t::NotificationSystem_t()
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::Draw()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     if (Features::Menu::Notification::RenderNotification.IsActive() == false)
         return;
 
@@ -118,6 +121,8 @@ void NotificationSystem_t::_CalcAnchorPos()
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::_CalcOrigin()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     // Set to top-left by default.
     m_vOrigin.x = 0.0f; m_vOrigin.y = 0.0f;
     m_flGrowthDirection = 1.0f;
@@ -147,6 +152,8 @@ void NotificationSystem_t::_CalcOrigin()
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::_RemoveExpiredNtfsAndAnimate()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     for (auto it = m_qNotifications.begin(); it != m_qNotifications.end(); )
     {
         auto   now          = std::chrono::high_resolution_clock::now();
@@ -196,6 +203,8 @@ std::string NotificationSystem_t::_FormatString(const char* msg, va_list args)
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::_DrawImGui()
 {
+    PROFILER_RECORD_FUNCTION(EndScene);
+
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
 
     // Setup coordinates & size.

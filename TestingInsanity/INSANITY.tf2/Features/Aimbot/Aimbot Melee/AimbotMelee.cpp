@@ -31,7 +31,6 @@
 // UTILITY
 #include "../../Entity Iterator/EntityIterator.h"
 #include "../../../Utility/CVar Handler/CVarHandler.h"
-#include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../../Utility/Hook Handler/Hook_t.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
@@ -47,7 +46,6 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 {
     // NOTE : Output false means, no target has been found.
     //        Output true  means,  a target has been found.
-    PROFILE_FUNCTION(); 
 
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return false;

@@ -4,7 +4,6 @@
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/IVEngineClient.h"
 
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../Graphics Engine V2/Draw Objects/Cube/Cube.h"
 #include "../Entity Iterator/EntityIterator.h"
 
@@ -13,8 +12,6 @@
 ///////////////////////////////////////////////////////////////////////////
 void ESPV2_t::Run(BaseEntity* pLocalPlayer)
 {
-    PROFILE_FUNCTION();
-
     if (m_bMapCleared == false)
         return;
 

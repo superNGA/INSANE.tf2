@@ -28,7 +28,6 @@
 
 // UTILITY
 #include "../../../Utility/CVar Handler/CVarHandler.h"
-#include "../../../Utility/Insane Profiler/InsaneProfiler.h"
 #include "../../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../AimbotHelper.h"
 #include "../../../Extra/math.h"
@@ -53,7 +52,6 @@ TODO :
 ///////////////////////////////////////////////////////////////////////////
 bool AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
-    PROFILE_FUNCTION();
 
     // Constructing LUT ( only for pipes )
     if (pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)
@@ -116,8 +114,6 @@ bool AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon
 
 BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseEntity* pAttacker, baseWeapon* pWeapon, CUserCmd* pCmd)
 {
-    PROFILE_FUNCTION();
-
     std::vector<BaseEntity*> vecTargets = F::aimbotHelper.GetAimbotTargetData().m_vecEnemyPlayers;
 
     float flAngBestDistance = std::numeric_limits<float>::infinity();
@@ -230,8 +226,6 @@ BaseEntity* AimbotProjectile_t::_GetBestTarget(ProjectileInfo_t& projInfo, BaseE
 
 bool AimbotProjectile_t::_SolveProjectileMotion(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, ProjectileInfo_t& projInfo, const vec& vTarget, float& flAngleOut, float& flTimeToReachOut)
 {
-    PROFILE_FUNCTION();
-
     float flGravity = projInfo.m_flGravityMult * CVars::sv_gravity * -1.0f;
 
     float x = projInfo.m_vOrigin.Dist2Dto(vTarget);
@@ -501,8 +495,6 @@ bool AimbotProjectile_t::_GetBestHitPointOnTargetHull(BaseEntity* pTarget, const
     const vec& vProjectileOrigin, const float flProjVelocity,
     const float flProjGravity, BaseEntity* pProjectileOwner, baseWeapon* pWeapon)
 {
-    PROFILE_FUNCTION();
-
     ICollideable_t* pCollidable = pTarget->GetCollideable();
     const vec& vHullMins = pCollidable->OBBMins();
     const vec& vHullMaxs = pCollidable->OBBMaxs();
@@ -771,8 +763,6 @@ void TrajactoryLUT_t::_Set(float x, float y, float flTimeToReach, float flAngle 
 
 float TrajactoryLUT_t::GetTravelTime(const float x, const float y, bool bInterpolation)
 {
-    PROFILE_FUNCTION();
-
     if(m_pTrajactoryLUT == nullptr)
     {
         return std::numeric_limits<float>::infinity();

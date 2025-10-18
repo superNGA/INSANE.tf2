@@ -13,7 +13,6 @@
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../Tick Shifting/TickShifting.h"
-#include "../../Utility/Insane Profiler/InsaneProfiler.h"
 
 // Utility
 #include "../../Utility/ConsoleLogging.h"
@@ -25,8 +24,6 @@
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
-    PROFILE_FUNCTION();
-
     if (F::tickShifter.ShiftingTicks() == true)
         return;
 
