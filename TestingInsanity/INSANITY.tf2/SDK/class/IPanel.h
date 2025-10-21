@@ -1,7 +1,19 @@
 #pragma once
+
+#include <vector>
+#include <unordered_map>
 #include "../../Utility/Interface Handler/Interface.h"
 #include "IBaseInterface.h"
 #include "VPanel.h"
+
+
+namespace IPanelHelper
+{
+	// List of panel names that we might remove or change depending on condition.
+	inline std::vector<std::string>						 m_vecTargetPanels = { "HudScope", "HudScopeCharge" };
+	inline std::unordered_map<vgui::VPANEL, std::string> m_mapTargetPanels = {};
+}
+
 
 class IPanel : public IBaseInterface
 {
@@ -105,6 +117,8 @@ public:
 	}
 
 	vgui::VPANEL FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse);
+
+	void RefreshTargetPanelId();
 };
 
 MAKE_INTERFACE_VERSION(iPanel, "VGUI_Panel009", IPanel, VGUI2_DLL)

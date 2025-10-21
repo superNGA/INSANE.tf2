@@ -24,6 +24,7 @@
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Utility/CVar Handler/CVarHandler.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Extra/math.h"
 
@@ -59,6 +60,8 @@ typedef void(__fastcall* T_CL_Move)(float flAccumuatedExtraSample,  int64_t bFin
 
 void TickShifter_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     m_bInitialized = true;
 
     if (m_bTickShifting == false)

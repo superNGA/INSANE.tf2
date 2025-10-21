@@ -6,6 +6,8 @@ class CUserCmd;
 class baseWeapon;
 class BaseEntity;
 
+
+///////////////////////////////////////////////////////////////////////////
 class Movement_t
 {
 public:
@@ -28,6 +30,8 @@ private:
     bool    m_bLastBhopState        = false;
     
 };
+///////////////////////////////////////////////////////////////////////////
+
 
 DECLARE_FEATURE_OBJECT(movement, Movement_t)
 

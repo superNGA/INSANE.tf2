@@ -1,9 +1,12 @@
 #include "FakeLag.h"
 #include "../../SDK/class/CUserCmd.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 
 void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     if (bSendPacket == nullptr || pCmd == nullptr)
         return;
 

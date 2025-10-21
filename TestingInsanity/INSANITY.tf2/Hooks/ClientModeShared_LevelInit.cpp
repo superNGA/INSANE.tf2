@@ -8,6 +8,9 @@
 #include "../Features/NoSpread/NoSpreadV2.h"
 #include "../Features/ESP/ESPV2.h"
 
+#include "../SDK/class/IPanel.h"
+
+
 MAKE_HOOK(ClientModeShared_LevelInit, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 48 8B FA 48 8B 49 ? 48 8B 01", __fastcall, CLIENT_DLL, int64_t,
     void* pVTable, const char* szMapName)
 {
@@ -28,6 +31,8 @@ MAKE_HOOK(ClientModeShared_LevelInit, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 48 8
     F::entityIterator.ClearSequenceData();
 
     F::espV2.Free();
+
+    I::iPanel->RefreshTargetPanelId();
 
     return result;
 }

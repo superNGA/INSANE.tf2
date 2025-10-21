@@ -1,6 +1,12 @@
 #include "IPanel.h"
+#include "ISurface.h"
+#include <unordered_set>
+#include "../../Utility/ConsoleLogging.h"
+#include "../../Features/ImGui/NotificationSystem/NotificationSystem.h"
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 vgui::VPANEL IPanel::FindChildByName(vgui::VPANEL parent, const std::string& szChildName, bool bRecurse)
 {
 	// Sanity checks
@@ -45,4 +51,29 @@ vgui::VPANEL IPanel::FindChildByName(vgui::VPANEL parent, const std::string& szC
 	}
 
 	return NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void IPanel::RefreshTargetPanelId()
+{
+	IPanelHelper::m_mapTargetPanels.clear();
+
+	for (std::string& szPanelName : IPanelHelper::m_vecTargetPanels)
+	{
+		vgui::VPANEL iPanelID = FindChildByName(I::iSurface->GetEmbeddedPanel(), szPanelName.c_str(), true);
+
+		if (iPanelID == NULL)
+		{
+			Render::notificationSystem.PushBack("Failed to find target panel [ %s ]", szPanelName.c_str());
+			FAIL_LOG("Failed to find target panel [ %s ]", szPanelName.c_str());
+			continue;
+		}
+
+		IPanelHelper::m_mapTargetPanels.insert({ iPanelID, szPanelName });
+
+		LOG("Refreshed panel ID for [ %s ]", szPanelName.c_str());
+		Render::notificationSystem.PushBack("Refreshed panel ID for [ %s ]", szPanelName.c_str());
+	}
 }

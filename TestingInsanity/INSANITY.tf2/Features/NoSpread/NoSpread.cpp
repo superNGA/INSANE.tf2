@@ -18,7 +18,6 @@
 #include "../../SDK/class/Basic Structures.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
-#include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/FileWeaponInfo.h"
 #include "../../SDK/class/I_EngineClientReplay.h"

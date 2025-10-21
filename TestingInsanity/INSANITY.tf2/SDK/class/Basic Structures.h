@@ -398,7 +398,8 @@ public:
     float m[3][4];
 
     /* gets the bone's world coordinates */
-    vec GetWorldPos(){
+    vec GetWorldPos() const
+    {
         return vec(m[0][3], m[1][3], m[2][3]);
     }
 

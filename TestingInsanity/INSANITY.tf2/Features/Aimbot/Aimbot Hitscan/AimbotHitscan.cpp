@@ -13,6 +13,7 @@
 // UTILITY
 #include "../../../Extra/math.h"
 #include "../../../Utility/Signature Handler/signatures.h"
+#include "../../../Utility/Profiler/Profiler.h"
 
 #include "../AimbotHelper.h"
 
@@ -22,6 +23,8 @@ MAKE_SIG(CBaseAnimatinng_LookUpBones, "40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8
 
 bool AimbotHitscan_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* bCreateMoveResult)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     if (Features::Aimbot::HitscanAimbot::Enable.IsActive() == false)
         return false;
 
@@ -108,7 +111,7 @@ BaseEntity* AimbotHitscan_t::_GetBestTarget(BaseEntity* pLocalPlayer, CUserCmd* 
             continue;
 
         // Tracing to target
-            ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
+        ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
         I::EngineTrace->UTIL_TraceRay(vLocalPlayerEyePos, vTargetBonePos, MASK_SHOT, &filter, &trace);
 
         // Can't hit this target.

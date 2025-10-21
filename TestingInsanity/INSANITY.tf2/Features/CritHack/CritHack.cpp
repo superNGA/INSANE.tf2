@@ -19,6 +19,7 @@
 #include "../../SDK/class/LocalPlayerScoring.h"
 #include "../../SDK/class/IGameEventManager.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../SDK/class/CPrediction.h"
 #include "../../SDK/class/IVEngineClient.h"
 
@@ -67,6 +68,8 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //=========================================================================
 void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     // Storing some basic info.. ( nothing to look at here )
     m_pLocalPlayer         = pLocalPlayer;
     m_iLocalPlayerEntIndex = pLocalPlayer->entindex();

@@ -5,7 +5,6 @@
 #include "../../Features/Graphics Engine/DirectX Handler/DirectXHandler.h"
 
 // SDK
-#include "../../SDK/Entity Manager/entityManager.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 
 
@@ -32,13 +31,6 @@ MAKE_HOOK(FrameStateNotify, "48 83 EC ? 89 15", __stdcall, CLIENT_DLL, void, voi
 	case FRAME_NET_UPDATE_END:
 		F::graphics.CaptureW2SMatrix();
 		F::directxHandler.SetW2SMatrix();
-
-		if (frameCounter == 2) 
-		{
-			entityManager.UpdateLocalPlayer();
-			frameCounter = 0; // reseting frame counter
-		}
-		frameCounter++;
 		break;
 
 	case FRAME_RENDER_START:

@@ -4,12 +4,12 @@
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CMultAnimState.h"
 #include "../../SDK/class/BaseEntity.h"
-#include "../../SDK/Entity Manager/entityManager.h"
 
 //======================= Internal stuff =======================
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../Extra/math.h"
 
 MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*);
@@ -19,6 +19,8 @@ MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT
 //=========================================================================
 void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer)
 {
+	PROFILER_RECORD_FUNCTION(CreateMove);
+
 	if (Features::AntiAim::AntiAim::AntiAim.IsActive() == false)
 		return;
 

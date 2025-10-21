@@ -17,6 +17,7 @@
 // Utility
 #include "../../Utility/ConsoleLogging.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 
 
@@ -24,6 +25,8 @@
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     if (F::tickShifter.ShiftingTicks() == true)
         return;
 
@@ -33,6 +36,10 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     {
         _ConstructJumpTableHelper();
     }
+
+    // Store Local-Player's information before doing anything else.
+    _UpdateLocalPlayerInfo(pLocalPlayer, pActiveWeapon);
+
 
     // Clear lists out before filling up with new data.
     ClearLists();
@@ -93,12 +100,17 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
             _ProcessPlayer((bFriendlyEntity == true ? vecTeamMates : vecEnemies), pEnt, pCmd->tick_count);
             break;
         }
-        case ClassIdIndex::CObjectSentrygun:  _ProcessSentry(pEnt, pLocalPlayer->m_iTeamNum());     break;
-        case ClassIdIndex::CObjectDispenser:  _ProcessDispenser(pEnt, pLocalPlayer->m_iTeamNum());  break;
+        case ClassIdIndex::CObjectSentrygun:  _ProcessSentry    (pEnt, pLocalPlayer->m_iTeamNum()); break;
+        case ClassIdIndex::CObjectDispenser:  _ProcessDispenser (pEnt, pLocalPlayer->m_iTeamNum()); break;
         case ClassIdIndex::CObjectTeleporter: _ProcessTeleporter(pEnt, pLocalPlayer->m_iTeamNum()); break;
         default: break;
         }
     }
+
+    // Now swap them buffers plz.
+    m_vecDispenserEnemy.SwapBuffer();  m_vecDispenserFriendly.SwapBuffer();
+    m_vecSentryEnemy.SwapBuffer();     m_vecSentryFriendly.SwapBuffer();
+    m_vecTeleporterEnemy.SwapBuffer(); m_vecTeleporterFriendly.SwapBuffer();
 }
 
 
@@ -122,13 +134,20 @@ void EntityIterator_t::ClearLists()
     // Non-Dormant entities.
     ClearDoubleBufferVector(m_vecPlayerEnemy);
     ClearDoubleBufferVector(m_vecPlayerFriendly);
-    m_vecDispenserEnemy.clear();  m_vecDispenserFriendly.clear();
-    m_vecSentryEnemy.clear();     m_vecSentryFriendly.clear();
-    m_vecTeleporterEnemy.clear(); m_vecTeleporterFriendly.clear();
-
+    
     // Dormant & Non-Dormant players.
     ClearDoubleBufferVector(m_vecAllConnectedEnemies);
     ClearDoubleBufferVector(m_vecAllConnectedTeammates);
+
+    // Buildings...
+    ClearDoubleBufferVector(m_vecSentryEnemy);
+    ClearDoubleBufferVector(m_vecSentryFriendly);
+    
+    ClearDoubleBufferVector(m_vecDispenserEnemy);
+    ClearDoubleBufferVector(m_vecDispenserFriendly);
+    
+    ClearDoubleBufferVector(m_vecTeleporterEnemy);
+    ClearDoubleBufferVector(m_vecTeleporterFriendly);
 }
 
 
@@ -169,6 +188,54 @@ Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemy
 Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFrendlyPlayers()
 {
     return m_vecPlayerFriendly;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemySentry()
+{
+    return m_vecSentryEnemy;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFriendlySentry()
+{
+    return m_vecSentryFriendly;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemyDispenser()
+{
+    return m_vecDispenserEnemy;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFrendlyDispenser()
+{
+    return m_vecDispenserFriendly;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemyTeleporter()
+{
+    return m_vecTeleporterEnemy;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFrendlyTeleporter()
+{
+    return m_vecTeleporterFriendly;
 }
 
 
@@ -278,6 +345,14 @@ std::deque<EntityIterator_t::DatagramStat_t>& EntityIterator_t::GetDatagramSeque
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+const LocalPlayerInfo_t& EntityIterator_t::GetLocalPlayerInfo()
+{
+    return m_localPlayerInfo;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::_ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn, BaseEntity* pEnt, int iCurrentTick)
 {
     if (pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
@@ -324,11 +399,15 @@ void EntityIterator_t::_ProcessSentry(BaseEntity* pEnt, int iFriendlyTeam)
 {
     if (pEnt->m_iTeamNum() == iFriendlyTeam)
     {
-        m_vecSentryFriendly.push_back(pEnt);
+        std::vector<BaseEntity*>* vecFriendlySentires = m_vecSentryFriendly.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecSentryFriendly, vecFriendlySentires);
+        vecFriendlySentires->push_back(pEnt);
     }
     else
     {
-        m_vecSentryEnemy.push_back(pEnt);
+        std::vector<BaseEntity*>* vecEnemySentires = m_vecSentryEnemy.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecSentryEnemy, vecEnemySentires);
+        vecEnemySentires->push_back(pEnt);
     }
 }
 
@@ -339,11 +418,15 @@ void EntityIterator_t::_ProcessDispenser(BaseEntity* pEnt, int iFriendlyTeam)
 {
     if (pEnt->m_iTeamNum() == iFriendlyTeam)
     {
-        m_vecDispenserFriendly.push_back(pEnt);
+        std::vector<BaseEntity*>* vecFriendlyDispenser = m_vecDispenserFriendly.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecDispenserFriendly, vecFriendlyDispenser);
+        vecFriendlyDispenser->push_back(pEnt);
     }
     else
     {
-        m_vecDispenserEnemy.push_back(pEnt);
+        std::vector<BaseEntity*>* vecEnemyDispenser = m_vecDispenserEnemy.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecDispenserEnemy, vecEnemyDispenser);
+        vecEnemyDispenser->push_back(pEnt);
     }
 }
 
@@ -354,12 +437,27 @@ void EntityIterator_t::_ProcessTeleporter(BaseEntity* pEnt, int iFriendlyTeam)
 {
     if (pEnt->m_iTeamNum() == iFriendlyTeam)
     {
-        m_vecTeleporterFriendly.push_back(pEnt);
+        std::vector<BaseEntity*>* vecFriendlyTeleporter = m_vecTeleporterFriendly.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecTeleporterFriendly, vecFriendlyTeleporter);
+        vecFriendlyTeleporter->push_back(pEnt);
     }
     else
     {
-        m_vecTeleporterEnemy.push_back(pEnt);
+        std::vector<BaseEntity*>* vecEnemyTeleporter = m_vecTeleporterEnemy.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecTeleporterEnemy, vecEnemyTeleporter);
+        vecEnemyTeleporter->push_back(pEnt);
     }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void EntityIterator_t::_UpdateLocalPlayerInfo(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    m_localPlayerInfo.m_iClass     = pLocalPlayer->m_iClass();
+    m_localPlayerInfo.m_iLifeState = pLocalPlayer->m_lifeState();
+    m_localPlayerInfo.m_iTeam      = pLocalPlayer->m_iTeamNum();
+    m_localPlayerInfo.m_iCond      = pLocalPlayer->GetPlayerCond();
 }
 
 

@@ -1,0 +1,521 @@
+#include "AimbotHitscanV2.h"
+
+// SDK
+#include "../../../SDK/class/CUserCmd.h"
+#include "../../../SDK/class/BaseEntity.h"
+#include "../../../SDK/class/BaseWeapon.h"
+#include "../../../SDK/class/IVEngineClient.h"
+#include "../../../SDK/class/CommonFns.h"
+#include "../../../SDK/class/IVModelInfo.h"
+#include "../../../SDK/class/IVDebugOverlay.h"
+#include "../../../SDK/class/IEngineTrace.h"
+
+#include "../../Entity Iterator/EntityIterator.h"
+#include "../../../Extra/math.h"
+
+
+// UTILITY
+#include "../../../Utility/ConsoleLogging.h"
+#include "../../../Utility/Profiler/Profiler.h"
+#include "../../../Utility/Signature Handler/signatures.h"
+
+
+MAKE_SIG(CBaseAnimatinng_LookUpBones, "40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL, int64_t, void*, const char*)
+
+
+/*
+* Hitboxes : 
+        * Pyro and Scout seem to have 19 hitboxes, and every other class has 18 hitboxes.
+
+* 0th -> Head
+* 1 -> Ass
+* 2 -> spine lower
+* 3 -> spine middle
+* 4 -> spine upper / chest
+* 5 -> spine top / just below neck. 
+* 6 -> Left upper arm
+* 7 -> Left forarm
+* 8 -> left hand
+* 9 -> Right upper arm
+* 10 -> Right forearm
+* 11 -> Right hand
+* 12 -> Left upper leg
+* 13 -> Left lower leg
+* 14 -> Left foot
+* 15 -> Right upper leg
+* 16 -> Right lower leg
+* 17 -> Right foot
+* 18 -> BackPack for scout & pyro
+*/
+
+/*
+* Convinence features.
+    * No sniper scope overlays.
+    * No sniper scope cross overlays.
+    * No sniper charger overlays.
+    * Third person in scope.
+*/
+
+
+enum HitboxPlayer_t
+{
+    HitboxPlayer_Head = 0,
+
+    // Torso...
+    HitboxPlayer_Hip,
+    HitboxPlayer_SpineLower,
+    HitboxPlayer_SpineMiddle,
+    HitboxPlayer_SpineUpper,
+    HitboxPlayer_SpineTop,
+
+    // Left Arm...
+    HitboxPlayer_LeftUpperArm,
+    HitboxPlayer_LeftForearm,
+    HitboxPlayer_LeftHand,
+
+    // Right Arm...
+    HitboxPlayer_RightUpperArm,
+    HitboxPlayer_RightForearm,
+    HitboxPlayer_RightHand,
+
+    // Left Leg...
+    HitboxPlayer_LeftUpperLeg,
+    HitboxPlayer_LeftLowerLeg,
+    HitboxPlayer_LeftFoot,
+
+    // Right Leg...
+    HitboxPlayer_RightUpperLeg,
+    HitboxPlayer_RightLowerLeg,
+    HitboxPlayer_RightFoot,
+
+    // Only for scout & pyro
+    HitboxPlayer_Backpack 
+};
+
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, bool* pCreateMoveResult)
+{
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_Enable.IsActive() == false)
+        return;
+
+    
+    // Choose target.
+    bool bInAttack  = SDK::InAttack(pLocalPlayer, pActiveWeapon);
+    bool bCanAttack = SDK::CanAttack(pLocalPlayer, pActiveWeapon);
+    if(bInAttack == false)
+    {
+        m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon, pCmd);
+    }
+
+
+    // If no target found, then leave.
+    if (m_pBestTarget == nullptr)
+        return;
+
+
+    // If valid target found, just shoot.
+    if (bCanAttack == true && Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFire.IsActive() == true)
+    {
+        pCmd->buttons |= IN_ATTACK;
+    }
+
+
+    // Aim @ that nigga we just found.
+    if ((pCmd->buttons & IN_ATTACK) == true && bCanAttack == true)
+    {
+        _ShootAtTarget(pLocalPlayer, pCmd, pCreateMoveResult);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
+{
+    BaseEntity* pTarget = nullptr;
+
+    // Delete this
+    I::IDebugOverlay->ClearAllOverlays();
+
+
+    // First, try to find a valid enemy player...
+    pTarget = _ChoosePlayerTarget(pLocalPlayer, pActiveWeapon, pCmd);
+    if (pTarget != nullptr)
+        return pTarget;
+
+
+    // If can't find a valid enemy player, try to find a valid enemy building.
+    
+    // SENTRIES...
+    if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Sentry.IsActive() == true)
+    {
+        Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemySentry();
+        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
+
+        pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
+        if (pTarget != nullptr)
+            return pTarget;
+    }
+
+    // TELEPORTERS...
+    if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Teleporter.IsActive() == true)
+    {
+        Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemyTeleporter();
+        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
+
+        pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
+        if (pTarget != nullptr)
+            return pTarget;
+    }
+
+    // DISPENSERS...
+    if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Dispenser.IsActive() == true)
+    {
+        Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemyDispenser();
+        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
+
+        pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
+        if (pTarget != nullptr)
+            return pTarget;
+    }
+
+
+    return pTarget;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
+{
+    // Get the enemy list. Very important step.
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemyPlayers();
+    std::vector<BaseEntity*>*                             pVecEnemies          = pDoubleBufferEnemies.GetReadBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
+
+
+    // Now we sort the enemy list according to user's prefrences.
+    std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
+    _SortTargetList(pVecEnemies, vecSortedTargets, pLocalPlayer, pCmd->viewangles);
+
+
+    // Some localplayer stuff...
+    vec vEyePos         = pLocalPlayer->GetEyePos();
+    vec vAttackerOrigin = pLocalPlayer->GetAbsOrigin();
+    float flMaxDistance = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_MaxDistance.GetData().m_flVal;
+
+
+
+    // This holds the hitbox indexes in decreasing order or priority.
+    // we itearate all hitboxes in this list and shoot at the first one we can hit.
+    // Priorty depends on our active weapon & damage multiplier of that hitbox n stuff like that.
+    std::vector<int> vecHitboxPriorityList;
+    _ConstructHitboxPriorityList(&vecHitboxPriorityList);
+
+
+
+    // Now iterate all enemies & find a good one to kill :)
+    for (BaseEntity* pEnt : vecSortedTargets)
+    {
+        // Max distance check ( for skipping unwanted entities early )...
+        if (flMaxDistance > 0.0f)
+        {
+            if (pEnt->GetAbsOrigin().DistTo(vAttackerOrigin) > flMaxDistance)
+                continue;
+        }
+
+        // Model
+        const model_t* pModel = pEnt->GetModel();
+        if (pModel == nullptr)
+            continue;
+
+        // Studio model for this entities model
+        const StudioHdr_t* pStudioModel = I::iVModelInfo->GetStudiomodel(pModel);
+        if (pStudioModel == nullptr)
+            continue;
+
+        // Hit boxes for this studio model.
+        const auto* pHitBoxSet = pStudioModel->pHitboxSet(pEnt->m_nHitboxSet());
+        if (pHitBoxSet == nullptr)
+            continue;
+
+
+        std::deque<BackTrackRecord_t>* pQBackTrackRecords = F::entityIterator.GetBackTrackRecord(pEnt);
+        BackTrackRecord_t& record = pQBackTrackRecords->front();
+
+
+        // Itearte over all hitboxes for this entity, to find one we can hit.
+        // NOTE : the hitbox indexes are arranged in decreasing order of priority.
+        for (int iHitboxIndex : vecHitboxPriorityList)
+        {
+            // Target hitbox & bone for that hitbox.
+            mstudiobbox_t* pHitbox    = pHitBoxSet->pHitbox(iHitboxIndex);
+            matrix3x4_t*   targetBone = &record.m_bones[pHitbox->bone];
+
+
+            // Is this hitbox in FOV ?
+            if (_IsInFOV(targetBone, pHitbox, vEyePos, pCmd->viewangles) == false)
+                continue;
+
+
+            // Most visible point on target.
+            vec vBestAngles;
+            if (_IsVisible(targetBone, pHitbox, vEyePos, vBestAngles, pLocalPlayer, pEnt) == false)
+                continue;
+
+            // Store angles if we can shoot his nigga & leave. ( no more scanning and cause it is alread quite expensive to run this much )
+            m_vBestTargetPos = vBestAngles;
+            return pEnt;
+        }
+
+    }
+
+    return nullptr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntity*>* pVecTargets, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
+{
+    // Now we sort the enemy list according to user's prefrences.
+    std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
+    _SortTargetList(pVecTargets, vecSortedTargets, pLocalPlayer, pCmd->viewangles);
+
+
+    // Some localplayer stuff...
+    vec vEyePos         = pLocalPlayer->GetEyePos();
+    vec vAttackerOrigin = pLocalPlayer->GetAbsOrigin();
+    float flMaxDistance = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_MaxDistance.GetData().m_flVal;
+
+
+
+    // Now iterate all enemies & find a good one to kill :)
+    for (BaseEntity* pEnt : vecSortedTargets)
+    {
+        // Max distance check ( for skipping unwanted entities early )...
+        if (flMaxDistance > 0.0f)
+        {
+            if (pEnt->GetAbsOrigin().DistTo(vAttackerOrigin) > flMaxDistance)
+                continue;
+        }
+
+        ICollideable_t* pCollidable = pEnt->GetCollideable();
+        if (pCollidable == nullptr)
+            continue;
+
+
+        // Min, Max & Origin for building...
+        vec vEntOrigin = pCollidable->GetCollisionOrigin();
+        vec vObbMin    = pCollidable->OBBMinsPreScaled();
+        vec vObbMax    = pCollidable->OBBMaxsPreScaled();
+
+        // Is this building in FOV ?
+        {
+            float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
+            float flAngleMin = _GetAngleFromCrosshair(vEntOrigin + vObbMin, vEyePos, pCmd->viewangles);
+            float flAngleMax = _GetAngleFromCrosshair(vEntOrigin + vObbMax, vEyePos, pCmd->viewangles);
+
+            // if both of the corners are out of FOV-circle, then building ain't in the FOV-circle.
+            if (flAngleMin > flFOV && flAngleMax > flFOV)
+                continue;
+        }
+
+        // Visibile or not?
+        {
+            vec vEntCenter = vEntOrigin + (vObbMin + vObbMax) / 2.0f;
+            ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
+            I::EngineTrace->UTIL_TraceRay(vEyePos, vEntCenter, MASK_SHOT, &filter, &trace);
+
+            // Can't hit this target.
+            bool bTargetVisible = trace.m_fraction >= 0.99f && trace.m_entity == pEnt;
+
+            if (bTargetVisible == false)
+                continue;
+
+            m_vBestTargetPos = vEntCenter;
+            return pEnt;
+        }
+    }
+
+    return nullptr;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::_ShootAtTarget(BaseEntity* pLocalPlayer, CUserCmd* pCmd, bool* pCreateMoveResult)
+{
+    vec vAttackerToTarget = m_vBestTargetPos - pLocalPlayer->GetEyePos();
+    vAttackerToTarget.NormalizeInPlace();
+
+    qangle qAimbotAngles; Maths::VectorAnglesFromSDK(vAttackerToTarget, qAimbotAngles);
+    Maths::WrapYaw(qAimbotAngles);
+
+    pCmd->viewangles = qAimbotAngles;
+
+
+    // Silenting view angle changes for client.
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_SilentAim.IsActive() == true)
+    {
+        *pCreateMoveResult = false;
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::_SortTargetList(const std::vector<BaseEntity*>* vecSource, std::vector<BaseEntity*>& vecDestination, BaseEntity* pLocalPlayer, const qangle& qViewAngles)
+{
+    // Copy into destination.
+    vecDestination = *vecSource;
+
+    // Just for the sake of redability.
+    enum TargetPriorityType_t
+    {
+        TargetPriorityType_Invalid      = -1,
+        TargetPriorityType_ByDistance   = 0,
+        TargetPriorityType_ClosestToCrosshair
+    };
+
+    int iSortOrder = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_TargetPriority.GetData();
+    iSortOrder     = std::clamp<int>(iSortOrder, TargetPriorityType_ByDistance, TargetPriorityType_ClosestToCrosshair);
+
+    vec vAttackerPos = pLocalPlayer->GetAbsOrigin();
+    vec vEyePos = pLocalPlayer->GetEyePos();
+
+    if (iSortOrder == TargetPriorityType_ByDistance)
+    {
+        std::sort(vecDestination.begin(), vecDestination.end(),
+            [&](BaseEntity* pEnt1, BaseEntity* pEnt2) -> bool
+            {
+                return pEnt1->GetAbsOrigin().DistTo(vAttackerPos) < pEnt2->GetAbsOrigin().DistTo(vAttackerPos);
+            });
+    }
+    else
+    {
+        std::sort(vecDestination.begin(), vecDestination.end(),
+            [&](BaseEntity* pEnt1, BaseEntity* pEnt2) -> bool
+            {
+                vec vEntCenter1 = pEnt1->GetAbsOrigin(); vEntCenter1.z += pEnt1->m_vecViewOffset().z / 2.0f;
+                vec vEntCenter2 = pEnt2->GetAbsOrigin(); vEntCenter2.z += pEnt2->m_vecViewOffset().z / 2.0f;
+
+                return _GetAngleFromCrosshair(vEntCenter1, vEyePos, qViewAngles) < _GetAngleFromCrosshair(vEntCenter2, vEyePos, qViewAngles);
+            });
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::_ConstructHitboxPriorityList(std::vector<int>* vecHitboxes)
+{
+    vecHitboxes->clear();
+
+
+    // Head.
+    if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Head.IsActive() == true)
+    {
+        vecHitboxes->push_back(HitboxPlayer_Head);
+    }
+
+
+    // Torso hitboxes.
+    if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Torso.IsActive() == true)
+    {
+        // NOTE : we are giving middle torso more important here... thats intentional.
+        vecHitboxes->push_back(HitboxPlayer_SpineMiddle);
+        vecHitboxes->push_back(HitboxPlayer_SpineUpper);
+        vecHitboxes->push_back(HitboxPlayer_SpineLower);
+        vecHitboxes->push_back(HitboxPlayer_SpineTop);
+        vecHitboxes->push_back(HitboxPlayer_Hip);
+    }
+
+
+    // Arms...
+    if (Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Arms.IsActive() == true)
+    {
+        vecHitboxes->push_back(HitboxPlayer_LeftUpperArm);
+        vecHitboxes->push_back(HitboxPlayer_RightUpperArm);
+        
+        vecHitboxes->push_back(HitboxPlayer_LeftForearm);
+        vecHitboxes->push_back(HitboxPlayer_RightForearm);
+        
+        vecHitboxes->push_back(HitboxPlayer_LeftHand);
+        vecHitboxes->push_back(HitboxPlayer_RightHand);
+    }
+
+
+    // Legs...
+    if (Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Arms.IsActive() == true)
+    {
+        vecHitboxes->push_back(HitboxPlayer_LeftUpperLeg);
+        vecHitboxes->push_back(HitboxPlayer_RightUpperLeg);
+
+        vecHitboxes->push_back(HitboxPlayer_LeftLowerLeg);
+        vecHitboxes->push_back(HitboxPlayer_RightLowerLeg);
+
+        vecHitboxes->push_back(HitboxPlayer_LeftFoot);
+        vecHitboxes->push_back(HitboxPlayer_RightFoot);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool AimbotHitscanV2_t::_IsInFOV(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, const qangle& qAttackerViewAngles) const
+{
+    float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
+
+    vec vBoneOrigin = bone->GetWorldPos();
+    vec vBoneMin    = vBoneOrigin - pHitbox->bbmin;
+    vec vBoneMax    = vBoneOrigin - pHitbox->bbmax;
+
+    float flAngleToMin = _GetAngleFromCrosshair(vBoneMin, vAttackerEyePos, qAttackerViewAngles);
+    float flAngleToMax = _GetAngleFromCrosshair(vBoneMax, vAttackerEyePos, qAttackerViewAngles);
+
+    // If atleast one corner of the hitbox is within the fov circle, then we can shoot it.
+    return flAngleToMin <= flFOV || flAngleToMax <= flFOV;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float AimbotHitscanV2_t::_GetAngleFromCrosshair(const vec& vTargetPos, const vec& vAttackerEyePos, const qangle& qViewAngles) const
+{
+    vec vViewAngles;
+    Maths::AngleVectors(qViewAngles, &vViewAngles);
+    vViewAngles.NormalizeInPlace();
+
+    vec vAttackerToTarget = vTargetPos - vAttackerEyePos;
+    vAttackerToTarget.NormalizeInPlace();
+
+    float flDot = vViewAngles.Dot(vAttackerToTarget);
+    return RAD2DEG(acosf(flDot));
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool AimbotHitscanV2_t::_IsVisible(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, vec& vBestTargetPosOut, BaseEntity* pLocalPlayer, BaseEntity* pTarget)
+{
+    vec vBoneOrigin = bone->GetWorldPos();
+
+    ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
+    I::EngineTrace->UTIL_TraceRay(vAttackerEyePos, vBoneOrigin, MASK_SHOT, &filter, &trace);
+
+    // Can't hit this target.
+    bool bTargetVisible = trace.m_fraction >= 0.99f || trace.m_entity == pTarget;
+
+    vBestTargetPosOut = vBoneOrigin;
+    
+    return bTargetVisible;
+}

@@ -23,7 +23,6 @@
 // SDK
 #include "../SDK/class/IGameEventManager.h"
 #include "../SDK/class/ISurface.h"
-#include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/class/IVEngineClient.h"
 
 // FEATURES
@@ -136,7 +135,6 @@ void thread1_t::execute_thread1(HINSTANCE instance)
 			F::movement.Reset();
 			F::projectileEngine.Reset();
 			F::movementSimulation.ClearStrafeData();
-			entityManager.Reset();
 		}
 	}
 

@@ -25,7 +25,7 @@ class BaseEntity;
 class AimbotHelper_t
 {
 public:
-    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPackets);
+    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreateMoveResult);
 
     struct AimbotTargetData_t
     {
@@ -54,6 +54,8 @@ public:
         _ConstructAimbotTargetData();
         return m_aimbotTargetData;
     }
+
+    // Store's the passed in FOV, to be used in FOV-circle's radius calculation later.
     void NotifyGameFOV(const float flFOV);
 
 private:
@@ -73,5 +75,5 @@ DECLARE_FEATURE_OBJECT(aimbotHelper, AimbotHelper_t)
 DEFINE_TAB(Aimbot, 1)
 
 DEFINE_SECTION(View, "Misc", 2)
-DEFINE_FEATURE(FOV,           "FOV",           FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
-DEFINE_FEATURE(ViewModel_FOV, "ViewModel FOV", FloatSlider_t, View, Misc, 2, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(View_FOV,         "FOV",       FloatSlider_t, View, Misc, 1, FloatSlider_t(90.0f, 0.0f, 180.0f));
+DEFINE_FEATURE(View_ScopedInFOV, "Scope FOV", FloatSlider_t, View, Misc, 2, FloatSlider_t(30.0f, 0.0f, 180.0f));

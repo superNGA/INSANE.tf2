@@ -1,7 +1,6 @@
 #include <intrin.h>
 
 //======================= Internal stuff =======================
-#include "../SDK/Entity Manager/entityManager.h"
 #include "../SDK/FN index Manager/FN index manager.h"
 #include "../Extra/math.h"
 #include "../Utility/Signature Handler/signatures.h"
@@ -34,6 +33,32 @@
 #include "../SDK/class/IVEngineClient.h"
 #include "../SDK/class/IVDebugOverlay.h"
 #include "../SDK/class/ISurface.h"
+
+
+/*
+* Now as of today 19th of October, 2025. I have no idea what to do now? I have done the UI and I am 
+* pretty happy with that, but now what do I do? I have a shit ton of feature to do, but I don't know
+* which one to do now, I need to make world class feature next, and they need to be practical and not
+* bullshit. I want them to be highly optimized and not some barely working high resource consuming freeloading
+* features. 
+* 
+* TODO's : 
+		* Crit Hack ( rapid fire and reliable )
+		* Hitscan aimbot ( a good one with multipoints for each hitbox n stuff )
+		* Projectile aimbot. ( absolute one )
+		* Spash bot ( good & efficient one )
+		* Melee aimbot ( very good one, shouldn't miss even once )
+		* Anti Aim ( a good one again )
+		* Resolver ( I don't even know how to get started on this shit. )
+		* ESP
+		* Enemy index arrow.
+		* Radar.
+		* custom sky box
+		* world lighting.
+		* Fake lag ( With absolute chocked tick tracking )
+		* 
+		* and so on...
+*/
 
 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
@@ -82,6 +107,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 
 
 	// Running Features
+	PROFILER_START_SCOPE_NAMED("CreateMove");
 	F::entityIterator.Run(pLocalPlayer, pActiveWeapon, pCmd);
 	F::movement.Run(pCmd, result, pLocalPlayer, pActiveWeapon);
 	F::fakeLag.Run(bSendPacket, pCmd);
@@ -91,6 +117,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
 	//F::espV2.Run(pLocalPlayer);
 	F::noSpreadV2.Run(pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
 	F::tickShifter.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
+	PROFILER_END_SCOPE_NAMED("CreateMove");
 
 	// Delete this
 	// Testing Strafe prediction

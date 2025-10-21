@@ -2,12 +2,14 @@
 
 // UTILITY
 #include "../TF object manager/TFOjectManager.h"
-#include "../Entity Manager/entityManager.h"
 #include "../../Extra/math.h"
 #include "../../Utility/Signature Handler/signatures.h"
 
 // SDK
 #include "../../SDK/class/IVEngineClient.h"
+#include "../../Features/Entity Iterator/EntityIterator.h"
+
+
 
 MAKE_SIG(mShared_IsCritBoosted, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 0F 29 7C 24", CLIENT_DLL, bool, uintptr_t);
 
@@ -17,12 +19,17 @@ MAKE_SIG(CALL_ATRIB_HOOK_FLOAT, "4C 8B DC 49 89 5B ? 49 89 6B ? 56 57 41 54 41 5
 		float, float, const char*, const BaseEntity*, void*, bool);
 
 
-// 0x11D8 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 baseWeapon* BaseEntity::getActiveWeapon()
 {
+	// 0x11D8 
 	return reinterpret_cast<baseWeapon*>(I::IClientEntityList->GetClientEntity((*(int32_t*)((uintptr_t)this + Netvars::DT_BaseCombatCharacter::m_hActiveWeapon)) & 0xFFF)); // 0xFFF -> 1111 1111 1111 gets 12 least significant bits, which are the active weapon entity index.
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 const char* BaseEntity::GetPlayerClassName()
 {
 	switch (this->m_iClass())
@@ -42,18 +49,21 @@ const char* BaseEntity::GetPlayerClassName()
 	return "UnicornShit";
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool BaseEntity::IsEnemy()
 {
-	if (entityManager.GetLocalPlayer() == nullptr)
-		return false;
-
-	return entityManager.GetLocalPlayer()->m_iTeamNum() != this->m_iTeamNum();
+	return F::entityIterator.GetLocalPlayerInfo().m_iTeam != this->m_iTeamNum();
 }
 
-// 0xC38 + 0x90 + 0x48 = 0xD10
-// return the weapon index
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 int32_t BaseEntity::GetWeaponIndex() 
 {
+	// 0xC38 + 0x90 + 0x48 = 0xD10
+	// return the weapon index
 	return *reinterpret_cast<int32_t*>(
 		reinterpret_cast<uintptr_t>(this) + 
 		Netvars::DT_EconEntity::m_AttributeManager + 
@@ -62,6 +72,9 @@ int32_t BaseEntity::GetWeaponIndex()
 	);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void BaseEntity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 
 	// skip if not in thirdpeson
@@ -80,17 +93,24 @@ void BaseEntity::changeThirdPersonVisibility(renderGroup_t renderGroup) {
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 vec BaseEntity::GetEyePos() const
 {
 	return (GetAbsOrigin() + *reinterpret_cast<vec*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_LocalPlayerExclusive::m_vecViewOffset));
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 uint32_t BaseEntity::GetPlayerCond() 
 {
 	return *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_nPlayerCond);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool BaseEntity::InCond(FLAG_playerCond eCond)
 {
 	// Getting Player Condition array
@@ -105,48 +125,75 @@ bool BaseEntity::InCond(FLAG_playerCond eCond)
 	return iPlayerCond & (1 << iTargetBit);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool BaseEntity::isOnGround()
 {
 	return this->m_fFlags() & (1 << 0);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 float BaseEntity::GetCritMult()
 {
 	int flCritMult = *reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_iCritMult);
 	return Maths::RemapValClamped(static_cast<float>(flCritMult), 0.0f, 255.0f, 1.0, 4.0);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 RoundStats_t* BaseEntity::GetPlayerRoundData()
 {
 	return reinterpret_cast<RoundStats_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerSharedLocal::m_RoundScoreData);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool BaseEntity::IsCritBoosted()
 {
 	return Sig::mShared_IsCritBoosted(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayer::m_Shared);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool BaseEntity::IsFeignDeathReady()
 {
 	return *reinterpret_cast<bool*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_bFeignDeathReady);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void BaseEntity::CALL_ATRIB_HOOK_INT(int& iAtributeOut, const char* szAtribute) const
 {
 	iAtributeOut = Sig::CALL_ATRIB_HOOK_INT(iAtributeOut, szAtribute, this, 0, true);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void BaseEntity::CALL_ATRIB_HOOK_FLOAT(float& flAtributeOut, const char* szAtribute) const
 {
 	flAtributeOut = Sig::CALL_ATRIB_HOOK_FLOAT(flAtributeOut, szAtribute, this, 0, true);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 BaseEntity* I_client_entity_list::GetClientEntityFromUserID(int userID)
 {
 	int iEntIndex = I::iEngine->GetPlayerForUserID(userID);
 	return GetClientEntity(iEntIndex);
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 int32_t BaseEntity::GetAirDash()
 {
 	return *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(this) + Netvars::DT_TFPlayerShared::m_iAirDash);

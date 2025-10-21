@@ -76,6 +76,7 @@ namespace Maths
     }
 
 
+    // NOTE : This is an exact one to one rip off of the tf2's matrixangles function.
     inline void MatrixAngles(const matrix3x4_t& matrix, qangle& qAngleOut)
     {
         float forward[3];

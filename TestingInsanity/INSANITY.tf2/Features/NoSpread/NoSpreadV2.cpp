@@ -23,6 +23,7 @@
 
 // UTILITY
 #include "../../Utility/ConsoleLogging.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../Utility/CVar Handler/CVarHandler.h"
 #include "../../Utility/Export Fn Handler/ExportFnHelper.h"
 #include "../../Utility/Signature Handler/signatures.h"
@@ -50,6 +51,8 @@ vec vEyePos;
 
 void NoSpreadV2_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreateMoveResult, bool* pSendPacket)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     vEyePos = pLocalPlayer->GetEyePos();
 
     if (Features::NoSpreadV2::NoSpread::NoSpread.IsActive() == false)
