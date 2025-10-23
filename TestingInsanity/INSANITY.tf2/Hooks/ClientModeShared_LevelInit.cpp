@@ -7,6 +7,7 @@
 #include "../Features/Tick Shifting/TickShifting.h"
 #include "../Features/NoSpread/NoSpreadV2.h"
 #include "../Features/ESP/ESPV2.h"
+#include "../Features/BulletTracers/BulletTarcers_t.h"
 
 #include "../SDK/class/IPanel.h"
 
@@ -33,6 +34,8 @@ MAKE_HOOK(ClientModeShared_LevelInit, "48 89 5C 24 ? 57 48 83 EC ? 48 8B D9 48 8
     F::espV2.Free();
 
     I::iPanel->RefreshTargetPanelId();
+
+    F::tracerHandler.InvalidateTracerCount();
 
     return result;
 }

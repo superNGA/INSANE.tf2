@@ -9,6 +9,7 @@
 #include "../../../SDK/class/IVModelInfo.h"
 #include "../../../SDK/class/IVDebugOverlay.h"
 #include "../../../SDK/class/IEngineTrace.h"
+#include "../../../SDK/class/FileWeaponInfo.h"
 
 #include "../../Entity Iterator/EntityIterator.h"
 #include "../../../Extra/math.h"
@@ -93,6 +94,16 @@ enum HitboxPlayer_t
 };
 
 
+//constexpr float DMG_HITGROUP_GENERIC  = 1.0f;
+constexpr float DMG_HITGROUP_HEAD	  = 3.00f;
+constexpr float DMG_HITGROUP_CHEST	  = 1.00f;
+constexpr float DMG_HITGROUP_STOMACH  = 1.25f;
+constexpr float DMG_HITGROUP_LEFTARM  = 1.00f;
+constexpr float DMG_HITGROUP_RIGHTARM = 1.00f;
+constexpr float DMG_HITGROUP_LEFTLEG  = 0.75f;
+constexpr float DMG_HITGROUP_RIGHTLEG = 0.75f;
+constexpr float DMG_HITGROUP_GEAR     = 1.00f;
+
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -117,9 +128,13 @@ void AimbotHitscanV2_t::Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon
     if (m_pBestTarget == nullptr)
         return;
 
+    
+    // Zoom-in if Auto-Scope is active.
+    _DoAutoScope(pLocalPlayer, pActiveWeapon, pCmd);
+
 
     // If valid target found, just shoot.
-    if (bCanAttack == true && Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFire.IsActive() == true)
+    if (_ShouldAutoFire(pLocalPlayer, pActiveWeapon) == true)
     {
         pCmd->buttons |= IN_ATTACK;
     }
@@ -135,12 +150,114 @@ void AimbotHitscanV2_t::Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::_DoAutoScope(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
+{
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoScope.IsActive() == false)
+        return;
+
+    bool bIsUsingSniperRifle = pLocalPlayer->m_iClass() == TF_SNIPER && pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY;
+    if (bIsUsingSniperRifle == false)
+        return;
+
+    if (pLocalPlayer->InCond(TF_COND_ZOOMED) == true)
+        return;
+
+    // Yea, there is a button enum named as IN_ZOOM, but to zoom, you have to use this.
+    pCmd->buttons |= IN_SECOND_ATTACK;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool AimbotHitscanV2_t::_ShouldAutoFire(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFire.IsActive() == false)
+        return false;
+
+    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
+        return false;
+
+    // Don't Auto-Fire unscooped, if user doesn't wanna shoot unscoped.
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_DontShootUnscoped.IsActive() == true)
+    {
+        bool bIsUsingSniperRifle = pLocalPlayer->m_iClass() == TF_SNIPER && pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY;
+        
+        bool bUnscoped = bIsUsingSniperRifle == true && pActiveWeapon->m_flChargedDamage() == 0.0f;
+        if (bUnscoped == true)
+            return false;
+    }
+
+    
+    // Only shooting is shot is lethal
+    if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFireWhenLethal.IsActive() == true)
+    {
+        if (pLocalPlayer->m_iClass() == TF_SNIPER && pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY)
+        {
+            if (m_pBestTarget->m_iHealth() > static_cast<int32_t>(_EstimateSniperDamage(pLocalPlayer, pActiveWeapon)))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+float AimbotHitscanV2_t::_EstimateSniperDamage(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+{
+    float flDamage    = std::clamp<float>(pActiveWeapon->m_flChargedDamage(), TF_WEAPON_SNIPERRIFLE_DAMAGE_MIN, TF_WEAPON_SNIPERRIFLE_DAMAGE_MAX);
+    float flDamageMod = 1.0f; pActiveWeapon->CALL_ATRIB_HOOK_FLOAT(flDamageMod, "mult_dmg");
+    flDamage *= flDamageMod;
+
+    // if fully charged, then fire!
+    if (pActiveWeapon->m_flChargedDamage() >= TF_WEAPON_SNIPERRIFLE_DAMAGE_MAX)
+        return 10000.0f;
+
+    // Now, assuming that we hit our target, we will simply hack together a number that roughly resembles 
+    // the damage we are gonna deal. This is by no means accurate at all, but my big brain is hi on cheap chocolates right now. :)
+    float flDamageMult = 1.0f;
+    switch (m_iTargetHitbox)
+    {
+    case HitboxPlayer_Head:
+        flDamageMult = DMG_HITGROUP_HEAD;
+        break;
+    case HitboxPlayer_Hip:
+    case HitboxPlayer_SpineLower:
+    case HitboxPlayer_SpineMiddle:
+    case HitboxPlayer_SpineUpper:
+    case HitboxPlayer_SpineTop:
+        flDamageMult = DMG_HITGROUP_CHEST;
+        break;
+    case HitboxPlayer_LeftUpperArm:
+    case HitboxPlayer_LeftForearm:
+    case HitboxPlayer_LeftHand:
+    case HitboxPlayer_RightUpperArm:
+    case HitboxPlayer_RightForearm:
+    case HitboxPlayer_RightHand:
+        flDamageMult = DMG_HITGROUP_RIGHTARM;
+        break;
+    case HitboxPlayer_LeftUpperLeg:
+    case HitboxPlayer_LeftLowerLeg:
+    case HitboxPlayer_LeftFoot:
+    case HitboxPlayer_RightUpperLeg:
+    case HitboxPlayer_RightLowerLeg:
+    case HitboxPlayer_RightFoot:
+        flDamageMult = DMG_HITGROUP_RIGHTLEG;
+        break;
+    case HitboxPlayer_Backpack:
+    default: break;
+    }
+
+    return flDamage * flDamageMult;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
     BaseEntity* pTarget = nullptr;
-
-    // Delete this
-    I::IDebugOverlay->ClearAllOverlays();
 
 
     // First, try to find a valid enemy player...
@@ -155,7 +272,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapo
     if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Sentry.IsActive() == true)
     {
         Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemySentry();
-        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        std::vector<BaseEntity*>*                             pVecEnemies          = pDoubleBufferEnemies.GetReadBuffer();
         DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
 
         pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
@@ -167,7 +284,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapo
     if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Teleporter.IsActive() == true)
     {
         Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemyTeleporter();
-        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        std::vector<BaseEntity*>*                             pVecEnemies          = pDoubleBufferEnemies.GetReadBuffer();
         DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
 
         pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
@@ -179,7 +296,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapo
     if(Features::Aimbot::AimbotHitscan_Hitbox::Hitbox_Dispenser.IsActive() == true)
     {
         Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& pDoubleBufferEnemies = F::entityIterator.GetEnemyDispenser();
-        std::vector<BaseEntity*>* pVecEnemies = pDoubleBufferEnemies.GetReadBuffer();
+        std::vector<BaseEntity*>*                             pVecEnemies          = pDoubleBufferEnemies.GetReadBuffer();
         DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&pDoubleBufferEnemies, pVecEnemies);
 
         pTarget = _ChooseBuildingTarget(pVecEnemies, pLocalPlayer, pActiveWeapon, pCmd);
@@ -205,6 +322,8 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
     // Now we sort the enemy list according to user's prefrences.
     std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
     _SortTargetList(pVecEnemies, vecSortedTargets, pLocalPlayer, pCmd->viewangles);
+    if (vecSortedTargets.size() == 0LLU) // User doesn't wanna shoot at any enemy players it seems...
+        return nullptr;
 
 
     // Some localplayer stuff...
@@ -272,6 +391,7 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
                 continue;
 
             // Store angles if we can shoot his nigga & leave. ( no more scanning and cause it is alread quite expensive to run this much )
+            m_iTargetHitbox  = iHitboxIndex;
             m_vBestTargetPos = vBestAngles;
             return pEnt;
         }
@@ -318,6 +438,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntit
         vec vObbMin    = pCollidable->OBBMinsPreScaled();
         vec vObbMax    = pCollidable->OBBMaxsPreScaled();
 
+
         // Is this building in FOV ?
         {
             float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
@@ -336,10 +457,11 @@ BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntit
             I::EngineTrace->UTIL_TraceRay(vEyePos, vEntCenter, MASK_SHOT, &filter, &trace);
 
             // Can't hit this target.
-            bool bTargetVisible = trace.m_fraction >= 0.99f && trace.m_entity == pEnt;
+            bool bTargetVisible = trace.m_fraction >= 0.99f || trace.m_entity == pEnt;
 
             if (bTargetVisible == false)
                 continue;
+
 
             m_vBestTargetPos = vEntCenter;
             return pEnt;

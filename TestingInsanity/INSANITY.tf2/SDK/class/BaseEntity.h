@@ -23,6 +23,7 @@ NETVAR(m_hOwnerEntity,			 DT_BaseEntity)
 NETVAR(m_hEffectEntity,			 DT_BaseEntity)
 NETVAR(m_angRotation,			 DT_BaseEntity)
 NETVAR(m_flSimulationTime,		 DT_BaseEntity)
+NETVAR(m_fEffects,				 DT_BaseEntity)
 								 
 // Base Animating				 
 NETVAR(m_flModelScale,			 DT_BaseAnimating)
@@ -140,6 +141,7 @@ public:
 	NETVAR_GETTER(m_vecVelocity, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecVelocity, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_angRotation, DT_BaseEntity, qangle)
+	NETVAR_GETTER(m_fEffects,	 DT_BaseEntity, int)
 
 	NETVAR_GETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 	NETVAR_SETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)

@@ -35,7 +35,7 @@ class ProfilerHelper_t;
     #define PROFILER_END_SCOPE_NAMED(szScopeName)   F::profiler.EndProfilingScope(szScopeName);
 
     #define PROFILER_RECORD_FUNCTION_NAMED(szFunctionName, szScopeName)\
-        static FuncInfoStorage_t CONCAT(szScopeName);\
+        static FuncInfoStorage_t szScopeName;\
         ProfilerHelper_t CONCAT(szScopeName, __COUNTER__)(szFunctionName, #szScopeName, &szScopeName);
 
     #define PROFILER_RECORD_FUNCTION(szScopeName) PROFILER_RECORD_FUNCTION_NAMED(__FUNCTION__, szScopeName)

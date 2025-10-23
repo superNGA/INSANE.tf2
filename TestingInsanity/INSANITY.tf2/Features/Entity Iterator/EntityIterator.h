@@ -48,6 +48,10 @@ struct LocalPlayerInfo_t
     lifeState_t  m_iLifeState = lifeState_t::LIFE_DEAD;
     int          m_iTeam      = 0;
     uint32_t     m_iCond      = 0u;
+    vec          m_vOrigin;
+    int          m_iEntIndex = -1;
+    int          m_iActiveWeaponSlot = -1;
+    int32_t      m_refEHandle = 0;
 };
 ///////////////////////////////////////////////////////////////////////////
 

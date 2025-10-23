@@ -9,6 +9,14 @@ enum StereoEye_t
 	STEREO_EYE_MAX = 3,
 };
 
+enum RenderViewInfo_t
+{
+	RENDERVIEW_UNSPECIFIED = 0,
+	RENDERVIEW_DRAWVIEWMODEL = (1 << 0),
+	RENDERVIEW_DRAWHUD = (1 << 1),
+	RENDERVIEW_SUPPRESSMONITORRENDERING = (1 << 2),
+};
+
 struct CViewSetup {
 
 	int			x;
@@ -27,8 +35,8 @@ struct CViewSetup {
 	float		m_OrthoBottom;
 	float		fov;
 	float		fovViewmodel;
-	vec			origin;
-	qangle		angles;
+	vec			origin; // Origin of the camera...
+	qangle		angles; // Angle of the camera
 	float		zNear;
 	float		zFar;
 	float		zNearViewmodel;

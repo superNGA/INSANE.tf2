@@ -1,15 +1,23 @@
 #include "../Utility/Hook Handler/Hook_t.h"
 #include "../Utility/ConsoleLogging.h"
 
+#include "../SDK/class/Basic Structures.h"
 #include "../Features/config.h"
 #include "../Features/NoSpread/NoSpread.h"
+#include "../Features/BulletTracers/BulletTarcers_t.h"
+#include "../Features/Entity Iterator/EntityIterator.h"
 
-MAKE_HOOK(FX_FireBullet, "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", __fastcall, CLIENT_DLL, int64_t, float* a1,
-    unsigned int a2, int32_t* a3, int64_t a4,
-    uint32_t a5, int32_t a6, uint32_t iSeed, float flBaseSpread, float a9, bool bIsCrit)
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+MAKE_HOOK(FX_FireBullet, "48 89 5C 24 ? 48 89 74 24 ? 4C 89 4C 24 ? 55", __fastcall, CLIENT_DLL, int64_t, 
+    baseWeapon* pWpn, int iPlayerIndex, vec* vOrigin, qangle* qAngles, int iWeapon, int iMode, int iSeed, float flSpread, float flDamage, bool bCritical)
 {
-    /*if(config.aimbotConfig.bNoSpread == true)
-        iSeed = F::noSpread.m_iSeed.load();*/
+    F::tracerHandler.BeginTracer(iPlayerIndex, pWpn);
 
-    return Hook::FX_FireBullet::O_FX_FireBullet(a1, a2, a3, a4, a5, a6, iSeed, flBaseSpread, a9, bIsCrit);
+    int64_t iResult = Hook::FX_FireBullet::O_FX_FireBullet(pWpn, iPlayerIndex, vOrigin, qAngles, iWeapon, iMode, iSeed, flSpread, flDamage, bCritical);
+    
+    F::tracerHandler.EndTracer();
+
+    return iResult;
 }

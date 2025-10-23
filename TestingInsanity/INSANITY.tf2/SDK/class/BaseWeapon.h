@@ -7,6 +7,11 @@
 // UTILITY
 #include "../NetVars/NetVarHandler.h"
 
+
+constexpr float TF_WEAPON_SNIPERRIFLE_DAMAGE_MIN = 50.0f;
+constexpr float TF_WEAPON_SNIPERRIFLE_DAMAGE_MAX = 150.0f;
+
+
 NETVAR_OFFSET(m_flSmackTime, m_bReadyToBackstab, DT_TFWeaponKnife, -0x14)
 NETVAR(m_bReadyToBackstab, DT_TFWeaponKnife)
 NETVAR(m_iReloadMode,	   DT_TFWeaponBase)
@@ -17,6 +22,9 @@ NETVAR(m_bFlipViewModel,		DT_LocalWeaponData)
 NETVAR(m_flObservedCritChance,	DT_LocalTFWeaponData)
 NETVAR(m_flLastCritCheckTime,	DT_LocalTFWeaponData)
 NETVAR(m_flNextPrimaryAttack,	DT_LocalActiveWeaponData)
+NETVAR(m_flChargedDamage,		DT_SniperRifleLocalData)
+
+NETVAR(m_hOwner, DT_BaseCombatWeapon)
 
 NETVAR(m_flLastFireTime, DT_LocalTFWeaponData)
 
@@ -33,65 +41,68 @@ NETVAR_OFFSET(m_flCritTokenBucket, m_nViewModelIndex, DT_LocalWeaponData, -0xC)
 class CTFWeaponInfo;
 
 enum slot_t {
-	WPN_SLOT_INVALID = -1,
-	WPN_SLOT_PRIMARY=0,
-	WPN_SLOT_SECONDARY,
-	WPN_SLOT_MELLE
+    WPN_SLOT_INVALID = -1,
+    WPN_SLOT_PRIMARY=0,
+    WPN_SLOT_SECONDARY,
+    WPN_SLOT_MELLE
 };
 
 enum reload_t
 {
-	WPN_RELOAD_START = 0,
-	WPN_RELOADING,
-	WPN_RELOADING_CONTINUE,
-	WPN_RELOAD_FINISH
+    WPN_RELOAD_START = 0,
+    WPN_RELOADING,
+    WPN_RELOADING_CONTINUE,
+    WPN_RELOAD_FINISH
 };
 
 class baseWeapon : public BaseEntity {
 public:
-	int			getSlot();
+    int			getSlot();
 
-	// Reload mode
-	NETVAR_GETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
-	NETVAR_SETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
+    // Reload mode
+    NETVAR_GETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
+    NETVAR_SETTER(m_iReloadMode, DT_TFWeaponBase, reload_t)
 
-	NETVAR_GETTER(m_iClip1, DT_LocalWeaponData, int)
-	NETVAR_GETTER(m_iClip2, DT_LocalWeaponData, int)
+    NETVAR_GETTER(m_iClip1, DT_LocalWeaponData, int)
+    NETVAR_GETTER(m_iClip2, DT_LocalWeaponData, int)
 
-	NETVAR_GETTER(m_bFlipViewModel, DT_LocalWeaponData, bool)
-	
-	// Crit Bucket Getters
-	NETVAR_GETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
-	NETVAR_GETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
-	NETVAR_GETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
-	
-	// Crit Bucket Setter
-	NETVAR_SETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
-	NETVAR_SETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
-	NETVAR_SETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
+    NETVAR_GETTER(m_bFlipViewModel, DT_LocalWeaponData, bool)
+    
+    // Crit Bucket Getters
+    NETVAR_GETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
+    NETVAR_GETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
+    NETVAR_GETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
+    
+    // Crit Bucket Setter
+    NETVAR_SETTER(m_nCritSeedRequests, DT_LocalWeaponData, int)
+    NETVAR_SETTER(m_nCritChecks,	   DT_LocalWeaponData, int)
+    NETVAR_SETTER(m_flCritTokenBucket, DT_LocalWeaponData, float)
 
-	NETVAR_GETTER(m_flObservedCritChance, DT_LocalTFWeaponData, float)
-	NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
+    NETVAR_GETTER(m_flObservedCritChance, DT_LocalTFWeaponData, float)
+    NETVAR_GETTER(m_flLastCritCheckTime, DT_LocalTFWeaponData, float)
 
-	NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
-	NETVAR_SETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
-	NETVAR_GETTER(m_flLastFireTime,		 DT_LocalTFWeaponData,		float)
-	NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife,			float)
+    NETVAR_GETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
+    NETVAR_SETTER(m_flNextPrimaryAttack, DT_LocalActiveWeaponData,	float)
+    NETVAR_GETTER(m_flLastFireTime,		 DT_LocalTFWeaponData,		float)
+    NETVAR_GETTER(m_flSmackTime,		 DT_TFWeaponKnife,			float)
 
-	NETVAR_GETTER(m_hLauncher, DT_TFProjectile_Pipebomb, int)
+    NETVAR_GETTER(m_flChargedDamage, DT_SniperRifleLocalData, float);
 
-	NETVAR_GETTER(m_flChargeBeginTime, DT_PipebombLauncherLocalData, float)
+    NETVAR_GETTER(m_hLauncher, DT_TFProjectile_Pipebomb, int)
 
-	bool		IsProjectile();
+    NETVAR_GETTER(m_flChargeBeginTime, DT_PipebombLauncherLocalData, float)
+    NETVAR_GETTER(m_hOwner,            DT_BaseCombatWeapon,          int)
 
-	CTFWeaponInfo* GetTFWeaponInfo();
-	
-	// Weapon IDs
-	int			GetWeaponTypeID(); // <- ETFWeaponInfo ID ( i.e. same for all bats for scout )
-	int			GetWeaponDefinitionID(); // <- Item specific ID ( i.e. different for each bat type for scout )
+    bool		IsProjectile();
 
-	float		GetDamagePerShot();
+    CTFWeaponInfo* GetTFWeaponInfo();
+    
+    // Weapon IDs
+    int			GetWeaponTypeID(); // <- ETFWeaponInfo ID ( i.e. same for all bats for scout )
+    int			GetWeaponDefinitionID(); // <- Item specific ID ( i.e. different for each bat type for scout )
+
+    float		GetDamagePerShot();
 
 private:
-	bool TracerHook = false;
+    bool TracerHook = false;
 };

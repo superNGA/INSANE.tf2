@@ -454,10 +454,14 @@ void EntityIterator_t::_ProcessTeleporter(BaseEntity* pEnt, int iFriendlyTeam)
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::_UpdateLocalPlayerInfo(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
-    m_localPlayerInfo.m_iClass     = pLocalPlayer->m_iClass();
-    m_localPlayerInfo.m_iLifeState = pLocalPlayer->m_lifeState();
-    m_localPlayerInfo.m_iTeam      = pLocalPlayer->m_iTeamNum();
-    m_localPlayerInfo.m_iCond      = pLocalPlayer->GetPlayerCond();
+    m_localPlayerInfo.m_iClass            = pLocalPlayer->m_iClass();
+    m_localPlayerInfo.m_iLifeState        = pLocalPlayer->m_lifeState();
+    m_localPlayerInfo.m_iTeam             = pLocalPlayer->m_iTeamNum();
+    m_localPlayerInfo.m_iCond             = pLocalPlayer->GetPlayerCond();
+    m_localPlayerInfo.m_vOrigin           = pLocalPlayer->GetAbsOrigin();
+    m_localPlayerInfo.m_iEntIndex         = pLocalPlayer->entindex();
+    m_localPlayerInfo.m_iActiveWeaponSlot = pActiveWeapon->getSlot();
+    m_localPlayerInfo.m_refEHandle        = pLocalPlayer->GetRefEHandle();
 }
 
 

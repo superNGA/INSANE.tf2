@@ -17,6 +17,10 @@ public:
     void Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, bool* pCreateMoveResult);
 
 private:
+    void        _DoAutoScope(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
+    bool        _ShouldAutoFire(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    float       _EstimateSniperDamage(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+
     BaseEntity* _ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     BaseEntity* _ChoosePlayerTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     BaseEntity* _ChooseBuildingTarget(const std::vector<BaseEntity*>* vecTargets, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
@@ -34,6 +38,7 @@ private:
     
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetPos;
+    int         m_iTargetHitbox = -1;
 
 };
 ///////////////////////////////////////////////////////////////////////////
@@ -51,6 +56,9 @@ DEFINE_FEATURE(AimbotHitscan_TargetPriority, "Target Priority", DropDown_t, Aimb
 
 // A negative max distance means no max distance check...
 DEFINE_FEATURE(AimbotHitscan_MaxDistance, "Max Distance", FloatSlider_t, AimbotHitscanV2, Aimbot, 6, FloatSlider_t(-1.0f, -1.0f, 3000.0f), FeatureFlag_SupportKeyBind, "FOV for aimbot.")
+DEFINE_FEATURE(AimbotHitscan_DontShootUnscoped,  "Don't shoot unscoped", bool, AimbotHitscanV2, Aimbot, 7, false, FeatureFlag_None, "Won't auto fire while not scoped")
+DEFINE_FEATURE(AimbotHitscan_AutoScope,          "Auto-Scope", bool, AimbotHitscanV2, Aimbot, 8, false, FeatureFlag_None, "Automatically Zoom in if target found.")
+DEFINE_FEATURE(AimbotHitscan_AutoFireWhenLethal, "Auto-Fire if Lethal", bool, AimbotHitscanV2, Aimbot, 9, false, FeatureFlag_None, "Only fire if shot if lethal or fully charged. ( only for sniper )")
 
 
 
