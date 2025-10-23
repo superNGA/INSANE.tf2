@@ -35,10 +35,12 @@ private:
 
     bool        _IsVisible(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, vec& vBestTargetPosOut, BaseEntity* pLocalPlayer, BaseEntity* pTarget);
     
+    void        _ResetAimbotData();
     
     BaseEntity* m_pBestTarget = nullptr;
     vec         m_vBestTargetPos;
     int         m_iTargetHitbox = -1;
+    int         m_iTickCount    = -1;
 
 };
 ///////////////////////////////////////////////////////////////////////////
@@ -55,11 +57,13 @@ static const char* g_szTargetPriority[] = { "Closet to you" , "Closest to crossh
 DEFINE_FEATURE(AimbotHitscan_TargetPriority, "Target Priority", DropDown_t, AimbotHitscanV2, Aimbot, 5, DropDown_t(g_szTargetPriority, 2), FeatureFlag_None, "Which target gets checked first.")
 
 // A negative max distance means no max distance check...
-DEFINE_FEATURE(AimbotHitscan_MaxDistance, "Max Distance", FloatSlider_t, AimbotHitscanV2, Aimbot, 6, FloatSlider_t(-1.0f, -1.0f, 3000.0f), FeatureFlag_SupportKeyBind, "FOV for aimbot.")
-DEFINE_FEATURE(AimbotHitscan_DontShootUnscoped,  "Don't shoot unscoped", bool, AimbotHitscanV2, Aimbot, 7, false, FeatureFlag_None, "Won't auto fire while not scoped")
-DEFINE_FEATURE(AimbotHitscan_AutoScope,          "Auto-Scope", bool, AimbotHitscanV2, Aimbot, 8, false, FeatureFlag_None, "Automatically Zoom in if target found.")
-DEFINE_FEATURE(AimbotHitscan_AutoFireWhenLethal, "Auto-Fire if Lethal", bool, AimbotHitscanV2, Aimbot, 9, false, FeatureFlag_None, "Only fire if shot if lethal or fully charged. ( only for sniper )")
+DEFINE_FEATURE(AimbotHitscan_MaxDistance,        "Max Distance",         FloatSlider_t, AimbotHitscanV2, Aimbot, 6, FloatSlider_t(-1.0f, -1.0f, 3000.0f), FeatureFlag_SupportKeyBind, "FOV for aimbot.")
+DEFINE_FEATURE(AimbotHitscan_DontShootUnscoped,  "Don't shoot unscoped", bool,          AimbotHitscanV2, Aimbot, 7, false, FeatureFlag_None, "Won't auto fire while not scoped")
+DEFINE_FEATURE(AimbotHitscan_AutoScope,          "Auto-Scope",           bool,          AimbotHitscanV2, Aimbot, 8, false, FeatureFlag_None, "Automatically Zoom in if target found.")
+DEFINE_FEATURE(AimbotHitscan_AutoFireWhenLethal, "Auto-Fire if Lethal",  bool,          AimbotHitscanV2, Aimbot, 9, false, FeatureFlag_None, "Only fire if shot if lethal or fully charged. ( only for sniper )")
 
+static const char* g_szBackTrackTargetingChoice[] = { "First Only" , "Last Only", "All" };
+DEFINE_FEATURE(AimbotHitscan_BackTrackChoice, "BackTrack to target", DropDown_t, AimbotHitscanV2, Aimbot, 10, DropDown_t(g_szBackTrackTargetingChoice, 3), FeatureFlag_None)
 
 
 // Hit-Box seletion for user.

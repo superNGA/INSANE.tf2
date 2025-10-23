@@ -84,7 +84,7 @@ public:
     // NOTE: The latest record is @ front & the oldest record is @ the back.
     std::deque<BackTrackRecord_t>* GetBackTrackRecord(BaseEntity* pEnt);
     void  SetBackTrackTime(const float flBackTrackTime);
-    float GetBackTrackTime() const;
+    float GetBackTrackTimeInSec() const;
 
     enum ClassIdIndex : int
     {

@@ -261,7 +261,7 @@ void EntityIterator_t::SetBackTrackTime(const float flBackTrackTime)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-float EntityIterator_t::GetBackTrackTime() const
+float EntityIterator_t::GetBackTrackTimeInSec() const
 {
     return m_flBackTrackTime;
 }
@@ -381,7 +381,7 @@ void EntityIterator_t::_ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn,
     allRecords.push_front(record);
 
     // Keep at least one record.
-    const int iMaxRecords = TIME_TO_TICK(GetBackTrackTime()) == 0 ? 1 : TIME_TO_TICK(GetBackTrackTime());
+    const int iMaxRecords = TIME_TO_TICK(GetBackTrackTimeInSec()) == 0 ? 1 : TIME_TO_TICK(GetBackTrackTimeInSec());
     // removing expired ones.
     for (int iTick = 0; iTick < 70; iTick++)
     {

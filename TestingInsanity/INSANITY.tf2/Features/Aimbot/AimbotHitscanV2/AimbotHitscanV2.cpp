@@ -10,6 +10,7 @@
 #include "../../../SDK/class/IVDebugOverlay.h"
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/class/FileWeaponInfo.h"
+#include "../../../SDK/TF object manager/TFOjectManager.h"
 
 #include "../../Entity Iterator/EntityIterator.h"
 #include "../../../Extra/math.h"
@@ -332,7 +333,6 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
     float flMaxDistance = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_MaxDistance.GetData().m_flVal;
 
 
-
     // This holds the hitbox indexes in decreasing order or priority.
     // we itearate all hitboxes in this list and shoot at the first one we can hit.
     // Priorty depends on our active weapon & damage multiplier of that hitbox n stuff like that.
@@ -367,33 +367,59 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
             continue;
 
 
+        // Just in case, we don't happen to have any backtrack records for this entity.
         std::deque<BackTrackRecord_t>* pQBackTrackRecords = F::entityIterator.GetBackTrackRecord(pEnt);
-        BackTrackRecord_t& record = pQBackTrackRecords->front();
+        if (pQBackTrackRecords->size() == 0LLU)
+            continue;
 
 
-        // Itearte over all hitboxes for this entity, to find one we can hit.
-        // NOTE : the hitbox indexes are arranged in decreasing order of priority.
-        for (int iHitboxIndex : vecHitboxPriorityList)
+        // NOTE : In case no choice is selected, the first record / the latest record will simply be targated...
+        enum BackTrackChoice_t { BackTrackChoice_FirstOnly = 0, BackTrackChoice_LastOnly, BackTrackChoice_All };
+        bool bIterateBackwards = (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_BackTrackChoice.GetData() == BackTrackChoice_LastOnly);
+        bool bSingleIteration  = (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_BackTrackChoice.GetData() != BackTrackChoice_All);
+        
+        // BackTrack min & max...
+        float flBackTrackTimeInSec = F::entityIterator.GetBackTrackTimeInSec();
+        int iBackTrackTickMax = std::clamp<int>(TIME_TO_TICK(flBackTrackTimeInSec),                      0, pQBackTrackRecords->size() - 1LLU);
+        int iBackTrackTickMin = std::clamp<int>(TIME_TO_TICK(flBackTrackTimeInSec - MAX_BACKTRACK_TIME), 0, pQBackTrackRecords->size() - 1LLU);
+
+        // First index for iteration & number of records to iterate... 
+        int iFirstRecordIndex = bIterateBackwards == true ? iBackTrackTickMax : iBackTrackTickMin;
+        int nRecords          = bSingleIteration  == true ? 1 : TIME_TO_TICK(MAX_BACKTRACK_TIME);
+
+        for (int i = 0, iRecordIndex = iFirstRecordIndex; i < nRecords && iRecordIndex >= iBackTrackTickMin && iRecordIndex <= iBackTrackTickMax; i++)
         {
-            // Target hitbox & bone for that hitbox.
-            mstudiobbox_t* pHitbox    = pHitBoxSet->pHitbox(iHitboxIndex);
-            matrix3x4_t*   targetBone = &record.m_bones[pHitbox->bone];
+            BackTrackRecord_t& record = (*pQBackTrackRecords)[iRecordIndex];
+
+            // Update record index here, cause we don't know if user wanted the first or last records.
+            // That means, we might need to iterate forward or backwards, hence +1 or -1 is unknown.
+            iFirstRecordIndex = bIterateBackwards == true ? iRecordIndex - 1 : iRecordIndex + 1;
+
+            // Itearte over all hitboxes for this entity, to find one we can hit.
+            // NOTE : the hitbox indexes are arranged in decreasing order of priority.
+            for (int iHitboxIndex : vecHitboxPriorityList)
+            {
+                // Target hitbox & bone for that hitbox.
+                mstudiobbox_t* pHitbox = pHitBoxSet->pHitbox(iHitboxIndex);
+                matrix3x4_t* targetBone = &record.m_bones[pHitbox->bone];
 
 
-            // Is this hitbox in FOV ?
-            if (_IsInFOV(targetBone, pHitbox, vEyePos, pCmd->viewangles) == false)
-                continue;
+                // Is this hitbox in FOV ?
+                if (_IsInFOV(targetBone, pHitbox, vEyePos, pCmd->viewangles) == false)
+                    continue;
 
 
-            // Most visible point on target.
-            vec vBestAngles;
-            if (_IsVisible(targetBone, pHitbox, vEyePos, vBestAngles, pLocalPlayer, pEnt) == false)
-                continue;
+                // Most visible point on target.
+                vec vBestAngles;
+                if (_IsVisible(targetBone, pHitbox, vEyePos, vBestAngles, pLocalPlayer, pEnt) == false)
+                    continue;
 
-            // Store angles if we can shoot his nigga & leave. ( no more scanning and cause it is alread quite expensive to run this much )
-            m_iTargetHitbox  = iHitboxIndex;
-            m_vBestTargetPos = vBestAngles;
-            return pEnt;
+                // Store angles if we can shoot his nigga & leave. ( no more scanning and cause it is alread quite expensive to run this much )
+                m_iTargetHitbox  = iHitboxIndex;
+                m_vBestTargetPos = vBestAngles;
+                m_iTickCount     = record.m_iTick;
+                return pEnt;
+            }
         }
 
     }
@@ -483,6 +509,7 @@ void AimbotHitscanV2_t::_ShootAtTarget(BaseEntity* pLocalPlayer, CUserCmd* pCmd,
     Maths::WrapYaw(qAimbotAngles);
 
     pCmd->viewangles = qAimbotAngles;
+    pCmd->tick_count = m_iTickCount > 0 ? m_iTickCount : pCmd->tick_count;
 
 
     // Silenting view angle changes for client.
@@ -490,6 +517,9 @@ void AimbotHitscanV2_t::_ShootAtTarget(BaseEntity* pLocalPlayer, CUserCmd* pCmd,
     {
         *pCreateMoveResult = false;
     }
+
+    // Resetting once aimbot angles and stuff are setup
+    _ResetAimbotData();
 }
 
 
@@ -640,4 +670,15 @@ bool AimbotHitscanV2_t::_IsVisible(const matrix3x4_t* bone, mstudiobbox_t* pHitb
     vBestTargetPosOut = vBoneOrigin;
     
     return bTargetVisible;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void AimbotHitscanV2_t::_ResetAimbotData()
+{
+    m_pBestTarget   = nullptr;
+    m_vBestTargetPos.Init();
+    m_iTickCount    = -1;
+    m_iTargetHitbox = -1;
 }

@@ -231,7 +231,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
     else // SPY
     {
         vec   vAttackerEyePos = pLocalPlayer->GetEyePos();
-        float flBackTrackTime = F::entityIterator.GetBackTrackTime();
+        float flBackTrackTime = F::entityIterator.GetBackTrackTimeInSec();
         for (BaseEntity* pTarget : vecTargets)
         {
             std::deque<BackTrackRecord_t>* pRecords = F::entityIterator.GetBackTrackRecord(pTarget);
