@@ -23,6 +23,7 @@ NETVAR(m_hOwnerEntity,			 DT_BaseEntity)
 NETVAR(m_hEffectEntity,			 DT_BaseEntity)
 NETVAR(m_angRotation,			 DT_BaseEntity)
 NETVAR(m_flSimulationTime,		 DT_BaseEntity)
+NETVAR(m_fEffects,				 DT_BaseEntity)
 								 
 // Base Animating				 
 NETVAR(m_flModelScale,			 DT_BaseAnimating)
@@ -35,6 +36,9 @@ NETVAR(m_Local,					 DT_LocalPlayerExclusive)
 NETVAR(m_hGroundEntity,			 DT_LocalPlayerExclusive)
 
 NETVAR(m_flNextAttack,			 DT_BCCLocalPlayerExclusive)
+
+NETVAR(m_iObjectType,			 DT_BaseObject)
+NETVAR(m_bBuilding,				 DT_BaseObject)
 
 NETVAR(m_bDucked,				 DT_Local)
 NETVAR(m_bDucking,				 DT_Local)
@@ -55,6 +59,10 @@ NETVAR(m_nPlayerCond,	         DT_TFPlayerShared)
 NETVAR(m_iCritMult,		         DT_TFPlayerShared)
 NETVAR(m_bFeignDeathReady,       DT_TFPlayerShared)
 NETVAR(m_iAirDash,		         DT_TFPlayerShared)
+
+NETVAR(m_bTouched,				 DT_TFProjectile_Pipebomb)
+NETVAR(m_iType,					 DT_TFProjectile_Pipebomb)
+NETVAR(m_bIsLive,			     DT_BaseGrenade)
 
 NETVAR(m_RoundScoreData,	     DT_TFPlayerSharedLocal)
 							     
@@ -106,6 +114,14 @@ public:
 	NETVAR_GETTER(m_flCycle, DT_ServerAnimationData, float)
 	NETVAR_SETTER(m_flCycle, DT_ServerAnimationData, float)
 	
+	NETVAR_GETTER(m_iType,    DT_TFProjectile_Pipebomb, int)
+	NETVAR_GETTER(m_bTouched, DT_TFProjectile_Pipebomb, bool)
+	NETVAR_GETTER(m_bIsLive,  DT_BaseGrenade, bool)
+	
+	NETVAR_GETTER(m_iObjectType, DT_BaseObject, int)
+	NETVAR_GETTER(m_bBuilding, DT_BaseObject,	bool)
+	
+	
 	NETVAR_GETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecOrigin, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_iTeamNum, DT_BaseEntity, int32_t)
@@ -140,6 +156,7 @@ public:
 	NETVAR_GETTER(m_vecVelocity, DT_BaseEntity, vec)
 	NETVAR_SETTER(m_vecVelocity, DT_BaseEntity, vec)
 	NETVAR_GETTER(m_angRotation, DT_BaseEntity, qangle)
+	NETVAR_GETTER(m_fEffects,	 DT_BaseEntity, int)
 
 	NETVAR_GETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)
 	NETVAR_SETTER(m_vecViewOffset, DT_LocalPlayerExclusive, vec)

@@ -5,6 +5,8 @@
 
 #include "../../Features/FeatureHandler.h"
 
+
+///////////////////////////////////////////////////////////////////////////
 class ClassID_t
 {
 public:
@@ -13,18 +15,23 @@ public:
     int*        m_pDestination = nullptr;
     std::string m_szClassName;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 class ClassIDHandler_t
 {
 public:
     void RegisterClassID(ClassID_t* pClassID);
     bool Initialize();
+    bool IsInitialized() const;
 
 private:
     std::unordered_map<std::string, ClassID_t*> m_mapClassNameToID = {}; 
     bool m_bInitialized = false;
 };
+///////////////////////////////////////////////////////////////////////////
+
 DECLARE_FEATURE_OBJECT(classIDHandler, ClassIDHandler_t)
 
 #define REGISTER_CLASS_ID(szName)\
@@ -127,7 +134,7 @@ REGISTER_CLASS_ID(CTFGrenadePipebombProjectile)
 //REGISTER_CLASS_ID(CTFCompoundBow)
 //REGISTER_CLASS_ID(CTFClub)
 //REGISTER_CLASS_ID(CTFBuffItem)
-//REGISTER_CLASS_ID(CTFStickBomb)
+REGISTER_CLASS_ID(CTFStickBomb)
 //REGISTER_CLASS_ID(CTFBreakableSign)
 //REGISTER_CLASS_ID(CTFBottle)
 //REGISTER_CLASS_ID(CTFBreakableMelee)

@@ -133,6 +133,33 @@
 // Not a studio flag, but used to flag model as a non-sorting brush model
 #define STUDIO_TRANSPARENCY				0x80000000
 
+
+// entity effects
+enum EntityEffects
+{
+	EF_BONEMERGE			= 0x001,	// Performs bone merge on client side
+	EF_BRIGHTLIGHT 			= 0x002,	// DLIGHT centered at entity origin
+	EF_DIMLIGHT 			= 0x004,	// player flashlight
+	EF_NOINTERP				= 0x008,	// don't interpolate the next frame
+	EF_NOSHADOW				= 0x010,	// Don't cast no shadow
+	EF_NODRAW				= 0x020,	// don't draw entity
+	EF_NORECEIVESHADOW		= 0x040,	// Don't receive no shadow
+	EF_BONEMERGE_FASTCULL	= 0x080,	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
+	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
+	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
+	EF_MAX_BITS = 10
+};
+
+
+enum PipeBombType_t
+{
+    TF_GL_MODE_REGULAR = 0,
+    TF_GL_MODE_REMOTE_DETONATE,
+    TF_GL_MODE_REMOTE_DETONATE_PRACTICE,
+    TF_GL_MODE_CANNONBALL,
+};
+
+
 namespace vgui 
 { 
     typedef uintptr_t VPANEL; 
@@ -398,7 +425,8 @@ public:
     float m[3][4];
 
     /* gets the bone's world coordinates */
-    vec GetWorldPos(){
+    vec GetWorldPos() const
+    {
         return vec(m[0][3], m[1][3], m[2][3]);
     }
 

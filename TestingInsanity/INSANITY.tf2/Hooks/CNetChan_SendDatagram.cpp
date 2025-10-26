@@ -24,7 +24,7 @@ MAKE_HOOK(CNetChan_SendDatagram, "40 55 57 41 56 48 8D AC 24", __fastcall, ENGIN
         
         if(pCVar != nullptr)
         {
-            float flFakeLag = std::clamp<float>(F::entityIterator.GetBackTrackTime() - 0.2f, 0.0f, 1.0f);
+            float flFakeLag = std::clamp<float>(F::entityIterator.GetBackTrackTimeInSec() - 0.2f, 0.0f, 1.0f);
             pCVar->m_fValue = (flFakeLag * 1000.0f) / 2.0f;
         }
 
@@ -48,7 +48,7 @@ MAKE_HOOK(CNetChan_SendDatagram, "40 55 57 41 56 48 8D AC 24", __fastcall, ENGIN
     int iOldInReliableState = pThis->m_nInReliableState;
 
     // Find a sequence old enough from the list.
-    float flFakeLatency = F::entityIterator.GetBackTrackTime() - 0.2f;
+    float flFakeLatency = F::entityIterator.GetBackTrackTimeInSec() - 0.2f;
     flFakeLatency       = std::clamp<float>(flFakeLatency, 0.0f, CVars::sv_maxunlag);
 
     if (flFakeLatency <= 0.0f)

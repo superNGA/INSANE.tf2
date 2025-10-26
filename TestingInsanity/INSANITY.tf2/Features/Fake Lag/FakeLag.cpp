@@ -1,9 +1,14 @@
 #include "FakeLag.h"
 #include "../../SDK/class/CUserCmd.h"
+#include "../../SDK/class/BaseEntity.h"
+#include "../../SDK/class/BaseWeapon.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 
-void FakeLag_t::Run(bool* bSendPacket, CUserCmd* pCmd)
+void FakeLag_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, bool* bSendPacket, CUserCmd* pCmd)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     if (bSendPacket == nullptr || pCmd == nullptr)
         return;
 

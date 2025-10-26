@@ -9,12 +9,15 @@
 
 // Utility & UI
 #include "../Graphics Engine V2/Draw Objects/Circle/Circle.h"
+#include "../Graphics Engine V2/Draw Objects/Box/Box.h"
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../../Utility/Profiler/Profiler.h"
 
 #include "../Entity Iterator/EntityIterator.h"
 
 // AIMBOTS
+#include "AimbotHitscanV2/AimbotHitscanV2.h"
 #include "Aimbot Hitscan/AimbotHitscan.h"
 #include "Aimbot Projectile/AimbotProjectile.h"
 #include "Aimbot Melee/AimbotMelee.h"
@@ -23,8 +26,10 @@
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPackets)
+void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreateMoveResult)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
+
     // We alive?
     if (pLocalPlayer->m_lifeState() != lifeState_t::LIFE_ALIVE)
         return;
@@ -35,25 +40,33 @@ void AimbotHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CU
     if(pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
     {
         // Smack em niggas!
-        bTargetFound = F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotMelee.RunV3(pLocalPlayer, pActiveWeapon, pCmd, pCreateMoveResult);
 
         if(Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsDisabled() == false)
+        {
             flAimbotFOV = Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal;
+        }
     }
     else if (iProjectileType != TF_PROJECTILE_BULLET && iProjectileType != TF_PROJECTILE_NONE)
     {
         // surface-to-air freedom delivery system :)
-        bTargetFound = F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        bTargetFound = F::aimbotProjectile.Run(pLocalPlayer, pActiveWeapon, pCmd, pCreateMoveResult);
 
         if(Features::Aimbot::Aimbot_Projectile::ProjAimbot_Enable.IsDisabled() == false)
+        {
             flAimbotFOV = Features::Aimbot::Aimbot_Projectile::ProjAimbot_FOV.GetData().m_flVal;
+        }
     }
     else
     {
-        bTargetFound = F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pSendPackets);
+        F::aimbotHitscanV2.Run(pCmd, pLocalPlayer, pActiveWeapon, pCreateMoveResult);
 
-        if(Features::Aimbot::HitscanAimbot::Enable.IsDisabled() == false)
-            flAimbotFOV = Features::Aimbot::HitscanAimbot::FOV.GetData().m_flVal;
+        //bTargetFound = F::aimbotHitscan.Run(pLocalPlayer, pActiveWeapon, pCmd, pCreateMoveResult);
+
+        if(Features::Aimbot::AimbotHitscanV2::AimbotHitscan_Enable.IsActive() == true)
+        {
+            flAimbotFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
+        }
     }
 
 
@@ -67,6 +80,7 @@ void AimbotHelper_t::NotifyGameFOV(const float flFOV)
 {
     m_flGameFOV = flFOV;
 }
+
 
 //=========================================================================
 //                     PRIVATE METHODS
@@ -170,12 +184,11 @@ void AimbotHelper_t::_ClearAimbotData()
 ///////////////////////////////////////////////////////////////////////////
 void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
 {
-    // Game FOV hasn't been told to us yet ( i.e. not set through IClientMode::OverrideView() yet). ( IK that its not the best way of doing this. )
     if (m_flGameFOV < 0.0f)
         return;
 
     int iScreenHeight = 0, iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
-    float flFOVCircleRadius = (tanf(DEG2RAD(FOV / 2.0f)) / tanf(DEG2RAD(m_flGameFOV / 2.0f))) * (static_cast<float>(iScreenWidth) / 2.0f);
+    float flFOVCircleRadius = (tanf(DEG2RAD(FOV / 2.0f)) / tanf(DEG2RAD(m_flGameFOV / 2.0f))) * (static_cast<float>(iScreenWidth));
 
     flFOVCircleRadius = Maths::MAX<float>(flFOVCircleRadius, 0.0f);
 

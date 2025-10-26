@@ -10,6 +10,7 @@
 
 // UTILITY
 #include "../../Utility/CVar Handler/CVarHandler.h"
+#include "../../Utility/Profiler/Profiler.h"
 #include "../../Extra/math.h"
 
 #define SPACEBAR_STATE (1 << 0)
@@ -25,8 +26,10 @@ Movement_t::Movement_t()
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+void Movement_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool& result)
 {
+	PROFILER_RECORD_FUNCTION(CreateMove);
+
 	_InitializeKeyCodes();
 
 	_Bhop(pCmd, result, pLocalPlayer);

@@ -95,7 +95,7 @@ namespace ASMTemp{\
     inline ASMData_t<type> temp##name(&ASM::name, signature, startOffset, #name, Dll, iLen, 0);\
 }
 
-#define GET_RIP_ADRS_FROM_ASSEMBLY(name, type, signature, startOffset, iLen, iNextInstructionOffset)\
+#define GET_RIP_ADRS_FROM_ASSEMBLY(name, type, signature, Dll, startOffset, iLen, iNextInstructionOffset)\
 namespace ASM {\
         inline type* name = nullptr; \
 }\
@@ -123,8 +123,8 @@ bool ASMData_t<Type>::Initialize()
     }
     else // If RIP intruction then add rip offset to next instructions adrs.
     {
-        int iRipOffset = *reinterpret_cast<int32_t*>(pTarget + m_iStartOffset);
-        *m_pOutput     = reinterpret_cast<Type*>(iRipOffset + (pTarget + m_iNextInstructionOffest));
+        int32_t iRipOffset = *reinterpret_cast<int32_t*>(pTarget + static_cast<uintptr_t>(m_iStartOffset));
+        *m_pOutput         =  reinterpret_cast<Type*>(static_cast<uintptr_t>(iRipOffset) + (pTarget + static_cast<uintptr_t>(m_iNextInstructionOffest)));
         return true;
     }
 

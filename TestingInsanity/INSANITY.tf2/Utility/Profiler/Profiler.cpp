@@ -246,10 +246,16 @@ void Profiler_t::_UpdateScopeList()
 ///////////////////////////////////////////////////////////////////////////
 void Profiler_t::_DrawFlameGraph()
 {
-    int iActiveScopeIndex = Features::Performance::Profiler::Profiler_ActiveScope.GetData();
-    if (iActiveScopeIndex < 0)
+    // Nothing to profile :(
+    if (m_umAllProfilerScopes.size() == 0LLU)
         return;
+
+    int iActiveScopeIndex = Features::Performance::Profiler::Profiler_ActiveScope.GetData();
     
+    // Invalid ass scope index...
+    if (iActiveScopeIndex < 0 || iActiveScopeIndex >= m_umAllProfilerScopes.size())
+        return;
+
     
     // Get the ProfilerScope_t object, which holds the informatoin we need to draw.
     const char* szActiveScopeName = Features::Performance::Profiler::Profiler_ActiveScope.m_data.m_pItems[iActiveScopeIndex];
@@ -434,6 +440,32 @@ void Profiler_t::_GetTimeString(double flTimeInNs, std::string& szTimeOut)
 ///////////////////////////////////////////////////////////////////////////
 void Profiler_t::_DrawInfoPanel()
 {
+    // Nothing to profile :(
+    if (m_umAllProfilerScopes.size() == 0LLU)
+        return;
+
+    // NOTE : Aquire and lock the "ProfilerScope_t" object, so this remains thread safe & we don't encounter any race conditions.
+    // The ProfilerScope_t object ( that holds all information required for rendering ) will be kept locked until we finish 
+    // drawing, where it will be release automatically via the Macro "DOUBLEBUFFER_AUTO_RELEASE_READBUFFER".
+    ProfilerScope_t* pScope = nullptr;
+
+    // Invalid ass scope index...
+    int iActiveScopeIndex = Features::Performance::Profiler::Profiler_ActiveScope.GetData();
+    if (iActiveScopeIndex < 0 || iActiveScopeIndex >= m_umAllProfilerScopes.size())
+        return;
+
+    // Get the ProfilerScope_t object, which holds the informatoin we need to draw.
+    const char* szActiveScopeName = Features::Performance::Profiler::Profiler_ActiveScope.m_data.m_pItems[iActiveScopeIndex];
+    uint32_t    iScopeID          = _GetScopeID(szActiveScopeName);
+    auto        it                = m_umAllProfilerScopes.find(iScopeID);
+    if (it == m_umAllProfilerScopes.end())
+        return; // well, I wasn't expecting this at all.
+
+    pScope = it->second->GetReadBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(it->second, pScope);
+
+
+
     int iScreenWidth = 0, iScreenHeight = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
     ImVec2 vScreenSize(static_cast<float>(iScreenWidth), static_cast<float>(iScreenHeight));
 
@@ -450,25 +482,6 @@ void Profiler_t::_DrawInfoPanel()
         ImGui::PushStyleColor(ImGuiCol_WindowBg, Render::menuGUI.GetPrimaryClr().GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     }
-
-
-    // NOTE : Aquire and lock the "ProfilerScope_t" object, so this remains thread safe & we don't encounter any race conditions.
-    // The ProfilerScope_t object ( that holds all information required for rendering ) will be kept locked until we finish 
-    // drawing, where it will be release automatically via the Macro "DOUBLEBUFFER_AUTO_RELEASE_READBUFFER".
-    ProfilerScope_t* pScope = nullptr;
-    int iActiveScopeIndex = Features::Performance::Profiler::Profiler_ActiveScope.GetData();
-    if (iActiveScopeIndex < 0)
-        return;
-
-    // Get the ProfilerScope_t object, which holds the informatoin we need to draw.
-    const char* szActiveScopeName = Features::Performance::Profiler::Profiler_ActiveScope.m_data.m_pItems[iActiveScopeIndex];
-    uint32_t    iScopeID = _GetScopeID(szActiveScopeName);
-    auto        it = m_umAllProfilerScopes.find(iScopeID);
-    if (it == m_umAllProfilerScopes.end())
-        return; // well, I wasn't expecting this at all.
-
-    pScope = it->second->GetReadBuffer();
-    DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(it->second, pScope);
 
 
     ImGuiWindowFlags iWindowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoBringToFrontOnFocus;

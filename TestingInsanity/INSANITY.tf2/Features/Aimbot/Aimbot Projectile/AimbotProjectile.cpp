@@ -29,6 +29,7 @@
 // UTILITY
 #include "../../../Utility/CVar Handler/CVarHandler.h"
 #include "../../../Utility/ClassIDHandler/ClassIDHandler.h"
+#include "../../../Utility/Profiler/Profiler.h"
 #include "../AimbotHelper.h"
 #include "../../../Extra/math.h"
 
@@ -52,6 +53,7 @@ TODO :
 ///////////////////////////////////////////////////////////////////////////
 bool AimbotProjectile_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pCreatemoveResult)
 {
+    PROFILER_RECORD_FUNCTION(CreateMove);
 
     // Constructing LUT ( only for pipes )
     if (pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY && pLocalPlayer->m_iClass() == TF_DEMOMAN)

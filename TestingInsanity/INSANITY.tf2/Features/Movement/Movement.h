@@ -6,13 +6,15 @@ class CUserCmd;
 class baseWeapon;
 class BaseEntity;
 
+
+///////////////////////////////////////////////////////////////////////////
 class Movement_t
 {
 public:
     Movement_t();
     void Reset();
 
-    void Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool& result);
 
 private:
     void _Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
@@ -28,6 +30,8 @@ private:
     bool    m_bLastBhopState        = false;
     
 };
+///////////////////////////////////////////////////////////////////////////
+
 
 DECLARE_FEATURE_OBJECT(movement, Movement_t)
 

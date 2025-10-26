@@ -117,7 +117,7 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
         return;
 
     // No backtrack ?
-    if (F::entityIterator.GetBackTrackTime() == 0.0f)
+    if (F::entityIterator.GetBackTrackTimeInSec() == 0.0f)
         return;
 
     std::deque<BackTrackRecord_t>* records = F::entityIterator.GetBackTrackRecord(pEnt);
@@ -135,7 +135,7 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
         return;
 
     iWishMaterialIndex = std::clamp<int>(iWishMaterialIndex, 0, F::materialGen.GetMaterialList().size() - 1);
-    int nTicks         = TIME_TO_TICK(F::entityIterator.GetBackTrackTime());
+    int nTicks         = TIME_TO_TICK(F::entityIterator.GetBackTrackTimeInSec());
 
     if (Features::BackTrack::BackTrack::BackTrack_Cham_Setting.GetData() == 1)
     {

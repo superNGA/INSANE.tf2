@@ -32,6 +32,7 @@
 #include "../../Entity Iterator/EntityIterator.h"
 #include "../../../Utility/CVar Handler/CVarHandler.h"
 #include "../../../Utility/Hook Handler/Hook_t.h"
+#include "../../../Utility/Profiler/Profiler.h"
 #include "../../MovementSimulation/MovementSimulation.h"
 #include "../../../Extra/math.h"
 #include "../../ImGui/InfoWindowV2/InfoWindow.h"
@@ -46,6 +47,8 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
 {
     // NOTE : Output false means, no target has been found.
     //        Output true  means,  a target has been found.
+
+    PROFILER_RECORD_FUNCTION(CreateMove);
 
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return false;
@@ -228,7 +231,7 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
     else // SPY
     {
         vec   vAttackerEyePos = pLocalPlayer->GetEyePos();
-        float flBackTrackTime = F::entityIterator.GetBackTrackTime();
+        float flBackTrackTime = F::entityIterator.GetBackTrackTimeInSec();
         for (BaseEntity* pTarget : vecTargets)
         {
             std::deque<BackTrackRecord_t>* pRecords = F::entityIterator.GetBackTrackRecord(pTarget);

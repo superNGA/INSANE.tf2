@@ -102,6 +102,7 @@ public:
     void SetVertex(const vec& vMin, const vec& vMax);
 
     void SetRounding(float flRoundingInPixels) override final;
+    void SetRoundingInPercentage(float flPercantage);
 };
 ///////////////////////////////////////////////////////////////////////////
 
