@@ -4,28 +4,34 @@
 
 #include "../../Features/CritHack/CritHack.h"
 
+
+
+///////////////////////////////////////////////////////////////////////////
 class IGameEvent
 {
 public:
-	virtual ~IGameEvent() {};
+	virtual				~IGameEvent() {};
 	virtual const char* GetName() const = 0;	// get event name
 
-	virtual bool  IsReliable() const = 0; // if event handled reliable
-	virtual bool  IsLocal() const = 0; // if event is never networked
-	virtual bool  IsEmpty(const char* keyName = NULL) = 0; // check if data field exists
+	virtual bool		IsReliable() const = 0; // if event handled reliable
+	virtual bool		IsLocal() const = 0; // if event is never networked
+	virtual bool		IsEmpty(const char* keyName = NULL) = 0; // check if data field exists
 
 	// Data access
-	virtual bool  GetBool(const char* keyName = NULL, bool defaultValue = false) = 0;
-	virtual int   GetInt(const char* keyName = NULL, int defaultValue = 0) = 0;
-	virtual float GetFloat(const char* keyName = NULL, float defaultValue = 0.0f) = 0;
+	virtual bool		GetBool	 (const char* keyName = NULL, bool defaultValue = false) = 0;
+	virtual int			GetInt	 (const char* keyName = NULL, int defaultValue = 0) = 0;
+	virtual float		GetFloat (const char* keyName = NULL, float defaultValue = 0.0f) = 0;
 	virtual const char* GetString(const char* keyName = NULL, const char* defaultValue = "") = 0;
 
-	virtual void SetBool(const char* keyName, bool value) = 0;
-	virtual void SetInt(const char* keyName, int value) = 0;
-	virtual void SetFloat(const char* keyName, float value) = 0;
-	virtual void SetString(const char* keyName, const char* value) = 0;
+	virtual void		SetBool	 (const char* keyName, bool value) = 0;
+	virtual void		SetInt	 (const char* keyName, int value) = 0;
+	virtual void		SetFloat (const char* keyName, float value) = 0;
+	virtual void		SetString(const char* keyName, const char* value) = 0;
 };
+///////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////////////////////////
 class IGameEventListener2
 {
 public:
@@ -36,14 +42,19 @@ public:
 	virtual void FireGameEvent(IGameEvent* event);
 };
 extern IGameEventListener2 iEventListener;
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 class IBaseInterface
 {
 public:
 	virtual	~IBaseInterface() {}
 };
+///////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////////////////////////
 class IGameEventManager2 : public IBaseInterface
 {
 public:
@@ -80,6 +91,7 @@ public:
 	// if an event was created but not fired for some reason, it has to bee freed, same UnserializeEvent
 	virtual void FreeEvent(IGameEvent* event) = 0;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
 MAKE_INTERFACE_VERSION(iGameEventManager, "GAMEEVENTSMANAGER002", IGameEventManager2, ENGINE_DLL);

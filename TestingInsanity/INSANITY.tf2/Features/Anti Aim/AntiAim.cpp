@@ -12,12 +12,12 @@
 #include "../../Utility/Profiler/Profiler.h"
 #include "../../Extra/math.h"
 
-MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*);
+MAKE_SIG(CBaseAnimating_InvalidateBoneCache2, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*);
 
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void AntiAim_t::Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer)
+void AntiAim_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* cmd, bool& bResult, bool* bSendPacket)
 {
 	PROFILER_RECORD_FUNCTION(CreateMove);
 
@@ -74,7 +74,7 @@ void AntiAim_t::StoreAABones(BaseEntity* pLocalPlayer)
 	pAnimState->m_flCurrentFeetYaw  = m_qAAAngles.yaw;
 	pAnimState->Update(m_qAAAngles.yaw, m_qAAAngles.pitch); // <- this is important.
 
-	Sig::CBaseAnimating_InvalidateBoneCache(pLocalPlayer->GetBaseEntity());
+	Sig::CBaseAnimating_InvalidateBoneCache2(pLocalPlayer->GetBaseEntity());
 	
 	const qangle qOriRenderAngles = pLocalPlayer->GetRenderAngles();
 	pLocalPlayer->GetRenderAngles().yaw = m_qAAAngles.yaw;

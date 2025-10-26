@@ -5,6 +5,7 @@
 class CUserCmd;
 class CMultiPlayerAnimState;
 class BaseEntity;
+class baseWeapon;
 
 /* OBSERVATIONS :
 * -> changing eye yaw, will make the character model look at desiered angle, and thsi will also
@@ -21,7 +22,7 @@ class BaseEntity;
 class AntiAim_t
 {
 public:
-    void Run(CUserCmd* cmd, bool& bResult, bool* bSendPacket, BaseEntity* pLocalPlayer);
+    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* cmd, bool& bResult, bool* bSendPacket);
     void StoreAABones(BaseEntity* pLocalPlayer);
 
     matrix3x4_t pBone[MAX_STUDIO_BONES] = {};

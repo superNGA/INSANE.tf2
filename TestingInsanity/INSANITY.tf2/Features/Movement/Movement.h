@@ -14,7 +14,7 @@ public:
     Movement_t();
     void Reset();
 
-    void Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool& result);
 
 private:
     void _Bhop(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);

@@ -66,7 +66,7 @@ MAKE_INTERFACE_SIGNATURE(p_iPredictionSeed, "89 05 ? ? ? ? C3 CC CC CC CC CC CC 
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void CritHack_t::RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+void CritHack_t::RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
     PROFILER_RECORD_FUNCTION(CreateMove);
 

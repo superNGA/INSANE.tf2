@@ -26,7 +26,7 @@ Movement_t::Movement_t()
 //=========================================================================
 //                     PUBLIC METHODS
 //=========================================================================
-void Movement_t::Run(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
+void Movement_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool& result)
 {
 	PROFILER_RECORD_FUNCTION(CreateMove);
 

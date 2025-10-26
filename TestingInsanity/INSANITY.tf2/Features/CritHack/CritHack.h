@@ -51,7 +51,7 @@ public:
 class CritHack_t
 {
 public:
-    void RunV2(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon);
+    void RunV2(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
 
     // Used in CTFWeaponBase::CalcIsAttackCritical() hook to add up normal shots to bucket
     void AddToWeaponsBucket(baseWeapon* pActiveWeapon);

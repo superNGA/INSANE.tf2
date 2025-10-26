@@ -12,13 +12,16 @@
 #include "../../SDK/class/BaseEntity.h"
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/CUserCmd.h"
+#include "../../SDK/class/IVDebugOverlay.h"
+#include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../Tick Shifting/TickShifting.h"
 
 // Utility
 #include "../../Utility/ConsoleLogging.h"
-#include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../../Utility/Profiler/Profiler.h"
+#include "../../Utility/Signature Handler/signatures.h"
 
+MAKE_SIG(CBaseAnimating_InvalidateBoneCache, "8B 05 ? ? ? ? FF C8 C7 81", CLIENT_DLL, int64_t, void*)
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -45,7 +48,8 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     ClearLists();
 
 
-    int nEntities = I::IClientEntityList->NumberOfEntities(false);
+    //int nEntities = I::IClientEntityList->NumberOfEntities(true);
+    int nEntities = I::IClientEntityList->GetHighestEntityIndex();
 
 
     std::vector<BaseEntity*>* vAllConnectedEnemies = m_vecAllConnectedEnemies.GetWriteBuffer();
@@ -59,6 +63,7 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     
     std::vector<BaseEntity*>* vecEnemies = m_vecPlayerEnemy.GetWriteBuffer();
     DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecPlayerEnemy, vecEnemies);
+
 
     for (int iEntIndex = 0; iEntIndex < nEntities; iEntIndex++)
     {
@@ -83,15 +88,14 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
             }
         }
 
+
         if (pEnt->IsDormant() == true || pEnt == pLocalPlayer)
             continue;
-
-        // Call back to all registered functions.
-        _CallBack(pEnt);
 
         auto it = m_jumpTableHelperMap.find(iClassID);
         if (it == m_jumpTableHelperMap.end())
             continue;
+
 
         switch (it->second)
         {
@@ -103,20 +107,23 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
         case ClassIdIndex::CObjectSentrygun:  _ProcessSentry    (pEnt, pLocalPlayer->m_iTeamNum()); break;
         case ClassIdIndex::CObjectDispenser:  _ProcessDispenser (pEnt, pLocalPlayer->m_iTeamNum()); break;
         case ClassIdIndex::CObjectTeleporter: _ProcessTeleporter(pEnt, pLocalPlayer->m_iTeamNum()); break;
+        case ClassIdIndex::CTFStickBomb:      _ProcessPipeBomb  (pEnt, pLocalPlayer->m_iTeamNum()); break;
         default: break;
         }
     }
+
 
     // Now swap them buffers plz.
     m_vecDispenserEnemy.SwapBuffer();  m_vecDispenserFriendly.SwapBuffer();
     m_vecSentryEnemy.SwapBuffer();     m_vecSentryFriendly.SwapBuffer();
     m_vecTeleporterEnemy.SwapBuffer(); m_vecTeleporterFriendly.SwapBuffer();
+    m_vecEnemyPipeBombs.SwapBuffer();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-__forceinline void ClearDoubleBufferVector(Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& data)
+static void ClearDoubleBufferVector(Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& data)
 {
     std::vector<BaseEntity*>* pBuffer = data.GetWriteBuffer();
     if (pBuffer != nullptr)
@@ -148,6 +155,8 @@ void EntityIterator_t::ClearLists()
     
     ClearDoubleBufferVector(m_vecTeleporterEnemy);
     ClearDoubleBufferVector(m_vecTeleporterFriendly);
+
+    ClearDoubleBufferVector(m_vecEnemyPipeBombs);
 }
 
 
@@ -236,6 +245,14 @@ Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemy
 Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetFrendlyTeleporter()
 {
     return m_vecTeleporterFriendly;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetEnemyPipeBombs()
+{
+    return m_vecEnemyPipeBombs;
 }
 
 
@@ -368,6 +385,7 @@ void EntityIterator_t::_ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn,
     }
 
     // Adding this back track record.
+    //Sig::CBaseAnimating_InvalidateBoneCache(pEnt);
     BackTrackRecord_t record;
     pEnt->SetupBones(record.m_bones, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, CUR_TIME);
     record.m_iFlags      = pEnt->m_fFlags();
@@ -452,6 +470,19 @@ void EntityIterator_t::_ProcessTeleporter(BaseEntity* pEnt, int iFriendlyTeam)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void EntityIterator_t::_ProcessPipeBomb(BaseEntity* pEnt, int iFriendlyTeam)
+{
+    if (pEnt->m_iTeamNum() != iFriendlyTeam)
+    {
+        std::vector<BaseEntity*>* vecEnemyPipeBombs = m_vecEnemyPipeBombs.GetWriteBuffer();
+        DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_NOSWAP(&m_vecEnemyPipeBombs, vecEnemyPipeBombs);
+        vecEnemyPipeBombs->push_back(pEnt);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::_UpdateLocalPlayerInfo(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon)
 {
     m_localPlayerInfo.m_iClass            = pLocalPlayer->m_iClass();
@@ -480,10 +511,16 @@ void EntityIterator_t::_CallBack(BaseEntity* pEnt)
 ///////////////////////////////////////////////////////////////////////////
 void EntityIterator_t::_ConstructJumpTableHelper()
 {
-    m_jumpTableHelperMap.insert({ ClassID::CTFPlayer,         CTFPlayer });
-    m_jumpTableHelperMap.insert({ ClassID::CObjectSentrygun,  CObjectSentrygun });
-    m_jumpTableHelperMap.insert({ ClassID::CObjectDispenser,  CObjectDispenser });
-    m_jumpTableHelperMap.insert({ ClassID::CObjectTeleporter, CObjectTeleporter });
+    if (F::classIDHandler.IsInitialized() == false)
+        return;
+
+    m_jumpTableHelperMap.clear();
+
+    m_jumpTableHelperMap.emplace(ClassID::CTFPlayer,                    ClassIdIndex::CTFPlayer        );
+    m_jumpTableHelperMap.emplace(ClassID::CObjectSentrygun,             ClassIdIndex::CObjectSentrygun );
+    m_jumpTableHelperMap.emplace(ClassID::CObjectDispenser,             ClassIdIndex::CObjectDispenser );
+    m_jumpTableHelperMap.emplace(ClassID::CObjectTeleporter,            ClassIdIndex::CObjectTeleporter);
+    m_jumpTableHelperMap.emplace(ClassID::CTFGrenadePipebombProjectile, ClassIdIndex::CTFStickBomb     );
 
     m_bJumpTableHelperInit = true;
 }

@@ -2,12 +2,14 @@
 #include <cstdint>
 #include "../FeatureHandler.h"
 
+class BaseEntity;
+class baseWeapon;
 class CUserCmd;
 
 class FakeLag_t
 {
 public:
-    void Run(bool* bSendPacket, CUserCmd* pCmd);
+    void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, bool* bSendPacket, CUserCmd* pCmd);
     void Reset();
 
 private:

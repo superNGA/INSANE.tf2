@@ -9,6 +9,7 @@
 
 // Utility & UI
 #include "../Graphics Engine V2/Draw Objects/Circle/Circle.h"
+#include "../Graphics Engine V2/Draw Objects/Box/Box.h"
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/ClassIDHandler/ClassIDHandler.h"
 #include "../../Utility/Profiler/Profiler.h"
@@ -79,6 +80,7 @@ void AimbotHelper_t::NotifyGameFOV(const float flFOV)
 {
     m_flGameFOV = flFOV;
 }
+
 
 //=========================================================================
 //                     PRIVATE METHODS
@@ -182,12 +184,11 @@ void AimbotHelper_t::_ClearAimbotData()
 ///////////////////////////////////////////////////////////////////////////
 void AimbotHelper_t::_DrawFOVCircle(const float FOV, bool bTargetFound)
 {
-    // Game FOV hasn't been told to us yet ( i.e. not set through IClientMode::OverrideView() yet). ( IK that its not the best way of doing this. )
     if (m_flGameFOV < 0.0f)
         return;
 
     int iScreenHeight = 0, iScreenWidth = 0; I::iEngine->GetScreenSize(iScreenWidth, iScreenHeight);
-    float flFOVCircleRadius = (tanf(DEG2RAD(FOV / 2.0f)) / tanf(DEG2RAD(m_flGameFOV / 2.0f))) * (static_cast<float>(iScreenWidth) / 2.0f);
+    float flFOVCircleRadius = (tanf(DEG2RAD(FOV / 2.0f)) / tanf(DEG2RAD(m_flGameFOV / 2.0f))) * (static_cast<float>(iScreenWidth));
 
     flFOVCircleRadius = Maths::MAX<float>(flFOVCircleRadius, 0.0f);
 

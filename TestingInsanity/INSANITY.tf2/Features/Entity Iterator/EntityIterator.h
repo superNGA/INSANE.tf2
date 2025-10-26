@@ -80,6 +80,9 @@ public:
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetEnemyTeleporter();
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetFrendlyTeleporter();
 
+    // Projectiles & explosives...
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetEnemyPipeBombs();
+
 
     // NOTE: The latest record is @ front & the oldest record is @ the back.
     std::deque<BackTrackRecord_t>* GetBackTrackRecord(BaseEntity* pEnt);
@@ -88,10 +91,11 @@ public:
 
     enum ClassIdIndex : int
     {
-        CTFPlayer,
+        CTFPlayer = 0,
         CObjectSentrygun,
         CObjectDispenser,
-        CObjectTeleporter
+        CObjectTeleporter,
+        CTFStickBomb
     };
 
     void RegisterCallBack(void* pFunction);
@@ -139,6 +143,9 @@ private:
     void _ProcessTeleporter(BaseEntity* pEnt, int iFriendlyTeam);
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>> m_vecTeleporterEnemy, m_vecTeleporterFriendly;
 
+    void _ProcessPipeBomb(BaseEntity* pEnt, int iFriendlyTeam);
+    Containers::DoubleBuffer_t<std::vector<BaseEntity*>> m_vecEnemyPipeBombs;
+
 
     // Entity stored in these thread safe containers, might or might not be dormant. 
     // These are strictly for using in the player list ( UI feature ) and are meant to be used with care.
@@ -176,7 +183,7 @@ private:
     // Unordered map to get entity's classID's in O(1) time ( maybe :) ).
     void _ConstructJumpTableHelper();
     bool m_bJumpTableHelperInit = false;
-    std::unordered_map<int, int> m_jumpTableHelperMap = {};
+    std::unordered_map<int32_t, int32_t> m_jumpTableHelperMap = {};
 };
 ///////////////////////////////////////////////////////////////////////////
 

@@ -2,14 +2,22 @@
 #include <iostream>
 #include <vector>
 
+#include "IVEngineClient.h"
+
 #include "../../Utility/ConsoleLogging.h"
 #include "../../Utility/Signature Handler/signatures.h"
+#include "../../Features/ImGui/NotificationSystem/NotificationSystem.h"
+
+
 
 MAKE_SIG(AddListener, "48 89 6C 24 ? 48 89 7C 24 ? 41 56 48 83 EC ? 41 0F B6 E9", ENGINE_DLL, bool,
     IGameEventManager2*, IGameEventListener2*, const char*, bool);
 
 IGameEventListener2 iEventListener;
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool IGameEventListener2::Initialize()
 {
     // All the listeners that will be added by our "software"
@@ -44,6 +52,8 @@ bool IGameEventListener2::Initialize()
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void IGameEventListener2::FireGameEvent(IGameEvent* event)
 {
     // Hashing event name, so we can easily campare it with others
@@ -52,8 +62,24 @@ void IGameEventListener2::FireGameEvent(IGameEvent* event)
     switch (iHash)
     {
     case FNV1A32("player_hurt"):
-        F::critHack.RecordDamageEvent(event);
-        break;
+    F::critHack.RecordDamageEvent(event);
+    
+    // Damage dealt notification...
+    {
+        int iVictimEntIndex   = I::iEngine->GetPlayerForUserID(event->GetInt("userid"));
+        int iAttackerEntIndex = I::iEngine->GetPlayerForUserID(event->GetInt("attacker"));
+        
+        // Negative ent index. Those are for client only entities maybe? idk.
+        if(iVictimEntIndex > 0 && iAttackerEntIndex == I::iEngine->GetLocalPlayer())
+        {
+            static player_info_t s_playerInfo;
+            I::iEngine->GetPlayerInfo(iVictimEntIndex, &s_playerInfo);
+            int iDamageDealth = event->GetInt("damageamount");
+            int iHealthLeft   = event->GetInt("health");
+            Render::notificationSystem.PushBack("Dealt %d / %d damage to %s", iDamageDealth, iHealthLeft + iDamageDealth, s_playerInfo.name);
+        }
+    }
+    break;
 
     //case FNV1A32("round_end"):
     //case FNV1A32("round_start"):
