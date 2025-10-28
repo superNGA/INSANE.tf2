@@ -10,8 +10,9 @@
 
 //DrawObjs
 #include "Draw Objects/BaseDrawObj.h"
-
 #include "../ImGui/MenuV2/MenuV2.h"
+
+constexpr size_t MAX_VERTEXBUFFER_SIZE = 20LLU * 0x400LLU; // 20 KiBs for max vertex buffer.
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -96,7 +97,7 @@ void Graphics_t::RegisterInLineList(IDrawObj_t* pDrawObj)
 {
     m_lines.RegisterDrawObj(pDrawObj);
     
-    LOG("Registered traingle list object. Verticies [ %d ]", pDrawObj->GetVertexCount());
+    LOG("Registered LINE_LIST object. Verticies [ %d ]", pDrawObj->GetVertexCount());
 }
 
 
@@ -106,7 +107,7 @@ void Graphics_t::RegisterInTraingleList(IDrawObj_t* pDrawObj)
 {
     m_traingles.RegisterDrawObj(pDrawObj);
 
-    LOG("Registered traingle list object. Verticies [ %d ]", pDrawObj->GetVertexCount());
+    LOG("Registered TRIANGLE_LIST object. Verticies [ %d ]", pDrawObj->GetVertexCount());
 }
 
 
@@ -478,7 +479,7 @@ bool VertexBuffer_t::AdjustBufferSize(uint64_t iSizeRequired, LPDIRECT3DDEVICE9 
     iSizeRequired = static_cast<uint64_t>(powf(2.0f, ceilf(static_cast<float>(log2(iSizeRequired))) ));
 
     // Warning size.
-    if (iSizeRequired >= 10ull * 0x400ull)
+    if (iSizeRequired >= MAX_VERTEXBUFFER_SIZE)
         FAIL_LOG("Buffer size more than 10KiBs, we are drawing [ %d ] objects. is this normal", nObjects);
 
     // Release old buffer first.

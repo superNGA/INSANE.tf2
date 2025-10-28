@@ -48,7 +48,7 @@ void ChamsV2_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo
     {
         iWishMaterialIndex =
             pEnt->m_iTeamNum() == iFriendlyTeam ?
-            Features::Materials::Materials::Player_TeamMates.GetData() : Features::Materials::Materials::Player_Enemy.GetData();
+            Features::Materials::Player::Player_TeamMates.GetData() : Features::Materials::Player::Player_Enemy.GetData();
 
         if (pEnt->m_iTeamNum() != iFriendlyTeam)
             _DrawBackTrack(pVTable, modelState, renderInfo, pOriginalDME, pEnt);
@@ -58,17 +58,17 @@ void ChamsV2_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo
     case EntityIterator_t::ClassIdIndex::CObjectSentrygun:
         iWishMaterialIndex = 
             pEnt->m_iTeamNum() == iFriendlyTeam ?
-            Features::Materials::Materials::Sentry_TeamMates.GetData() : Features::Materials::Materials::Sentry_Enemy.GetData();
+            Features::Materials::Sentry::Sentry_TeamMates.GetData() : Features::Materials::Sentry::Sentry_Enemy.GetData();
         break;
     case EntityIterator_t::ClassIdIndex::CObjectTeleporter:
         iWishMaterialIndex = 
             pEnt->m_iTeamNum() == iFriendlyTeam ?
-            Features::Materials::Materials::Teleporter_TeamMates.GetData() : Features::Materials::Materials::Teleporter_Enemy.GetData();
+            Features::Materials::Teleporter::Teleporter_TeamMates.GetData() : Features::Materials::Teleporter::Teleporter_Enemy.GetData();
         break;
     case EntityIterator_t::ClassIdIndex::CObjectDispenser:
         iWishMaterialIndex = 
             pEnt->m_iTeamNum() == iFriendlyTeam ?
-            Features::Materials::Materials::Dispenser_TeamMates.GetData() : Features::Materials::Materials::Dispenser_Enemy.GetData();
+            Features::Materials::Dispenser::Dispenser_TeamMates.GetData() : Features::Materials::Dispenser::Dispenser_Enemy.GetData();
         break;
     
     default: break;
@@ -218,13 +218,13 @@ void ChamsV2_t::_SetupMatDropDowns()
 
 
     // Finally setting list.
-    Features::Materials::Materials::Player_Enemy.SetItems(szMaterialList,         nMaterials + 1);
-    Features::Materials::Materials::Player_TeamMates.SetItems(szMaterialList,     nMaterials + 1);
-    Features::Materials::Materials::Sentry_Enemy.SetItems(szMaterialList,         nMaterials + 1);
-    Features::Materials::Materials::Sentry_TeamMates.SetItems(szMaterialList,     nMaterials + 1);
-    Features::Materials::Materials::Dispenser_Enemy.SetItems(szMaterialList,      nMaterials + 1);
-    Features::Materials::Materials::Dispenser_TeamMates.SetItems(szMaterialList,  nMaterials + 1);
-    Features::Materials::Materials::Teleporter_Enemy.SetItems(szMaterialList,     nMaterials + 1);
-    Features::Materials::Materials::Teleporter_TeamMates.SetItems(szMaterialList, nMaterials + 1);
-    Features::BackTrack::BackTrack::BackTrack_Cham.SetItems(szMaterialList,       nMaterials + 1);
+    Features::Materials::Player::Player_Enemy.SetItems            (szMaterialList, nMaterials + 1);
+    Features::Materials::Player::Player_TeamMates.SetItems        (szMaterialList, nMaterials + 1);
+    Features::Materials::Sentry::Sentry_Enemy.SetItems            (szMaterialList, nMaterials + 1);
+    Features::Materials::Sentry::Sentry_TeamMates.SetItems        (szMaterialList, nMaterials + 1);
+    Features::Materials::Dispenser::Dispenser_Enemy.SetItems      (szMaterialList, nMaterials + 1);
+    Features::Materials::Dispenser::Dispenser_TeamMates.SetItems  (szMaterialList, nMaterials + 1);
+    Features::Materials::Teleporter::Teleporter_Enemy.SetItems    (szMaterialList, nMaterials + 1);
+    Features::Materials::Teleporter::Teleporter_TeamMates.SetItems(szMaterialList, nMaterials + 1);
+    Features::BackTrack::BackTrack::BackTrack_Cham.SetItems       (szMaterialList, nMaterials + 1);
 }

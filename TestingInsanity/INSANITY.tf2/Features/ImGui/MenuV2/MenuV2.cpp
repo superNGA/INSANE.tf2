@@ -1409,14 +1409,18 @@ void MenuGUI_t::_DrawIntSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec
     // Tool tip
     {
         ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
         ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
         if (ImGui::IsItemHovered() == true && pIntFeature->m_szToolTip.empty() == false)
+        {
             ImGui::SetTooltip(pIntFeature->m_szToolTip.c_str());
+        }
 
-        ImGui::PopStyleColor(2);
+        ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
     }
 
@@ -1563,14 +1567,18 @@ void MenuGUI_t::_DrawFloatSlider(IFeature* pFeature, ImVec2 vMinWithPadding, ImV
     // Tool tip
     {
         ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
         ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text,   clrText.GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
         if (ImGui::IsItemHovered() == true && pFloatFeature->m_szToolTip.empty() == false)
+        {
             ImGui::SetTooltip(pFloatFeature->m_szToolTip.c_str());
+        }
 
-        ImGui::PopStyleColor(2);
+        ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
     }
 

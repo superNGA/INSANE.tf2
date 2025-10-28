@@ -347,22 +347,22 @@ void IBox_t::SetRGBAnimSpeed(const float flAnimSpeed)
 void IBox_t::InitRelativeUV()
 {
     // Min
-    m_vertex[VertexType_TopLeft].m_vPos         = vec(0.0f, 0.0f, 0.0f);
+    m_vertex[VertexType_TopLeft].m_vRelativeUV          = vec(0.0f, 0.0f, 0.0f);
     
     // Bottom left
-    m_vertex[VertexType_BottomLeft].m_vPos      = vec(0.0f, 1.0f, 0.0f);
-    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = m_vertex[VertexType_BottomLeft].m_vPos;
+    m_vertex[VertexType_BottomLeft].m_vRelativeUV       = vec(0.0f, 1.0f, 0.0f);
+    m_vertex[VertexType_BottomLeft_Dup].m_vRelativeUV   = m_vertex[VertexType_BottomLeft].m_vRelativeUV;
 
     // Max
-    m_vertex[VertexType_BottomRight].m_vPos     = vec(1.0f, 1.0f, 0.0f);
-    m_vertex[VertexType_BottomRight_Dup].m_vPos = m_vertex[VertexType_BottomRight].m_vPos;
+    m_vertex[VertexType_BottomRight].m_vRelativeUV      = vec(1.0f, 1.0f, 0.0f);
+    m_vertex[VertexType_BottomRight_Dup].m_vRelativeUV  = m_vertex[VertexType_BottomRight].m_vRelativeUV;
 
     // Top right
-    m_vertex[VertexType_TopRight].m_vPos        = vec(1.0f, 0.0f, 0.0f);
-    m_vertex[VertexType_TopRight_Dup].m_vPos    = m_vertex[VertexType_TopRight].m_vPos;
+    m_vertex[VertexType_TopRight].m_vRelativeUV         = vec(1.0f, 0.0f, 0.0f);
+    m_vertex[VertexType_TopRight_Dup].m_vRelativeUV     = m_vertex[VertexType_TopRight].m_vRelativeUV;
 
     // Min
-    m_vertex[VertexType_TopLeft_Dup].m_vPos     = m_vertex[VertexType_TopLeft].m_vPos;
+    m_vertex[VertexType_TopLeft_Dup].m_vRelativeUV      = m_vertex[VertexType_TopLeft].m_vRelativeUV;
 }
 
 
@@ -410,27 +410,9 @@ void Box3D_t::InitDimension()
 ///////////////////////////////////////////////////////////////////////////
 void Box3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qNormal)
 {
-    vec vForward; Maths::AngleVectors(qNormal, &vForward); vForward.NormalizeInPlace();
-    vec vDiagonal = vMax - vMin; vDiagonal.NormalizeInPlace();
-
-    if (vForward.HasSameDirection(vDiagonal) == true)
-        return;
-
-    vec vDiagonal2 = vDiagonal.CrossProduct(vForward); vDiagonal2.NormalizeInPlace();
-
-    // Calculating both axis perpendicular in the plane of the rectangle.
-    vec vAxis1 = vDiagonal2 + vDiagonal;        vAxis1.NormalizeInPlace();
-    vec vAxis2 = vAxis1.CrossProduct(vForward); vAxis2.NormalizeInPlace();
-
-    // magnitude along each axis of the half daigonal.
-    vec   vHalfDaigonal = (vMax - vMin) / 2.0f;
-    float flOffset1     = vHalfDaigonal.Dot(vAxis1);
-    float flOffset2     = vHalfDaigonal.Dot(vAxis2);
-
-    // Adding magnitude along each axis in opposite order to get the other 2 points.
-    vec vCenter     = (vMin + vMax) / 2.0;
-    vec vTopRight   = vCenter + (vAxis1 * flOffset1 * -1.0f) + (vAxis2 * flOffset2);
-    vec vBottomLeft = vCenter + (vAxis1 * flOffset1) + (vAxis2 * flOffset2 * -1.0f);
+    // ;aslkdjfhg
+    vec vTopRight  (vMax.x, vMax.y, vMin.z);
+    vec vBottomLeft(vMin.x, vMin.y, vMax.z);
 
     m_vertex[VertexType_TopLeft].m_vPos         = vMin;
     m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;
@@ -441,3 +423,41 @@ void Box3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qNormal)
     m_vertex[VertexType_TopRight_Dup].m_vPos    = vTopRight;
     m_vertex[VertexType_TopLeft_Dup].m_vPos     = vMin;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//void Box3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qNormal)
+//{
+//    vec vForward; Maths::AngleVectors(qNormal, &vForward); vForward.NormalizeInPlace();
+//    vec vDiagonal = vMax - vMin; vDiagonal.NormalizeInPlace();
+//    vDiagonal -= vForward * vDiagonal.Dot(vForward);
+//
+//    if (vForward.HasSameDirection(vDiagonal) == true)
+//        return;
+//
+//    vec vDiagonal2 = vDiagonal.CrossProduct(vForward); vDiagonal2.NormalizeInPlace();
+//
+//    // Calculating both axis perpendicular in the plane of the rectangle.
+//    vec vAxis1 = vDiagonal2 + vDiagonal;        vAxis1.NormalizeInPlace();
+//    vec vAxis2 = vAxis1.CrossProduct(vForward); vAxis2.NormalizeInPlace();
+//
+//    // magnitude along each axis of the half daigonal.
+//    vec   vHalfDaigonal = (vMax - vMin) / 2.0f;
+//    float flOffset1     = vHalfDaigonal.Dot(vAxis1);
+//    float flOffset2     = vHalfDaigonal.Dot(vAxis2);
+//
+//    // Adding magnitude along each axis in opposite order to get the other 2 points.
+//    vec vCenter     = (vMin + vMax) / 2.0;
+//    vec vTopRight   = vCenter + (vAxis1 * flOffset1 * -1.0f) + (vAxis2 * flOffset2);
+//    vec vBottomLeft = vCenter + (vAxis1 * flOffset1) + (vAxis2 * flOffset2 * -1.0f);
+//
+//    m_vertex[VertexType_TopLeft].m_vPos         = vMin;
+//    m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;
+//    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = vBottomLeft;
+//    m_vertex[VertexType_BottomRight].m_vPos     = vMax;
+//    m_vertex[VertexType_BottomRight_Dup].m_vPos = vMax;
+//    m_vertex[VertexType_TopRight].m_vPos        = vTopRight;
+//    m_vertex[VertexType_TopRight_Dup].m_vPos    = vTopRight;
+//    m_vertex[VertexType_TopLeft_Dup].m_vPos     = vMin;
+//}

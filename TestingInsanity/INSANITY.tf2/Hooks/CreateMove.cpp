@@ -45,13 +45,11 @@
 * 
 * TODO's : 
         * Crit Hack ( rapid fire and reliable )
-        * Hitscan aimbot ( a good one with multipoints for each hitbox n stuff )
         * Projectile aimbot. ( absolute one )
         * Spash bot ( good & efficient one )
         * Melee aimbot ( very good one, shouldn't miss even once )
         * Anti Aim ( a good one again )
         * Resolver ( I don't even know how to get started on this shit. )
-        * ESP
         * Enemy index arrow.
         * Radar.
         * custom sky box
@@ -59,6 +57,9 @@
         * Fake lag ( With absolute chocked tick tracking )
         * 
         * and so on...
+
+* DONE : 
+        * ESP
 */
 
 
@@ -118,6 +119,7 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
         F::critHack.RunV2    (pLocalPlayer, pActiveWeapon, pCmd);
         F::noSpreadV2.Run    (pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
         F::tickShifter.Run   (pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
+        F::esp.RunCreateMove();
     }
     PROFILER_END_SCOPE_NAMED("CreateMove");
 

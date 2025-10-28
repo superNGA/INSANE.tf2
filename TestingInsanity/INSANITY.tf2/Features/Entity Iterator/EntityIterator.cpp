@@ -48,7 +48,6 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     ClearLists();
 
 
-    //int nEntities = I::IClientEntityList->NumberOfEntities(true);
     int nEntities = I::IClientEntityList->GetHighestEntityIndex();
 
 
@@ -118,6 +117,11 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     m_vecSentryEnemy.SwapBuffer();     m_vecSentryFriendly.SwapBuffer();
     m_vecTeleporterEnemy.SwapBuffer(); m_vecTeleporterFriendly.SwapBuffer();
     m_vecEnemyPipeBombs.SwapBuffer();
+
+
+    // Now since we have processed the entity list & also swapped all buffers, we can 
+    // claim that all list's are valid enough to be used.
+    m_bRecordsValid = true;
 }
 
 
@@ -165,6 +169,22 @@ void EntityIterator_t::ClearLists()
 void EntityIterator_t::ClearBackTrackData()
 {
     m_mapEntInfo.clear();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool EntityIterator_t::AreListsValid() const
+{
+    return m_bRecordsValid;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void EntityIterator_t::InvalidateLists()
+{
+    m_bRecordsValid = false;
 }
 
 
