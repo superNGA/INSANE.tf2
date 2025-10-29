@@ -17,6 +17,7 @@
 #include "../Graphics Engine V2/Draw Objects/BaseDrawObj.h"
 #include "../Graphics Engine V2/Draw Objects/Box/Box.h"
 #include "../Graphics Engine V2/Draw Objects/Cube/Cube.h"
+#include "../Graphics Engine V2/Draw Objects/Line/Line.h"
 
 
 /*
@@ -126,8 +127,9 @@ void ESP_t::RunEndScene()
 
 
     // Quickly get a list of what we have to draw.
-    bool bDrawEsp    = Features::Materials::Player::ESPPlayer_Enable.IsActive();
-    bool bDrawHitbox = Features::Materials::Player::ESPPlayer_DrawHitbox.IsActive();
+    bool bDrawEsp      = Features::Materials::Player::ESPPlayer_Enable.IsActive();
+    bool bDrawHitbox   = Features::Materials::Player::ESPPlayer_DrawHitbox.IsActive();
+    bool bDrawSkeleton = Features::Materials::Player::ESPPlayer_DrawSkeleton.IsActive();
 
 
     // Don't iterate bad entitylist. It's instant crash.
@@ -156,6 +158,26 @@ void ESP_t::RunEndScene()
         BaseEntity* pEnt = (*pVecEnemies)[iEntIndex];
 
 
+        // Getting player's hitbox.
+        mstudiohitboxset_t* pHitBoxSet = nullptr;
+        {
+            // Model
+            const model_t* pModel = pEnt->GetModel();
+            if (pModel == nullptr)
+                continue;
+
+            // Studio model for this entities model
+            const StudioHdr_t* pStudioModel = I::iVModelInfo->GetStudiomodel(pModel);
+            if (pStudioModel == nullptr)
+                continue;
+
+            // Hit boxes for this studio model.
+            pHitBoxSet = pStudioModel->pHitboxSet(pEnt->m_nHitboxSet());
+            if (pHitBoxSet == nullptr)
+                continue;
+        }
+
+
         // do we have atleast 1 record for this entity
         std::deque<BackTrackRecord_t>* pQRecords = F::entityIterator.GetBackTrackRecord(pEnt);
         if (pQRecords->size() == 0LLU)
@@ -166,7 +188,7 @@ void ESP_t::RunEndScene()
         // Draw this player's esp.
         if(bDrawEsp == true)
         {
-            _DrawPlayerEsp(pEnt, iEntIndex, vRight, record);
+            _DrawPlayerEsp(pEnt, iEntIndex, vRight, record, pHitBoxSet);
             nEspBoxes++;
         }
 
@@ -174,8 +196,16 @@ void ESP_t::RunEndScene()
         // Drawing player's hitboxes.
         if (bDrawHitbox == true)
         {
-            _DrawPlayerHitbox(pEnt, iEntIndex, record);
+            _DrawPlayerHitbox(pEnt, iEntIndex, record, pHitBoxSet);
             nHitboxes++;
+        }
+
+        
+        // Drawing player's skeleton
+        if (bDrawSkeleton == true)
+        {
+            _DrawPlayerSkeleton(pEnt, iEntIndex, record, pHitBoxSet);
+            nSkeletons++;
         }
     }
 
@@ -183,7 +213,7 @@ void ESP_t::RunEndScene()
     // Now we need to also disable unused draw objects, so we don't see ghosts esp's.
     size_t nTotalEspBoxes  = m_vecPlayerEsp.size();
     size_t nTotalHitBoxes  = m_vecPlayerHitbox.size();
-    size_t nTotalSkeletons = 0LLU; // comming soon.
+    size_t nTotalSkeletons = m_vecPlayerSkeletons.size();
 
     size_t iMaxIndex = Maths::MAX<size_t>(Maths::MAX<size_t>(nTotalEspBoxes, nTotalHitBoxes), nTotalSkeletons);
     size_t iMinIndex = Maths::MIN<size_t>(Maths::MIN<size_t>(nEspBoxes, nHitboxes),           nSkeletons);
@@ -205,7 +235,13 @@ void ESP_t::RunEndScene()
         }
         
         // disable skeleton
-        // TODO : do this one too.
+        if (i >= nSkeletons && i < nTotalSkeletons)
+        {
+            for (int iDrawObjIndex = 0; iDrawObjIndex < m_vecPlayerSkeletons[i].m_nBones; iDrawObjIndex++)
+            {
+                m_vecPlayerSkeletons[i].m_boneDrawObj[iDrawObjIndex]->SetVisible(false);
+            }
+        }
     }
 }
 
@@ -276,7 +312,7 @@ void ESP_t::_DisableAllEsp(std::vector<IDrawObj_t*>& pVecEsp, size_t iStartIndex
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void ESP_t::_DrawPlayerEsp(BaseEntity* pEnt, size_t iEspIndex, const vec& vViewAngleRight, const BackTrackRecord_t& record)
+void ESP_t::_DrawPlayerEsp(BaseEntity* pEnt, size_t iEspIndex, const vec& vViewAngleRight, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet)
 {
     if (iEspIndex >= m_vecPlayerEsp.size())
     {
@@ -286,22 +322,6 @@ void ESP_t::_DrawPlayerEsp(BaseEntity* pEnt, size_t iEspIndex, const vec& vViewA
         if (iEspIndex >= m_vecPlayerEsp.size())
             return;
     }
-
-
-    // Model
-    const model_t* pModel = pEnt->GetModel();
-    if (pModel == nullptr)
-        return;
-
-    // Studio model for this entities model
-    const StudioHdr_t* pStudioModel = I::iVModelInfo->GetStudiomodel(pModel);
-    if (pStudioModel == nullptr)
-        return;
-
-    // Hit boxes for this studio model.
-    const auto* pHitBoxSet = pStudioModel->pHitboxSet(pEnt->m_nHitboxSet());
-    if (pHitBoxSet == nullptr)
-        return;
 
 
     const matrix3x4_t& anchorBone     = record.m_bones[pHitBoxSet->pHitbox(HitboxPlayer_t::HitboxPlayer_Hip)->bone];
@@ -332,7 +352,7 @@ void ESP_t::_DrawPlayerEsp(BaseEntity* pEnt, size_t iEspIndex, const vec& vViewA
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void ESP_t::_DrawPlayerHitbox(BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record)
+void ESP_t::_DrawPlayerHitbox(BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet)
 {
     if (iEspIndex >= m_vecPlayerHitbox.size())
     {
@@ -342,22 +362,6 @@ void ESP_t::_DrawPlayerHitbox(BaseEntity* pEnt, size_t iEspIndex, const BackTrac
         if (iEspIndex >= m_vecPlayerHitbox.size())
             return;
     }
-
-
-    // Model
-    const model_t* pModel = pEnt->GetModel();
-    if (pModel == nullptr)
-        return;
-
-    // Studio model for this entities model
-    const StudioHdr_t* pStudioModel = I::iVModelInfo->GetStudiomodel(pModel);
-    if (pStudioModel == nullptr)
-        return;
-
-    // Hit boxes for this studio model.
-    const auto* pHitBoxSet = pStudioModel->pHitboxSet(pEnt->m_nHitboxSet());
-    if (pHitBoxSet == nullptr)
-        return;
 
 
     HitboxDrawObj_t& hitboxDrawObjSet = m_vecPlayerHitbox[iEspIndex];
@@ -383,6 +387,90 @@ void ESP_t::_DrawPlayerHitbox(BaseEntity* pEnt, size_t iEspIndex, const BackTrac
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ESP_t::_DrawPlayerSkeleton(BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet)
+{
+    if (iEspIndex >= m_vecPlayerSkeletons.size())
+    {
+        m_vecPlayerSkeletons.emplace_back();
+
+        // still not enough?
+        if (iEspIndex >= m_vecPlayerSkeletons.size())
+            return;
+    }
+
+
+    // Draw all spine bones & storing Hip's and head's end pos to connect arms and legs to.
+    vec vHipEndPos, vHeadEndPos;
+    vec vLastMin(0.0f);
+    for (size_t iHitboxIndex = HitboxPlayer_Hip; iHitboxIndex <= HitboxPlayer_SpineTop; iHitboxIndex++)
+    {
+        mstudiobbox_t* pHitbox = pHitBoxSet->pHitbox(iHitboxIndex);
+        const matrix3x4_t& bone = record.m_bones[pHitbox->bone];
+
+        // Calculating min & max ( rotated ) for the line we are gonna draw.
+        vec vBoneOrigin = bone.GetWorldPos();
+        vec vMin, vMax;
+        vec vMinNoRot(0.0f, pHitbox->bbmin.y, 0.0f); Maths::VectorTransform(vMinNoRot, bone, vMin);
+        vec vMaxNoRot(0.0f, pHitbox->bbmax.y, 0.0f); Maths::VectorTransform(vMaxNoRot, bone, vMax);
+
+        Line3D_t* pLine = reinterpret_cast<Line3D_t*>(m_vecPlayerSkeletons[iEspIndex].m_boneDrawObj[iHitboxIndex]);
+        pLine->SetPoints(vMin, vLastMin.IsZero() == false ? vLastMin : vMax);
+        pLine->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorTopLeft.GetData().GetAsBytes(),     ILine_t::VertexType_Min);
+        pLine->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorBottomRight.GetData().GetAsBytes(), ILine_t::VertexType_Max);
+        pLine->SetRGBAnimSpeed(Features::Materials::Player::ESPPlayer_SkeletonRGB.GetData().m_flVal);
+        pLine->SetVisible(true);
+
+        // Now, we need to store some specific points. ( head and hip end point )
+        if (iHitboxIndex == HitboxPlayer_Hip)
+        {
+            vHipEndPos = vMax;
+        }
+        vLastMin = vMin; // this should store the very last bone's min pos. that is the very top, i.e. shoulder connection point.
+    }
+    vHeadEndPos = vLastMin;
+
+
+    auto DrawLimb = [&](int iLimbIndex, vec& vStartPos) -> void
+        {
+            // Getting bone for lower limb.
+            mstudiobbox_t*     pHitbox = pHitBoxSet->pHitbox(iLimbIndex + 1);
+            const matrix3x4_t& bone    = record.m_bones[pHitbox->bone];
+
+            // Calculating lower limb.
+            vec vBoneOrigin = bone.GetWorldPos();
+            vec vMin, vMax;
+            vec vMinNoRot(pHitbox->bbmin.x, 0.0f, 0.0f); Maths::VectorTransform(vMinNoRot, bone, vMin);
+            vec vMaxNoRot(pHitbox->bbmax.x, 0.0f, 0.0f); Maths::VectorTransform(vMaxNoRot, bone, vMax);
+
+            // Drawing lower limb.
+            Line3D_t* pLine = reinterpret_cast<Line3D_t*>(m_vecPlayerSkeletons[iEspIndex].m_boneDrawObj[iLimbIndex + 1]);
+            pLine->SetPoints(vMin, vMax);
+            pLine->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorTopLeft.GetData().GetAsBytes(), ILine_t::VertexType_Min);
+            pLine->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorBottomRight.GetData().GetAsBytes(), ILine_t::VertexType_Max);
+            pLine->SetRGBAnimSpeed(Features::Materials::Player::ESPPlayer_SkeletonRGB.GetData().m_flVal);
+            pLine->SetVisible(true);
+
+            // Drawing upper limb
+            Line3D_t* pLineUpperLimb = reinterpret_cast<Line3D_t*>(m_vecPlayerSkeletons[iEspIndex].m_boneDrawObj[iLimbIndex]);
+            pLineUpperLimb->SetPoints(vMin, vStartPos);
+            pLineUpperLimb->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorTopLeft.GetData().GetAsBytes(), ILine_t::VertexType_Min);
+            pLineUpperLimb->SetColor(Features::Materials::Player::ESPPlayer_ExtraColorBottomRight.GetData().GetAsBytes(), ILine_t::VertexType_Max);
+            pLineUpperLimb->SetRGBAnimSpeed(Features::Materials::Player::ESPPlayer_SkeletonRGB.GetData().m_flVal);
+            pLineUpperLimb->SetVisible(true);
+        };
+
+    DrawLimb(HitboxPlayer_LeftUpperArm,  vHeadEndPos);
+    DrawLimb(HitboxPlayer_RightUpperArm, vHeadEndPos);
+    DrawLimb(HitboxPlayer_LeftUpperLeg,  vHipEndPos);
+    DrawLimb(HitboxPlayer_RightUpperLeg, vHipEndPos);
+
+    //vec vMinNoRot(pHitbox->bbmin.x, 0.0f, 0.0f); Maths::VectorTransform(vMinNoRot, bone, vMin);
+    //vec vMaxNoRot(pHitbox->bbmax.x, 0.0f, 0.0f); Maths::VectorTransform(vMaxNoRot, bone, vMax);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 HitboxDrawObj_t::HitboxDrawObj_t()
 {
     m_nHitbox = HitboxPlayer_Count;
@@ -398,5 +486,26 @@ void HitboxDrawObj_t::InitDrawObjs()
     {
         m_hitboxDrawObj[i] = new Cube3D_t();
         m_hitboxDrawObj[i]->SetVisible(false);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+SkeletonDrawObj_t::SkeletonDrawObj_t()
+{
+    m_nBones = static_cast<size_t>(HitboxPlayer_Count) - 1LLU;
+    InitDrawObj();
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void SkeletonDrawObj_t::InitDrawObj()
+{
+    for (size_t i = 0; i < m_nBones; i++)
+    {
+        m_boneDrawObj[i] = new Line3D_t();
+        m_boneDrawObj[i]->SetVisible(false);
     }
 }

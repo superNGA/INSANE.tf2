@@ -8,6 +8,7 @@
 class  IDrawObj_t;
 class  BaseEntity;
 struct BackTrackRecord_t;
+struct mstudiohitboxset_t;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -18,6 +19,18 @@ struct HitboxDrawObj_t
 
     IDrawObj_t* m_hitboxDrawObj[HitboxPlayer_Count];
     size_t      m_nHitbox = HitboxPlayer_Count;
+};
+///////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////
+struct SkeletonDrawObj_t
+{
+    SkeletonDrawObj_t();
+    void InitDrawObj();
+
+    IDrawObj_t* m_boneDrawObj[HitboxPlayer_Count - 1];
+    size_t      m_nBones = HitboxPlayer_Count - 1;
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -36,13 +49,17 @@ public:
     void RunCreateMove();
     void RunEndScene();
 
+
 private:
     void _DrawEspList(std::vector<IDrawObj_t*>& pVecEsp, std::vector<BaseEntity*>* pVecEntities, float flRGBSpeed = -1.0f, float flWidthOffset = 0.0f, float flHeightOffset = 0.0f);
     void _DisableAllEsp(std::vector<IDrawObj_t*>& pVecEsp, size_t iStartIndex);
 
+    
     // Player esp stuff...
-    void _DrawPlayerEsp   (BaseEntity* pEnt, size_t iEspIndex, const vec& vViewAngleRight, const BackTrackRecord_t& record);
-    void _DrawPlayerHitbox(BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record);
+    void _DrawPlayerEsp     (BaseEntity* pEnt, size_t iEspIndex, const vec& vViewAngleRight, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet);
+    void _DrawPlayerHitbox  (BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet);
+    void _DrawPlayerSkeleton(BaseEntity* pEnt, size_t iEspIndex, const BackTrackRecord_t& record, mstudiohitboxset_t* pHitBoxSet);
+
 
     // ESP lists...
     std::vector<IDrawObj_t*> m_vecPlayerEsp     = {};
@@ -50,8 +67,13 @@ private:
     std::vector<IDrawObj_t*> m_vecTeleporterEsp = {};
     std::vector<IDrawObj_t*> m_vecDispenserEsp  = {};
 
+
     // Player hitbox draw objects list.
     std::vector<HitboxDrawObj_t> m_vecPlayerHitbox = {};
+
+
+    // Player skeleton draw objects list.
+    std::vector<SkeletonDrawObj_t> m_vecPlayerSkeletons = {};
 };
 ///////////////////////////////////////////////////////////////////////////
 
