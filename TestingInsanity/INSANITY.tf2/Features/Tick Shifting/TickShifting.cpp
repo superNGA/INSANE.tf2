@@ -23,6 +23,7 @@
 // UTILITY
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
+#include "../../Utility/PullFromAssembly.h"
 #include "../../Utility/CVar Handler/CVarHandler.h"
 #include "../../Utility/Profiler/Profiler.h"
 #include "../../Utility/ConsoleLogging.h"
@@ -31,6 +32,7 @@
 
 #define DEBUG_TICK_SHIFTING false
 
+GET_RIP_ADRS_FROM_ASSEMBLY(CL_RunPrediction, void*, "E8 ? ? ? ? E8 ? ? ? ? F3 0F 10 05", ENGINE_DLL, 1, 5, 5)
 
 /*
 THEORY : 
@@ -58,6 +60,8 @@ constexpr int MAX_NEW_COMMANDS = 15;
 typedef void(__fastcall* T_CL_Move)(float flAccumuatedExtraSample,  int64_t bFinalTick);
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
     PROFILER_RECORD_FUNCTION(CreateMove);
@@ -102,7 +106,8 @@ void TickShifter_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
 }
 
 
-
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::Reset()
 {
     m_bInitialized          = false;
@@ -115,6 +120,8 @@ void TickShifter_t::Reset()
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSample, bool bOriginalFinalTick)
 {
     // Consume this tick for charging & don't call the original.
@@ -167,6 +174,8 @@ void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSa
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::_ConsumeTickForCharge()
 {
     if (m_bTickShifting == true)
@@ -194,6 +203,8 @@ bool TickShifter_t::_ConsumeTickForCharge()
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::_SpoofCmd(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket) const
 {
     // don't send anything until the last tick of the packet.
@@ -209,20 +220,12 @@ void TickShifter_t::_SpoofCmd(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapo
         {
             pCmd->buttons &= ~IN_ATTACK;
         }
-
-        // Trying to prevent teleport while DT-ing.
-        if (m_bFirstTick == true)
-        {
-            pCmd->forwardmove *= -1.0f; pCmd->sidemove *= -1.0f;
-        }
-        else
-        {
-            pCmd->forwardmove = 0.0f; pCmd->sidemove = 0.0f;
-        }
     }
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 int TickShifter_t::_DetermineShiftGoal()
 {
     int iRateOfFireInTicks = static_cast<int>(0.5f + (m_flRateOfFire / TICK_INTERVAL)) + 1;
@@ -236,6 +239,8 @@ int TickShifter_t::_DetermineShiftGoal()
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::_ShouldDumpCharge() const
 {
     // Got any charge ?
@@ -250,6 +255,8 @@ bool TickShifter_t::_ShouldDumpCharge() const
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::_DumpCharge(int nTicks, void* pOriginalCLMove, float flAccumulatedExtraSample)
 {
     // Fn cast the original CLMove poitner.
@@ -265,6 +272,10 @@ void TickShifter_t::_DumpCharge(int nTicks, void* pOriginalCLMove, float flAccum
 
         // I actually don't know why I have placed a fucking 0 for the accumulatedExtraSample but it seems to work.
         pCLMove(flAccumulatedExtraSample, m_bFinalTickThisPacket);
+
+        // if you don't want your velocity / position to be static during tick shifting, you better call one
+        // CL_RunPrediction per tick you shift.
+        ((void(*)())ASM::CL_RunPrediction)();
     }
 
     // Deducting shifted ticks from charge.
@@ -272,6 +283,8 @@ void TickShifter_t::_DumpCharge(int nTicks, void* pOriginalCLMove, float flAccum
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void TickShifter_t::_Draw()
 {
     int64_t iTimeSinceDumpInMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - m_lastChargeDumpTime).count();
@@ -291,15 +304,16 @@ void TickShifter_t::_Draw()
 }
 
 
-
-//=========================================================================
-//                     API-ish functions
-//=========================================================================
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::CanShiftThisTick() const
 {
     return m_bTickShifting == false && m_iChargeLevel > 0 && m_bInitialized == true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::ForceDumpCharge(int iTicks)
 {
     if (CanShiftThisTick() == false)
@@ -307,6 +321,14 @@ bool TickShifter_t::ForceDumpCharge(int iTicks)
 
     m_bDoubleTap = false; m_nShiftGoal = iTicks;
     return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool TickShifter_t::DoubleTapping() const
+{
+    return ShiftingTicks() == true && m_bDoubleTap == true;
 }
 
 
