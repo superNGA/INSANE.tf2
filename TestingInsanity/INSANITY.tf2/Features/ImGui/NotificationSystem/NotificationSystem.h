@@ -87,3 +87,4 @@ DEFINE_FEATURE(NotificationLifeTime, "Life",   FloatSlider_t, Notification, Menu
 
 static const char* g_szNotificationOriginSettings[] = { "Top-Left", "Top-Right", "Bottom-Left", "Bottom-Right" };
 DEFINE_FEATURE(NotificationOrigin, "Origin", DropDown_t, Notification, Menu, 3, DropDown_t(g_szNotificationOriginSettings, 4))
+DEFINE_FEATURE(NotificationMax,    "Max Notifications", IntSlider_t, Notification, Menu, 4, IntSlider_t(30, 1, 30))

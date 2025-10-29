@@ -20,15 +20,6 @@
 #include "../Graphics Engine V2/Draw Objects/Line/Line.h"
 
 
-/*
-TODO : 
-    * Skeleton ESP ( with functinality & on and off )
-    * Auto stop
-    * text rendering ? how difficult could it be?
-    * Renderer safe deletion logic. ( IMPORTANT )
-    * Entity iterator clean up.     ( IMPORTANT )
-*/
-
 constexpr size_t MAX_ESP_RECORDS = 25LLU;
 
 
@@ -463,9 +454,6 @@ void ESP_t::_DrawPlayerSkeleton(BaseEntity* pEnt, size_t iEspIndex, const BackTr
     DrawLimb(HitboxPlayer_RightUpperArm, vHeadEndPos);
     DrawLimb(HitboxPlayer_LeftUpperLeg,  vHipEndPos);
     DrawLimb(HitboxPlayer_RightUpperLeg, vHipEndPos);
-
-    //vec vMinNoRot(pHitbox->bbmin.x, 0.0f, 0.0f); Maths::VectorTransform(vMinNoRot, bone, vMin);
-    //vec vMaxNoRot(pHitbox->bbmax.x, 0.0f, 0.0f); Maths::VectorTransform(vMaxNoRot, bone, vMax);
 }
 
 

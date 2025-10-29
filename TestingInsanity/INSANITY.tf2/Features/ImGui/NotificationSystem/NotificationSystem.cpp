@@ -14,9 +14,9 @@
 #include "../../../SDK/class/IVEngineClient.h"
 
 
-constexpr float ANCHOR_POS_TOLERANCE_IN_PXL      = 2.0f;
-constexpr float ANIMATION_RESET_TOLERANCE_IN_PXL = 2.0f;
-constexpr float NOTIFICATION_WINDOW_WIDTH        = 600.0f;
+constexpr float  ANCHOR_POS_TOLERANCE_IN_PXL      = 2.0f;
+constexpr float  ANIMATION_RESET_TOLERANCE_IN_PXL = 2.0f;
+constexpr float  NOTIFICATION_WINDOW_WIDTH        = 600.0f;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -50,6 +50,9 @@ void NotificationSystem_t::Draw()
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::PushBack(const char* msg, ...)
 {
+    if (m_qNotifications.size() > Features::Menu::Notification::NotificationMax.GetData().m_iVal)
+        return;
+
     // Get the formatted string.
     va_list args; va_start(args, msg);
     std::string szFormattedString = _FormatString(msg, args);
@@ -67,6 +70,9 @@ void NotificationSystem_t::PushBack(const char* msg, ...)
 ///////////////////////////////////////////////////////////////////////////
 void NotificationSystem_t::PushFront(const char* msg, ...)
 {
+    if (m_qNotifications.size() > Features::Menu::Notification::NotificationMax.GetData().m_iVal)
+        return;
+
     // Get the formatted string.
     va_list args; va_start(args, msg);
     std::string szFormattedString = _FormatString(msg, args);
@@ -157,7 +163,7 @@ void NotificationSystem_t::_RemoveExpiredNtfsAndAnimate()
     for (auto it = m_qNotifications.begin(); it != m_qNotifications.end(); )
     {
         auto   now          = std::chrono::high_resolution_clock::now();
-        double flNtfLife    = std::chrono::duration_cast<std::chrono::duration<double>>(now - (*it).GetStartTime()).count();
+        double flNtfLife    = std::chrono::duration_cast<std::chrono::duration<double>>(now - it->GetStartTime()).count();
         float  flNtfMaxLife = Features::Menu::Notification::NotificationLifeTime.GetData().m_flVal;
 
         if (flNtfLife > flNtfMaxLife)
@@ -167,13 +173,13 @@ void NotificationSystem_t::_RemoveExpiredNtfsAndAnimate()
         }
         else
         {
-            if ((*it).m_bExiting == false && flNtfLife > flNtfMaxLife - (*it).m_animation.GetCompletionTime())
+            if (it->m_bExiting == false && flNtfLife > flNtfMaxLife - it->m_animation.GetCompletionTime())
             {
-                (*it).m_bExiting = true;
-                (*it).m_animation.Reset();
+                it->m_bExiting = true;
+                it->m_animation.Reset();
             }
 
-            (*it).CalculateAnim(); // Animate this shit
+            it->CalculateAnim(); // Animate this shit
             it++;
         }
     }
