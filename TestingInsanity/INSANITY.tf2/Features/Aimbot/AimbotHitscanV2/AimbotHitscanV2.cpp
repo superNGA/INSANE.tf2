@@ -11,12 +11,11 @@
 #include "../../../SDK/class/IEngineTrace.h"
 #include "../../../SDK/class/FileWeaponInfo.h"
 #include "../../../SDK/TF object manager/TFOjectManager.h"
-
+#include "../../../SDK/class/HitboxDefs.h"
 #include "../../Entity Iterator/EntityIterator.h"
-#include "../../../Extra/math.h"
-
 
 // UTILITY
+#include "../../../Extra/math.h"
 #include "../../../Utility/ConsoleLogging.h"
 #include "../../../Utility/Profiler/Profiler.h"
 #include "../../../Utility/Signature Handler/signatures.h"
@@ -25,52 +24,6 @@
 
 MAKE_SIG(CBaseAnimatinng_LookUpBones, "40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL, int64_t, void*, const char*)
 
-
-
-enum HitboxPlayer_t
-{
-    HitboxPlayer_Head = 0,
-
-    // Torso...
-    HitboxPlayer_Hip,
-    HitboxPlayer_SpineLower,
-    HitboxPlayer_SpineMiddle,
-    HitboxPlayer_SpineUpper,
-    HitboxPlayer_SpineTop,
-
-    // Left Arm...
-    HitboxPlayer_LeftUpperArm,
-    HitboxPlayer_LeftForearm,
-    HitboxPlayer_LeftHand,
-
-    // Right Arm...
-    HitboxPlayer_RightUpperArm,
-    HitboxPlayer_RightForearm,
-    HitboxPlayer_RightHand,
-
-    // Left Leg...
-    HitboxPlayer_LeftUpperLeg,
-    HitboxPlayer_LeftLowerLeg,
-    HitboxPlayer_LeftFoot,
-
-    // Right Leg...
-    HitboxPlayer_RightUpperLeg,
-    HitboxPlayer_RightLowerLeg,
-    HitboxPlayer_RightFoot,
-
-    // Only for scout & pyro
-    HitboxPlayer_Backpack 
-};
-
-
-constexpr float DMG_HITGROUP_HEAD	  = 3.00f;
-constexpr float DMG_HITGROUP_CHEST	  = 1.00f;
-constexpr float DMG_HITGROUP_STOMACH  = 1.25f;
-constexpr float DMG_HITGROUP_LEFTARM  = 1.00f;
-constexpr float DMG_HITGROUP_RIGHTARM = 1.00f;
-constexpr float DMG_HITGROUP_LEFTLEG  = 0.75f;
-constexpr float DMG_HITGROUP_RIGHTLEG = 0.75f;
-constexpr float DMG_HITGROUP_GEAR     = 1.00f;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -221,7 +174,7 @@ float AimbotHitscanV2_t::_EstimateSniperDamage(BaseEntity* pLocalPlayer, baseWea
     case HitboxPlayer_RightFoot:
         flDamageMult = DMG_HITGROUP_RIGHTLEG;
         break;
-    case HitboxPlayer_Backpack:
+    case HitboxPlayer_Count:
     default: break;
     }
 
@@ -233,8 +186,9 @@ float AimbotHitscanV2_t::_EstimateSniperDamage(BaseEntity* pLocalPlayer, baseWea
 ///////////////////////////////////////////////////////////////////////////
 BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd)
 {
-    // Delete this
+#if (HITSCANAIMBOT_DEBUG_HITBOX == true)
     I::IDebugOverlay->ClearAllOverlays();
+#endif
 
     BaseEntity* pTarget = nullptr;
 
@@ -307,23 +261,6 @@ BaseEntity* AimbotHitscanV2_t::_ChooseTarget(BaseEntity* pLocalPlayer, baseWeapo
 
 
     return pTarget;
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-// Delete this : This is just for debugging purposes, either put these in math.h or remove them..
-static void VectorTransform(const vec& in, const matrix3x4_t& matrix, vec& out)
-{
-    out.x = in.x * matrix.m[0][0] + in.y * matrix.m[0][1] + in.z * matrix.m[0][2];
-    out.y = in.x * matrix.m[1][0] + in.y * matrix.m[1][1] + in.z * matrix.m[1][2];
-    out.z = in.x * matrix.m[2][0] + in.y * matrix.m[2][1] + in.z * matrix.m[2][2];
-}
-static void VectorTransformMax(const vec& in, const matrix3x4_t& matrix, vec& out)
-{
-    out.x = in.x * matrix.m[0][0] + in.y * matrix.m[0][1] + in.z * matrix.m[0][2] + matrix.m[0][3];
-    out.y = in.x * matrix.m[1][0] + in.y * matrix.m[1][1] + in.z * matrix.m[1][2] + matrix.m[1][3];
-    out.z = in.x * matrix.m[2][0] + in.y * matrix.m[2][1] + in.z * matrix.m[2][2] + matrix.m[2][3];
 }
 
 
@@ -435,8 +372,8 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
 
                 qangle qBoneAngle; Maths::MatrixAngles(*targetBone, qBoneAngle);
                 static vec s_vMarkerBoxSize(2.0f, 2.0f, 2.0f); 
-                vec vMinRotated; VectorTransform(pHitbox->bbmin, *targetBone, vMinRotated);
-                vec vMaxRotated; VectorTransform(pHitbox->bbmax, *targetBone, vMaxRotated);
+                vec vMaxRotated; Maths::VectorTransform(pHitbox->bbmax, *targetBone, vMaxRotated);
+                vec vMinRotated; Maths::VectorTransform(pHitbox->bbmin, *targetBone, vMinRotated);
                 vec vBoneCenter = vMinRotated + ((vMaxRotated - vMinRotated) / 2.0f);
                 vec vBoneOrigin = targetBone->GetWorldPos();
 
@@ -448,8 +385,8 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
                 I::IDebugOverlay->AddBoxOverlay(vBoneCenter,    s_vMarkerBoxSize * -0.5f, s_vMarkerBoxSize * 0.5f, qBoneAngle, 255,   0,   0, 100, 5.0f);
 
                 // Min & Max on the hitbox...
-                I::IDebugOverlay->AddBoxOverlay(vBoneOrigin + vMinRotated, s_vMarkerBoxSize * -1.0f, s_vMarkerBoxSize, qBoneAngle, 255, 0, 0, 100, 5.0f);
-                I::IDebugOverlay->AddBoxOverlay(vBoneOrigin + vMaxRotated, s_vMarkerBoxSize * -1.0f, s_vMarkerBoxSize, qBoneAngle, 255, 0, 0, 100, 5.0f);
+                I::IDebugOverlay->AddBoxOverlay(/*vBoneOrigin + */vMinRotated, s_vMarkerBoxSize * -1.0f, s_vMarkerBoxSize, qBoneAngle, 255, 0, 0, 100, 5.0f);
+                I::IDebugOverlay->AddBoxOverlay(/*vBoneOrigin + */vMaxRotated, s_vMarkerBoxSize * -1.0f, s_vMarkerBoxSize, qBoneAngle, 255, 0, 0, 100, 5.0f);
 
                 // Additional information...
                 I::IDebugOverlay->AddLineOverlay(vEyePos, vBestTargetPos, 255, 255, 255, false, 5.0f);
@@ -771,8 +708,8 @@ float AimbotHitscanV2_t::_GetAngleFromCrosshair(const vec& vTargetPos, const vec
 ///////////////////////////////////////////////////////////////////////////
 bool AimbotHitscanV2_t::_IsVisible(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, vec& vBestTargetPosOut, BaseEntity* pLocalPlayer, BaseEntity* pTarget, const qangle& qViewAngles) const
 {
-    vec vMinRotated; VectorTransformMax(pHitbox->bbmin, *bone, vMinRotated);
-    vec vMaxRotated; VectorTransformMax(pHitbox->bbmax, *bone, vMaxRotated);
+    vec vMinRotated; Maths::VectorTransform(pHitbox->bbmin, *bone, vMinRotated);
+    vec vMaxRotated; Maths::VectorTransform(pHitbox->bbmax, *bone, vMaxRotated);
     vec vBoneOrigin = vMinRotated + ((vMaxRotated - vMinRotated) / 2.0f);
 
     float flBloomRadius = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_PlayerBloom.GetData().m_flVal / 2.0f;

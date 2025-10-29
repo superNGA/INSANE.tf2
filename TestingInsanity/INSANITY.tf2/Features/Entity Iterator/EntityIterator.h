@@ -62,8 +62,15 @@ class EntityIterator_t
 public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd);
     void ClearLists();
-    void ClearBackTrackData();
+
+
+    // These list aren't cleared when disconnecting or joining n stuff like that. 
+    // So entities in these lists might not always be valid.
+    // Before using please check list's validity using these functions.
+    bool AreListsValid() const;
+    void InvalidateLists();
     
+
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedEnemiesList();
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedTeamMatesList();
 
@@ -86,6 +93,7 @@ public:
 
     // NOTE: The latest record is @ front & the oldest record is @ the back.
     std::deque<BackTrackRecord_t>* GetBackTrackRecord(BaseEntity* pEnt);
+    void  ClearBackTrackData();
     void  SetBackTrackTime(const float flBackTrackTime);
     float GetBackTrackTimeInSec() const;
 
@@ -123,6 +131,8 @@ public:
     const LocalPlayerInfo_t& GetLocalPlayerInfo();
 
 private:
+    bool m_bRecordsValid = false;
+
     // All mighty back track records.
     std::unordered_map<BaseEntity*, std::deque<BackTrackRecord_t>> m_mapEntInfo = {};
     float m_flBackTrackTime = 0.0f; // This is how much time the last backtrack record is behind from the actual player's location.

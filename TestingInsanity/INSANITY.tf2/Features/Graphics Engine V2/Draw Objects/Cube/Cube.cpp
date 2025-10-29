@@ -1,4 +1,5 @@
 #include "Cube.h"
+#include "../../../../Extra/math.h"
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -162,17 +163,24 @@ void Cube3D_t::InitDimension()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void Cube3D_t::SetVertex(const vec& vMin, const vec& vMax)
+void Cube3D_t::SetVertex(const vec& vMin, const vec& vMax, qangle qOrientation)
 {
-    vec vTopLeftBack(vMin.x, vMin.y, vMax.z);
-    vec vTopRightFront(vMax.x, vMin.y, vMin.z);   vec vTopRightBack(vMax.x, vMin.y, vMax.z);
-    vec vBottomLeftFront(vMin.x, vMax.y, vMin.z); vec vBottomLeftBack(vMin.x, vMax.y, vMax.z);
-    vec vBottomRightFront(vMax.x, vMax.y, vMin.z);
+    matrix3x4_t rot; Maths::AngleMatrix(qOrientation, vec(0.0f), rot);
+
+    // Rotate them or something, idk
+    vec vTopLeftFront;     Maths::VectorTransform(vMin, rot, vTopLeftFront);
+    vec vBottomRightBack;  Maths::VectorTransform(vMax, rot, vBottomRightBack);
+    vec vTopLeftBack;      vec vTopLeftBackNoRot     (vMin.x, vMin.y, vMax.z); Maths::VectorTransform(vTopLeftBackNoRot,      rot, vTopLeftBack);
+    vec vTopRightFront;    vec vTopRightFrontNoRot   (vMax.x, vMin.y, vMin.z); Maths::VectorTransform(vTopRightFrontNoRot,    rot, vTopRightFront);
+    vec vTopRightBack;     vec vTopRightBackNoRot    (vMax.x, vMin.y, vMax.z); Maths::VectorTransform(vTopRightBackNoRot,     rot, vTopRightBack);
+    vec vBottomLeftFront;  vec vBottomLeftFrontNoRot (vMin.x, vMax.y, vMin.z); Maths::VectorTransform(vBottomLeftFrontNoRot,  rot, vBottomLeftFront);
+    vec vBottomLeftBack;   vec vBottomLeftBackNoRot  (vMin.x, vMax.y, vMax.z); Maths::VectorTransform(vBottomLeftBackNoRot,   rot, vBottomLeftBack);
+    vec vBottomRightFront; vec vBottomRightFrontNoRot(vMax.x, vMax.y, vMin.z); Maths::VectorTransform(vBottomRightFrontNoRot, rot, vBottomRightFront);
 
     // Top Left Front.
-    m_vertex[VertexType_TopLeftFront].m_vPos         = vMin;
-    m_vertex[VertexType_TopLeftFront_Dup].m_vPos     = vMin;
-    m_vertex[VertexType_TopLeftSideFront].m_vPos     = vMin;
+    m_vertex[VertexType_TopLeftFront].m_vPos         = vTopLeftFront;
+    m_vertex[VertexType_TopLeftFront_Dup].m_vPos     = vTopLeftFront;
+    m_vertex[VertexType_TopLeftSideFront].m_vPos     = vTopLeftFront;
     
     // Top Left Back
     m_vertex[VertexType_TopLeftBack].m_vPos          = vTopLeftBack;
@@ -180,9 +188,65 @@ void Cube3D_t::SetVertex(const vec& vMin, const vec& vMax)
     m_vertex[VertexType_TopLeftSideBack].m_vPos      = vTopLeftBack;
 
     // Bottom Right Back
-    m_vertex[VertexType_BottomRightBack].m_vPos      = vMax;
-    m_vertex[VertexType_BottomRightBack_Dup].m_vPos  = vMax;
-    m_vertex[VertexType_BottomRightSideBack].m_vPos  = vMax;
+    m_vertex[VertexType_BottomRightBack].m_vPos      = vBottomRightBack;
+    m_vertex[VertexType_BottomRightBack_Dup].m_vPos  = vBottomRightBack;
+    m_vertex[VertexType_BottomRightSideBack].m_vPos  = vBottomRightBack;
+    
+    // Bottom Right Front
+    m_vertex[VertexType_BottomRightFront].m_vPos     = vBottomRightFront;
+    m_vertex[VertexType_BottomRightFront_Dup].m_vPos = vBottomRightFront;
+    m_vertex[VertexType_BottomRightSideFront].m_vPos = vBottomRightFront;
+
+    // Top Right Front
+    m_vertex[VertexType_TopRightFront].m_vPos        = vTopRightFront;
+    m_vertex[VertexType_TopRightFront_Dup].m_vPos    = vTopRightFront;
+    m_vertex[VertexType_TopRightSideFront].m_vPos    = vTopRightFront;
+                                                            
+    // Top Right Back                                       
+    m_vertex[VertexType_TopRightBack].m_vPos         = vTopRightBack;
+    m_vertex[VertexType_TopRightBack_Dup].m_vPos     = vTopRightBack;
+    m_vertex[VertexType_TopRightSideBack].m_vPos     = vTopRightBack;
+                                                            
+    // Bottom Left Front                                    
+    m_vertex[VertexType_BottomLeftFront].m_vPos      = vBottomLeftFront;
+    m_vertex[VertexType_BottomLeftFront_Dup].m_vPos  = vBottomLeftFront;
+    m_vertex[VertexType_BottomLeftSideFront].m_vPos  = vBottomLeftFront;
+                                                            
+    // Bottom Left Back                                     
+    m_vertex[VertexType_BottomLeftBack].m_vPos       = vBottomLeftBack;
+    m_vertex[VertexType_BottomLeftBack_Dup].m_vPos   = vBottomLeftBack;
+    m_vertex[VertexType_BottomLeftSideBack].m_vPos   = vBottomLeftBack;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Cube3D_t::SetVertex(const vec& vMin, const vec& vMax, const matrix3x4_t& matrix)
+{
+    // Rotate them or something, idk
+    vec vTopLeftFront;     Maths::VectorTransform(vMin, matrix, vTopLeftFront);
+    vec vBottomRightBack;  Maths::VectorTransform(vMax, matrix, vBottomRightBack);
+    vec vTopLeftBack;      vec vTopLeftBackNoRot     (vMin.x, vMin.y, vMax.z); Maths::VectorTransform(vTopLeftBackNoRot,      matrix, vTopLeftBack);
+    vec vTopRightFront;    vec vTopRightFrontNoRot   (vMax.x, vMin.y, vMin.z); Maths::VectorTransform(vTopRightFrontNoRot,    matrix, vTopRightFront);
+    vec vTopRightBack;     vec vTopRightBackNoRot    (vMax.x, vMin.y, vMax.z); Maths::VectorTransform(vTopRightBackNoRot,     matrix, vTopRightBack);
+    vec vBottomLeftFront;  vec vBottomLeftFrontNoRot (vMin.x, vMax.y, vMin.z); Maths::VectorTransform(vBottomLeftFrontNoRot,  matrix, vBottomLeftFront);
+    vec vBottomLeftBack;   vec vBottomLeftBackNoRot  (vMin.x, vMax.y, vMax.z); Maths::VectorTransform(vBottomLeftBackNoRot,   matrix, vBottomLeftBack);
+    vec vBottomRightFront; vec vBottomRightFrontNoRot(vMax.x, vMax.y, vMin.z); Maths::VectorTransform(vBottomRightFrontNoRot, matrix, vBottomRightFront);
+
+    // Top Left Front.
+    m_vertex[VertexType_TopLeftFront].m_vPos         = vTopLeftFront;
+    m_vertex[VertexType_TopLeftFront_Dup].m_vPos     = vTopLeftFront;
+    m_vertex[VertexType_TopLeftSideFront].m_vPos     = vTopLeftFront;
+    
+    // Top Left Back
+    m_vertex[VertexType_TopLeftBack].m_vPos          = vTopLeftBack;
+    m_vertex[VertexType_TopLeftBack_Dup].m_vPos      = vTopLeftBack;
+    m_vertex[VertexType_TopLeftSideBack].m_vPos      = vTopLeftBack;
+
+    // Bottom Right Back
+    m_vertex[VertexType_BottomRightBack].m_vPos      = vBottomRightBack;
+    m_vertex[VertexType_BottomRightBack_Dup].m_vPos  = vBottomRightBack;
+    m_vertex[VertexType_BottomRightSideBack].m_vPos  = vBottomRightBack;
     
     // Bottom Right Front
     m_vertex[VertexType_BottomRightFront].m_vPos     = vBottomRightFront;

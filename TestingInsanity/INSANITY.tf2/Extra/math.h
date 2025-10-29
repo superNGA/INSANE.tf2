@@ -241,6 +241,13 @@ namespace Maths
         angles.roll  = 0.0f;
     }
 
+    inline void VectorTransform(const vec& in, const matrix3x4_t& matrix, vec& out)
+    {
+        out.x = in.x * matrix.m[0][0] + in.y * matrix.m[0][1] + in.z * matrix.m[0][2] + matrix.m[0][3];
+        out.y = in.x * matrix.m[1][0] + in.y * matrix.m[1][1] + in.z * matrix.m[1][2] + matrix.m[1][3];
+        out.z = in.x * matrix.m[2][0] + in.y * matrix.m[2][1] + in.z * matrix.m[2][2] + matrix.m[2][3];
+    }
+
     inline void VectorAnglesFromSDK(const vec& vForward, qangle& vAngles)
     {
         float yaw, pitch;

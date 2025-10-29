@@ -18,15 +18,16 @@ public:
     void          SetColor(RGBA_t clr, int vertex) override final;
 
     void          SetRGBAnimSpeed(const float flAnimSpeed) override final;
-
-protected:
-    void          InitRelativeUV() override final;
-
+    
     enum VertexType_t : int 
     { 
         VertexType_Min = 0, 
         VertexType_Max 
     };
+
+protected:
+    void          InitRelativeUV() override final;
+
 
 protected:
     Vertex m_vertex[2];

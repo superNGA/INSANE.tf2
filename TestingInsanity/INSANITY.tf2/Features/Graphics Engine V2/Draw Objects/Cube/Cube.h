@@ -17,7 +17,8 @@ public:
     void          SetColor(RGBA_t clr, int vertex)         override final;
     void          SetRGBAnimSpeed(const float flAnimSpeed) override final;
 
-    void          SetVertex(const vec& vMin, const vec& vMax);
+    void          SetVertex(const vec& vMin, const vec& vMax, qangle qOrientation);
+    void          SetVertex(const vec& vMin, const vec& vMax, const matrix3x4_t& matrix);
 protected:
     void          InitDimension()  override final; // Handle m_flStrictly2D & m_bIs3D parameter for vertex. ( called in constructor )
     void          InitRelativeUV() override final; // Set up the relative UV coords for this draw obj.      ( called in constructor )

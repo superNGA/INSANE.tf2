@@ -230,7 +230,8 @@ HRESULT directX::H_endscene(LPDIRECT3DDEVICE9 pDevice)
         Render::playerListV2.SetVisible(UI::UI_visble); Render::playerListV2.Draw();
         Render::menuGUI.SetVisible(UI::UI_visble);      Render::menuGUI.Draw();
         F::profiler.Draw();
-        
+        F::esp.RunEndScene();
+
         // Model Rendering.
         F::modelPreview.Run();
         HandleModelPreviewPanel();
