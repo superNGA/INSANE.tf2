@@ -186,6 +186,36 @@ void BoxFilled3D_t::SetVertex(const vec& vMin, const vec& vMax, const qangle& qN
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void BoxFilled3D_t::SetVertex(const vec& vOrigin, const vec& vMin, const vec& vMax, const qangle& qNormal)
+{
+    // Construct THE MATRIX.
+    matrix3x4_t mat; Maths::AngleMatrix(qNormal, vOrigin, mat);
+
+
+    // DO MATRIX THINGS.
+    vec vTopLeft;     Maths::VectorTransform(vMin, mat, vTopLeft);
+    vec vTopRight;    vec vTopRightNoRot   (vMax.x, vMin.y, 0.0f); Maths::VectorTransform(vTopRightNoRot,   mat, vTopRight);
+    vec vBottomLeft;  vec vBottomLeftNoRot (vMin.x, vMax.y, 0.0f); Maths::VectorTransform(vBottomLeftNoRot, mat, vBottomLeft);
+    vec vBottomRight; Maths::VectorTransform(vMax, mat, vBottomRight);
+
+
+    // set points.
+    m_vertex[VertexType_TopLeft].m_vPos         = vTopLeft;
+    m_vertex[VertexType_TopRight].m_vPos        = vTopRight;
+    m_vertex[VertexType_BottomLeft].m_vPos      = vBottomLeft;
+    m_vertex[VertexType_TopRight_Dup].m_vPos    = vTopRight;
+    m_vertex[VertexType_BottomLeft_Dup].m_vPos  = vBottomLeft;
+    m_vertex[VertexType_BottomRight].m_vPos     = vBottomRight;
+
+    
+    // set ratio.
+    for (int i = 0; i < GetVertexCount(); i++)
+        m_vertex[i].m_flScaleY = fabsf(vMax.y - vMin.y) / fabsf(vMax.x - vMin.x);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void BoxFilled2D_t::InitDimension()
 {
     m_bIs3D = false;

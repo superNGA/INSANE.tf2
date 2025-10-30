@@ -9,8 +9,12 @@
 #include "../../SDK/class/IVDebugOverlay.h"
 #include "../../SDK/class/CommonFns.h"
 #include "../../SDK/class/CPrediction.h"
+#include "../../SDK/class/IEngineTrace.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../Tick Shifting/TickShifting.h"
+
+// RENDERER
+#include "../Graphics Engine V2/Draw Objects/Box/Box.h"
 
 // UTILITY
 #include "../../Utility/CVar Handler/CVarHandler.h"
@@ -37,13 +41,16 @@ void Movement_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserC
 {
     PROFILER_RECORD_FUNCTION(CreateMove);
 
+    
     _InitializeKeyCodes();
+
 
     // MOVE!!!
     _Bhop		(pCmd, result, pLocalPlayer);
     _RocketJump (pCmd, result, pActiveWeapon, pLocalPlayer);
     _ThirdPerson(pCmd, result, pLocalPlayer);
     _AutoStrafer(pLocalPlayer, pCmd);
+    _PeekAssist (pLocalPlayer, pCmd, pActiveWeapon);
     _AutoStop	(pLocalPlayer, pCmd, pActiveWeapon);
 } 
 
@@ -208,9 +215,116 @@ void Movement_t::_AutoStop(BaseEntity* pLocalPlayer, CUserCmd* pCmd, baseWeapon*
     vec  vVelFlat  = pLocalPlayer->m_vecAbsVelocity(); vVelFlat.z = 0.0f;
     vVelFlat.NormalizeInPlace();
 
+
     // Set forward & move in opposite direction of velocity.
     pCmd->forwardmove = std::clamp<float>(-1.0f * MAX_MOVE_USERCMD * vVelFlat.Dot(vForward), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
     pCmd->sidemove    = std::clamp<float>(-1.0f * MAX_MOVE_USERCMD * vVelFlat.Dot(vRight),   -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void Movement_t::_PeekAssist(BaseEntity* pLocalPlayer, CUserCmd* pCmd, baseWeapon* pActiveWeapon)
+{
+    static bool s_bReturnOriginSaved = false;
+    static bool s_bReturnActive      = false;
+    static vec  s_vReturnOrigin(0.0f, 0.0f, 0.0f);
+    static vec  s_vMarkerOrigin(0.0f);
+    static qangle s_qSurfaceNormal(0.0f);
+    static BoxFilled3D_t* s_pMarker = nullptr;
+    
+    // Initializing marker draw obj if null
+    if (s_pMarker == nullptr)
+    {
+        s_pMarker = new BoxFilled3D_t();
+        
+        if (s_pMarker == nullptr)
+            return;
+    }
+
+
+    // no return origin is inactive.
+    if (Features::Movement::Movement::PeekAssist.IsActive() == false)
+    {
+        s_bReturnOriginSaved = false;
+        s_bReturnActive      = false;
+        s_pMarker->SetVisible(false);
+        return;
+    }
+
+
+    // While double tapping don't interfere, only do anything when double tapping is over.
+    if (F::tickShifter.DoubleTapping() == true)
+        return;
+
+
+    // Only store return origin on the first iteration.
+    if (s_bReturnOriginSaved == false)
+    {
+        s_vReturnOrigin = pLocalPlayer->GetAbsOrigin();
+
+        // ray trace to get the surface normal ( for drawing marker )
+        ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
+        vec vTraceEndPos = pLocalPlayer->GetAbsOrigin(); vTraceEndPos.z -= 200.0f; // To make sure the end pos is in the fucking ground.
+        I::EngineTrace->UTIL_TraceRay(pLocalPlayer->GetEyePos(), vTraceEndPos, MASK_SHOT, &filter, &trace);
+        
+        // Store point on ground ( where ray ended ) cause GetAbsOrigin() is a little above the ground.
+        s_vMarkerOrigin = trace.m_end;
+        
+        // if we don't do this, the circle will draw in the direction or normal & not perpendicular to it.
+        Maths::VectorAnglesFromSDK(trace.m_plane.normal, s_qSurfaceNormal);
+        s_qSurfaceNormal.pitch += 90.0f;
+        
+        s_bReturnOriginSaved = true;
+    }
+
+    
+    // Start return to saved origin once we shoot.
+    bool bShotThisTick = SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true && (pCmd->buttons & IN_ATTACK) == true;
+    if (bShotThisTick == true)
+    {
+        s_bReturnActive = true;
+    }
+
+
+    // Drawing marker for return position.
+    {
+        s_pMarker->SetVisible(true);
+        s_pMarker->SetRounding(0.5f); // to make it a circle.
+        s_pMarker->SetBlur(-1);       // on 3D objects, this looks like shit.
+
+        // Points
+        float flMarkerRadius = Features::Movement::Movement::PeekAssist_Size.GetData().m_flVal; 
+        s_pMarker->SetVertex(s_vMarkerOrigin, vec(-flMarkerRadius), vec(flMarkerRadius), s_qSurfaceNormal);
+
+        // Colors
+        RGBA_t clr = Features::Movement::Movement::PeekAssist_Clr.GetData().GetAsBytes(); 
+        s_pMarker->SetColor(clr.r, clr.g, clr.b, clr.a);
+        s_pMarker->SetRGBAnimSpeed(Features::Movement::Movement::PeekAssist_RGB.GetData().m_flVal);
+    }
+    
+
+
+    // Nothing to do if we don't need to return this tick.
+    if (s_bReturnActive == false)
+        return;
+
+
+    // Calculating vector point for current position to target position.
+    vec vTargetPosFlat(s_vReturnOrigin);              vTargetPosFlat.z = 0.0f;
+    vec vOriginFlat   (pLocalPlayer->GetAbsOrigin()); vOriginFlat.z    = 0.0f;
+    vec vOriginToTarget = vTargetPosFlat - vOriginFlat; vOriginToTarget.NormalizeInPlace();
+
+
+    // View angles. Flat.
+    qangle qViewAnglesFlat = pCmd->viewangles; qViewAnglesFlat.pitch = 0.0f;
+    vec vForward, vRight, vUp; Maths::AngleVectors(qViewAnglesFlat, &vForward, &vRight, &vUp);
+    vForward.NormalizeInPlace(); vRight.NormalizeInPlace(); // NOTE : Up component isn't useful here.
+
+
+    // Set forward & move in opposite direction of velocity.
+    pCmd->forwardmove = std::clamp<float>(MAX_MOVE_USERCMD * vOriginToTarget.Dot(vForward), -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
+    pCmd->sidemove    = std::clamp<float>(MAX_MOVE_USERCMD * vOriginToTarget.Dot(vRight),   -MAX_MOVE_USERCMD, MAX_MOVE_USERCMD);
 }
 
 
