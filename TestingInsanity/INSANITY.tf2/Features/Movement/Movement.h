@@ -22,6 +22,7 @@ private:
     void _ThirdPerson(CUserCmd* pCmd, bool& result, BaseEntity* pLocalPlayer);
     void _AutoStrafer(BaseEntity* pLocalPlayer, CUserCmd* pCmd);
     void _AutoStop   (BaseEntity* pLocalPlayer, CUserCmd* pCmd, baseWeapon* pActiveWeapon);
+    void _PeekAssist (BaseEntity* pLocalPlayer, CUserCmd* pCmd, baseWeapon* pActiveWeapon);
 
     void _InitializeKeyCodes();
 
@@ -44,3 +45,7 @@ DEFINE_FEATURE(AutoRocketJump,       "Auto Rocket Jump",           bool,        
 DEFINE_FEATURE(ThirdPerson,          "Third Person",               bool,          Movement, Movement, 3, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
 DEFINE_FEATURE(DirectionStrafe,      "Direction Strafe",           bool,          Movement, Movement, 4, false, FeatureFlag_SupportKeyBind | FeatureFlag_ToggleOnlyKeyBind)
 DEFINE_FEATURE(AutoStrafe_Agression, "Direction Strafe Aggresion", FloatSlider_t, Movement, Movement, 5, FloatSlider_t(0.05f, 0.0f, 0.5f), FeatureFlag_None, "Smaller agression is recommended ( Default is pretty good )")
+DEFINE_FEATURE(PeekAssist,           "Peek Assist",                bool,          Movement, Movement, 6, false, FeatureFlag_SupportKeyBind | FeatureFlag_HoldOnlyKeyBind, "Automatically return to safe spot after taking a shot.")
+DEFINE_FEATURE(PeekAssist_Clr,       "PeekAssist Marker clr",      ColorData_t,   Movement, Movement, 7, ColorData_t(1.0f, 1.0f, 1.0f, 1.0f))
+DEFINE_FEATURE(PeekAssist_RGB,       "PeekAssist RGB",             FloatSlider_t, Movement, Movement, 8, FloatSlider_t(-1.0f, -1.0f, 10.0f))
+DEFINE_FEATURE(PeekAssist_Size,      "PeekAssist Size",            FloatSlider_t, Movement, Movement, 8, FloatSlider_t(30.0f, 10.0f, 100.0f))

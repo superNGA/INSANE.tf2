@@ -85,6 +85,7 @@ public:
     
     void InitDimension() override final;
     void SetVertex(const vec& vMin, const vec& vMax, const qangle& qNormal);
+    void SetVertex(const vec& vOrigin, const vec& vMin, const vec& vMax, const qangle& qNormal);
 };
 ///////////////////////////////////////////////////////////////////////////
 
