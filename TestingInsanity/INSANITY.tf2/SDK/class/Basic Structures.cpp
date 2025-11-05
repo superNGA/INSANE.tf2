@@ -510,6 +510,12 @@ void Vec4::Set(unsigned char r, unsigned char g, unsigned char b, unsigned char 
 }
 
 
+vec Vec4::XYZ() const
+{
+    return vec(x, y, z);
+}
+
+
 ////////////////////////////// view_matrix ////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 view_matrix::view_matrix()

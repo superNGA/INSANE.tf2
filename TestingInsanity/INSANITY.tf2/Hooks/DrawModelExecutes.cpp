@@ -8,6 +8,7 @@
 #include "../SDK/class/IStudioRender.h"
 #include "../SDK/class/IMaterial.h"
 #include "../SDK/class/BaseEntity.h"
+#include "../SDK/class/CBaseLightCache.h"
 
 #include "../Features/Aimbot/AimbotHitscanV2/AimbotHitscanV2.h"
 #include "../Features/Chams/ChamsV2.h"
@@ -15,6 +16,7 @@
 #include "../Features/Material Gen/MaterialGen.h"
 #include "../Features/Entity Iterator/EntityIterator.h"
 #include "../Features/Aimbot/Aimbot Melee/AimbotMelee.h"
+#include "../Features/WorldColorModulation/WorldColorModulation.h"
 #include "EndScene/EndScene.h"
 
 
@@ -24,8 +26,17 @@
 MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __fastcall, ENGINE_DLL, int64_t, 
     void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
-    // Don't do material altering at unstable states, else causes crahes.
+    // NOTE : Not a single model with "World Texture" gets drawn through this function.
+    // There must be something else drawing all those world models n shit.
+
     int64_t result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
+
+
+    // Modulate world color materials & props n shit.
+    F::worldColorMod.Run();
+
+
+    // Don't do material altering at unstable states, else causes crahes.
     if (directX::UI::UI_has_been_shutdown == true)
         return result;
 

@@ -34,14 +34,18 @@
 #include "../SDK/class/IVDebugOverlay.h"
 #include "../SDK/class/ISurface.h"
 #include "../SDK/class/IEngineTrace.h"
+#include "../SDK/class/IMaterialSystem.h"
+#include "../SDK/class/IMaterial.h"
 
 
 /*
-* Now as of today 19th of October, 2025. I have no idea what to do now? I have done the UI and I am 
-* pretty happy with that, but now what do I do? I have a shit ton of feature to do, but I don't know
-* which one to do now, I need to make world class feature next, and they need to be practical and not
-* bullshit. I want them to be highly optimized and not some barely working high resource consuming freeloading
-* features. 
+* Priority TODO : 
+        * Custom skybox.
+        * World lighting modulation.
+        * Anti-Aim ( legit and rage )
+        * Anti-Aim chams.
+        * Decide on how the chocked ticks would be tracked.
+        * Projectiles.
 * 
 * TODO's : 
         * Crit Hack ( rapid fire and reliable )
@@ -57,9 +61,6 @@
         * Fake lag ( With absolute chocked tick tracking )
         * 
         * and so on...
-
-* DONE : 
-        * ESP
 */
 
 

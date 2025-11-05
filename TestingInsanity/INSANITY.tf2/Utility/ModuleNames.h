@@ -13,3 +13,5 @@
 #define TIER0_DLL               "tier0.dll"
 #define VGUIMATSURFACE_DLL      "vguimatsurface.dll"
 #define SHADERAPIDX9_DLL        "shaderapidx9.dll"
+#define FILESYSTEM_STDIO_DLL    "filesystem_stdio.dll"
+#define VRAD_DLL_DLL            "vrad_dll.dll" // this is not loaded while in game, its useless.

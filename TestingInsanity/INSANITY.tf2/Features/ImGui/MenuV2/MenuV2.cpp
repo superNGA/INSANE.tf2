@@ -1359,14 +1359,16 @@ void MenuGUI_t::_DrawBoolean(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 
     // Tool tip
     {
         ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
         ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
         if (ImGui::IsItemHovered() == true && pBoolFeature->m_szToolTip.empty() == false)
             ImGui::SetTooltip(pBoolFeature->m_szToolTip.c_str());
 
-        ImGui::PopStyleColor(2);
+        ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
     }
 
@@ -1749,14 +1751,16 @@ void MenuGUI_t::_DrawDropDown(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2
     // Tool tip
     {
         ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
         ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
         if (ImGui::IsItemHovered() == true && pDropDownFeature->m_szToolTip.empty() == false)
             ImGui::SetTooltip(pDropDownFeature->m_szToolTip.c_str());
 
-        ImGui::PopStyleColor(2);
+        ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
     }
 
@@ -1873,14 +1877,16 @@ void MenuGUI_t::_DrawColor(IFeature* pFeature, ImVec2 vMinWithPadding, ImVec2 vM
     // Tool tip
     {
         ImVec4 vClrPopup = m_clrPrimary.GetAsImVec4(); vClrPopup.w = 1.0f;
+        RGBA_t clrText; CalcTextClrForBg(clrText, m_clrPrimary);
         ImGui::PushStyleColor(ImGuiCol_PopupBg, vClrPopup);
         ImGui::PushStyleColor(ImGuiCol_Border, m_clrTheme.GetAsImVec4());
+        ImGui::PushStyleColor(ImGuiCol_Text, clrText.GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, POPUP_ROUNDING);
 
         if (ImGui::IsItemHovered() == true && pColorFeature->m_szToolTip.empty() == false)
             ImGui::SetTooltip(pColorFeature->m_szToolTip.c_str());
 
-        ImGui::PopStyleColor(2);
+        ImGui::PopStyleColor(3);
         ImGui::PopStyleVar();
     }
 

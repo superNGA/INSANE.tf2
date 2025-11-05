@@ -353,6 +353,7 @@ struct Vec4
 
     void Init();
     void Set(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+    vec  XYZ() const;
 };
 
 

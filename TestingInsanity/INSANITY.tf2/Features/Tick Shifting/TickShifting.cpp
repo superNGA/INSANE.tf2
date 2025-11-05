@@ -130,6 +130,7 @@ void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSa
         m_iChargeLevel++;
         return;
     }
+
     
     // Call the original.
     reinterpret_cast<T_CL_Move>(pOriginalCLMove)(flAccumulatedExtraSample, bOriginalFinalTick);
@@ -200,6 +201,7 @@ bool TickShifter_t::_ConsumeTickForCharge()
     if (iTicksSinceDump % iRechargeAggression == 0)
         return true;
 
+    return false;
 }
 
 

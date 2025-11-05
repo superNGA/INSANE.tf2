@@ -39,10 +39,11 @@ void AimbotHitscanV2_t::Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon
     // Choose target.
     bool bInAttack  = SDK::InAttack(pLocalPlayer, pActiveWeapon);
     bool bCanAttack = SDK::CanAttack(pLocalPlayer, pActiveWeapon);
-    if(bInAttack == false)
+    /*if(bInAttack == false)
     {
         m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon, pCmd);
-    }
+    }*/
+    m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon, pCmd);
 
 
     // If no target found, then leave.
@@ -103,8 +104,9 @@ bool AimbotHitscanV2_t::_ShouldAutoFire(BaseEntity* pLocalPlayer, baseWeapon* pA
     if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFire.IsActive() == false)
         return false;
 
-    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
-        return false;
+    // causing trouble with pistols.
+    /*if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
+        return false;*/
 
     // Don't Auto-Fire unscooped, if user doesn't wanna shoot unscoped.
     if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_DontShootUnscoped.IsActive() == true)
