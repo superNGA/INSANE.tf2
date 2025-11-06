@@ -37,7 +37,10 @@ public:
     // This is just a wrapper for "AddOrUpdate", this will calculate the most visible text color for you.
     void AddOrUpdate(std::string szKey, std::string&& szMessage, int iRow, int iAlignment);
     void AddOrUpdate(std::string szKey, float flVal, float flMin, float flMax, int iRow);
-    void AddOrUpdate(std::string szKey, int iVal,    int iMin,    int iMax,    int iRow);
+    void AddOrUpdate(std::string szKey, int   iVal,  int   iMin,  int   iMax,  int iRow);
+
+    // disabling / hidding logic
+    void Hide(std::string szKey);
 
 private:
     void _DrawWindow(InfoWindowInstance_t& window, float flRowHeight);
@@ -105,6 +108,8 @@ struct InfoWindowInstance_t
     ImVec2 m_vWindowSize;
     std::vector<InfoWindowWidget_t>       m_vecWidgets;
     std::vector<InfoWindowSliderWidget_t> m_vecSliderWidgets;
+    
+    bool m_bVisible = true;
 };
 ///////////////////////////////////////////////////////////////////////////
 

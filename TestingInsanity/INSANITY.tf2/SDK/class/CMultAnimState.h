@@ -127,21 +127,21 @@ struct MultiPlayerMovementData_t
 class CMultiPlayerAnimState
 {
 public:
-	virtual void				GANDU_COLLEGE();
-	virtual void				ClearAnimationState();
-	virtual void				DoAnimationEvent(PlayerAnimEvent_t event, int nData = 0);
-	virtual Activity			CalcMainActivity();
-	virtual void				Update(float eyeYaw, float eyePitch);
-	virtual void				Release(void);
-	virtual Activity			TranslateActivity(Activity actDesired);
+	virtual void				GANDU_COLLEGE() = 0;
+	virtual void				ClearAnimationState() = 0;
+	virtual void				DoAnimationEvent(PlayerAnimEvent_t event, int nData = 0) = 0;
+	virtual Activity			CalcMainActivity() = 0;
+	virtual void				Update(float eyeYaw, float eyePitch) = 0;
+	virtual void				Release(void) = 0;
+	virtual Activity			TranslateActivity(Activity actDesired) = 0;
 
-	virtual void				SetRunSpeed(float flSpeed);	    // { m_MovementData.m_flRunSpeed = flSpeed; }
-	virtual void				SetWalkSpeed(float flSpeed);	// { m_MovementData.m_flWalkSpeed = flSpeed; }
-	virtual void				SetSprintSpeed(float flSpeed);	// { m_MovementData.m_flSprintSpeed = flSpeed; }
+	virtual void				SetRunSpeed(float flSpeed) = 0;	    // { m_MovementData.m_flRunSpeed = flSpeed; }
+	virtual void				SetWalkSpeed(float flSpeed) = 0;	// { m_MovementData.m_flWalkSpeed = flSpeed; }
+	virtual void				SetSprintSpeed(float flSpeed) = 0;	// { m_MovementData.m_flSprintSpeed = flSpeed; }
 
 	// Debug
-	virtual void				ShowDebugInfo(void);
-	virtual void				DebugShowAnimState(int iStartLine);
+	virtual void				ShowDebugInfo(void) = 0;
+	virtual void				DebugShowAnimState(int iStartLine) = 0;
 
 	// Feet.
 	// If you are forcing aim yaw, your code is almost definitely broken if you don't include a delay between 

@@ -9,7 +9,9 @@
 #include "../SDK/class/IMaterial.h"
 #include "../SDK/class/BaseEntity.h"
 #include "../SDK/class/CBaseLightCache.h"
+#include "../SDK/class/IVEngineClient.h"
 
+#include "../Features/TickManip/TickManipHelper.h"
 #include "../Features/Aimbot/AimbotHitscanV2/AimbotHitscanV2.h"
 #include "../Features/Chams/ChamsV2.h"
 #include "../Features/ModelPreview/ModelPreview.h"
@@ -26,13 +28,22 @@
 MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __fastcall, ENGINE_DLL, int64_t, 
     void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix)
 {
-    // NOTE : Not a single model with "World Texture" gets drawn through this function.
-    // There must be something else drawing all those world models n shit.
+    // If we are drawing local player while antiaim is on. 
+    // modify the bone matrix so that we get a the following:
+    // -> Proper eye angles on our real angles model for local player.
+    // -> AntiAim simulation going on for model preview model.
+    if (renderInfo->pRenderable->GetBaseEntFromRenderable() == I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer()))
+    {
+        if (F::tickManipHelper.UseCustomBonesLocalPlayer() == true)
+            boneMatrix = F::tickManipHelper.GetRealAngleBones();
+    }
 
+
+    // NOTE : each model will be drawn atleast once.
     int64_t result = Hook::DrawModelExecute::O_DrawModelExecute(pVTable, modelState, renderInfo, boneMatrix);
 
 
-    // Modulate world color materials & props n shit.
+    // Color/Alpha Modulate world materials & props n shit.
     F::worldColorMod.Run();
 
 
@@ -40,7 +51,9 @@ MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __f
     if (directX::UI::UI_has_been_shutdown == true)
         return result;
 
+    
     F::chamsV2.Run(pVTable, modelState, renderInfo, boneMatrix, Hook::DrawModelExecute::O_DrawModelExecute);
+
 
 
     // No model entity yet.
@@ -49,6 +62,7 @@ MAKE_HOOK(DrawModelExecute, "4C 89 4C 24 ? 48 89 4C 24 ? 55 53 56 57 41 54", __f
         return result;
 
 
+    // Hanlding our model from the model preview panel.
     if (pModelEnt->GetClientRenderable() == modelState->m_pRenderable)
     {
         std::vector<Material_t*>* pMaterials = F::materialGen.GetModelMaterials();

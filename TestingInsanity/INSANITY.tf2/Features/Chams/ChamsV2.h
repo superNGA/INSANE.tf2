@@ -16,6 +16,7 @@ public:
 
 private:
     void _DrawBackTrack(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, void* pOriginalDME, BaseEntity* pEnt);
+    void _DrawAAModel  (void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, void* pOriginalDME);
 
     void _SetupMatDropDowns();
 
@@ -30,6 +31,7 @@ DEFINE_SECTION(Player, "Materials", 1)
 static const char* pDummyList[] = {"NULL"};
 DEFINE_FEATURE(Player_Enemy,         "Enemy Players",     DropDown_t, Player, Materials, 1, DropDown_t(pDummyList, 1));
 DEFINE_FEATURE(Player_TeamMates,     "TeamMates",         DropDown_t, Player, Materials, 2, DropDown_t(pDummyList, 1));
+DEFINE_FEATURE(Player_AntiAim,       "AntiAim",           DropDown_t, Player, Materials, 3, DropDown_t(pDummyList, 1));
 
 DEFINE_SECTION(Sentry, "Materials", 2)
 DEFINE_FEATURE(Sentry_Enemy,         "Enemy Sentry",      DropDown_t, Sentry, Materials, 1, DropDown_t(pDummyList, 1));

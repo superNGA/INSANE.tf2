@@ -44,6 +44,9 @@ void InfoWindowV2_t::Draw()
     constexpr ImGuiWindowFlags iDefaultWindowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoNavInputs;
     for (auto& [szKey, windowInstance] : m_umAllWindows)
     {
+        if (windowInstance.m_bVisible == false)
+            continue;
+
         // Window's flags ( can move when menu is open, else static AF )
         ImGuiWindowFlags iWindowFlags = iDefaultWindowFlags;
         if (Render::menuGUI.IsVisible() == true)
@@ -74,7 +77,7 @@ void InfoWindowV2_t::Draw()
             bool bIsWindowBeingDragged = 
                 ImGui::IsMouseDragging(ImGuiMouseButton_Left) && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
-            // Since these windows are not movable while menu is closed, we won't even bother checking it while its closed.
+            // Since these windows are not movable while menu is closed, we won't even bother checking it while menu is closed.
             if(Render::menuGUI.IsVisible() == true && Features::Menu::FeatureInfo::FeatureInfo_DockWindows.IsActive() == true)
             {
                 if (bIsWindowBeingDragged == false && windowInstance.m_bDraggedLastFrame == true)
@@ -183,10 +186,15 @@ void InfoWindowV2_t::_CheckWindowDocking(InfoWindowInstance_t& window)
     ImVec2                vIdealParentWindowCenter(-1.0f, -1.0f); // To be set in this loop below.
     float                 flBestDistanceSqr = INFINITY;
     
+    // NOTE : Iterating all windows and finding one which is most suitable for docking.
+    // that window will be called parent.
     for (auto& [szKey, windowInstance] : m_umAllWindows)
     {
         // skip itself.
         if (&windowInstance == &window)
+            continue;
+
+        if (windowInstance.m_bVisible == false)
             continue;
 
         // center of this parent window.
@@ -227,6 +235,7 @@ void InfoWindowV2_t::_CheckWindowDocking(InfoWindowInstance_t& window)
     float flThetaAbs      = fabsf(RAD2DEG(atan2f(vWindowCenter.y - vParentWindowCenter.y, vWindowCenter.x - vParentWindowCenter.x)));
     bool  bDoVerticalDock = flThetaAbs >= 20.0f && flThetaAbs <= 160.0f;
     
+    // NOTE : window.m_vWindowPos is top left corner and not the center of the window.s
     if (bDoVerticalDock == true)
     {
         vFinalPos.x = pParentWindow->m_vWindowPos.x;
@@ -271,6 +280,7 @@ void InfoWindowV2_t::AddOrUpdate(std::string szKey, std::string&& szMessage, int
     }
 
     InfoWindowInstance_t* pWindowInstance = &it->second;
+    pWindowInstance->m_bVisible           = true;
 
     // NOTE : I am not expecting some crazy ammount of widgets inside one window, so 
     //        I am storing them in an array, and will search linearly. ( should be just fine. )
@@ -326,6 +336,7 @@ void InfoWindowV2_t::AddOrUpdate(std::string szKey, float flVal, float flMin, fl
     }
 
     InfoWindowInstance_t* pWindowInstance = &it->second;
+    pWindowInstance->m_bVisible           = true;
 
     // NOTE : I am not expecting some crazy ammoung of widgets inside one window, so 
     //        I am storing them in an array, and will search for required entry linearly. ( shouldn't effect performance )
@@ -363,4 +374,16 @@ void InfoWindowV2_t::AddOrUpdate(std::string szKey, float flVal, float flMin, fl
 void InfoWindowV2_t::AddOrUpdate(std::string szKey, int iVal, int iMin, int iMax, int iRow)
 {
     AddOrUpdate(szKey, static_cast<float>(iVal), static_cast<float>(iMin), static_cast<float>(iMax), iRow);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void InfoWindowV2_t::Hide(std::string szKey)
+{
+    auto it = m_umAllWindows.find(szKey);
+    if (it == m_umAllWindows.end())
+        return;
+
+    it->second.m_bVisible = false;
 }

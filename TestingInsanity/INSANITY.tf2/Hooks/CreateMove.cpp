@@ -16,8 +16,7 @@
 #include "../Features/Movement/Movement.h"
 #include "../Features/NoSpread/NoSpreadV2.h" // VENGENCE !
 #include "../Features/NoSpread/NoSpread.h"
-#include "../Features/Anti Aim/AntiAim.h"
-#include "../Features/Fake Lag/FakeLag.h"
+#include "../Features/TickManip/TickManipHelper.h"
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
@@ -40,8 +39,6 @@
 
 /*
 * Priority TODO : 
-        * Custom skybox.
-        * World lighting modulation.
         * Anti-Aim ( legit and rage )
         * Anti-Aim chams.
         * Decide on how the chocked ticks would be tracked.
@@ -112,15 +109,13 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
     // Me features, me pride-n-joy :)
     PROFILER_START_SCOPE_NAMED("CreateMove");
     {
-        F::entityIterator.Run(pLocalPlayer, pActiveWeapon, pCmd);
-        //F::movement.Run      (pLocalPlayer, pActiveWeapon, pCmd, result);
-        F::fakeLag.Run       (pLocalPlayer, pActiveWeapon, bSendPacket, pCmd);
-        F::antiAim.Run       (pLocalPlayer, pActiveWeapon, pCmd, result, bSendPacket);
-        F::aimbotHelper.Run  (pLocalPlayer, pActiveWeapon, pCmd, &result);
-        F::critHack.RunV2    (pLocalPlayer, pActiveWeapon, pCmd);
-        F::noSpreadV2.Run    (pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
-        F::tickShifter.Run   (pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
-        F::movement.Run      (pLocalPlayer, pActiveWeapon, pCmd, result);
+        F::entityIterator.Run (pLocalPlayer, pActiveWeapon, pCmd);
+        F::tickManipHelper.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket, &result);
+        F::aimbotHelper.Run   (pLocalPlayer, pActiveWeapon, pCmd, &result);
+        F::critHack.RunV2     (pLocalPlayer, pActiveWeapon, pCmd);
+        F::noSpreadV2.Run     (pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
+        F::movement.Run       (pLocalPlayer, pActiveWeapon, pCmd, result);
+        F::tickShifter.Run    (pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
         F::esp.RunCreateMove();
     }
     PROFILER_END_SCOPE_NAMED("CreateMove");

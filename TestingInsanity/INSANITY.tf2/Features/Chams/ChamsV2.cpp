@@ -7,6 +7,9 @@
 #include "../../SDK/class/IStudioRender.h"
 
 // Other
+#include "../../Extra/math.h"
+#include "../TickManip/TickManipHelper.h"
+#include "../TickManip/AntiAim/AntiAimV2.h"
 #include "../Entity Iterator/EntityIterator.h"
 #include "../Material Gen/MaterialGen.h"
 
@@ -24,19 +27,30 @@ void ChamsV2_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo
     if (F::materialGen.GetMaterialList().empty() == true)
         return;
     
+    
     BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
     if (pLocalPlayer == nullptr)
         return;
 
+
+    // Draw antiaim model.
+    _DrawAAModel(pVTable, modelState, renderInfo, pOriginalDME);
+
+    
     int         iFriendlyTeam      = pLocalPlayer->m_iTeamNum();
     BaseEntity* pEnt               = modelState->m_pRenderable->GetBaseEntFromRenderable();
     int         iClassID           = pEnt->GetClientClass()->m_ClassID;
     const auto& mapJumpTableHelper = F::entityIterator.GetJumpTableHelper();
     int         iWishMaterialIndex = -1;
+    
+
+    // We need to use recaculated bone matrix for local player while using antiaim custom real angles.
+    boneMatrix = (F::tickManipHelper.UseCustomBonesLocalPlayer() == true && pEnt == pLocalPlayer) ? F::tickManipHelper.GetRealAngleBones() : boneMatrix;
+
 
     if (mapJumpTableHelper.empty() == true)
         return;
-
+    
     auto it = mapJumpTableHelper.find(iClassID);
     if (it == mapJumpTableHelper.end())
         return;
@@ -74,10 +88,11 @@ void ChamsV2_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo
     default: break;
     }
 
+
+    // NOTE : Since at index 0 is the "off" material, index 1 is actually the true index 0.
+    // so we have to do this, its important.
     iWishMaterialIndex -= 1;
 
-    // First draw.
-    reinterpret_cast<T_DME>(pOriginalDME)(pVTable, modelState, renderInfo, boneMatrix);
 
     int iCustomMatOverride = F::entityIterator.GetEntityMaterial(pEnt);
     if (iCustomMatOverride >= 0)
@@ -199,6 +214,48 @@ void ChamsV2_t::_DrawBackTrack(void* pVTable, DrawModelState_t* modelState, Mode
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
+void ChamsV2_t::_DrawAAModel(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, void* pOriginalDME)
+{
+    if(F::tickManipHelper.ShouldDrawSecondModel() == false)
+        return;
+
+    BaseEntity* pLocalPlayer = I::IClientEntityList->GetClientEntity(I::iEngine->GetLocalPlayer());
+    BaseEntity* pEnt         = renderInfo->pRenderable->GetBaseEntFromRenderable();
+
+    if (pEnt != pLocalPlayer)
+        return;
+
+
+    // Get user's mateiral choice.
+    int iMatIndex = Features::Materials::Player::Player_AntiAim.GetData() - 1;
+    if (iMatIndex < 0) // if don't want a material override, then draw once & leave.
+    {
+        reinterpret_cast<T_DME>(pOriginalDME)(pVTable, modelState, renderInfo, F::tickManipHelper.GetFakeAngleBones());
+        return;
+    }
+    
+
+    iMatIndex = std::clamp<int>(iMatIndex, 0, F::materialGen.GetMaterialList().size() - 1);
+    const std::vector<Material_t*>& vecMaterials = F::materialGen.GetMaterialList()[iMatIndex].m_vecMaterials;
+
+
+    for(Material_t* pMat : vecMaterials)
+    {
+        if (pMat == nullptr || pMat->m_pMaterial == nullptr)
+            continue;
+
+
+        I::iStudioRender->ForcedMaterialOverride(pMat->m_pMaterial, OverrideType_t::OVERRIDE_NORMAL);
+        reinterpret_cast<T_DME>(pOriginalDME)(pVTable, modelState, renderInfo, F::tickManipHelper.GetFakeAngleBones());
+    }
+
+
+    I::iStudioRender->ForcedMaterialOverride(nullptr, OverrideType_t::OVERRIDE_NORMAL);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void ChamsV2_t::_SetupMatDropDowns()
 {
     // TODO : Maybe when a notification UI is in place, push a notification to alert of this limit.
@@ -209,7 +266,7 @@ void ChamsV2_t::_SetupMatDropDowns()
     // Constructing Material list. ( all mateiral that we have in mat gen. )
     const std::vector<MaterialBundle_t>& vecMatList = F::materialGen.GetMaterialList();
 
-    int nMaterials = vecMatList.size() <= MAX_MATERIALS ? vecMatList.size() : MAX_MATERIALS;
+    int nMaterials = Maths::MIN<int>(vecMatList.size(), MAX_MATERIALS);
     szMaterialList[0] = "None";
     for (int iMatIndex = 1; iMatIndex <= nMaterials; iMatIndex++)
     {
@@ -220,6 +277,7 @@ void ChamsV2_t::_SetupMatDropDowns()
     // Finally setting list.
     Features::Materials::Player::Player_Enemy.SetItems            (szMaterialList, nMaterials + 1);
     Features::Materials::Player::Player_TeamMates.SetItems        (szMaterialList, nMaterials + 1);
+    Features::Materials::Player::Player_AntiAim.SetItems          (szMaterialList, nMaterials + 1);
     Features::Materials::Sentry::Sentry_Enemy.SetItems            (szMaterialList, nMaterials + 1);
     Features::Materials::Sentry::Sentry_TeamMates.SetItems        (szMaterialList, nMaterials + 1);
     Features::Materials::Dispenser::Dispenser_Enemy.SetItems      (szMaterialList, nMaterials + 1);

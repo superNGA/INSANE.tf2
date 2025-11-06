@@ -35,7 +35,7 @@ private:
     // Target searching utility...
     void        _SortTargetList(const std::vector<BaseEntity*>* vecSource, std::vector<BaseEntity*>& vecDestination, BaseEntity* pLocalPlayer, const qangle& qViewAngles, bool bIsPlayer);
     void        _ConstructHitboxPriorityList(std::vector<int>* vecHitboxes);
-    bool        _IsInFOV                    (const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, const qangle& qAttackerViewAngles) const;
+    bool        _IsInFOV                    (const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos) const;
     float       _GetAngleFromCrosshair      (const vec& vTargetPos, const vec& vAttackerEyePos, const qangle& qViewAngles) const;
     bool        _IsVisible                  (const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, vec& vBestTargetPosOut, BaseEntity* pLocalPlayer, BaseEntity* pTarget, const qangle& qViewAngles) const;
     bool        _MultipointVisibilityCheck  (vec& vOrigin, vec& vMin, vec& vMax, const qangle& qViewAngles, vec& vTargetPosOut, BaseEntity* pLocalPlayer, BaseEntity* pTarget, float flBloomRadiusPerc) const;
