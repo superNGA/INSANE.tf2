@@ -167,10 +167,6 @@ int64_t DMEHandler_t::_HandleModelPreview(void* pVTable, DrawModelState_t* model
         return 0LL;
 
 
-    CMultiPlayerAnimState* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)F::modelPreview.GetModelEntity() + Netvars::DT_TFPlayer::m_hItem - 88);
-    pAnimState->Update(F::antiAimV2.GetRealAngles().yaw, F::antiAimV2.GetRealAngles().pitch);
-
-
     return _DrawModelWithMatList(pVecMaterials, pVTable, modelState, renderInfo, boneMatrix, pOriginalDME);
 }
 
