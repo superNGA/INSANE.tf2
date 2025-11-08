@@ -12,6 +12,7 @@
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/CMultAnimState.h"
 #include "../../SDK/class/IVEngineClient.h"
+#include "../../SDK/class/IMaterial.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 
 
@@ -48,20 +49,21 @@ void TickManipHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon,
 
     // Store bones to draw our fake angles model.
     // Either Fake-Lag is off or Fake-Lag is on and we are send packet is true.
-    bool bRecordFakeBones = 
-        (Features::Misc::FakeLag::FakeLag_Draw.IsActive() == false) || 
-        (Features::Misc::FakeLag::FakeLag_Draw.IsActive() == true && *pSendPacket == true);
-    if(ShouldDrawSecondModel() == true && bRecordFakeBones == true)
+    if(_ShouldRecordSecondModelBones(*pSendPacket) == true)
     {
-        _StoreBones(F::antiAimV2.GetFakeAngles(), m_fakeAngleBones, pLocalPlayer, pCmd);
+        qangle qEyeAngle = 
+            Features::AntiAim::AntiAim::AntiAim_Draw.IsActive() == true ?
+            F::antiAimV2.GetFakeAngles() : F::antiAimV2.GetRealAngles();
+
+        _StoreBones(qEyeAngle, m_fakeAngleBones, pLocalPlayer);
     }
 
 
     // if we are using custom real angles, we also need to store our real angle bones,
     // so we can draw our model with proper eye & feet yaw n shit like that.
-    if (Features::AntiAim::AntiAim::AntiAim_CustomRealAngles.IsActive() == true)
+    if (UseCustomBonesLocalPlayer() == true)
     {
-        _StoreBones(F::antiAimV2.GetRealAngles(), m_realAngleBones, pLocalPlayer, pCmd);
+        _StoreBones(F::antiAimV2.GetRealAngles(), m_realAngleBones, pLocalPlayer);
     }
 
 
@@ -87,13 +89,15 @@ void TickManipHelper_t::Reset()
 ///////////////////////////////////////////////////////////////////////////
 bool TickManipHelper_t::UseCustomBonesLocalPlayer() const
 {
-    return Features::AntiAim::AntiAim::AntiAim_CustomRealAngles.IsActive() == true;
+    return
+        Features::AntiAim::AntiAim::AntiAim_Enable.IsActive()           == true &&
+        Features::AntiAim::AntiAim::AntiAim_CustomRealAngles.IsActive() == true;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool TickManipHelper_t::ShouldDrawSecondModel()
+bool TickManipHelper_t::ShouldDrawSecondModel() const
 {
     bool bAntiAimDrawEnabled =
         Features::AntiAim::AntiAim::AntiAim_Enable.IsActive() == true &&
@@ -125,11 +129,33 @@ matrix3x4_t* TickManipHelper_t::GetRealAngleBones()
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, CUserCmd* pCmd)
+bool TickManipHelper_t::CalculatingBones() const
 {
-    assert(
-        (Features::AntiAim::AntiAim::AntiAim_Draw.IsActive() == true || Features::Misc::FakeLag::FakeLag_Draw.IsActive() == true) && 
-        "Draw disabled for AntiAim & FakeLag, but still storing bones.");
+    return m_bCalculatingBones;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool TickManipHelper_t::_ShouldRecordSecondModelBones(const bool bSendPacket) const
+{
+    // Atlest one of the features from antiaim_draw and fakelag_draw shoudl should be enabled.
+    // else no recording.
+    if (ShouldDrawSecondModel() == false)
+        return false;
+
+    if (Features::Misc::FakeLag::FakeLag_Enable.IsActive() == true && Features::Misc::FakeLag::FakeLag_Draw.IsActive() == true && bSendPacket == false)
+        return false;
+
+    return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, bool bRestoreAnimState)
+{
+    m_bCalculatingBones = true;
 
     // Store old animation state.
     CMultiPlayerAnimState* pAnimState = *reinterpret_cast<CMultiPlayerAnimState**>((uintptr_t)pLocalPlayer + Netvars::DT_TFPlayer::m_hItem - 88);
@@ -146,7 +172,7 @@ void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDesti
     pAnimState->Update(qEyeAngle.yaw, qEyeAngle.pitch); // <- this is important.
 
     // store original angles & spoof render angles.
-    const qangle qOriginalRenderAngles  = pLocalPlayer->GetRenderAngles();
+    const qangle qOriginalRenderAngles = pLocalPlayer->GetRenderAngles();
     pLocalPlayer->GetRenderAngles().yaw = qEyeAngle.yaw;
 
 
@@ -156,7 +182,10 @@ void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDesti
 
     // restore render angles & animation state.
     pLocalPlayer->GetRenderAngles() = qOriginalRenderAngles;
-    memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
+    if (bRestoreAnimState == false)
+        memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
+
+    m_bCalculatingBones = false;
 }
 
 

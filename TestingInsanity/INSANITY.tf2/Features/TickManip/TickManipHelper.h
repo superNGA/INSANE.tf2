@@ -10,9 +10,12 @@
 #include "../FeatureHandler.h"
 
 
-class BaseEntity;
-class baseWeapon;
-class CUserCmd;
+class  BaseEntity;
+class  baseWeapon;
+class  CUserCmd;
+struct ModelRenderInfo_t;
+struct matrix3x4_t;
+
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -23,17 +26,20 @@ public:
     void Reset();
 
     bool         UseCustomBonesLocalPlayer() const;
-    bool         ShouldDrawSecondModel();
+    bool         ShouldDrawSecondModel() const;
     matrix3x4_t* GetFakeAngleBones();
     matrix3x4_t* GetRealAngleBones();
+
+    bool CalculatingBones() const;
 
 private:
 
     // Calculating & storing bones.
-    void   _StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, CUserCmd* pCmd);
+    bool   _ShouldRecordSecondModelBones(const bool bSendPacket) const;
+    void   _StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, bool bRestoreAnimState = true);
     matrix3x4_t m_fakeAngleBones[MAX_STUDIO_BONES];
     matrix3x4_t m_realAngleBones[MAX_STUDIO_BONES];
-
+    bool        m_bCalculatingBones = false;
 
     // View angle override while manually shooting.
     void _HandleShots(CUserCmd* pCmd);

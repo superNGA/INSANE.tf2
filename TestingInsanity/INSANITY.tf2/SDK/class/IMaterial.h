@@ -2,6 +2,7 @@
 #include "Source Entity.h"
 #include "../TF object manager/TFOjectManager.h"
 #include "LightDesc_t.h"
+#include "IVModelInfo.h"
 #include "../../Utility/Signature Handler/signatures.h"
 
 #include "IKeyValuesSystem.h"
@@ -83,6 +84,9 @@ enum MaterialVarFlags_t
 //			 them this characteristics.
 //=========================================================================
 MAKE_SIG(KeyValues_LoadFromBuffer, "4C 89 4C 24 ? 48 89 4C 24 ? 55 56 48 81 EC", CLIENT_DLL, bool, void*, const char*, const char*, const char*, const char*)
+
+
+///////////////////////////////////////////////////////////////////////////
 enum types_t
 {
     TYPE_NONE = 0,
@@ -92,6 +96,10 @@ enum types_t
     TYPE_COLOR,
     TYPE_MATERIAL_TYPE
 };
+///////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////
 struct KeyValues
 {
     inline void Init()
@@ -168,8 +176,10 @@ struct KeyValues
     KeyValues* m_pSub   = nullptr;	// pointer to Start of a new sub key list
     KeyValues* m_pChain = nullptr;// Search here if it's not in our list
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 enum OverrideType_t
 {
     OVERRIDE_NORMAL = 0,
@@ -177,8 +187,10 @@ enum OverrideType_t
     OVERRIDE_DEPTH_WRITE,
     OVERRIDE_SSAO_DEPTH_WRITE,
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 struct studioloddata_t
 {
     void*					m_pMeshData; // there are studiohwdata_t.m_NumStudioMeshes of these.
@@ -191,8 +203,10 @@ struct studioloddata_t
     int*					m_pHWMorphDecalBoneRemap;
     int						m_nDecalBoneCount;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 struct studiohwdata_t
 {
     int						m_RootLOD;	// calced and clamped, nonzero for lod culling
@@ -200,11 +214,13 @@ struct studiohwdata_t
     studioloddata_t*		m_pLODs;
     int						m_NumStudioMeshes;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 struct DrawModelState_t
 {
-    void*					m_pStudioHdr;
+    StudioHdr_t*			m_pStudioHdr;
     studiohwdata_t*			m_pStudioHWData;
     I_client_renderable*	m_pRenderable;
     const void*				m_pModelToWorld;
@@ -212,8 +228,10 @@ struct DrawModelState_t
     int						m_drawFlags;
     int						m_lod;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 struct ModelRenderInfo_t
 {
     vec						origin;
@@ -230,8 +248,10 @@ struct ModelRenderInfo_t
     int						hitboxset;
     int16_t					instance;
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 struct DrawModelInfo_t
 {
     void*			m_pStudioHdr;
@@ -248,8 +268,10 @@ struct DrawModelInfo_t
     int				m_nLocalLightCount;
     LightDesc_t		m_LocalLightDescs[4];
 };
+///////////////////////////////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////////////////////////////////
 class IMaterial
 {
 public:
@@ -412,3 +434,4 @@ public:
 
     virtual bool			IsPrecached() const = 0;
 };
+///////////////////////////////////////////////////////////////////////////
