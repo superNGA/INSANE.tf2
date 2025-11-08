@@ -33,8 +33,10 @@ public:
     bool        ForceDumpCharge(int iTicks);
     bool        DoubleTapping() const;
 
+
 private:
     bool m_bInitialized = false;    
+
 
     // Charging...
     bool _ConsumeTickForCharge();

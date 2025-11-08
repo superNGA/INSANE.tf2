@@ -412,7 +412,7 @@ bool AimbotMelee_t::_IsInFOV(BaseEntity* pAttacker, const vec& vAttackerPos, con
     vAttackerToTarget.NormalizeInPlace();
 
     vec vAttackerAngles;
-    qangle qAttackerAngles = pAttacker->m_angEyeAngles();
+    qangle qAttackerAngles; I::iEngine->GetViewAngles(qAttackerAngles);
     Maths::AngleVectors(qAttackerAngles, &vAttackerAngles);
     vAttackerAngles.NormalizeInPlace();
 

@@ -24,7 +24,7 @@
 
 MAKE_SIG(CBaseAnimatinng_LookUpBones, "40 53 48 83 EC ? 48 8B DA E8 ? ? ? ? 48 8B C8 48 8B D3 48 83 C4 ? 5B E9 ? ? ? ? CC CC 48 89 74 24", CLIENT_DLL, int64_t, void*, const char*)
 
-
+ 
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
@@ -39,10 +39,11 @@ void AimbotHitscanV2_t::Run(CUserCmd* pCmd, BaseEntity* pLocalPlayer, baseWeapon
     // Choose target.
     bool bInAttack  = SDK::InAttack(pLocalPlayer, pActiveWeapon);
     bool bCanAttack = SDK::CanAttack(pLocalPlayer, pActiveWeapon);
-    if(bInAttack == false)
+    /*if(bInAttack == false)
     {
         m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon, pCmd);
-    }
+    }*/
+    m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon, pCmd);
 
 
     // If no target found, then leave.
@@ -103,8 +104,9 @@ bool AimbotHitscanV2_t::_ShouldAutoFire(BaseEntity* pLocalPlayer, baseWeapon* pA
     if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_AutoFire.IsActive() == false)
         return false;
 
-    if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
-        return false;
+    // causing trouble with pistols.
+    /*if (SDK::CanAttack(pLocalPlayer, pActiveWeapon) == false)
+        return false;*/
 
     // Don't Auto-Fire unscooped, if user doesn't wanna shoot unscoped.
     if (Features::Aimbot::AimbotHitscanV2::AimbotHitscan_DontShootUnscoped.IsActive() == true)
@@ -358,7 +360,7 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
                 matrix3x4_t*   targetBone = &record.m_bones[pHitbox->bone];
 
                 // Is this hitbox in FOV ?
-                if (_IsInFOV(targetBone, pHitbox, vEyePos, pCmd->viewangles) == false)
+                if (_IsInFOV(targetBone, pHitbox, vEyePos) == false)
                     continue;
 
 
@@ -672,7 +674,7 @@ void AimbotHitscanV2_t::_ConstructHitboxPriorityList(std::vector<int>* vecHitbox
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-bool AimbotHitscanV2_t::_IsInFOV(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos, const qangle& qAttackerViewAngles) const
+bool AimbotHitscanV2_t::_IsInFOV(const matrix3x4_t* bone, mstudiobbox_t* pHitbox, const vec& vAttackerEyePos) const
 {
     float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
 
@@ -680,6 +682,7 @@ bool AimbotHitscanV2_t::_IsInFOV(const matrix3x4_t* bone, mstudiobbox_t* pHitbox
     vec vBoneMin    = vBoneOrigin - pHitbox->bbmin;
     vec vBoneMax    = vBoneOrigin - pHitbox->bbmax;
 
+    qangle qAttackerViewAngles; I::iEngine->GetViewAngles(qAttackerViewAngles);
     float flAngleToMin = _GetAngleFromCrosshair(vBoneMin, vAttackerEyePos, qAttackerViewAngles);
     float flAngleToMax = _GetAngleFromCrosshair(vBoneMax, vAttackerEyePos, qAttackerViewAngles);
 

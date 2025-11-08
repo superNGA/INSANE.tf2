@@ -9,6 +9,7 @@
 #include "../../SDK/class/IRender.h"
 #include "../../SDK/class/ISurface.h"
 #include "../../SDK/class/IPanel.h"
+#include "../../SDK/class/IFileSystem.h"
 
 #include "../../Utility/Hook Handler/Hook_t.h"
 

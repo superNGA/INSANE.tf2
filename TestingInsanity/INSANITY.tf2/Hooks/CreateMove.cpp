@@ -16,8 +16,7 @@
 #include "../Features/Movement/Movement.h"
 #include "../Features/NoSpread/NoSpreadV2.h" // VENGENCE !
 #include "../Features/NoSpread/NoSpread.h"
-#include "../Features/Anti Aim/AntiAim.h"
-#include "../Features/Fake Lag/FakeLag.h"
+#include "../Features/TickManip/TickManipHelper.h"
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
 #include "../Features/MovementSimulation/MovementSimulation.h"
@@ -34,14 +33,21 @@
 #include "../SDK/class/IVDebugOverlay.h"
 #include "../SDK/class/ISurface.h"
 #include "../SDK/class/IEngineTrace.h"
+#include "../SDK/class/IMaterialSystem.h"
+#include "../SDK/class/IMaterial.h"
 
 
 /*
-* Now as of today 19th of October, 2025. I have no idea what to do now? I have done the UI and I am 
-* pretty happy with that, but now what do I do? I have a shit ton of feature to do, but I don't know
-* which one to do now, I need to make world class feature next, and they need to be practical and not
-* bullshit. I want them to be highly optimized and not some barely working high resource consuming freeloading
-* features. 
+I'm INSANE motha fuka, not a bitch ass niga like yourself. shut the fuck up. I will burn this fucking world down
+just to watch this fuckign world burn down. You don't dare put your pathetic name in the same line with my name. 
+*/
+
+/*
+* Priority TODO : 
+        * Anti-Aim ( legit and rage )
+        * Anti-Aim chams.
+        * Decide on how the chocked ticks would be tracked.
+        * Projectiles.
 * 
 * TODO's : 
         * Crit Hack ( rapid fire and reliable )
@@ -57,9 +63,6 @@
         * Fake lag ( With absolute chocked tick tracking )
         * 
         * and so on...
-
-* DONE : 
-        * ESP
 */
 
 
@@ -111,15 +114,13 @@ MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLI
     // Me features, me pride-n-joy :)
     PROFILER_START_SCOPE_NAMED("CreateMove");
     {
-        F::entityIterator.Run(pLocalPlayer, pActiveWeapon, pCmd);
-        //F::movement.Run      (pLocalPlayer, pActiveWeapon, pCmd, result);
-        F::fakeLag.Run       (pLocalPlayer, pActiveWeapon, bSendPacket, pCmd);
-        F::antiAim.Run       (pLocalPlayer, pActiveWeapon, pCmd, result, bSendPacket);
-        F::aimbotHelper.Run  (pLocalPlayer, pActiveWeapon, pCmd, &result);
-        F::critHack.RunV2    (pLocalPlayer, pActiveWeapon, pCmd);
-        F::noSpreadV2.Run    (pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
-        F::tickShifter.Run   (pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
-        F::movement.Run      (pLocalPlayer, pActiveWeapon, pCmd, result);
+        F::entityIterator.Run (pLocalPlayer, pActiveWeapon, pCmd);
+        F::tickManipHelper.Run(pLocalPlayer, pActiveWeapon, pCmd, bSendPacket, &result);
+        F::aimbotHelper.Run   (pLocalPlayer, pActiveWeapon, pCmd, &result);
+        F::critHack.RunV2     (pLocalPlayer, pActiveWeapon, pCmd);
+        F::noSpreadV2.Run     (pLocalPlayer, pActiveWeapon, pCmd, &result, bSendPacket);
+        F::movement.Run       (pLocalPlayer, pActiveWeapon, pCmd, result);
+        F::tickShifter.Run    (pLocalPlayer, pActiveWeapon, pCmd, bSendPacket);
         F::esp.RunCreateMove();
     }
     PROFILER_END_SCOPE_NAMED("CreateMove");

@@ -1,14 +1,35 @@
 #pragma once
 #include "ConCommandBase.h"
 
-class ConVar : public ConCommandBase
+
+///////////////////////////////////////////////////////////////////////////
+class IConVar
+{
+public:
+	// Value set
+	virtual void SetValue(const char* pValue) = 0;
+	virtual void SetValue(float flValue) = 0;
+	virtual void SetValue(int nValue) = 0;
+
+	// Return name of command
+	virtual const char* GetName(void) const = 0;
+
+	// Accessors.. not as efficient as using GetState()/GetInfo()
+	// if you call these methods multiple times on the same IConVar
+	virtual bool IsFlagSet(int nFlag) const = 0;
+};
+///////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////
+class ConVar : public ConCommandBase, public IConVar
 {
 public:
 	float GetFloat() { return m_fValue; }
 	int GetInt()	 { return m_nValue; }
 
 public:
-	void*						pVTable; // <-- This accounts for lack of virtual fns in my class.
+	//void*						pVTable; // <-- This accounts for lack of virtual fns in my class.
 
 	ConVar*						m_pParent;
 
@@ -42,3 +63,4 @@ public:
 	// Call this function when ConVar changes
 	//FnChangeCallback_t			m_fnChangeCallback;
 };
+///////////////////////////////////////////////////////////////////////////

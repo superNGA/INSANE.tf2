@@ -825,6 +825,12 @@ void MaterialGen_t::_DrawModelPanelOverlay(float flWidth, float flHeight, float 
         }
     }
 
+    ImGui::SameLine(flWidth - (vHelperButtonSize.x + flCharWidth) * 3.0f);
+    if (ImGui::Button("x##CloseThisShit", ImVec2(20.0f, 20.0f)) == true)
+    {
+        Features::MaterialGen::MaterialGen::Enable.m_Data = false;
+    }
+
 
     // Model search box
     {

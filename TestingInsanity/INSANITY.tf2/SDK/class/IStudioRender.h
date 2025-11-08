@@ -1,5 +1,6 @@
 #pragma once
 #include "IAppSystem.h"
+#include "LightDesc_t.h"
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
 
@@ -39,7 +40,7 @@ public:
 	virtual const vec* GetAmbientLightDirections() = 0;
 	virtual void SetAmbientLightColors(const void* pAmbientOnlyColors) = 0;
 	virtual void SetAmbientLightColors(const vec* pAmbientOnlyColors) = 0;
-	virtual void SetLocalLights(int numLights, const void* pLights) = 0;
+	virtual void SetLocalLights(int numLights, const LightDesc_t* pLights) = 0;
 
 	// Sets information about the camera location + orientation
 	virtual void SetViewState(const vec& viewOrigin, const vec& viewRight,
@@ -60,7 +61,7 @@ public:
 	virtual void SetLODSwitchValue(void* hardwareData, int lod, float switchValue) = 0;
 
 	// Sets the color/alpha modulation
-	virtual void SetColorModulation(float const* pColor) = 0;
+	virtual void SetColorModulation(float const* pColor) = 0; // 27th index according to this paste.
 	virtual void SetAlphaModulation(float flAlpha) = 0;
 
 	// Draws the model

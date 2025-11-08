@@ -20,6 +20,8 @@
 #include "../../SDK/class/FileWeaponInfo.h"
 #include "../ImGui/InfoWindowV2/InfoWindow.h"
 
+#include "../TickManip/TickManipHelper.h"
+
 // UTILITY
 #include "../../Utility/Interface Handler/Interface.h"
 #include "../../Utility/Signature Handler/signatures.h"
@@ -79,9 +81,9 @@ void TickShifter_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUs
             if (m_bDoubleTap == true)
                 pCmd->buttons |= IN_ATTACK;
 
-            *pSendPacket   = true;
-            m_bFinalTickThisPacket   = false;
-            m_bDoubleTap   = false;
+            *pSendPacket           = true;
+            m_bFinalTickThisPacket = false;
+            m_bDoubleTap           = false;
             WIN_LOG("Fired second double tap shot.");
             return;
         }
@@ -130,6 +132,7 @@ void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSa
         m_iChargeLevel++;
         return;
     }
+
     
     // Call the original.
     reinterpret_cast<T_CL_Move>(pOriginalCLMove)(flAccumulatedExtraSample, bOriginalFinalTick);
@@ -178,6 +181,10 @@ void TickShifter_t::HandleTick(void* pOriginalCLMove, float flAccumulatedExtraSa
 ///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::_ConsumeTickForCharge()
 {
+    // No double tapping while fake lagging.
+    if (Features::Misc::FakeLag::FakeLag_Enable.IsActive() == true)
+        return false;
+
     if (m_bTickShifting == true)
         return false;
 
@@ -200,6 +207,7 @@ bool TickShifter_t::_ConsumeTickForCharge()
     if (iTicksSinceDump % iRechargeAggression == 0)
         return true;
 
+    return false;
 }
 
 
@@ -243,6 +251,9 @@ int TickShifter_t::_DetermineShiftGoal()
 ///////////////////////////////////////////////////////////////////////////
 bool TickShifter_t::_ShouldDumpCharge() const
 {
+    if (Features::Misc::FakeLag::FakeLag_Enable.IsActive() == true)
+        return false;
+
     // Got any charge ?
     if (m_iChargeLevel <= 0)
         return false;
@@ -294,13 +305,6 @@ void TickShifter_t::_Draw()
     Render::infoWindowV2.AddOrUpdate("TickShifter", 
         std::format("waiting {:.2}",
         Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))), 1, InfoWindowWidget_t::Alignment_Middle);
-
-    //// Drawing Charge
-    //Render::InfoWindow.AddToCenterConsole("TS_Charge", std::format("Charge: {}", m_iChargeLevel), m_iChargeLevel < CVars::sv_maxusrcmdprocessticks ? RED : GREEN);
-    //
-    //// Drawing Charge delay
-    //Render::InfoWindow.AddToCenterConsole("TS_ChargeWait", std::format("waiting {:.2}", 
-    //    Maths::MAX<float>(0.0f, Features::TickShifter::TickShifter::RechargeDelay_InSec.GetData().m_flVal - (iTimeSinceDumpInMs / 1000.0f))));
 }
 
 
@@ -330,7 +334,6 @@ bool TickShifter_t::DoubleTapping() const
 {
     return ShiftingTicks() == true && m_bDoubleTap == true;
 }
-
 
 
 //=========================================================================

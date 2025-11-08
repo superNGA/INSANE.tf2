@@ -193,10 +193,10 @@ void BoxFilled3D_t::SetVertex(const vec& vOrigin, const vec& vMin, const vec& vM
 
 
     // DO MATRIX THINGS.
-    vec vTopLeft;     Maths::VectorTransform(vMin, mat, vTopLeft);
-    vec vTopRight;    vec vTopRightNoRot   (vMax.x, vMin.y, 0.0f); Maths::VectorTransform(vTopRightNoRot,   mat, vTopRight);
-    vec vBottomLeft;  vec vBottomLeftNoRot (vMin.x, vMax.y, 0.0f); Maths::VectorTransform(vBottomLeftNoRot, mat, vBottomLeft);
-    vec vBottomRight; Maths::VectorTransform(vMax, mat, vBottomRight);
+    vec vTopLeft;     vec vTopLeftNoRot     (vMin.x, vMin.y, 0.0f); Maths::VectorTransform(vTopLeftNoRot,     mat, vTopLeft);
+    vec vTopRight;    vec vTopRightNoRot    (vMax.x, vMin.y, 0.0f); Maths::VectorTransform(vTopRightNoRot,    mat, vTopRight);
+    vec vBottomLeft;  vec vBottomLeftNoRot  (vMin.x, vMax.y, 0.0f); Maths::VectorTransform(vBottomLeftNoRot,  mat, vBottomLeft);
+    vec vBottomRight; vec vBottomRightNoRot (vMax.x, vMax.y, 0.0f); Maths::VectorTransform(vBottomRightNoRot, mat, vBottomRight);
 
 
     // set points.

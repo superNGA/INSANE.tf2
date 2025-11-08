@@ -11,21 +11,18 @@ class IMaterial;
 class IMaterialSystem;
 
 // Functions
-MAKE_SIG(CMaterialSystem_CreateNamedRenderTargetTextureEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 8B 9C 24", MATERIALSYSTEM_DLL, ITexture*,
-    void*, const char*, int, int, int, int, int, int, int)
+MAKE_SIG(CMaterialSystem_CreateNamedRenderTargetTextureEx, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC ? 8B 9C 24",                   MATERIALSYSTEM_DLL, ITexture*, void*, const char*, int, int, int, int, int, int, int)
+MAKE_SIG(CMaterialSystem_GetRenderContext,                 "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F9 48 81 C1",                                    MATERIALSYSTEM_DLL, IMatRenderContext*, void*)
+MAKE_SIG(CMaterialSystem_ClearBuffer,                      "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 41 0F B6 F9",                   MATERIALSYSTEM_DLL, void*, void*, bool, bool, bool)
+MAKE_SIG(CMaterialSystem_GetBackBufferFormat,              "48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 83 EC", MATERIALSYSTEM_DLL, int64_t, int)
 
-MAKE_SIG(CMaterialSystem_GetRenderContext, "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F9 48 81 C1", MATERIALSYSTEM_DLL, IMatRenderContext*,
-    void*)
 
-MAKE_SIG(CMaterialSystem_ClearBuffer, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B D9 41 0F B6 F9", MATERIALSYSTEM_DLL, void*,
-    void*, bool, bool, bool)
-
-MAKE_SIG(CMaterialSystem_GetBackBufferFormat, "48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 8B 0D ? ? ? ? 48 8B 01 48 FF 60 ? CC CC 48 83 EC", MATERIALSYSTEM_DLL, int64_t, int)
-
-//																		    Return, this,  name,		type,        complain, flags
-MAKE_SIG(CMateiralSystem_FindTexture, "40 55 57 41 55", MATERIALSYSTEM_DLL, void*,	void*, const char*, const char*, bool,     int)
-MAKE_SIG(CMaterialSystem_FindMaterial, "48 83 EC ? 48 8B 44 24 ? 4C 8B 11", MATERIALSYSTEM_DLL, IMaterial*, void*, const char*, const char*, bool, const char*)
+MAKE_SIG(CMateiralSystem_FindTexture,    "40 55 57 41 55",                       MATERIALSYSTEM_DLL, void*,	     void*,            const char*, const char*, bool,     int)
+MAKE_SIG(CMaterialSystem_FindMaterial,   "48 83 EC ? 48 8B 44 24 ? 4C 8B 11",    MATERIALSYSTEM_DLL, IMaterial*, void*,            const char*, const char*, bool, const char*)
 MAKE_SIG(CMaterialSystem_CreateMaterial, "48 89 5C 24 ? 57 48 83 EC ? 48 8B C2", MATERIALSYSTEM_DLL, IMaterial*, IMaterialSystem*, const char*, KeyValues*)
+MAKE_SIG(CMaterialSystem_FirstMaterial,  "0F B7 81 ? ? ? ? 4C 8B C9",            MATERIALSYSTEM_DLL, unsigned short, void*)
+MAKE_SIG(CMaterialSystem_NextMaterial,   "48 81 C1 ? ? ? ? E9 ? ? ? ? CC CC CC CC 89 15", MATERIALSYSTEM_DLL, unsigned short, void*, unsigned short)
+MAKE_SIG(CMaterialSystem_GetMaterial,    "0F B7 C2 48 8D 14 40",                 MATERIALSYSTEM_DLL, IMaterial*, void*, unsigned short)
 
 class IMaterialSystem
 {
@@ -76,6 +73,34 @@ public:
     inline IMaterial* CreateMaterial(const char* szMaterialName, KeyValues* pKV)
     {
         return Sig::CMaterialSystem_CreateMaterial(this, szMaterialName, pKV);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    inline unsigned short FirstMaterial()
+    {
+        return Sig::CMaterialSystem_FirstMaterial(this);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    inline unsigned short NextMaterial(unsigned short hMaterial)
+    {
+        return Sig::CMaterialSystem_NextMaterial(this, hMaterial);
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    inline unsigned short InvalidMaterial()
+    {
+        return 0xFFFF;
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    inline IMaterial* GetMaterial(unsigned short hMaterial)
+    {
+        return Sig::CMaterialSystem_GetMaterial(this, hMaterial);
     }
 };
 
