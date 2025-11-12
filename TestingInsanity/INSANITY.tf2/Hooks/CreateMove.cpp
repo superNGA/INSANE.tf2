@@ -38,11 +38,6 @@
 
 
 /*
-I'm INSANE motha fuka, not a bitch ass niga like yourself. shut the fuck up. I will burn this fucking world down
-just to watch this fuckign world burn down. You don't dare put your pathetic name in the same line with my name. 
-*/
-
-/*
 * Priority TODO : 
         * Anti-Aim ( legit and rage )
         * Anti-Aim chams.

@@ -13,6 +13,7 @@
 #include "../../SDK/class/CMultAnimState.h"
 #include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/IMaterial.h"
+#include "../../SDK/class/IVDebugOverlay.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 
 
@@ -59,19 +60,11 @@ void TickManipHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon,
     }
 
 
-    // if we are using custom real angles, we also need to store our real angle bones,
-    // so we can draw our model with proper eye & feet yaw n shit like that.
-    if (UseCustomBonesLocalPlayer() == true)
-    {
-        _StoreBones(F::antiAimV2.GetRealAngles(), m_realAngleBones, pLocalPlayer);
-    }
-
-
     // In case we are shooting, we need to put our cmd view angles to engine angles, so we 
     // shoot where user intends to shoot.
     if (bShooting == true)
         _HandleShots(pCmd);
-    
+
 
     _DrawWidget();
 }
@@ -153,7 +146,7 @@ bool TickManipHelper_t::_ShouldRecordSecondModelBones(const bool bSendPacket) co
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, bool bRestoreAnimState)
+void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer)
 {
     m_bCalculatingBones = true;
 
@@ -169,21 +162,40 @@ void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDesti
 
     // New animation state angles.
     pAnimState->m_flCurrentFeetYaw = qEyeAngle.yaw;
-    pAnimState->Update(qEyeAngle.yaw, qEyeAngle.pitch); // <- this is important.
+    pAnimState->Update(qEyeAngle.yaw, qEyeAngle.pitch);
+
 
     // store original angles & spoof render angles.
     const qangle qOriginalRenderAngles = pLocalPlayer->GetRenderAngles();
     pLocalPlayer->GetRenderAngles().yaw = qEyeAngle.yaw;
+
+    
+    // Make sure we are not looking at some bitch ass angle.
+    // sometimes, the pose parameter index 1, is set to 0 or 1, instead of 0.5, and that 
+    // will make us look either ot the right or left, with the correct feet position,
+    // as in rotating spine to look either way.
+    pLocalPlayer->GetPoseParameter()[1] = 0.5f;
+
+    // Storing animation parameters to prevent animation from speeding up.
+    int   iOldSequence   = pLocalPlayer->m_nSequence();
+    float flOldCycle     = pLocalPlayer->m_flCycle();
+    float flOldFrameTime = tfObject.pGlobalVar->frametime;
 
 
     // Make game build us another bone matrix
     pLocalPlayer->SetupBones(pDestination, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, CUR_TIME);
 
 
+    // Restoring anim parameters to prevent anim speed up.
+    tfObject.pGlobalVar->frametime = flOldFrameTime;
+    pLocalPlayer->m_nSequence(iOldSequence);
+    pLocalPlayer->m_flCycle(flOldCycle);
+
+
     // restore render angles & animation state.
     pLocalPlayer->GetRenderAngles() = qOriginalRenderAngles;
-    if (bRestoreAnimState == false)
-        memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
+    memcpy(pAnimState, &oldAnimState, sizeof(CMultiPlayerAnimState));
+
 
     m_bCalculatingBones = false;
 }

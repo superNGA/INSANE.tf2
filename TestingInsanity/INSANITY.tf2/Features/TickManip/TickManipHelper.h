@@ -36,7 +36,7 @@ private:
 
     // Calculating & storing bones.
     bool   _ShouldRecordSecondModelBones(const bool bSendPacket) const;
-    void   _StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer, bool bRestoreAnimState = true);
+    void   _StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDestination, BaseEntity* pLocalPlayer);
     matrix3x4_t m_fakeAngleBones[MAX_STUDIO_BONES];
     matrix3x4_t m_realAngleBones[MAX_STUDIO_BONES];
     bool        m_bCalculatingBones = false;

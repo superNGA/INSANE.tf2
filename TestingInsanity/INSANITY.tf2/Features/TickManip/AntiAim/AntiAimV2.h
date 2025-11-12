@@ -25,11 +25,14 @@ public:
     
     int    GetAntiAimTicks();
     
-    qangle GetFakeAngles() const;
-    qangle GetRealAngles() const;
+    qangle  GetFakeAngles() const;
+    qangle* GetFakeAnglesP();
+    qangle  GetRealAngles() const;
+    qangle* GetRealAnglesP();
 
 private:
     void _FixMovement(CUserCmd* pCmd);
+    void _EdgeDetection(BaseEntity* pLocalPlayer, CUserCmd* pCmd, qangle& qSafeAngleOut, float flPitchIn);
 
     qangle _GetFakeAngles(CUserCmd* pCmd) const;
     qangle _GetRealAngles(CUserCmd* pCmd) const;
@@ -56,3 +59,5 @@ DEFINE_FEATURE(AntiAim_FakeYawOffset,    "Fake Yaw Offest",    FloatSlider_t, An
 DEFINE_FEATURE(AntiAim_CustomRealAngles, "Custom Real Angles", bool,          AntiAim, AntiAim, 6, false,                              FeatureFlag_SupportKeyBind, "Draw model with fake angles.")
 DEFINE_FEATURE(AntiAim_RealPitch,        "Real Pitch",         FloatSlider_t, AntiAim, AntiAim, 7, FloatSlider_t(0.0f, -89.0f, 89.0f), FeatureFlag_SupportKeyBind, "Pitch the others see.")
 DEFINE_FEATURE(AntiAim_RealYawOffset,    "Real Yaw Offest",    FloatSlider_t, AntiAim, AntiAim, 8, FloatSlider_t(0.0f, 0.0f, 360.0f),  FeatureFlag_SupportKeyBind, "how much angle between your view angles & real yaw.")
+
+DEFINE_FEATURE(AntiAim_EdgeDetection,    "Edge Detection", bool, AntiAim, AntiAim, 9, false, FeatureFlag_SupportKeyBind, "Hide real angles behind wall if avaiable.")

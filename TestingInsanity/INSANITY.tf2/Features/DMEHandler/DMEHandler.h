@@ -19,7 +19,6 @@ private:
     int64_t _ApplyChams        (int& nDrawCalls, void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix, void* pOriginalDME);
     int64_t _HandleModelPreview(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t*  boneMatrix,   void* pOriginalDME);
     int64_t _HandleLocalPlayer (void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t** ppBoneMatrix, void* pOriginalDME);
-    int64_t _HandleLocalProps  (void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t** ppBoneMatrix, void* pOriginalDME);
 
     int     _GetMatIndexFromUIIndex(int iMatUIIndex);
     int64_t _DrawModelWithMatList(const std::vector<Material_t*>* pVecMaterials, void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t* boneMatrix, void* pOriginalDME);
