@@ -38,10 +38,16 @@ void InfoWindowV2_t::Draw()
     {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, Render::menuGUI.GetPrimaryClr().GetAsImVec4());
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize,   ImVec2(0.0f, 0.0f));
     }
 
     ImGui::PushFont(Resources::Fonts::JetBrainsMonoNerd_Small);
-    constexpr ImGuiWindowFlags iDefaultWindowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoNavInputs;
+    constexpr ImGuiWindowFlags iDefaultWindowFlags = 
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoNavInputs |
+        ImGuiWindowFlags_NoScrollbar  | ImGuiWindowFlags_NoScrollWithMouse;
+
     for (auto& [szKey, windowInstance] : m_umAllWindows)
     {
         if (windowInstance.m_bVisible == false)
@@ -68,10 +74,21 @@ void InfoWindowV2_t::Draw()
 
             // Window size.
             windowInstance.m_vWindowSize.x = Features::Menu::FeatureInfo::FeatureInfo_WindowWidth.GetData().m_flVal;
-            windowInstance.m_vWindowSize.y = (static_cast<float>(windowInstance.m_nRows + 1) * flRowHeight) + ((static_cast<float>(windowInstance.m_nRows + 2) * flPaddingInPxl));
+            windowInstance.m_vWindowSize.y = (static_cast<float>(windowInstance.m_nRows + 1) * flRowHeight) + (static_cast<float>(windowInstance.m_nRows + 2) * flPaddingInPxl);
             ImGui::SetWindowSize(windowInstance.m_vWindowSize);
 
+
+            if(Features::Menu::FeatureInfo::FeatureInfo_EnableBorder.IsActive() == true)
+            {
+                ImGui::GetWindowDrawList()->AddRect(
+                    windowInstance.m_vWindowPos,
+                    ImVec2(windowInstance.m_vWindowPos.x + windowInstance.m_vWindowSize.x, windowInstance.m_vWindowPos.y + windowInstance.m_vWindowSize.y),
+                    ImColor(255, 0, 0, 255));
+            }
+
+
             _DrawWindow(windowInstance, flRowHeight);
+
 
             // Check if we can dock this window.
             bool bIsWindowBeingDragged = 
@@ -87,12 +104,13 @@ void InfoWindowV2_t::Draw()
             }
             windowInstance.m_bDraggedLastFrame = bIsWindowBeingDragged;
 
+
             ImGui::End();
         }
     }
     ImGui::PopFont();
 
-    ImGui::PopStyleColor(); ImGui::PopStyleVar();
+    ImGui::PopStyleColor(); ImGui::PopStyleVar(4);
 }
 
 
@@ -131,11 +149,13 @@ void InfoWindowV2_t::_DrawWindow(InfoWindowInstance_t& window, float flRowHeight
         vWidgetPos.y = vWidgetPos.y + (flRowHeight - vWidgetSize.y) / 2.0f;
 
 
+        // Draw empty bar...
         pDrawList->AddRectFilled(
             vWidgetPos, ImVec2(vWidgetPos.x + vWidgetSize.x, vWidgetPos.y + vWidgetSize.y),
             ImColor(Render::menuGUI.GetSecondaryClr().GetAsImVec4()), 1000.0f
         );
 
+        // Draw another bar to represent fill level.
         float flFillLevel = (widget.m_flVal - widget.m_flMin) / (widget.m_flMax - widget.m_flMin);
         pDrawList->AddRectFilled(
             vWidgetPos, ImVec2(vWidgetPos.x + (vWidgetSize.x * flFillLevel), vWidgetPos.y + vWidgetSize.y),
@@ -150,18 +170,20 @@ void InfoWindowV2_t::_DrawWindow(InfoWindowInstance_t& window, float flRowHeight
     {
         // Calculating widget's X coordinate according to its alignment.
         float flWidgetPosX = 0.0f;
-        if (widget.m_iAlignment == InfoWindowWidget_t::Alignment_Left)
+        switch (widget.m_iAlignment)
         {
+        case InfoWindowWidget_t::Alignment_Left:
             flWidgetPosX = window.m_vWindowPos.x + flPaddingInPxl;
-        }
-        else if (widget.m_iAlignment == InfoWindowWidget_t::Alignment_Middle)
-        {
+            break;
+        case InfoWindowWidget_t::Alignment_Middle:
             flWidgetPosX = window.m_vWindowPos.x + (window.m_vWindowSize.x - (widget.m_szMessage.size() * flCharWidth)) / 2.0f;
-        }
-        else if (widget.m_iAlignment == InfoWindowWidget_t::Alignment_Right)
-        {
+            break;
+        case InfoWindowWidget_t::Alignment_Right:
             flWidgetPosX = window.m_vWindowPos.x + window.m_vWindowSize.x - flPaddingInPxl - (widget.m_szMessage.size() * flCharWidth);
+            break;
+        default: break;
         }
+
 
         ImVec2 vWidgetPos(
             flWidgetPosX,
@@ -181,6 +203,7 @@ void InfoWindowV2_t::_CheckWindowDocking(InfoWindowInstance_t& window)
     ImVec2 vWindowCenter(
         window.m_vWindowPos.x + (window.m_vWindowSize.x / 2.0f),
         window.m_vWindowPos.y + (window.m_vWindowSize.y / 2.0f));
+
 
     InfoWindowInstance_t* pParentWindow     = nullptr;
     ImVec2                vIdealParentWindowCenter(-1.0f, -1.0f); // To be set in this loop below.

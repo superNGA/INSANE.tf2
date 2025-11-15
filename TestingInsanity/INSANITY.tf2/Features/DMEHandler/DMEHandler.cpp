@@ -48,12 +48,6 @@ int64_t DMEHandler_t::Run(void* pVTable, DrawModelState_t* modelState, ModelRend
     {
         _HandleLocalPlayer(pVTable, modelState, renderInfo, &boneMatrix, pOriginalDME);
     }
-
-
-    if (pEnt->m_hOwnerEntity() == pLocalPlayer->GetRefEHandle())
-    {
-        _HandleLocalProps(pVTable, modelState, renderInfo, &boneMatrix, pOriginalDME);
-    }
     
 
     int nDrawCalls = 0; int64_t iResult = _ApplyChams(nDrawCalls, pVTable, modelState, renderInfo, boneMatrix, pOriginalDME);
@@ -74,10 +68,6 @@ int64_t DMEHandler_t::_ApplyChams(int& nDrawCalls, void* pVTable, DrawModelState
     int         iClassID           = pEnt->GetClientClass()->m_ClassID;
     const auto& mapJumpTableHelper = F::entityIterator.GetJumpTableHelper();
     int         iWishMaterialIndex = -1;
-
-
-    // We need to use recaculated bone matrix for local player while using antiaim custom real angles.
-    boneMatrix = (F::tickManipHelper.UseCustomBonesLocalPlayer() == true && pEnt == pLocalPlayer) ? F::tickManipHelper.GetRealAngleBones() : boneMatrix;
 
 
     auto it = mapJumpTableHelper.find(iClassID);
@@ -170,7 +160,7 @@ int64_t DMEHandler_t::_HandleModelPreview(void* pVTable, DrawModelState_t* model
     return _DrawModelWithMatList(pVecMaterials, pVTable, modelState, renderInfo, boneMatrix, pOriginalDME);
 }
 
-
+bool bShit = false;
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 int64_t DMEHandler_t::_HandleLocalPlayer(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t** ppBoneMatrix, void* pOriginalDME)
@@ -178,13 +168,6 @@ int64_t DMEHandler_t::_HandleLocalPlayer(void* pVTable, DrawModelState_t* modelS
     assert(ppBoneMatrix != nullptr && *ppBoneMatrix != nullptr && "Bad bone matrix for local player  ->  " __FUNCTION__);
     if (ppBoneMatrix == nullptr || *ppBoneMatrix == nullptr)
         return 0LL;
-
-
-    // In case using legit antiaim, use manually created bones.
-    if (F::tickManipHelper.UseCustomBonesLocalPlayer() == true)
-    {
-        *ppBoneMatrix = F::tickManipHelper.GetRealAngleBones();
-    }
 
 
     // User doesn't want to draw second model?
@@ -204,18 +187,6 @@ int64_t DMEHandler_t::_HandleLocalPlayer(void* pVTable, DrawModelState_t* modelS
     // draw using materials of choice.
     const std::vector<Material_t*>& vecMaterials = F::materialGen.GetMaterialList()[iMatIndex].m_vecMaterials;
     return _DrawModelWithMatList(&vecMaterials, pVTable, modelState, renderInfo, F::tickManipHelper.GetFakeAngleBones(), pOriginalDME);
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-int64_t DMEHandler_t::_HandleLocalProps(void* pVTable, DrawModelState_t* modelState, ModelRenderInfo_t* renderInfo, matrix3x4_t** ppBoneMatrix, void* pOriginalDME)
-{
-    BaseEntity* pEnt = renderInfo->pRenderable->GetBaseEntFromRenderable();
-    if (pEnt == nullptr)
-        return 0LL;
-    
-    return 1LL;
 }
 
 

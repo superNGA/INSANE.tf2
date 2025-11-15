@@ -127,7 +127,7 @@ struct MultiPlayerMovementData_t
 class CMultiPlayerAnimState
 {
 public:
-    virtual void				GANDU_COLLEGE() = 0;
+    virtual void				DummyFn() = 0;
     virtual void				ClearAnimationState() = 0;
     virtual void				DoAnimationEvent(PlayerAnimEvent_t event, int nData = 0) = 0;
     virtual Activity			CalcMainActivity() = 0;

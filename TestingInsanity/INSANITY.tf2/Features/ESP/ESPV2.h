@@ -94,6 +94,7 @@ DEFINE_FEATURE(ESPPlayer_ExtraColorTopLeft,     "Skeleton Top-Left clr",     Col
 DEFINE_FEATURE(ESPPlayer_ExtraColorTopRight,    "Skeleton Top-Right clr",    ColorData_t,   Player, Materials, 16, ColorData_t(1.0f, 1.0f, 1.0f, 1.0f))
 DEFINE_FEATURE(ESPPlayer_ExtraColorBottomLeft,  "Skeleton Bottom-Left clr",  ColorData_t,   Player, Materials, 17, ColorData_t(1.0f, 1.0f, 1.0f, 1.0f))
 DEFINE_FEATURE(ESPPlayer_ExtraColorBottomRight, "Skeleton Bottom-Right clr", ColorData_t,   Player, Materials, 18, ColorData_t(1.0f, 1.0f, 1.0f, 1.0f))
+DEFINE_FEATURE(ESPPlayer_NoDrawDeadEnt,         "DEXD ent filter",           bool,          Player, Materials, 19, false, FeatureFlag_None, "Enable esp boxes")
 
 // Sentry esp settings.
 DEFINE_FEATURE(ESPSentry_Enable,           "ESP",           bool,          Sentry,     Materials, 3, false,                                 FeatureFlag_None, "Enable esp boxes")

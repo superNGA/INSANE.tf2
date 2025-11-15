@@ -38,29 +38,28 @@
 
 
 /*
-I'm INSANE motha fuka, not a bitch ass niga like yourself. shut the fuck up. I will burn this fucking world down
-just to watch this fuckign world burn down. You don't dare put your pathetic name in the same line with my name. 
-*/
-
-/*
-* Priority TODO : 
-        * Anti-Aim ( legit and rage )
-        * Anti-Aim chams.
-        * Decide on how the chocked ticks would be tracked.
-        * Projectiles.
+* Priority TODO's:
+        * Radar. (ImGui or shader?)
+        * Enemy indicator arrow.
+        * AntiAim indicator arrow.
+        * AntiAim information box.
+        * AntiAim projectile fix.
+        * GLOW!
+        * Lineup kill only aimbot filter.
+        * 
+        * 
+        * ---- movement -----
+        * AutoRocket jump ( nice / continous )
+        * AutoSticky jump.
 * 
 * TODO's : 
         * Crit Hack ( rapid fire and reliable )
         * Projectile aimbot. ( absolute one )
         * Spash bot ( good & efficient one )
         * Melee aimbot ( very good one, shouldn't miss even once )
-        * Anti Aim ( a good one again )
         * Resolver ( I don't even know how to get started on this shit. )
         * Enemy index arrow.
         * Radar.
-        * custom sky box
-        * world lighting.
-        * Fake lag ( With absolute chocked tick tracking )
         * 
         * and so on...
 */

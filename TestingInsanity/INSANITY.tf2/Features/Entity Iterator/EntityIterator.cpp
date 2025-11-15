@@ -15,6 +15,7 @@
 #include "../../SDK/class/IVDebugOverlay.h"
 #include "../../SDK/TF object manager/TFOjectManager.h"
 #include "../Tick Shifting/TickShifting.h"
+#include "../MovementSimulation/MovementSimulation.h"
 
 // Utility
 #include "../../Utility/ConsoleLogging.h"
@@ -64,6 +65,10 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     std::vector<BaseEntity*>* vecEnemies = m_vecPlayerEnemy.GetWriteBuffer();
     DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecPlayerEnemy, vecEnemies);
 
+    // Enemy Handles...
+    std::vector<int32_t>* pVecEnemyHandles = m_vecEnemyPlayerHandles.GetWriteBuffer();
+    DOUBLEBUFFER_AUTO_RELEASE_WRITEBUFFER_SWAP(&m_vecEnemyPlayerHandles, pVecEnemyHandles);
+
 
     for (int iEntIndex = 0; iEntIndex < nEntities; iEntIndex++)
     {
@@ -102,6 +107,10 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
         case ClassIdIndex::CTFPlayer:         
         {
             _ProcessPlayer((bFriendlyEntity == true ? vecTeamMates : vecEnemies), pEnt, pCmd->tick_count);
+            
+            if(bFriendlyEntity == false)
+                pVecEnemyHandles->push_back(pEnt->GetRefEHandle());
+
             break;
         }
         case ClassIdIndex::CObjectSentrygun:  _ProcessSentry    (pEnt, pLocalPlayer->m_iTeamNum()); break;
@@ -150,6 +159,13 @@ void EntityIterator_t::ClearLists()
     // Dormant & Non-Dormant players.
     ClearDoubleBufferVector(m_vecAllConnectedEnemies);
     ClearDoubleBufferVector(m_vecAllConnectedTeammates);
+
+    // Enemy Handles...
+    std::vector<int32_t>* pVecEnemyHandles = m_vecEnemyPlayerHandles.GetWriteBuffer();
+    if(pVecEnemyHandles != nullptr)
+    {
+        pVecEnemyHandles->clear(); m_vecEnemyPlayerHandles.ReturnWriteBuffer(pVecEnemyHandles, false);
+    }
 
     // Buildings...
     ClearDoubleBufferVector(m_vecSentryEnemy);
@@ -202,6 +218,14 @@ Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetAllCo
 Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& EntityIterator_t::GetAllConnectedTeamMatesList()
 {
     return m_vecAllConnectedTeammates;
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+Containers::DoubleBuffer_t<std::vector<int32_t>>& EntityIterator_t::GetEnemyHandles()
+{
+    return m_vecEnemyPlayerHandles;
 }
 
 
@@ -405,8 +429,12 @@ void EntityIterator_t::_ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn,
         LOG("Added backtrack record for entity.");
     }
 
+
+    // Recording strafe prediction informatoin.
+    F::movementSimulation.RecordStrafeData(pEnt, false);
+
+
     // Adding this back track record.
-    //Sig::CBaseAnimating_InvalidateBoneCache(pEnt);
     BackTrackRecord_t record;
     pEnt->SetupBones(record.m_bones, MAX_STUDIO_BONES, BONE_USED_BY_ANYTHING, CUR_TIME);
     record.m_iFlags      = pEnt->m_fFlags();

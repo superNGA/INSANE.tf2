@@ -278,7 +278,8 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
 
     // Now we sort the enemy list according to user's prefrences.
     std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
-    _SortTargetList(pVecEnemies, vecSortedTargets, pLocalPlayer, pCmd->viewangles, true);
+    qangle qEngineAngles; I::iEngine->GetViewAngles(qEngineAngles);
+    _SortTargetList(pVecEnemies, vecSortedTargets, pLocalPlayer, qEngineAngles, true);
     if (vecSortedTargets.size() == 0LLU) // User doesn't wanna shoot at any enemy players it seems...
         return nullptr;
 
@@ -325,6 +326,9 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
 
         // Just in case, we don't happen to have any backtrack records for this entity.
         std::deque<BackTrackRecord_t>* pQBackTrackRecords = F::entityIterator.GetBackTrackRecord(pEnt);
+        if (pQBackTrackRecords == nullptr)
+            continue;
+
         if (pQBackTrackRecords->size() == 0LLU)
             continue;
 
@@ -366,7 +370,7 @@ BaseEntity* AimbotHitscanV2_t::_ChoosePlayerTarget(BaseEntity* pLocalPlayer, bas
 
                 // Most visible point on target.
                 vec vBestTargetPos;
-                if (_IsVisible(targetBone, pHitbox, vEyePos, vBestTargetPos, pLocalPlayer, pEnt, pCmd->viewangles) == false)
+                if (_IsVisible(targetBone, pHitbox, vEyePos, vBestTargetPos, pLocalPlayer, pEnt, qEngineAngles) == false)
                     continue;
 
 
@@ -419,7 +423,8 @@ BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntit
 {
     // Now we sort the enemy list according to user's prefrences.
     std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
-    _SortTargetList(pVecTargets, vecSortedTargets, pLocalPlayer, pCmd->viewangles, true);
+    qangle qEngineAngles; I::iEngine->GetViewAngles(qEngineAngles);
+    _SortTargetList(pVecTargets, vecSortedTargets, pLocalPlayer, qEngineAngles, true);
 
     // Some localplayer stuff...
     vec vEyePos         = pLocalPlayer->GetEyePos();
@@ -452,8 +457,8 @@ BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntit
         // Is this building in FOV ?
         {
             float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
-            float flAngleMin = _GetAngleFromCrosshair(vEntOrigin + vObbMin, vEyePos, pCmd->viewangles);
-            float flAngleMax = _GetAngleFromCrosshair(vEntOrigin + vObbMax, vEyePos, pCmd->viewangles);
+            float flAngleMin = _GetAngleFromCrosshair(vEntOrigin + vObbMin, vEyePos, qEngineAngles);
+            float flAngleMax = _GetAngleFromCrosshair(vEntOrigin + vObbMax, vEyePos, qEngineAngles);
 
             // if both of the corners are out of FOV-circle, then building ain't in the FOV-circle.
             // Atleast one of the corners ( min or max ) should be in FOV.
@@ -466,7 +471,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseBuildingTarget(const std::vector<BaseEntit
             vec   vVisibleTargetPos;
             vec   vEntCenter     = vEntOrigin + (vObbMax + vObbMin) / 2.0f;
             float flBloomRadius  = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_BuildingBloom.GetData().m_flVal / 2.0f;
-            bool  bTargetVisible = _MultipointVisibilityCheck(vEntCenter, vObbMin, vObbMax, pCmd->viewangles, vVisibleTargetPos, pLocalPlayer, pEnt, flBloomRadius);
+            bool  bTargetVisible = _MultipointVisibilityCheck(vEntCenter, vObbMin, vObbMax, qEngineAngles, vVisibleTargetPos, pLocalPlayer, pEnt, flBloomRadius);
 
             if (bTargetVisible == false)
                 continue;
@@ -486,7 +491,8 @@ BaseEntity* AimbotHitscanV2_t::_ChooseStickyBombTarget(const std::vector<BaseEnt
 {
     // Now we sort the enemy list according to user's prefrences.
     std::vector<BaseEntity*> vecSortedTargets; vecSortedTargets.clear();
-    _SortTargetList(pVecTargets, vecSortedTargets, pLocalPlayer, pCmd->viewangles, false);
+    qangle qEngineAngles; I::iEngine->GetViewAngles(qEngineAngles);
+    _SortTargetList(pVecTargets, vecSortedTargets, pLocalPlayer, qEngineAngles, false);
 
 
     // Some localplayer stuff...
@@ -520,7 +526,7 @@ BaseEntity* AimbotHitscanV2_t::_ChooseStickyBombTarget(const std::vector<BaseEnt
         // Is this building in FOV ?
         {
             float flFOV = Features::Aimbot::AimbotHitscanV2::AimbotHitscan_FOV.GetData().m_flVal;
-            float flAngle = _GetAngleFromCrosshair(vEntOrigin, vEyePos, pCmd->viewangles);
+            float flAngle = _GetAngleFromCrosshair(vEntOrigin, vEyePos, qEngineAngles);
 
             // if both of the corners are out of FOV-circle, then building ain't in the FOV-circle.
             if (flAngle > flFOV)
@@ -728,7 +734,9 @@ bool AimbotHitscanV2_t::_MultipointVisibilityCheck(vec& vOrigin, vec& vMin, vec&
     vec vEyePos = pLocalPlayer->GetEyePos();
     ITraceFilter_IgnoreSpawnVisualizer filter(pLocalPlayer); trace_t trace;
     I::EngineTrace->UTIL_TraceRay(vEyePos, vOrigin, MASK_SHOT, &filter, &trace);
-    if(trace.m_entity == pTarget)
+    // In case we are shooting @ backtracks, the entity pointer check won't do. 
+    // Cause there is no entity there & our data is from stored backtrack information.
+    if(trace.m_entity == pTarget || trace.m_fraction >= 0.99f) 
     {
         vTargetPosOut = vOrigin;
         return true;
@@ -772,16 +780,18 @@ bool AimbotHitscanV2_t::_MultipointVisibilityCheck(vec& vOrigin, vec& vMin, vec&
 
         // visibility test this hitpoint...
         I::EngineTrace->UTIL_TraceRay(vEyePos, vHitpoint, MASK_SHOT, &filter, &trace);
-        if (trace.m_entity == pTarget)
+        // In case we are shooting @ backtracks, the entity pointer check won't do. 
+        // Cause there is no entity there & our data is from stored backtrack information.
+        if (trace.m_entity == pTarget || trace.m_fraction >= 0.99f)
         {
-            vTargetPosOut = vHitpoint;
+            vTargetPosOut = vOrigin;
             return true;
         }
 
         // Modify hitpoint for next iteration... ( i.e. rotate it )
         float flCurrentAngle = atan2f(y, x);
-        flCurrentAngle += flGapAngle;
-        vVelRelative.x = cosf(flCurrentAngle); vVelRelative.y = sinf(flCurrentAngle);
+        float flNewAngle     = flCurrentAngle + flGapAngle;
+        vVelRelative.x = cosf(flNewAngle); vVelRelative.y = sinf(flNewAngle);
     }
 
 

@@ -102,6 +102,7 @@ public:
     int			GetWeaponDefinitionID(); // <- Item specific ID ( i.e. different for each bat type for scout )
 
     float		GetDamagePerShot();
+    bool        RequiresCharging();
 
 private:
     bool TracerHook = false;
