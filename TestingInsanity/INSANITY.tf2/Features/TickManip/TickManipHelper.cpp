@@ -1,9 +1,18 @@
+//=========================================================================
+//                      TICK MANIPULATION HELPER
+//=========================================================================
+// by      : INSANE
+// created : 11/05/2025
+// 
+// purpose : Handles "SendPacket"'s value & runs fakelag.
+//-------------------------------------------------------------------------
 #include "TickManipHelper.h"
 
 #include "../../Utility/Signature Handler/signatures.h"
 #include "../../Extra/math.h"
 #include "AntiAim/AntiAimV2.h"
 #include "../ImGui/InfoWindowV2/InfoWindow.h"
+#include "../ImGui/NotificationSystem/NotificationSystem.h"
 
 // SDK
 #include "../../SDK/class/CommonFns.h"
@@ -29,8 +38,10 @@ void TickManipHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon,
     int iFakeLagTicks = Features::Misc::FakeLag::FakeLag_Enable.IsActive()    == false ? 0 : Features::Misc::FakeLag::FakeLag_ChockedTicks.GetData().m_iVal;
     int iAntiAimTicks = Features::AntiAim::AntiAim::AntiAim_Enable.IsActive() == false ? 0 : F::antiAimV2.GetAntiAimTicks();
 
-    int  iTicksToChoke = Maths::MAX<int>(iFakeLagTicks, iAntiAimTicks);
-    bool bShooting     = (pCmd->buttons & IN_ATTACK) == true && SDK::CanAttack(pLocalPlayer, pActiveWeapon);
+    int iTicksToChoke = Maths::MAX<int>(iFakeLagTicks, iAntiAimTicks);
+
+    m_qOriginalAngles   = pCmd->viewangles;
+    m_flOrigForwardMove = pCmd->forwardmove; m_flOrigSideMove = pCmd->sidemove;
 
     // Choke...
     if (m_iTicksChocked < iTicksToChoke)
@@ -62,8 +73,7 @@ void TickManipHelper_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon,
 
     // In case we are shooting, we need to put our cmd view angles to engine angles, so we 
     // shoot where user intends to shoot.
-    if (bShooting == true)
-        _HandleShots(pCmd);
+    _DetectAndHandleShots(pLocalPlayer, pActiveWeapon, pCmd, pSendPacket);
 
 
     _DrawWidget();
@@ -170,11 +180,11 @@ void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDesti
     pLocalPlayer->GetRenderAngles().yaw = qEyeAngle.yaw;
 
     
-    // Make sure we are not looking at some bitch ass angle.
     // sometimes, the pose parameter index 1, is set to 0 or 1, instead of 0.5, and that 
-    // will make us look either ot the right or left, with the correct feet position,
+    // will make us look either to the right or left, with the correct feet position,
     // as in rotating spine to look either way.
     pLocalPlayer->GetPoseParameter()[1] = 0.5f;
+
 
     // Storing animation parameters to prevent animation from speeding up.
     int   iOldSequence   = pLocalPlayer->m_nSequence();
@@ -203,9 +213,49 @@ void TickManipHelper_t::_StoreBones(const qangle& qEyeAngle, matrix3x4_t* pDesti
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void TickManipHelper_t::_HandleShots(CUserCmd* pCmd)
+void TickManipHelper_t::_DetectAndHandleShots(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket)
 {
-    I::iEngine->GetViewAngles(pCmd->viewangles);
+    // If antiaim is turned off, then our moved if fixed, no need to fuck with anything here.
+    if (Features::AntiAim::AntiAim::AntiAim_Enable.IsActive() == false)
+        return;
+
+    bool bShooting    = SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true && (pCmd->buttons & IN_ATTACK) == true;
+    bool bResetAngles = false;
+
+    if (pActiveWeapon->getSlot() == WPN_SLOT_MELLE)
+    {
+        if (pLocalPlayer->m_iClass() != TF_SPY)
+        {
+            float flCurTime = TICK_TO_TIME(pLocalPlayer->m_nTickBase());
+            bResetAngles    = SDK::InAttack(pLocalPlayer, pActiveWeapon) == true && flCurTime >= pActiveWeapon->m_flSmackTime();
+        }
+    }
+    // TODO : Use switch here.
+    // In case we are playing pyro, we must reset angles on all the tick and not only on alternating ticks.
+    else if (pLocalPlayer->m_iClass() == TF_PYRO && pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY)
+    {
+        if (pCmd->buttons & IN_ATTACK)
+            bResetAngles = true;
+    }
+    else if (pActiveWeapon->RequiresCharging() == true)
+    {
+        // In case our wpn require charing, we need to do this weird check, where we need to 
+        // set angles on the tick where we have released the attack button ( hence bShooting == false ) but 
+        // all our netvars are in good state / represeting shooting. IDK, but it seems to work.
+        bResetAngles = pActiveWeapon->m_flChargeBeginTime() > 0.001f && bShooting == false;
+    }
+    else
+    {
+        bResetAngles = bShooting;
+    }
+
+
+    // We good, no need to set view angles to engine angles.
+    if (bResetAngles == false)
+        return;
+
+    pCmd->viewangles = m_qOriginalAngles;
+    pCmd->forwardmove = m_flOrigForwardMove; pCmd->sidemove = m_flOrigSideMove;
 }
 
 

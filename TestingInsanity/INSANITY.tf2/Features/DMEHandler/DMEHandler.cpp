@@ -70,10 +70,6 @@ int64_t DMEHandler_t::_ApplyChams(int& nDrawCalls, void* pVTable, DrawModelState
     int         iWishMaterialIndex = -1;
 
 
-    // We need to use recaculated bone matrix for local player while using antiaim custom real angles.
-    boneMatrix = (F::tickManipHelper.UseCustomBonesLocalPlayer() == true && pEnt == pLocalPlayer) ? F::tickManipHelper.GetRealAngleBones() : boneMatrix;
-
-
     auto it = mapJumpTableHelper.find(iClassID);
     if (it == mapJumpTableHelper.end())
         return -1LL;
@@ -172,13 +168,6 @@ int64_t DMEHandler_t::_HandleLocalPlayer(void* pVTable, DrawModelState_t* modelS
     assert(ppBoneMatrix != nullptr && *ppBoneMatrix != nullptr && "Bad bone matrix for local player  ->  " __FUNCTION__);
     if (ppBoneMatrix == nullptr || *ppBoneMatrix == nullptr)
         return 0LL;
-
-
-    // In case using legit antiaim, use manually created bones.
-    if (F::tickManipHelper.UseCustomBonesLocalPlayer() == true)
-    {
-        //*ppBoneMatrix = F::tickManipHelper.GetRealAngleBones();
-    }
 
 
     // User doesn't want to draw second model?

@@ -74,6 +74,7 @@ public:
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedEnemiesList();
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetAllConnectedTeamMatesList();
 
+    Containers::DoubleBuffer_t<std::vector<int32_t>>& GetEnemyHandles();
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetEnemyPlayers();
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& GetFrendlyPlayers();
     
@@ -141,6 +142,7 @@ private:
     // Storing all Non-Dormant player's in thread safe containers...
     void _ProcessPlayer(std::vector<BaseEntity*>* vecListToPushIn, BaseEntity* pEnt, int iCurrentTick);
     Containers::DoubleBuffer_t<std::vector<BaseEntity*>> m_vecPlayerEnemy, m_vecPlayerFriendly;
+    Containers::DoubleBuffer_t<std::vector<int32_t>> m_vecEnemyPlayerHandles;
 
 
     // Storing all Non-Dormant building's in thread safe containers...

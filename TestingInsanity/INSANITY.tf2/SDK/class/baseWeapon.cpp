@@ -138,3 +138,17 @@ float baseWeapon::GetDamagePerShot()
 
     return flDamage;
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+bool baseWeapon::RequiresCharging()
+{
+    ProjectileType_t iProjectileType = GetTFWeaponInfo()->GetWeaponData()->m_iProjectile;
+
+    return
+        iProjectileType == TF_PROJECTILE_ARROW           ||
+        iProjectileType == TF_PROJECTILE_FESTIVE_ARROW   ||
+        iProjectileType == TF_PROJECTILE_PIPEBOMB_REMOTE ||
+        iProjectileType == TF_PROJECTILE_PIPEBOMB_PRACTICE;
+}

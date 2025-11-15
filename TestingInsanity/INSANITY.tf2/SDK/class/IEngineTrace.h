@@ -98,8 +98,6 @@ struct trace_t {
 	short				m_physics_bone;
 	BaseEntity*			m_entity;
 	int					m_hitbox;
-
-	bool did_hit() const { return m_fraction < 1.f || m_allsolid || m_start_solid; }
 };
 
 typedef trace_t CGameTrace;

@@ -23,16 +23,22 @@ class AntiAimV2_t
 public:
     void Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, CUserCmd* pCmd, bool* pSendPacket, bool* pCreateMoveResult);
     
-    int    GetAntiAimTicks();
+    int     GetAntiAimTicks();
     
-    qangle  GetFakeAngles() const;
+    qangle  GetFakeAngles () const;
     qangle* GetFakeAnglesP();
-    qangle  GetRealAngles() const;
+    qangle  GetRealAngles () const;
     qangle* GetRealAnglesP();
 
+    void FixMovement(CUserCmd* pCmd);
+
 private:
-    void _FixMovement(CUserCmd* pCmd);
-    void _EdgeDetection(BaseEntity* pLocalPlayer, CUserCmd* pCmd, qangle& qSafeAngleOut, float flPitchIn);
+    void _EdgeDetection(BaseEntity* pLocalPlayer, CUserCmd* pCmd, qangle& qSafeAngleOut, float flPitchIn, bool& bEdgeFound);
+
+    // Handling widget...
+    void _DrawWidget();
+    bool m_bEdgeDetected = false; // Edge detection being done or not?
+
 
     qangle _GetFakeAngles(CUserCmd* pCmd) const;
     qangle _GetRealAngles(CUserCmd* pCmd) const;
@@ -61,3 +67,4 @@ DEFINE_FEATURE(AntiAim_RealPitch,        "Real Pitch",         FloatSlider_t, An
 DEFINE_FEATURE(AntiAim_RealYawOffset,    "Real Yaw Offest",    FloatSlider_t, AntiAim, AntiAim, 8, FloatSlider_t(0.0f, 0.0f, 360.0f),  FeatureFlag_SupportKeyBind, "how much angle between your view angles & real yaw.")
 
 DEFINE_FEATURE(AntiAim_EdgeDetection,    "Edge Detection", bool, AntiAim, AntiAim, 9, false, FeatureFlag_SupportKeyBind, "Hide real angles behind wall if avaiable.")
+DEFINE_FEATURE(AntiAim_DrawWidget,       "Draw Info",      bool, AntiAim, AntiAim, 10, false, FeatureFlag_None,           "Draw information on a widget?")

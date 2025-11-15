@@ -9,6 +9,8 @@
 #include "../../SDK/class/HitboxDefs.h"
 
 // Utility
+#include "../../Utility/PullFromAssembly.h"
+#include "../../SDK/NetVars/NetVarHandler.h"
 #include "../ImGui/NotificationSystem/NotificationSystem.h"
 #include "../../Utility/Profiler/Profiler.h"
 #include "../../Extra/math.h"
@@ -21,6 +23,9 @@
 
 
 constexpr size_t MAX_ESP_RECORDS = 25LLU;
+GET_RIP_ADRS_FROM_ASSEMBLY(g_pGameRules, void**,"48 8B 0D ? ? ? ? 48 8B 01 FF 90 ? ? ? ? 48 8B 0D ? ? ? ? 48 8B D0", CLIENT_DLL, 3, 7, 7)
+NETVAR(m_iRoundState, DT_TeamplayRoundBasedRules)
+
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -118,18 +123,18 @@ void ESP_t::RunEndScene()
 
 
     // Quickly get a list of what we have to draw.
-    bool bDrawEsp      = Features::Materials::Player::ESPPlayer_Enable.IsActive();
-    bool bDrawHitbox   = Features::Materials::Player::ESPPlayer_DrawHitbox.IsActive();
-    bool bDrawSkeleton = Features::Materials::Player::ESPPlayer_DrawSkeleton.IsActive();
-
+    bool bDrawEsp       = Features::Materials::Player::ESPPlayer_Enable.IsActive();
+    bool bDrawHitbox    = Features::Materials::Player::ESPPlayer_DrawHitbox.IsActive();
+    bool bDrawSkeleton  = Features::Materials::Player::ESPPlayer_DrawSkeleton.IsActive();
+    bool bNoDrawDeadEnt = Features::Materials::Player::ESPPlayer_NoDrawDeadEnt.IsActive();
 
     // Don't iterate bad entitylist. It's instant crash.
     if (F::entityIterator.AreListsValid() == false)
         return;
 
     // Aquire and setup auto-release for enemy players.
-    Containers::DoubleBuffer_t<std::vector<BaseEntity*>>& dbEnemies   = F::entityIterator.GetEnemyPlayers();
-    std::vector<BaseEntity*>*                             pVecEnemies = dbEnemies.GetReadBuffer();
+    Containers::DoubleBuffer_t<std::vector<int32_t>>& dbEnemies   = F::entityIterator.GetEnemyHandles();
+    std::vector<int32_t>*                             pVecEnemies = dbEnemies.GetReadBuffer();
     DOUBLEBUFFER_AUTO_RELEASE_READBUFFER(&dbEnemies, pVecEnemies);
 
 
@@ -146,7 +151,14 @@ void ESP_t::RunEndScene()
     size_t iEntIndex = 0LLU;
     for (iEntIndex = 0LLU; iEntIndex < nEntities; iEntIndex++)
     {
-        BaseEntity* pEnt = (*pVecEnemies)[iEntIndex];
+        int32_t iHandle = (*pVecEnemies)[iEntIndex];
+        BaseEntity* pEnt = I::IClientEntityList->GetClientEntityFromHandle(&iHandle);
+        if (pEnt == nullptr)
+            continue;
+
+        // Dead ent. filter
+        if (bNoDrawDeadEnt == true && pEnt->m_lifeState() != lifeState_t::LIFE_ALIVE)
+            continue;
 
 
         // Getting player's hitbox.
@@ -171,6 +183,14 @@ void ESP_t::RunEndScene()
 
         // do we have atleast 1 record for this entity
         std::deque<BackTrackRecord_t>* pQRecords = F::entityIterator.GetBackTrackRecord(pEnt);
+        
+        // This pointer it retrived form a std::unordered_map, and if backtrack records are not 
+        // initialized for this fucking entity via the createmove hook, this hook ( endscene ) can and
+        // will get a nullptr. This hook is also called far move frequenly than endscene so thats also
+        // icing on cake.
+        if (pQRecords == nullptr)
+            continue;
+
         if (pQRecords->size() == 0LLU)
             continue;
         BackTrackRecord_t& record = pQRecords->front();
