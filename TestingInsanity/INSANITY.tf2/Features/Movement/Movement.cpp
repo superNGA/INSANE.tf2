@@ -3,6 +3,7 @@
 
 // SDK
 #include "../../SDK/class/Source Entity.h"
+#include "../../SDK/class/IVEngineClient.h"
 #include "../../SDK/class/CUserCmd.h"
 #include "../../SDK/class/BaseWeapon.h"
 #include "../../SDK/class/IInputSystem.h"
@@ -97,9 +98,12 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
         return;
     }
 
+
     // Can Rocket jump?
-    if (pLocalPlayer->m_iClass() != TF_SOLDIER || pActiveWeapon->getSlot() != WPN_SLOT_PRIMARY)
+    bool bCanRocketJump = pLocalPlayer->m_iClass() == TF_SOLDIER && pActiveWeapon->getSlot() == WPN_SLOT_PRIMARY;
+    if(bCanRocketJump == false)
         return;
+
 
     // If Got no ammo, then return
     if (pActiveWeapon->m_iClip1() <= 0)
@@ -111,18 +115,25 @@ void Movement_t::_RocketJump(CUserCmd* pCmd, bool& result, baseWeapon* pActiveWe
         pCmd->buttons |= IN_JUMP;
         pCmd->buttons |= IN_DUCK;
         ++iRocketJumpingStage;
+
         // Canceling reload
         if (pActiveWeapon->m_iReloadMode() != reload_t::WPN_RELOAD_START)
             pCmd->buttons |= IN_ATTACK;
         break;
 
     case 1 :
+    {
+        // We must do this to ensure proper function with antiaim turned on.
+        // else we might shoot @ weird angles.
+        I::iEngine->GetViewAngles(pCmd->viewangles);
+
         pCmd->viewangles.yaw += 180.0f;
         Maths::ClampQAngle(pCmd->viewangles);
         pCmd->buttons |= IN_ATTACK;
         ++iRocketJumpingStage;
         result = false;
-        break;
+    }
+    break;
 
     default:
         break;

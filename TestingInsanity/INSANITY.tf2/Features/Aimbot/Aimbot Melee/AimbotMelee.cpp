@@ -53,9 +53,11 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot.IsActive() == false)
         return false;
 
+
     // Don't do aimbot while cloaked.
     if (pLocalPlayer->m_iClass() == TF_SPY && pLocalPlayer->InCond(FLAG_playerCond::TF_COND_STEALTHED) == true)
         return false;
+
 
     // Detecting the best target.
     if (SDK::InAttack(pLocalPlayer, pActiveWeapon) == false)
@@ -63,8 +65,10 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         m_pBestTarget = _ChooseTarget(pLocalPlayer, pActiveWeapon);
     }
 
+
     if (m_pBestTarget == nullptr)
         return false;
+
 
     // Auto firing.
     if (Features::Aimbot::Melee_Aimbot::MeleeAimbot_AutoFire.IsActive() == true && SDK::CanAttack(pLocalPlayer, pActiveWeapon) == true)
@@ -72,18 +76,36 @@ bool AimbotMelee_t::RunV3(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, C
         pCmd->buttons |= IN_ATTACK;
     }
 
+    
     // SETTING AIMBOT ANGLES
     if(_ShouldAim(pLocalPlayer, pActiveWeapon, pCmd) == true)
     {
-        // Calculating target's angles
-        qangle qTargetBestAngles;
-        Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - m_vAttackerFutureEyePos, qTargetBestAngles);
+        // If we are playing spy, we can rely on m_vBestTargetFuturePos to be good, 
+        // cause we attack on the tick we calculate them.
+        if(pLocalPlayer->m_iClass() == TF_SPY)
+        {
+            // Calculating target's angles
+            qangle qTargetBestAngles;
+            Maths::VectorAnglesFromSDK(m_vBestTargetFuturePos - m_vAttackerFutureEyePos, qTargetBestAngles);
 
-        LOG("Fired @ command [ %d ]. Difference %d", pCmd->tick_count, pCmd->tick_count - m_iBestTargetsTick);
+            LOG("Fired @ command [ %d ]. Difference %d", pCmd->tick_count, pCmd->tick_count - m_iBestTargetsTick);
 
-        // Silent aim
-        pCmd->viewangles   = qTargetBestAngles;
-        pCmd->tick_count   = pLocalPlayer->m_iClass() == TF_SPY ? m_iBestTargetsTick : pCmd->tick_count;
+            // Silent aim
+            pCmd->viewangles = qTargetBestAngles;
+            pCmd->tick_count = m_iBestTargetsTick;
+        }
+        // If not playing spy, we aim at the closest point on the target on the tick the shot / smack gets registered.
+        // This is cause our player simulation might be wrong, in which cause our smack will miss, which could have been 
+        // easily prevented by recalculating targetpos.
+        else 
+        {
+            vec vClosestTargetPoint = _GetClosestPointOnEntity(pLocalPlayer, m_pBestTarget);
+            qangle qTargetBestAngles;
+            Maths::VectorAnglesFromSDK(vClosestTargetPoint - pLocalPlayer->GetEyePos(), qTargetBestAngles);
+
+            pCmd->viewangles = qTargetBestAngles;
+        }
+
         *pCreatemoveResult = false; // Setting silent aim
 
         // Reset everything once swing is done.
@@ -173,15 +195,19 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
         //nTicksToSimulate += TIME_TO_TICK(Maths::MAX<float>(CVars::cl_interp, CVars::cl_interp_ratio / static_cast<float>(CVars::cl_updaterate))); // lerp.
         nTicksToSimulate += TIME_TO_TICK(flSmackDelay); // Smack delay.
 
+        
         // Getting local player's future eye pos.
         vec vFutureEyePos;
-        F::movementSimulation.Initialize(pLocalPlayer, false); // strafe prediction on attacker or target seems to work worse when simulating such small durations.
-        for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
         {
-            F::movementSimulation.RunTick();
+            F::movementSimulation.Initialize(pLocalPlayer, true);
+            for (int iTick = 0; iTick < nTicksToSimulate; iTick++)
+            {
+                F::movementSimulation.RunTick();
+            }
+            vFutureEyePos = F::movementSimulation.GetSimulationPos() + pLocalPlayer->m_vecViewOffset();
+            F::movementSimulation.Restore();
         }
-        vFutureEyePos = F::movementSimulation.GetSimulationPos() + pLocalPlayer->m_vecViewOffset();
-        F::movementSimulation.Restore();
+
 
         // Finding most smackable target.
         for (BaseEntity* pTarget : vecTargets)
@@ -199,10 +225,47 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
             
             // Too far away ?
             const vec vBestPosOnTarget = _GetClosestPointOnEntity(pLocalPlayer, vFutureEyePos, pTarget, vTargetFuturePos);
+
             
-            float flDistance = vFutureEyePos.DistTo(vBestPosOnTarget);
-            if (flDistance >= flSwingRange)
-                continue;
+            // Distance check, is this player in range for us to smack?
+            float flFuturePosDist = INFINITY;
+            {
+                // Distance b/w our future eye pos ( simulated ) and closest point on target ( simulated ).
+                flFuturePosDist         = vFutureEyePos.DistTo(vBestPosOnTarget);
+                bool bCanHitFuturePos   = flFuturePosDist < flSwingRange;
+
+                // NOTE:
+                // When sim-based future position checks fail, it can be a false negative.
+                // Reason:
+                //   We simulate localplayer before iterating enemies. If we're chasing someone,
+                //   the local simulation can think the enemy is still in front of us and block
+                //   the movement path. In reality the enemy would have already moved, but in
+                //   simulation they stay frozen, so the trace falsely reports "can't reach".
+                //
+                //   We estimate localplayer's future eye position using current velocity.
+                // For the target, we reuse the simulated future hit position since the
+                // enemy simulation is reliable — only our local sim gets blocked.
+                //
+                // Because this estimate is low-confidence, treat it as lower priority by
+                // tightening the allowed swing range.
+                //
+                // If this estimated future position is still out of range, skip the target.
+                if(bCanHitFuturePos == false)
+                {
+                    vec vTargetPos          = pTarget->GetAbsOrigin();
+                    vec vEyePos             = pLocalPlayer->GetEyePos();
+
+                    vec vEstFutureEyePos    = vEyePos + pLocalPlayer->m_vecAbsVelocity() * flSmackDelay;
+                    vec vEstFutureTargetPos = vBestPosOnTarget; // we can just reuse the simulated position for enemy. Its pretty good :).
+
+                    //I::IDebugOverlay->AddBoxOverlay(vEstFutureTargetPos, vec(-2.0f), vec(2.0f), qangle(0.0f), 255, 0, 0, 255, 1.0f);
+                    //I::IDebugOverlay->AddBoxOverlay(vEstFutureEyePos,    vec(-2.0f), vec(2.0f), qangle(0.0f), 0, 255, 0, 255, 1.0f);
+
+                    if (vEstFutureEyePos.DistTo(vEstFutureTargetPos) > flSwingRange * 0.90f)
+                        continue;
+                }
+            }
+
 
             // FOV check.
             if (_IsInFOV(pLocalPlayer, vFutureEyePos, vTargetFuturePos, Features::Aimbot::Melee_Aimbot::MeleeAimbot_FOV.GetData().m_flVal) == false)
@@ -216,9 +279,9 @@ BaseEntity* AimbotMelee_t::_ChooseTargetFromList(BaseEntity* pLocalPlayer, baseW
                 continue;
 
             // Store best target.
-            if(flDistance < flBestDistance)
+            if(flFuturePosDist < flBestDistance)
             {
-                flBestDistance          = flDistance;
+                flBestDistance          = flFuturePosDist;
 
                 pBestTarget             = pTarget;
                 m_vBestTargetFuturePos  = vTargetFuturePos;

@@ -3,7 +3,6 @@
 
 #include "../SDK/class/Basic Structures.h"
 #include "../Features/config.h"
-#include "../Features/NoSpread/NoSpread.h"
 #include "../Features/BulletTracers/BulletTarcers_t.h"
 #include "../Features/Entity Iterator/EntityIterator.h"
 

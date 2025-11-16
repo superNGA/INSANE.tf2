@@ -7,6 +7,7 @@
 // purpose : Aims for you when using melee weapons, also contains backtrack auto backstab
 //-------------------------------------------------------------------------
 #pragma once
+#include <vector>
 #include "../../FeatureHandler.h"
 #include "../../../SDK/class/Basic Structures.h"
 

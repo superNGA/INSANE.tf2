@@ -6,8 +6,10 @@
 
 #include "../../Features/NoSpread/NoSpreadV2.h"
 #include "../../SDK/class/bf_buf.h"
-#include "../../Features/NoSpread/NoSpread.h"
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 inline const char* GetMsgName(void* pCUserMsg, int iMsgType)
 {
     if (pCUserMsg == nullptr)
@@ -19,6 +21,8 @@ inline const char* GetMsgName(void* pCUserMsg, int iMsgType)
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 MAKE_HOOK(DispatchUserMsg, "40 56 48 83 EC ? 49 8B F0", __fastcall, CLIENT_DLL, bool, void* pVTable, int iDataType, bf_read* msg)
 {
     if (iDataType == 5)

@@ -1,4 +1,3 @@
-#include <intrin.h>
 
 //======================= Internal stuff =======================
 #include "../SDK/FN index Manager/FN index manager.h"
@@ -15,7 +14,6 @@
 //======================= Features =======================
 #include "../Features/Movement/Movement.h"
 #include "../Features/NoSpread/NoSpreadV2.h" // VENGENCE !
-#include "../Features/NoSpread/NoSpread.h"
 #include "../Features/TickManip/TickManipHelper.h"
 #include "../Features/CritHack/CritHack.h"
 #include "../Features/Aimbot/AimbotHelper.h"
@@ -65,6 +63,8 @@
 */
 
 
+///////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////// 
 MAKE_HOOK(CreateMove, "40 53 48 83 EC ? 0F 29 74 24 ? 49 8B D8", __fastcall, CLIENT_DLL, bool,
     int64_t a1, int64_t a2, CUserCmd* pCmd)
 {

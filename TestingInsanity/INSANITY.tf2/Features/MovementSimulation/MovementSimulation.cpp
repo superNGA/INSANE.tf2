@@ -22,6 +22,9 @@ MAKE_SIG(CTFGameMovement_ProcessMovement, "48 85 D2 0F 84 ? ? ? ? 48 89 5C 24 ? 
     void, void*, BaseEntity*, CMoveData*)
 MAKE_INTERFACE_VERSION(iGameMovement, "GameMovement001", void, CLIENT_DLL)
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MovementSimulation_t::Reset()
 {
     m_bInitialized = false;
@@ -40,6 +43,9 @@ void MovementSimulation_t::Reset()
     memset(&m_dummyCmd,         0, sizeof(CUserCmd));
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 bool MovementSimulation_t::Initialize(BaseEntity* pEnt, bool bStrafePrediction)
 {
     if (m_bSimulationRunning == true)
@@ -80,6 +86,9 @@ bool MovementSimulation_t::Initialize(BaseEntity* pEnt, bool bStrafePrediction)
     return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MovementSimulation_t::RunTick()
 {
     if (m_bInitialized == false)
@@ -135,9 +144,8 @@ void MovementSimulation_t::Restore()
 };
 
 
-//=========================================================================
-//                     PRIVATE METHODS
-//=========================================================================
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MovementSimulation_t::_SetupMove(BaseEntity* pEnt, const bool bLocalPlayer)
 {
     m_moveData.m_bFirstRunOfFunctions = false; // Keep it false, else will do extra bullshit and performance loss :(
@@ -165,6 +173,9 @@ void MovementSimulation_t::_SetupMove(BaseEntity* pEnt, const bool bLocalPlayer)
     m_moveData.m_flConstraintRadius = 0.0f; // radius 0 means no movement constraints ?
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
 {
     if (pEnt->m_fFlags() & FL_DUCKING)
@@ -182,6 +193,8 @@ void MovementSimulation_t::_HandleDuck(BaseEntity* pEnt)
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 void MovementSimulation_t::RecordStrafeData(BaseEntity* pEnt, const bool bIsLocalPlayer)
 {
     // Sometimes in loopback servers, local players Eye Angle is incorrect & delayed, hence we use absolute angle here.

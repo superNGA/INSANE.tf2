@@ -43,6 +43,7 @@ void EntityIterator_t::Run(BaseEntity* pLocalPlayer, baseWeapon* pActiveWeapon, 
     }
 
     // Store Local-Player's information before doing anything else.
+    F::movementSimulation.RecordStrafeData(pLocalPlayer, true);
     _UpdateLocalPlayerInfo(pLocalPlayer, pActiveWeapon);
 
 

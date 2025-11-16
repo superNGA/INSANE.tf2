@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(Insane_tf2 LANGUAGES CXX)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,7 +19,7 @@ endif()
 
 
 #//////////////////////////////////////////////////
-# Linking DirectX9 library.
+# Linking DirectX9 library. ( abs. adrs. u might need to fix it. )
 #//////////////////////////////////////////////////
 target_link_libraries(Insane_tf2 PRIVATE d3d9 d3dx9)
 target_include_directories(Insane_tf2 PRIVATE
